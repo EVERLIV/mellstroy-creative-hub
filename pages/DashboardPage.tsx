@@ -214,13 +214,15 @@ const DashboardPage: React.FC<DashboardPageProps> = () => {
                   className="flex flex-col items-center gap-1 group"
                 >
                   {category.imageUrl ? (
-                    <img 
-                      src={category.imageUrl} 
-                      alt={category.name}
-                      className="w-[100px] h-[100px] object-contain rounded-2xl transition-all duration-200 group-hover:scale-105"
-                    />
+                    <div className="w-[100px] h-[100px] flex items-center justify-center p-2 bg-white rounded-2xl">
+                      <img 
+                        src={category.imageUrl} 
+                        alt={category.name}
+                        className="w-full h-full object-contain transition-all duration-200 group-hover:scale-110"
+                      />
+                    </div>
                   ) : (
-                    <div className="w-[100px] h-[100px] flex items-center justify-center rounded-2xl transition-all duration-200 group-hover:scale-105">
+                    <div className="w-[100px] h-[100px] flex items-center justify-center rounded-2xl bg-slate-100 transition-all duration-200 group-hover:scale-105">
                       <IconComponent className="w-12 h-12 text-slate-700" />
                     </div>
                   )}
