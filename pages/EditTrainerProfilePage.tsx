@@ -180,23 +180,23 @@ const EditTrainerProfilePage: React.FC<EditTrainerProfilePageProps> = ({ user, o
     };
 
     return (
-        <div className="bg-background min-h-screen overflow-y-auto">
+        <div className="bg-slate-50 min-h-screen overflow-y-auto">
             {/* Fixed Header */}
-            <div className="sticky top-0 z-50 bg-background/95 backdrop-blur-sm border-b border-border">
+            <div className="sticky top-0 z-50 bg-white/95 backdrop-blur-sm border-b border-slate-200">
                 <div className="flex items-center justify-between p-4">
                     <button 
                         type="button"
                         onClick={onCancel} 
-                        className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
+                        className="flex items-center gap-2 text-slate-600 hover:text-slate-900 transition-colors"
                     >
                         <X className="w-5 h-5" />
                         <span className="font-medium">Cancel</span>
                     </button>
-                    <h1 className="text-lg font-bold text-foreground">Edit Trainer Profile</h1>
+                    <h1 className="text-lg font-bold text-slate-900">Edit Profile</h1>
                     <button 
                         type="button"
                         onClick={handleSave}
-                        className="flex items-center gap-2 bg-primary text-primary-foreground px-4 py-2 rounded-lg hover:bg-primary/90 transition-colors font-semibold"
+                        className="flex items-center gap-2 bg-[#FF6B35] text-white px-4 py-2 rounded-full hover:bg-orange-600 transition-all duration-200 font-semibold shadow-md"
                     >
                         <Save className="w-4 h-4" />
                         Save
@@ -204,9 +204,9 @@ const EditTrainerProfilePage: React.FC<EditTrainerProfilePageProps> = ({ user, o
                 </div>
             </div>
             
-            <form className="p-4 space-y-6 pb-32" onSubmit={handleSave}>
+            <form className="p-4 space-y-4 pb-32" onSubmit={handleSave}>
                 {/* Avatar Upload */}
-                <div className="flex flex-col items-center gap-3 py-4">
+                <div className="flex flex-col items-center gap-3 py-2">
                     <input
                         type="file"
                         ref={fileInputRef}
@@ -218,27 +218,27 @@ const EditTrainerProfilePage: React.FC<EditTrainerProfilePageProps> = ({ user, o
                         <img 
                             src={formData.imageUrl} 
                             alt={formData.name} 
-                            className="w-32 h-32 rounded-full object-cover border-4 border-border shadow-lg"
+                            className="w-28 h-28 rounded-full object-cover border-4 border-white shadow-lg"
                         />
                         <button 
                             type="button"
                             onClick={() => fileInputRef.current?.click()} 
                             disabled={isUploading}
-                            className="absolute bottom-0 right-0 w-10 h-10 rounded-full bg-primary text-primary-foreground flex items-center justify-center shadow-lg hover:bg-primary/90 transition-colors disabled:opacity-50"
+                            className="absolute bottom-0 right-0 w-10 h-10 rounded-full bg-[#FF6B35] text-white flex items-center justify-center shadow-lg hover:bg-orange-600 transition-all duration-200 disabled:opacity-50"
                         >
                             {isUploading ? <Loader className="w-5 h-5 animate-spin"/> : <Camera className="w-5 h-5" />}
                         </button>
                     </div>
-                    <p className="text-sm text-muted-foreground">Tap to change photo</p>
+                    <p className="text-sm text-slate-600">Tap to change photo</p>
                 </div>
 
                 {/* Basic Info */}
-                <div className="bg-card p-5 rounded-xl border border-border space-y-4">
-                    <h3 className="font-bold text-foreground text-lg">Basic Information</h3>
+                <div className="bg-white p-4 rounded-2xl shadow-md shadow-slate-200/60 space-y-4">
+                    <h3 className="font-bold text-slate-900 text-base">Basic Information</h3>
                     
                     <div>
-                        <label htmlFor="name" className="block text-sm font-medium text-foreground mb-2">
-                            Full Name <span className="text-destructive">*</span>
+                        <label htmlFor="name" className="block text-sm font-medium text-slate-700 mb-1.5">
+                            Full Name <span className="text-red-500">*</span>
                         </label>
                         <input 
                             type="text" 
@@ -247,13 +247,13 @@ const EditTrainerProfilePage: React.FC<EditTrainerProfilePageProps> = ({ user, o
                             value={formData.name} 
                             onChange={handleChange} 
                             required
-                            className="w-full px-4 py-3 border border-border rounded-lg bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary transition-all"
+                            className="w-full px-3 py-2.5 border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-orange-500 transition-all"
                             placeholder="Enter your full name"
                         />
                     </div>
                     
                     <div>
-                        <label htmlFor="bio" className="block text-sm font-medium text-foreground mb-2">
+                        <label htmlFor="bio" className="block text-sm font-medium text-slate-700 mb-1.5">
                             Professional Bio
                         </label>
                         <textarea 
@@ -263,13 +263,13 @@ const EditTrainerProfilePage: React.FC<EditTrainerProfilePageProps> = ({ user, o
                             onChange={handleChange} 
                             rows={4}
                             placeholder="Share your experience, certifications, and training philosophy..."
-                            className="w-full px-4 py-3 border border-border rounded-lg bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary transition-all resize-none"
+                            className="w-full px-3 py-2.5 border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-orange-500 transition-all resize-none"
                         />
                     </div>
                     
                     <div>
-                        <label htmlFor="location" className="block text-sm font-medium text-foreground mb-2">
-                            Location <span className="text-destructive">*</span>
+                        <label htmlFor="location" className="block text-sm font-medium text-slate-700 mb-1.5">
+                            Location <span className="text-red-500">*</span>
                         </label>
                         <select 
                             id="location" 
@@ -277,7 +277,7 @@ const EditTrainerProfilePage: React.FC<EditTrainerProfilePageProps> = ({ user, o
                             value={formData.location} 
                             onChange={handleChange} 
                             required
-                            className="w-full px-4 py-3 border border-border rounded-lg bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary transition-all appearance-none cursor-pointer"
+                            className="w-full px-3 py-2.5 border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-orange-500 transition-all appearance-none cursor-pointer"
                         >
                             <option value="">Select district</option>
                             {HCMC_DISTRICTS.map(district => (
@@ -287,7 +287,7 @@ const EditTrainerProfilePage: React.FC<EditTrainerProfilePageProps> = ({ user, o
                     </div>
                     
                     <div>
-                        <label htmlFor="phone" className="block text-sm font-medium text-foreground mb-2">
+                        <label htmlFor="phone" className="block text-sm font-medium text-slate-700 mb-1.5">
                             Phone Number
                         </label>
                         <input 
@@ -297,30 +297,30 @@ const EditTrainerProfilePage: React.FC<EditTrainerProfilePageProps> = ({ user, o
                             value={formData.phone || ''} 
                             onChange={handleChange} 
                             placeholder="+84 xxx xxx xxx"
-                            className={`w-full px-4 py-3 border rounded-lg bg-background text-foreground focus:outline-none focus:ring-2 transition-all ${
+                            className={`w-full px-3 py-2.5 border rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 transition-all ${
                                 phoneError 
-                                    ? 'border-destructive focus:ring-destructive' 
-                                    : 'border-border focus:ring-primary'
+                                    ? 'border-red-500 focus:ring-red-500' 
+                                    : 'border-slate-300 focus:ring-orange-500'
                             }`}
                         />
                         {phoneError && (
-                            <p className="text-xs text-destructive mt-2 flex items-start gap-1">
+                            <p className="text-xs text-red-500 mt-1.5 flex items-start gap-1">
                                 <span className="mt-0.5">⚠️</span>
                                 <span>{phoneError}</span>
                             </p>
                         )}
                         {!phoneError && (
-                            <p className="text-xs text-muted-foreground mt-2">Format: +84 followed by 9-10 digits</p>
+                            <p className="text-xs text-slate-500 mt-1.5">Format: +84 followed by 9-10 digits</p>
                         )}
                     </div>
                 </div>
 
                 {/* Pricing */}
-                <div className="bg-card p-5 rounded-xl border border-border">
-                    <h3 className="font-bold text-foreground text-lg mb-4">Pricing</h3>
+                <div className="bg-white p-4 rounded-2xl shadow-md shadow-slate-200/60">
+                    <h3 className="font-bold text-slate-900 text-base mb-3">Pricing</h3>
                     <div>
-                        <label htmlFor="price" className="block text-sm font-medium text-foreground mb-2">
-                            Hourly Rate (VND) <span className="text-destructive">*</span>
+                        <label htmlFor="price" className="block text-sm font-medium text-slate-700 mb-1.5">
+                            Hourly Rate (VND) <span className="text-red-500">*</span>
                         </label>
                         <input 
                             type="number" 
@@ -332,19 +332,19 @@ const EditTrainerProfilePage: React.FC<EditTrainerProfilePageProps> = ({ user, o
                             step="10000"
                             required
                             placeholder="300000"
-                            className="w-full px-4 py-3 border border-border rounded-lg bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary transition-all"
+                            className="w-full px-3 py-2.5 border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-orange-500 transition-all"
                         />
-                        <p className="text-xs text-muted-foreground mt-2">Your standard rate per hour of training</p>
+                        <p className="text-xs text-slate-500 mt-1.5">Your standard rate per hour of training</p>
                     </div>
                 </div>
                 
                 {/* Specialties */}
-                <div className="bg-card p-5 rounded-xl border border-border">
-                    <div className="flex justify-between items-center mb-4">
-                        <h3 className="font-bold text-foreground text-lg">
-                            Training Specialties <span className="text-destructive">*</span>
+                <div className="bg-white p-4 rounded-2xl shadow-md shadow-slate-200/60">
+                    <div className="flex justify-between items-center mb-3">
+                        <h3 className="font-bold text-slate-900 text-base">
+                            Training Specialties <span className="text-red-500">*</span>
                         </h3>
-                        <span className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded-full">
+                        <span className="text-xs text-slate-500 bg-slate-100 px-2 py-1 rounded-full">
                             Max 5
                         </span>
                     </div>
@@ -356,10 +356,10 @@ const EditTrainerProfilePage: React.FC<EditTrainerProfilePageProps> = ({ user, o
                                     type="button" 
                                     key={specialty} 
                                     onClick={() => handleToggleSpecialty(specialty)}
-                                    className={`px-4 py-2 text-sm font-semibold rounded-full transition-all border-2 ${
+                                    className={`px-4 py-2 text-sm font-semibold rounded-full transition-all duration-200 ease-in-out ${
                                         isSelected 
-                                            ? 'bg-primary border-primary text-primary-foreground shadow-md scale-105' 
-                                            : 'bg-background border-border text-foreground hover:border-primary/50 hover:bg-muted'
+                                            ? 'bg-[#FF6B35] text-white shadow-md' 
+                                            : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
                                     }`}
                                 >
                                     {specialty}

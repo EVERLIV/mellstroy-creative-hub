@@ -105,23 +105,23 @@ const EditAboutMePage: React.FC<EditAboutMePageProps> = ({ user, onSave, onCance
     };
 
     return (
-        <div className="bg-background min-h-screen overflow-y-auto">
+        <div className="bg-slate-50 min-h-screen overflow-y-auto">
             {/* Fixed Header */}
-            <div className="sticky top-0 z-50 bg-background/95 backdrop-blur-sm border-b border-border">
+            <div className="sticky top-0 z-50 bg-white/95 backdrop-blur-sm border-b border-slate-200">
                 <div className="flex items-center justify-between p-4">
                     <button 
                         type="button"
                         onClick={onCancel} 
-                        className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors"
+                        className="flex items-center gap-2 text-slate-600 hover:text-slate-900 transition-colors"
                     >
                         <X className="w-5 h-5" />
                         <span className="font-medium">Cancel</span>
                     </button>
-                    <h1 className="text-lg font-bold text-foreground">Edit Profile</h1>
+                    <h1 className="text-lg font-bold text-slate-900">Edit Profile</h1>
                     <button 
                         type="button"
                         onClick={handleSave}
-                        className="flex items-center gap-2 bg-primary text-primary-foreground px-4 py-2 rounded-lg hover:bg-primary/90 transition-colors font-semibold"
+                        className="flex items-center gap-2 bg-[#FF6B35] text-white px-4 py-2 rounded-full hover:bg-orange-600 transition-all duration-200 font-semibold shadow-md"
                     >
                         <Save className="w-4 h-4" />
                         Save
@@ -129,9 +129,9 @@ const EditAboutMePage: React.FC<EditAboutMePageProps> = ({ user, onSave, onCance
                 </div>
             </div>
             
-            <form className="p-4 space-y-6 pb-32" onSubmit={handleSave}>
+            <form className="p-4 space-y-4 pb-32" onSubmit={handleSave}>
                 {/* Avatar Upload */}
-                <div className="flex flex-col items-center gap-3 py-4">
+                <div className="flex flex-col items-center gap-3 py-2">
                     <input
                         type="file"
                         ref={fileInputRef}
@@ -143,26 +143,26 @@ const EditAboutMePage: React.FC<EditAboutMePageProps> = ({ user, onSave, onCance
                         <img 
                             src={formData.imageUrl} 
                             alt={formData.name} 
-                            className="w-32 h-32 rounded-full object-cover border-4 border-border shadow-lg"
+                            className="w-28 h-28 rounded-full object-cover border-4 border-white shadow-lg"
                         />
                         <button 
                             type="button"
                             onClick={() => fileInputRef.current?.click()} 
                             disabled={isUploading}
-                            className="absolute bottom-0 right-0 w-10 h-10 rounded-full bg-primary text-primary-foreground flex items-center justify-center shadow-lg hover:bg-primary/90 transition-colors disabled:opacity-50"
+                            className="absolute bottom-0 right-0 w-10 h-10 rounded-full bg-[#FF6B35] text-white flex items-center justify-center shadow-lg hover:bg-orange-600 transition-all duration-200 disabled:opacity-50"
                         >
                             {isUploading ? <Loader className="w-5 h-5 animate-spin"/> : <Camera className="w-5 h-5" />}
                         </button>
                     </div>
-                    <p className="text-sm text-muted-foreground">Tap to change photo</p>
+                    <p className="text-sm text-slate-600">Tap to change photo</p>
                 </div>
 
                 {/* Basic Info */}
-                <div className="bg-card p-5 rounded-xl border border-border space-y-4">
-                    <h3 className="font-bold text-foreground text-lg">Basic Information</h3>
+                <div className="bg-white p-4 rounded-2xl shadow-md shadow-slate-200/60 space-y-4">
+                    <h3 className="font-bold text-slate-900 text-base">Basic Information</h3>
                     
                     <div>
-                        <label htmlFor="name" className="block text-sm font-medium text-foreground mb-2">
+                        <label htmlFor="name" className="block text-sm font-medium text-slate-700 mb-1.5">
                             Full Name
                         </label>
                         <input 
@@ -171,13 +171,13 @@ const EditAboutMePage: React.FC<EditAboutMePageProps> = ({ user, onSave, onCance
                             name="name" 
                             value={formData.name} 
                             onChange={handleChange}
-                            className="w-full px-4 py-3 border border-border rounded-lg bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary transition-all"
+                            className="w-full px-3 py-2.5 border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-orange-500 transition-all"
                             placeholder="Enter your name"
                         />
                     </div>
                     
                     <div>
-                        <label htmlFor="bio" className="block text-sm font-medium text-foreground mb-2">
+                        <label htmlFor="bio" className="block text-sm font-medium text-slate-700 mb-1.5">
                             About Me
                         </label>
                         <textarea 
@@ -187,12 +187,12 @@ const EditAboutMePage: React.FC<EditAboutMePageProps> = ({ user, onSave, onCance
                             onChange={handleChange} 
                             rows={4}
                             placeholder="Tell others about yourself, your fitness journey, and goals..."
-                            className="w-full px-4 py-3 border border-border rounded-lg bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary transition-all resize-none"
+                            className="w-full px-3 py-2.5 border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-orange-500 transition-all resize-none"
                         />
                     </div>
                     
                     <div>
-                        <label htmlFor="location" className="block text-sm font-medium text-foreground mb-2">
+                        <label htmlFor="location" className="block text-sm font-medium text-slate-700 mb-1.5">
                             Location
                         </label>
                         <select 
@@ -200,7 +200,7 @@ const EditAboutMePage: React.FC<EditAboutMePageProps> = ({ user, onSave, onCance
                             name="location" 
                             value={formData.location} 
                             onChange={handleChange}
-                            className="w-full px-4 py-3 border border-border rounded-lg bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary transition-all appearance-none cursor-pointer"
+                            className="w-full px-3 py-2.5 border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-orange-500 transition-all appearance-none cursor-pointer"
                         >
                             <option value="">Select district</option>
                             {HCMC_DISTRICTS.map(district => (
@@ -211,11 +211,11 @@ const EditAboutMePage: React.FC<EditAboutMePageProps> = ({ user, onSave, onCance
                 </div>
                 
                 {/* Fitness Stats */}
-                <div className="bg-card p-5 rounded-xl border border-border">
-                    <h3 className="font-bold text-foreground text-lg mb-4">Fitness Stats</h3>
-                    <div className="grid grid-cols-3 gap-4">
+                <div className="bg-white p-4 rounded-2xl shadow-md shadow-slate-200/60">
+                    <h3 className="font-bold text-slate-900 text-base mb-3">Fitness Stats</h3>
+                    <div className="grid grid-cols-3 gap-3">
                         <div>
-                            <label htmlFor="age" className="block text-sm font-medium text-foreground mb-2 text-center">
+                            <label htmlFor="age" className="block text-sm font-medium text-slate-700 mb-1.5 text-center">
                                 Age
                             </label>
                             <input 
@@ -225,11 +225,11 @@ const EditAboutMePage: React.FC<EditAboutMePageProps> = ({ user, onSave, onCance
                                 value={formData.age || ''} 
                                 onChange={handleChange}
                                 placeholder="--"
-                                className="w-full text-center px-3 py-3 border border-border rounded-lg bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary transition-all"
+                                className="w-full text-center px-2 py-2.5 border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-orange-500 transition-all"
                             />
                         </div>
                         <div>
-                            <label htmlFor="height" className="block text-sm font-medium text-foreground mb-2 text-center">
+                            <label htmlFor="height" className="block text-sm font-medium text-slate-700 mb-1.5 text-center">
                                 Height
                             </label>
                             <input 
@@ -239,11 +239,11 @@ const EditAboutMePage: React.FC<EditAboutMePageProps> = ({ user, onSave, onCance
                                 value={formData.height || ''} 
                                 onChange={handleChange}
                                 placeholder="cm"
-                                className="w-full text-center px-3 py-3 border border-border rounded-lg bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary transition-all"
+                                className="w-full text-center px-2 py-2.5 border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-orange-500 transition-all"
                             />
                         </div>
                         <div>
-                            <label htmlFor="weight" className="block text-sm font-medium text-foreground mb-2 text-center">
+                            <label htmlFor="weight" className="block text-sm font-medium text-slate-700 mb-1.5 text-center">
                                 Weight
                             </label>
                             <input 
@@ -253,17 +253,17 @@ const EditAboutMePage: React.FC<EditAboutMePageProps> = ({ user, onSave, onCance
                                 value={formData.weight || ''} 
                                 onChange={handleChange}
                                 placeholder="kg"
-                                className="w-full text-center px-3 py-3 border border-border rounded-lg bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary transition-all"
+                                className="w-full text-center px-2 py-2.5 border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-orange-500 transition-all"
                             />
                         </div>
                     </div>
                 </div>
 
                 {/* Goals */}
-                <div className="bg-card p-5 rounded-xl border border-border">
-                    <div className="flex justify-between items-center mb-4">
-                        <h3 className="font-bold text-foreground text-lg">Fitness Goals</h3>
-                        <span className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded-full">
+                <div className="bg-white p-4 rounded-2xl shadow-md shadow-slate-200/60">
+                    <div className="flex justify-between items-center mb-3">
+                        <h3 className="font-bold text-slate-900 text-base">Fitness Goals</h3>
+                        <span className="text-xs text-slate-500 bg-slate-100 px-2 py-1 rounded-full">
                             Max 5
                         </span>
                     </div>
@@ -275,10 +275,10 @@ const EditAboutMePage: React.FC<EditAboutMePageProps> = ({ user, onSave, onCance
                                     type="button" 
                                     key={goal} 
                                     onClick={() => handleToggle('goals', goal)}
-                                    className={`px-4 py-2 text-sm font-semibold rounded-full transition-all border-2 ${
+                                    className={`px-4 py-2 text-sm font-semibold rounded-full transition-all duration-200 ease-in-out ${
                                         isSelected 
-                                            ? 'bg-primary border-primary text-primary-foreground shadow-md scale-105' 
-                                            : 'bg-background border-border text-foreground hover:border-primary/50 hover:bg-muted'
+                                            ? 'bg-[#FF6B35] text-white shadow-md' 
+                                            : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
                                     }`}
                                 >
                                     {goal}
@@ -289,10 +289,10 @@ const EditAboutMePage: React.FC<EditAboutMePageProps> = ({ user, onSave, onCance
                 </div>
                 
                 {/* Interests */}
-                <div className="bg-card p-5 rounded-xl border border-border">
-                    <div className="flex justify-between items-center mb-4">
-                        <h3 className="font-bold text-foreground text-lg">Sport Interests</h3>
-                        <span className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded-full">
+                <div className="bg-white p-4 rounded-2xl shadow-md shadow-slate-200/60">
+                    <div className="flex justify-between items-center mb-3">
+                        <h3 className="font-bold text-slate-900 text-base">Sport Interests</h3>
+                        <span className="text-xs text-slate-500 bg-slate-100 px-2 py-1 rounded-full">
                             Max 5
                         </span>
                     </div>
@@ -304,10 +304,10 @@ const EditAboutMePage: React.FC<EditAboutMePageProps> = ({ user, onSave, onCance
                                     type="button" 
                                     key={interest} 
                                     onClick={() => handleToggle('interests', interest)}
-                                    className={`px-4 py-2 text-sm font-semibold rounded-full transition-all border-2 ${
+                                    className={`px-4 py-2 text-sm font-semibold rounded-full transition-all duration-200 ease-in-out ${
                                         isSelected 
-                                            ? 'bg-secondary border-secondary text-secondary-foreground shadow-md scale-105' 
-                                            : 'bg-background border-border text-foreground hover:border-secondary/50 hover:bg-muted'
+                                            ? 'bg-[#FF6B35] text-white shadow-md' 
+                                            : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
                                     }`}
                                 >
                                     {interest}
