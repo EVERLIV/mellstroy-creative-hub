@@ -1,9 +1,11 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Trainer, Class, UserRole } from '../types';
-import { Star, Users, BookOpen, Pencil, ShieldCheck, Plus, MoreVertical, Edit3, Trash2, Clock, LogOut } from 'lucide-react';
+import { Star, Users, BookOpen, Pencil, ShieldCheck, Plus, MoreVertical, Edit3, Trash2, Clock, LogOut, Shield } from 'lucide-react';
 import RoleSwitcher from '../components/RoleSwitcher';
 import { isTrainerProfileComplete } from '../utils/profile'; // New Import
 import CompleteProfilePrompt from '../components/CompleteProfilePrompt'; // New Import
+import { supabase } from '../src/integrations/supabase/client';
+import { useNavigate } from 'react-router-dom';
 
 const formatVND = (amount: number) => {
     return new Intl.NumberFormat('vi-VN', {
@@ -26,8 +28,10 @@ interface ProfilePageProps {
 
 const ProfilePage: React.FC<ProfilePageProps> = ({ trainer, onEdit, onManageClass, onDeleteClass, userRole, onRoleChange, onStartVerification, onLogout }) => {
     const [menuOpenFor, setMenuOpenFor] = useState<number | null>(null);
+    const [isAdmin, setIsAdmin] = useState(false);
     const menuRef = useRef<HTMLDivElement>(null);
     const profileIsIncomplete = !isTrainerProfileComplete(trainer);
+    const navigate = useNavigate();
 
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
@@ -38,6 +42,24 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ trainer, onEdit, onManageClas
         document.addEventListener("mousedown", handleClickOutside);
         return () => document.removeEventListener("mousedown", handleClickOutside);
     }, []);
+
+    useEffect(() => {
+        checkAdminStatus();
+    }, []);
+
+    const checkAdminStatus = async () => {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+
+        const { data: roles } = await supabase
+            .from('user_roles')
+            .select('role')
+            .eq('user_id', user.id)
+            .eq('role', 'admin')
+            .maybeSingle();
+
+        setIsAdmin(!!roles);
+    };
 
     const handleMenuToggle = (classId: number) => {
         setMenuOpenFor(prev => (prev === classId ? null : classId));
@@ -191,6 +213,15 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ trainer, onEdit, onManageClas
                         </div>
                     )}
                 </div>
+                {isAdmin && (
+                    <button 
+                        onClick={() => navigate('/admin')}
+                        className="w-full flex items-center justify-center bg-gradient-to-r from-orange-500 to-pink-500 text-white font-bold py-3 rounded-xl hover:from-orange-600 hover:to-pink-600 transition-all shadow-md mb-3"
+                    >
+                        <Shield className="w-5 h-5 mr-2" />
+                        Admin Dashboard
+                    </button>
+                )}
                  <button 
                     onClick={onLogout}
                     className="w-full flex items-center justify-center bg-slate-200 text-slate-700 font-bold py-3 rounded-xl hover:bg-slate-300 transition-colors"

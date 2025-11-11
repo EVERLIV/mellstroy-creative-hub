@@ -19,6 +19,7 @@ import EventsFlowPage from './pages/EventsFlowPage';
 import MealPlannerPage from './pages/MealPlannerPage';
 import AICoachPage from './pages/AICoachPage';
 import UploadCategoryIconsPage from './pages/UploadCategoryIconsPage';
+import AdminDashboardPage from './pages/AdminDashboardPage';
 import BottomNav from './components/BottomNav';
 import BookingModal from './components/BookingModal';
 import ReviewModal from './components/ReviewModal';
@@ -279,6 +280,14 @@ const AppRoutes = () => {
           element={
             <ProtectedRoute>
               <UploadCategoryIconsPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/admin"
+          element={
+            <ProtectedRoute>
+              <AdminDashboardPage />
             </ProtectedRoute>
           }
         />

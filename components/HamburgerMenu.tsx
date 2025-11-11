@@ -1,12 +1,32 @@
 import React, { useState, useRef, useEffect } from 'react';
 import ReactDOM from 'react-dom';
 import { useNavigate } from 'react-router-dom';
-import { Menu, X, Calendar, Settings, HelpCircle } from 'lucide-react';
+import { Menu, X, Calendar, Settings, HelpCircle, Shield } from 'lucide-react';
+import { supabase } from '../src/integrations/supabase/client';
 
 const HamburgerMenu: React.FC = () => {
     const [isOpen, setIsOpen] = useState(false);
+    const [isAdmin, setIsAdmin] = useState(false);
     const menuRef = useRef<HTMLDivElement>(null);
     const navigate = useNavigate();
+
+    useEffect(() => {
+        checkAdminStatus();
+    }, []);
+
+    const checkAdminStatus = async () => {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+
+        const { data: roles } = await supabase
+            .from('user_roles')
+            .select('role')
+            .eq('user_id', user.id)
+            .eq('role', 'admin')
+            .maybeSingle();
+
+        setIsAdmin(!!roles);
+    };
 
     const handleNavigation = (page: string) => {
         navigate(page);
@@ -42,6 +62,14 @@ const HamburgerMenu: React.FC = () => {
                 </div>
                 <nav className="p-4">
                     <ul className="space-y-2">
+                        {isAdmin && (
+                            <li>
+                                <button onClick={() => handleNavigation('/admin')} className="w-full flex items-center p-3 text-left rounded-lg text-slate-700 font-semibold hover:bg-slate-100 transition-colors bg-orange-50 border border-orange-200">
+                                    <Shield className="w-5 h-5 mr-4 text-orange-600" />
+                                    <span className="text-orange-600">Admin Dashboard</span>
+                                </button>
+                            </li>
+                        )}
                         <li>
                             <button onClick={() => handleNavigation('/bookings')} className="w-full flex items-center p-3 text-left rounded-lg text-slate-700 font-semibold hover:bg-slate-100 transition-colors">
                                 <Calendar className="w-5 h-5 mr-4 text-slate-500" />
