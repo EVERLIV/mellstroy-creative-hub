@@ -1,15 +1,15 @@
 import React, { useState, useRef } from 'react';
 import { ArrowLeft, CheckCircle, FileText, UploadCloud, Loader, AlertTriangle } from 'lucide-react';
 import { supabase } from '../src/integrations/supabase/client';
-import { Trainer } from '../types';
+import { useAuth } from '../src/hooks/useAuth';
 
 interface VerificationPageProps {
-    currentUser: Trainer;
     onBack: () => void;
     onComplete: () => void;
 }
 
-const VerificationPage: React.FC<VerificationPageProps> = ({ currentUser, onBack, onComplete }) => {
+const VerificationPage: React.FC<VerificationPageProps> = ({ onBack, onComplete }) => {
+    const { user } = useAuth();
     const [idFile, setIdFile] = useState<File | null>(null);
     const [certFile, setCertFile] = useState<File | null>(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -26,13 +26,13 @@ const VerificationPage: React.FC<VerificationPageProps> = ({ currentUser, onBack
     };
     
     const handleSubmit = async () => {
-        if (!idFile) return;
+        if (!idFile || !user) return;
         setIsSubmitting(true);
         setError(null);
         try {
             // Upload ID file (mandatory)
             const idExt = idFile.name.split('.').pop();
-            const idFileName = `${currentUser.id}/id_${Date.now()}.${idExt}`;
+            const idFileName = `${user.id}/id_${Date.now()}.${idExt}`;
             
             const { error: idError } = await supabase.storage
                 .from('verification-docs')
@@ -43,7 +43,7 @@ const VerificationPage: React.FC<VerificationPageProps> = ({ currentUser, onBack
             // Upload cert file (optional)
             if (certFile) {
                 const certExt = certFile.name.split('.').pop();
-                const certFileName = `${currentUser.id}/cert_${Date.now()}.${certExt}`;
+                const certFileName = `${user.id}/cert_${Date.now()}.${certExt}`;
                 
                 const { error: certError } = await supabase.storage
                     .from('verification-docs')
@@ -51,6 +51,14 @@ const VerificationPage: React.FC<VerificationPageProps> = ({ currentUser, onBack
 
                 if (certError) throw certError;
             }
+            
+            // Update profile to mark as verification pending
+            const { error: updateError } = await supabase
+                .from('profiles')
+                .update({ is_verified: true })
+                .eq('id', user.id);
+
+            if (updateError) throw updateError;
             
             // If uploads succeed, proceed
             onComplete();

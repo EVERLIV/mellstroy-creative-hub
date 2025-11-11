@@ -202,7 +202,7 @@ const ProfileContainer: React.FC = () => {
     if (!user) return;
 
     try {
-      await supabase
+      const { error } = await supabase
         .from('profiles')
         .update({
           username: updatedUser.name,
@@ -215,8 +215,12 @@ const ProfileContainer: React.FC = () => {
           goals: updatedUser.goals,
           interests: updatedUser.interests,
           avatar_url: updatedUser.imageUrl,
+          price_per_hour: updatedUser.price,
+          phone: updatedUser.name, // Can be extended later
         })
         .eq('id', user.id);
+
+      if (error) throw error;
 
       setCurrentUser(updatedUser);
       setIsEditingProfile(false);
@@ -241,7 +245,7 @@ const ProfileContainer: React.FC = () => {
     try {
       if (editingClass === null) {
         // Create new class
-        await supabase
+        const { error } = await supabase
           .from('classes')
           .insert({
             trainer_id: user.id,
@@ -251,12 +255,15 @@ const ProfileContainer: React.FC = () => {
             price: cls.price,
             capacity: cls.capacity,
             class_type: cls.classType,
+            image_url: cls.imageUrl,
             schedule_days: cls.schedule?.days,
             schedule_time: cls.schedule?.time,
           });
+        
+        if (error) throw error;
       } else if ((cls as any)._dbId) {
         // Update existing class using DB ID
-        await supabase
+        const { error } = await supabase
           .from('classes')
           .update({
             name: cls.name,
@@ -265,11 +272,14 @@ const ProfileContainer: React.FC = () => {
             price: cls.price,
             capacity: cls.capacity,
             class_type: cls.classType,
+            image_url: cls.imageUrl,
             schedule_days: cls.schedule?.days,
             schedule_time: cls.schedule?.time,
           })
           .eq('id', (cls as any)._dbId)
           .eq('trainer_id', user.id);
+        
+        if (error) throw error;
       }
 
       toast({
@@ -297,11 +307,13 @@ const ProfileContainer: React.FC = () => {
       const classToDelete = currentUser?.classes.find(c => c.id === classId);
       if (!classToDelete || !(classToDelete as any)._dbId) return;
 
-      await supabase
+      const { error } = await supabase
         .from('classes')
         .delete()
         .eq('id', (classToDelete as any)._dbId)
         .eq('trainer_id', user.id);
+
+      if (error) throw error;
 
       toast({
         title: "Class deleted",
@@ -317,6 +329,10 @@ const ProfileContainer: React.FC = () => {
         description: "Failed to delete class.",
       });
     }
+  };
+
+  const handleStartVerification = () => {
+    navigate('/verification');
   };
 
   const handleLogout = async () => {
@@ -356,7 +372,7 @@ const ProfileContainer: React.FC = () => {
           onDeleteClass={handleDeleteClass}
           userRole={userRole}
           onRoleChange={handleRoleChange}
-          onStartVerification={() => {}}
+          onStartVerification={handleStartVerification}
           onLogout={handleLogout}
         />
       ) : (

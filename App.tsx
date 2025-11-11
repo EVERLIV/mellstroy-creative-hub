@@ -12,6 +12,7 @@ import MyBookingsPage from './pages/MyBookingsPage';
 import ChatPage from './pages/ChatPage';
 import OnboardingPageContainer from './pages/OnboardingPageContainer';
 import ProfileContainer from './pages/ProfileContainer';
+import VerificationPage from './pages/VerificationPage';
 import BottomNav from './components/BottomNav';
 import BookingModal from './components/BookingModal';
 import ReviewModal from './components/ReviewModal';
@@ -142,6 +143,17 @@ const AppRoutes = () => {
           element={
             <ProtectedRoute>
               <ProfileContainer />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/verification"
+          element={
+            <ProtectedRoute>
+              <VerificationPage 
+                onBack={() => window.history.back()}
+                onComplete={() => window.history.back()}
+              />
             </ProtectedRoute>
           }
         />

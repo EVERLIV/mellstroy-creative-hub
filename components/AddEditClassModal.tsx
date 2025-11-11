@@ -3,17 +3,16 @@ import { Class, ClassType } from '../types';
 import { X, Save, Building, Sun, Home } from 'lucide-react';
 
 interface AddEditClassModalProps {
-    isOpen: boolean;
-    onClose: () => void;
+    cls: Class | null | undefined;
     onSave: (classData: Class) => void;
-    classData: Class | null;
+    onCancel: () => void;
 }
 
 const dayOptions = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
 type FormData = Omit<Class, 'id' | 'bookings'>;
 
-const AddEditClassModal: React.FC<AddEditClassModalProps> = ({ isOpen, onClose, onSave, classData }) => {
+const AddEditClassModal: React.FC<AddEditClassModalProps> = ({ cls, onSave, onCancel }) => {
     const [formData, setFormData] = useState<FormData>({
         name: '',
         description: '',
@@ -26,16 +25,16 @@ const AddEditClassModal: React.FC<AddEditClassModalProps> = ({ isOpen, onClose, 
     });
     
     useEffect(() => {
-        if (classData) {
+        if (cls) {
             setFormData({
-                name: classData.name,
-                description: classData.description,
-                duration: classData.duration,
-                price: classData.price,
-                imageUrl: classData.imageUrl,
-                capacity: classData.capacity,
-                schedule: classData.schedule || { days: [], time: '09:00' },
-                classType: classData.classType || 'Indoor',
+                name: cls.name,
+                description: cls.description,
+                duration: cls.duration,
+                price: cls.price,
+                imageUrl: cls.imageUrl,
+                capacity: cls.capacity,
+                schedule: cls.schedule || { days: [], time: '09:00' },
+                classType: cls.classType || 'Indoor',
             });
         } else {
             // Reset to default for new class
@@ -50,7 +49,7 @@ const AddEditClassModal: React.FC<AddEditClassModalProps> = ({ isOpen, onClose, 
                 classType: 'Indoor'
             });
         }
-    }, [classData, isOpen]);
+    }, [cls]);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
         const { name, value } = e.target;
@@ -84,9 +83,10 @@ const AddEditClassModal: React.FC<AddEditClassModalProps> = ({ isOpen, onClose, 
     const handleSave = (e: React.FormEvent) => {
         e.preventDefault();
         const finalData: Class = {
-            id: classData?.id || 0,
-            bookings: classData?.bookings || [],
+            id: cls?.id || 0,
+            bookings: cls?.bookings || [],
             ...formData,
+            ...(cls as any)?._dbId && { _dbId: (cls as any)._dbId }
         };
         onSave(finalData);
     };
@@ -97,12 +97,12 @@ const AddEditClassModal: React.FC<AddEditClassModalProps> = ({ isOpen, onClose, 
         { id: 'Home', label: 'Home', icon: Home },
     ];
 
-    if (!isOpen) return null;
+    if (cls === undefined) return null;
 
     return (
         <div 
             className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4 animate-fade-in"
-            onClick={onClose}
+            onClick={onCancel}
             role="dialog"
             aria-modal="true"
         >
@@ -111,8 +111,8 @@ const AddEditClassModal: React.FC<AddEditClassModalProps> = ({ isOpen, onClose, 
                 onClick={e => e.stopPropagation()}
             >
                 <div className="p-5 border-b border-gray-200 flex items-center justify-between">
-                    <h2 className="text-lg font-bold text-gray-800">{classData ? 'Edit Class' : 'Add New Class'}</h2>
-                    <button onClick={onClose} className="p-2 rounded-full hover:bg-gray-100">
+                    <h2 className="text-lg font-bold text-gray-800">{cls ? 'Edit Class' : 'Add New Class'}</h2>
+                    <button onClick={onCancel} className="p-2 rounded-full hover:bg-gray-100">
                         <X className="w-5 h-5 text-gray-600" />
                     </button>
                 </div>
@@ -190,7 +190,7 @@ const AddEditClassModal: React.FC<AddEditClassModalProps> = ({ isOpen, onClose, 
                     </div>
                 
                     <div className="p-5 bg-gray-50 border-t border-gray-200 grid grid-cols-2 gap-3">
-                        <button type="button" onClick={onClose} className="w-full bg-white border border-gray-300 text-gray-700 font-bold py-2.5 rounded-xl transition-colors hover:bg-gray-100">
+                        <button type="button" onClick={onCancel} className="w-full bg-white border border-gray-300 text-gray-700 font-bold py-2.5 rounded-xl transition-colors hover:bg-gray-100">
                             Cancel
                         </button>
                         <button type="submit" className="w-full flex items-center justify-center bg-[#FF6B35] text-white font-bold py-2.5 rounded-xl transition-colors hover:bg-orange-600">
