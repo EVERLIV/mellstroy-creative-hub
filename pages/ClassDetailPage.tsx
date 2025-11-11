@@ -46,19 +46,28 @@ const ClassDetailPage: React.FC<ClassDetailPageProps> = ({
   const [isGalleryOpen, setIsGalleryOpen] = useState(false);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
 
-  console.log('ClassDetailPage mounted, classId:', classId);
+  console.log('🎯 ClassDetailPage MOUNTED');
+  console.log('📋 Props received:', { userRole, currentUserId, classId });
+  console.log('🔗 URL params:', useParams());
 
   useEffect(() => {
-    console.log('useEffect triggered for classId:', classId);
+    console.log('🔄 useEffect triggered for classId:', classId);
+    if (!classId) {
+      console.error('❌ No classId provided!');
+      return;
+    }
     loadClassData();
   }, [classId]);
 
   const loadClassData = async () => {
-    if (!classId) return;
+    if (!classId) {
+      console.error('❌ loadClassData: No classId');
+      return;
+    }
 
     try {
       setLoading(true);
-      console.log('Loading class data for ID:', classId);
+      console.log('📥 Loading class data for ID:', classId);
 
       // Fetch class data
       const { data: classInfo, error: classError } = await supabase
@@ -67,38 +76,43 @@ const ClassDetailPage: React.FC<ClassDetailPageProps> = ({
         .eq('id', classId)
         .maybeSingle();
 
+      console.log('🔍 Supabase query result:', { classInfo, classError });
+
       if (classError) {
-        console.error('Error fetching class:', classError);
+        console.error('❌ Error fetching class:', classError);
         throw classError;
       }
 
       if (!classInfo) {
-        console.error('Class not found');
+        console.error('❌ Class not found for ID:', classId);
         setLoading(false);
         return;
       }
 
-      console.log('Class data loaded:', classInfo);
+      console.log('✅ Class data loaded:', classInfo);
 
       // Fetch trainer profile
+      console.log('📥 Loading trainer profile for ID:', classInfo.trainer_id);
       const { data: trainerProfile, error: trainerError } = await supabase
         .from('profiles')
         .select('*')
         .eq('id', classInfo.trainer_id)
         .maybeSingle();
 
+      console.log('🔍 Trainer query result:', { trainerProfile, trainerError });
+
       if (trainerError) {
-        console.error('Error fetching trainer:', trainerError);
+        console.error('❌ Error fetching trainer:', trainerError);
         throw trainerError;
       }
 
       if (!trainerProfile) {
-        console.error('Trainer not found');
+        console.error('❌ Trainer not found for ID:', classInfo.trainer_id);
         setLoading(false);
         return;
       }
 
-      console.log('Trainer data loaded:', trainerProfile);
+      console.log('✅ Trainer data loaded:', trainerProfile);
 
       // Fetch bookings for this class
       const { data: bookings, error: bookingsError } = await supabase
@@ -148,11 +162,13 @@ const ClassDetailPage: React.FC<ClassDetailPageProps> = ({
 
       setClassData(cls);
       setTrainer(trainerData);
-      console.log('Class and trainer data set successfully');
+      console.log('✅✅✅ Class and trainer data set successfully');
+      console.log('📊 Final state:', { cls, trainerData });
     } catch (error) {
-      console.error('Error loading class data:', error);
+      console.error('💥 ERROR in loadClassData:', error);
     } finally {
       setLoading(false);
+      console.log('🏁 Loading complete, loading state set to false');
     }
   };
 
@@ -161,9 +177,16 @@ const ClassDetailPage: React.FC<ClassDetailPageProps> = ({
     setIsGalleryOpen(true);
   };
 
-  console.log('ClassDetailPage render state:', { loading, hasClassData: !!classData, hasTrainer: !!trainer });
+  console.log('🎨 RENDER - State:', { 
+    loading, 
+    hasClassData: !!classData, 
+    hasTrainer: !!trainer,
+    classId,
+    className: classData?.name 
+  });
 
   if (loading) {
+    console.log('⏳ Rendering loading state...');
     return (
       <div className="h-screen flex items-center justify-center bg-background">
         <div className="text-center">
@@ -175,6 +198,7 @@ const ClassDetailPage: React.FC<ClassDetailPageProps> = ({
   }
 
   if (!classData || !trainer) {
+    console.log('❌ Rendering NOT FOUND state - classData:', !!classData, 'trainer:', !!trainer);
     return (
       <div className="h-screen flex flex-col items-center justify-center bg-background p-4">
         <p className="text-foreground text-lg mb-2">Class not found</p>
@@ -208,7 +232,7 @@ const ClassDetailPage: React.FC<ClassDetailPageProps> = ({
 
   return (
     <div className="bg-background min-h-screen pb-24">
-      {console.log('Rendering ClassDetailPage content with data:', { classId, className: classData.name })}
+      {console.log('✅ Rendering ClassDetailPage content - Class:', classData.name, 'Trainer:', trainer.name)}
       {/* Header Image */}
       <div className="relative">
         <img 

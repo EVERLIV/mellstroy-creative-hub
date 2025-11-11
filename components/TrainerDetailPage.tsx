@@ -138,7 +138,11 @@ const ClassCard: React.FC<ClassCardProps> = ({ cls, trainer, userRole, currentUs
                 
                 <div className="mt-4 flex items-center gap-2">
                     <Button 
-                        onClick={() => navigate(`/class/${cls.id}`)}
+                        onClick={() => {
+                            const classId = (cls as any)._dbId || cls.id;
+                            console.log('Navigating to class detail:', classId, 'cls:', cls);
+                            navigate(`/class/${classId}`);
+                        }}
                         variant="outline"
                         size="default"
                         className="flex-1"
