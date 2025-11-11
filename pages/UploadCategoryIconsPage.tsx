@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, FolderUp, Image } from 'lucide-react';
+import { ArrowLeft, FolderUp, Image, Trash2 } from 'lucide-react';
 import { supabase } from '../src/integrations/supabase/client';
 import { useToast } from '../src/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
@@ -39,6 +39,30 @@ const UploadCategoryIconsPage: React.FC = () => {
       console.error('Error fetching files:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleDeleteFile = async (fileName: string) => {
+    try {
+      const { error } = await supabase.storage
+        .from('category-icons')
+        .remove([fileName]);
+
+      if (error) throw error;
+
+      toast({
+        title: 'Success',
+        description: `${fileName} deleted successfully`,
+      });
+
+      await fetchUploadedFiles();
+    } catch (error: any) {
+      console.error('Delete error:', error);
+      toast({
+        title: 'Delete failed',
+        description: error.message || 'Failed to delete file',
+        variant: 'destructive',
+      });
     }
   };
 
@@ -201,7 +225,14 @@ const UploadCategoryIconsPage: React.FC = () => {
                   .getPublicUrl(fileName).data.publicUrl;
                 
                 return (
-                  <div key={fileName} className="flex flex-col items-center gap-2 p-3 bg-slate-50 rounded-xl">
+                  <div key={fileName} className="relative flex flex-col items-center gap-2 p-3 bg-slate-50 rounded-xl group">
+                    <button
+                      onClick={() => handleDeleteFile(fileName)}
+                      className="absolute top-2 right-2 p-1.5 bg-red-500 hover:bg-red-600 text-white rounded-lg opacity-0 group-hover:opacity-100 transition-opacity"
+                      title="Delete file"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
                     <div className="w-20 h-20 rounded-lg overflow-hidden bg-white flex items-center justify-center">
                       <img 
                         src={fileUrl} 
