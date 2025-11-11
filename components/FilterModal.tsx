@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { FITNESS_ACTIVITIES, HCMC_DISTRICTS, CLASS_TYPES } from '../constants';
-import { X, ShieldCheck, Star, Check } from 'lucide-react';
+import { X, ShieldCheck, Star, Check, Crown } from 'lucide-react';
 import { ClassType } from '../types';
 
 type Filters = {
     specialty: string[];
     verified: boolean;
     topRated: boolean;
+    premiumOnly: boolean;
     district: string;
     time: 'any' | 'morning' | 'afternoon' | 'evening';
     classType: ClassType[];
@@ -27,7 +28,7 @@ const FilterModal: React.FC<FilterModalProps> = ({ isOpen, onClose, activeFilter
         setTempFilters(activeFilters);
     }, [activeFilters, isOpen]);
 
-    const handleToggleChange = (filterName: 'verified' | 'topRated') => {
+    const handleToggleChange = (filterName: 'verified' | 'topRated' | 'premiumOnly') => {
         setTempFilters(prev => ({ ...prev, [filterName]: !prev[filterName] }));
     };
 
@@ -192,6 +193,16 @@ const FilterModal: React.FC<FilterModalProps> = ({ isOpen, onClose, activeFilter
                             <div className="relative">
                                 <input type="checkbox" id="toprated-toggle" className="sr-only peer" checked={tempFilters.topRated} onChange={() => handleToggleChange('topRated')} />
                                 <div className="w-11 h-6 bg-slate-200 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-amber-400"></div>
+                            </div>
+                        </label>
+                        <label htmlFor="premium-toggle" className="flex items-center justify-between cursor-pointer p-2 rounded-lg hover:bg-slate-50">
+                            <div className="flex items-center">
+                                <Crown className="w-5 h-5 mr-3 text-amber-500"/>
+                                <span className="font-semibold text-slate-700">Premium Trainers</span>
+                            </div>
+                            <div className="relative">
+                                <input type="checkbox" id="premium-toggle" className="sr-only peer" checked={tempFilters.premiumOnly} onChange={() => handleToggleChange('premiumOnly')} />
+                                <div className="w-11 h-6 bg-slate-200 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-amber-500"></div>
                             </div>
                         </label>
                     </div>

@@ -41,6 +41,7 @@ const Explore: React.FC<ExploreProps> = ({
     specialty: [] as string[],
     verified: false,
     topRated: false,
+    premiumOnly: false,
     district: 'All',
     time: 'any' as 'any' | 'morning' | 'afternoon' | 'evening',
     classType: [] as ClassType[],
@@ -184,6 +185,11 @@ const Explore: React.FC<ExploreProps> = ({
       filtered = filtered.filter(trainer => trainer.rating >= 4.8);
     }
 
+    // Filter by premium only
+    if (activeFilters.premiumOnly) {
+      filtered = filtered.filter(trainer => trainer.isPremium);
+    }
+
     // Filter by search query
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
@@ -207,6 +213,7 @@ const Explore: React.FC<ExploreProps> = ({
       specialty: [],
       verified: false,
       topRated: false,
+      premiumOnly: false,
       district: 'All',
       time: 'any',
       classType: [],
