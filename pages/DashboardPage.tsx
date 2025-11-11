@@ -334,16 +334,15 @@ const DashboardPage: React.FC<DashboardPageProps> = () => {
       {/* Quick Actions Banner */}
       <div className="px-4 mb-6">
         <div 
-          className="bg-gradient-to-r from-blue-500 to-cyan-500 rounded-2xl p-6 shadow-lg bg-cover bg-center relative overflow-hidden"
+          className="rounded-2xl p-6 shadow-lg bg-cover bg-center relative overflow-hidden"
           style={{
-            backgroundImage: `url('${supabase.storage.from('class-images').getPublicUrl('1762885310608_jqsosa.png').data.publicUrl}')`,
-            backgroundBlendMode: 'overlay'
+            backgroundImage: `url('${supabase.storage.from('class-images').getPublicUrl('1762885310608_jqsosa.png').data.publicUrl}')`
           }}
         >
-          <div className="absolute inset-0 bg-gradient-to-r from-blue-500/80 to-cyan-500/80"></div>
+          <div className="absolute inset-0 bg-gradient-to-r from-blue-600/90 to-cyan-600/90"></div>
           <div className="relative z-10">
-            <h3 className="font-bold text-white text-lg mb-1">Start Your Journey</h3>
-            <p className="text-white/90 text-sm mb-3">Book your first training session today!</p>
+            <h3 className="font-bold text-white text-lg mb-1 drop-shadow-lg">Start Your Journey</h3>
+            <p className="text-white text-sm mb-3 drop-shadow-md">Book your first training session today!</p>
             <button
               onClick={() => navigate('/explore')}
               className="bg-white text-blue-600 font-semibold px-4 py-2 rounded-lg text-sm hover:bg-blue-50 transition-colors shadow-md"
