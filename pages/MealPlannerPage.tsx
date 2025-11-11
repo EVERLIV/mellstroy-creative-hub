@@ -68,7 +68,7 @@ const MealPlannerPage: React.FC<MealPlannerPageProps> = ({ user, onClose, onSave
     };
 
     return (
-        <div className="bg-slate-50 min-h-screen flex flex-col pb-24">
+        <div className="bg-slate-50 min-h-screen flex flex-col pb-32">
             {/* Header with gradient */}
             <div className="bg-gradient-to-br from-orange-500 to-pink-500 pt-6 pb-8 px-4 relative">
                 <button onClick={onClose} className="absolute top-6 left-4 p-2 rounded-full bg-white/20 hover:bg-white/30 transition-colors">
@@ -79,7 +79,6 @@ const MealPlannerPage: React.FC<MealPlannerPageProps> = ({ user, onClose, onSave
                         <UtensilsCrossed className="w-6 h-6 mr-2" />
                         AI Meal Planner
                     </h1>
-                    <p className="text-white/90 text-sm mt-1 text-center">Create personalized meal plans with AI</p>
                 </div>
             </div>
 

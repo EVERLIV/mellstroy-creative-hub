@@ -60,7 +60,6 @@ const AICoachPage: React.FC<AICoachPageProps> = ({ messages, onSendMessage, isLo
                         <Sparkles className="w-8 h-8 text-white"/>
                     </div>
                     <h1 className="text-2xl font-bold text-white">AI Fitness Coach</h1>
-                    <p className="text-white/90 text-sm mt-1">Your 24/7 personal fitness assistant</p>
                 </div>
             </div>
             
@@ -156,7 +155,7 @@ const AICoachPage: React.FC<AICoachPageProps> = ({ messages, onSendMessage, isLo
             </div>
 
             {/* Input Area */}
-            <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 shadow-2xl pb-safe">
+            <div className="fixed bottom-16 left-0 right-0 bg-white border-t border-slate-200 shadow-2xl pb-safe">
                 <div className="max-w-4xl mx-auto px-4 py-4">
                     <div className="flex items-end gap-2 bg-slate-50 rounded-2xl p-2 border border-slate-200 focus-within:border-[#FF6B35] focus-within:ring-2 focus-within:ring-[#FF6B35]/20 transition-all">
                         <textarea
