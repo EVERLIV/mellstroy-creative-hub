@@ -181,12 +181,26 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ trainer, onEdit, onManageClas
                     {trainer.classes.length > 0 ? (
                         <div className="space-y-3">
                             {trainer.classes.map(cls => (
-                                <div key={cls.id} className="flex items-center justify-between p-2 bg-slate-50 rounded-lg hover:bg-slate-100 transition-colors">
-                                    <div className="flex items-center overflow-hidden">
+                                <div key={cls.id} className="flex items-start justify-between p-3 bg-slate-50 rounded-lg hover:bg-slate-100 transition-colors">
+                                    <div className="flex items-start overflow-hidden flex-1 min-w-0">
                                         <img src={cls.imageUrl} alt={cls.name} className="w-14 h-14 rounded-md object-cover mr-3 flex-shrink-0" />
-                                        <div className="overflow-hidden">
+                                        <div className="overflow-hidden flex-1 min-w-0">
                                             <p className="font-semibold text-sm text-slate-700 truncate">{cls.name}</p>
                                             <p className="text-xs text-slate-500">{cls.duration} min &bull; {formatVND(cls.price)}</p>
+                                            
+                                            {/* Schedule */}
+                                            {cls.schedule && cls.schedule.days && cls.schedule.time && (
+                                                <div className="mt-1 flex items-center gap-1 text-xs text-blue-600">
+                                                    <Clock className="w-3 h-3" />
+                                                    <span className="truncate">{cls.schedule.days.join(', ')} at {cls.schedule.time}</span>
+                                                </div>
+                                            )}
+                                            
+                                            {/* Capacity */}
+                                            <div className="mt-1 flex items-center gap-1 text-xs text-emerald-600">
+                                                <Users className="w-3 h-3" />
+                                                <span>Capacity: {cls.capacity} spots</span>
+                                            </div>
                                         </div>
                                     </div>
                                     <div className="relative" ref={menuOpenFor === cls.id ? menuRef : null}>

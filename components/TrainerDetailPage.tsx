@@ -127,11 +127,15 @@ const ClassCard: React.FC<ClassCardProps> = ({ cls, trainer, userRole, currentUs
                         <Clock className="w-5 h-5 mr-1.5 text-gray-400" />
                         <span>Schedule</span>
                     </div>
-                    {cls.schedule && (
+                    {cls.schedule && cls.schedule.days && cls.schedule.time ? (
                          <div className="flex flex-wrap gap-2">
                             <div className="bg-blue-50 text-blue-800 text-xs font-semibold px-2.5 py-1.5 rounded-full">
                                 {cls.schedule.days.join(', ')} at {formatTime(cls.schedule.time)}
                             </div>
+                        </div>
+                    ) : (
+                        <div className="bg-amber-50 text-amber-700 text-xs font-medium px-2.5 py-1.5 rounded-lg">
+                            Schedule not set - Book to arrange time with trainer
                         </div>
                     )}
                 </div>
