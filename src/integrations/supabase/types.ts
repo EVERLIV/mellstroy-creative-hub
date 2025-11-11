@@ -14,6 +14,57 @@ export type Database = {
   }
   public: {
     Tables: {
+      bookings: {
+        Row: {
+          booking_date: string
+          booking_time: string
+          class_id: string
+          client_id: string
+          created_at: string | null
+          has_left_review: boolean | null
+          id: string
+          status: string
+          updated_at: string | null
+        }
+        Insert: {
+          booking_date: string
+          booking_time: string
+          class_id: string
+          client_id: string
+          created_at?: string | null
+          has_left_review?: boolean | null
+          id?: string
+          status?: string
+          updated_at?: string | null
+        }
+        Update: {
+          booking_date?: string
+          booking_time?: string
+          class_id?: string
+          client_id?: string
+          created_at?: string | null
+          has_left_review?: boolean | null
+          id?: string
+          status?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bookings_class_id_fkey"
+            columns: ["class_id"]
+            isOneToOne: false
+            referencedRelation: "classes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bookings_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       challenge_participations: {
         Row: {
           challenge_id: string
@@ -100,12 +151,76 @@ export type Database = {
           },
         ]
       }
+      classes: {
+        Row: {
+          capacity: number
+          class_type: string
+          created_at: string | null
+          description: string | null
+          duration_minutes: number
+          id: string
+          image_url: string | null
+          name: string
+          price: number
+          schedule_days: string[] | null
+          schedule_time: string | null
+          trainer_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          capacity?: number
+          class_type: string
+          created_at?: string | null
+          description?: string | null
+          duration_minutes: number
+          id?: string
+          image_url?: string | null
+          name: string
+          price: number
+          schedule_days?: string[] | null
+          schedule_time?: string | null
+          trainer_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          capacity?: number
+          class_type?: string
+          created_at?: string | null
+          description?: string | null
+          duration_minutes?: number
+          id?: string
+          image_url?: string | null
+          name?: string
+          price?: number
+          schedule_days?: string[] | null
+          schedule_time?: string | null
+          trainer_id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "classes_trainer_id_fkey"
+            columns: ["trainer_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
           bio: string | null
           created_at: string | null
           id: string
+          is_premium: boolean | null
+          is_verified: boolean | null
+          location: string | null
+          phone: string | null
+          price_per_hour: number | null
+          rating: number | null
+          reviews_count: number | null
+          specialty: string[] | null
           updated_at: string | null
           username: string
         }
@@ -114,6 +229,14 @@ export type Database = {
           bio?: string | null
           created_at?: string | null
           id: string
+          is_premium?: boolean | null
+          is_verified?: boolean | null
+          location?: string | null
+          phone?: string | null
+          price_per_hour?: number | null
+          rating?: number | null
+          reviews_count?: number | null
+          specialty?: string[] | null
           updated_at?: string | null
           username: string
         }
@@ -122,10 +245,73 @@ export type Database = {
           bio?: string | null
           created_at?: string | null
           id?: string
+          is_premium?: boolean | null
+          is_verified?: boolean | null
+          location?: string | null
+          phone?: string | null
+          price_per_hour?: number | null
+          rating?: number | null
+          reviews_count?: number | null
+          specialty?: string[] | null
           updated_at?: string | null
           username?: string
         }
         Relationships: []
+      }
+      reviews: {
+        Row: {
+          booking_id: string
+          client_id: string
+          comment: string | null
+          created_at: string | null
+          id: string
+          rating: number
+          trainer_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          booking_id: string
+          client_id: string
+          comment?: string | null
+          created_at?: string | null
+          id?: string
+          rating: number
+          trainer_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          booking_id?: string
+          client_id?: string
+          comment?: string | null
+          created_at?: string | null
+          id?: string
+          rating?: number
+          trainer_id?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reviews_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: true
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reviews_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reviews_trainer_id_fkey"
+            columns: ["trainer_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       saved_challenges: {
         Row: {
@@ -208,6 +394,27 @@ export type Database = {
           },
         ]
       }
+      user_roles: {
+        Row: {
+          created_at: string | null
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
       votes: {
         Row: {
           challenge_id: string
@@ -249,10 +456,16 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "trainer" | "client"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -379,6 +592,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["trainer", "client"],
+    },
   },
 } as const
