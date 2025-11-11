@@ -222,7 +222,7 @@ const DashboardPage: React.FC<DashboardPageProps> = () => {
                       />
                       <div className="absolute inset-0 bg-orange-500/0 group-hover:bg-orange-500/10 transition-colors duration-200 rounded-xl"></div>
                       {category.id === 'gym' && (
-                        <div className="absolute -top-0.5 -right-0.5 bg-orange-500 text-white text-[8px] font-semibold px-1.5 py-0.5 rounded-full shadow-sm">
+                        <div className="absolute -top-0.5 -right-0.5 bg-orange-500 text-white text-[8px] font-semibold px-2 py-0.5 rounded-full shadow-sm whitespace-nowrap">
                           Popular
                         </div>
                       )}
