@@ -89,56 +89,56 @@ const DashboardPage: React.FC<DashboardPageProps> = () => {
       id: 'gym', 
       name: 'Gym', 
       icon: Dumbbell, 
-      imageUrl: null, // Replace with: getCategoryIconUrl('gym.png') after uploading
+      imageUrl: getCategoryIconUrl('gym.png'),
       color: 'from-orange-100 to-orange-50' 
     },
     { 
       id: 'yoga', 
       name: 'Yoga', 
       icon: Heart, 
-      imageUrl: null, // Replace with: getCategoryIconUrl('yoga.png') after uploading
+      imageUrl: getCategoryIconUrl('yoga.png'),
       color: 'from-purple-100 to-purple-50' 
     },
     { 
       id: 'boxing', 
       name: 'Boxing', 
       icon: Trophy, 
-      imageUrl: null, // Replace with: getCategoryIconUrl('boxing.png') after uploading
+      imageUrl: getCategoryIconUrl('boxing.png'),
       color: 'from-red-100 to-red-50' 
     },
     { 
       id: 'running', 
       name: 'Running', 
       icon: TrendingUp, 
-      imageUrl: null, // Replace with: getCategoryIconUrl('running.png') after uploading
+      imageUrl: getCategoryIconUrl('running.png'),
       color: 'from-blue-100 to-blue-50' 
     },
     { 
       id: 'swimming', 
       name: 'Swimming', 
       icon: Users, 
-      imageUrl: null, // Replace with: getCategoryIconUrl('swimming.png') after uploading
+      imageUrl: getCategoryIconUrl('swimming.png'),
       color: 'from-cyan-100 to-cyan-50' 
     },
     { 
       id: 'dance', 
       name: 'Dance', 
       icon: Sparkles, 
-      imageUrl: null, // Replace with: getCategoryIconUrl('dance.png') after uploading
+      imageUrl: getCategoryIconUrl('dance.png'),
       color: 'from-pink-100 to-pink-50' 
     },
     { 
       id: 'tennis', 
       name: 'Tennis', 
       icon: Trophy, 
-      imageUrl: null, // Replace with: getCategoryIconUrl('tennis.png') after uploading
+      imageUrl: getCategoryIconUrl('tennis.png'),
       color: 'from-green-100 to-green-50' 
     },
     { 
       id: 'more', 
       name: 'More', 
       icon: MapPin, 
-      imageUrl: null, // Replace with: getCategoryIconUrl('more.png') after uploading
+      imageUrl: getCategoryIconUrl('more.png'),
       color: 'from-slate-100 to-slate-50' 
     },
   ];
