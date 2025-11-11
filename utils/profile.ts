@@ -5,7 +5,8 @@ import { Trainer } from '../types';
  * @param user The user object to check.
  * @returns True if the profile is considered complete, false otherwise.
  */
-export const isStudentProfileComplete = (user: Trainer): boolean => {
+export const isStudentProfileComplete = (user?: Trainer): boolean => {
+    if (!user) return false;
     return !!(
         user.bio && user.bio.trim() !== '' &&
         user.age && user.age > 0 &&
@@ -20,7 +21,8 @@ export const isStudentProfileComplete = (user: Trainer): boolean => {
  * @param trainer The trainer object to check.
  * @returns True if the profile is considered complete, false otherwise.
  */
-export const isTrainerProfileComplete = (trainer: Trainer): boolean => {
+export const isTrainerProfileComplete = (trainer?: Trainer): boolean => {
+    if (!trainer) return false;
     return !!(
         trainer.bio && trainer.bio.trim().length > 30 &&
         trainer.specialty && trainer.specialty.length > 0 &&

@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { User } from 'lucide-react';
 import { AuthProvider, useAuth } from './src/hooks/useAuth';
 import { Toaster } from './src/components/ui/toaster';
 import AuthPage from './src/pages/AuthPage';
@@ -142,11 +143,25 @@ const AppRoutes = () => {
           path="/profile"
           element={
             <ProtectedRoute>
-              {userRole === 'trainer' ? (
-                <ProfilePage currentUser={trainers.find(t => t.id === currentUserId)!} />
-              ) : (
-                <StudentProfilePage currentUser={trainers.find(t => t.id === currentUserId)!} />
-              )}
+              <div className="min-h-screen bg-background flex items-center justify-center p-4">
+                <div className="text-center space-y-4 max-w-md">
+                  <div className="w-20 h-20 bg-orange-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <User className="w-10 h-10 text-orange-500" />
+                  </div>
+                  <h1 className="text-2xl font-bold text-foreground">Profile Setup</h1>
+                  <p className="text-muted-foreground">
+                    We're setting up your profile. This feature requires connecting to the database to load and save your information.
+                  </p>
+                  <div className="mt-6 p-4 bg-orange-50 rounded-lg text-left">
+                    <p className="text-sm text-orange-800 font-medium mb-2">Coming soon:</p>
+                    <ul className="text-sm text-orange-700 space-y-1">
+                      <li>• View and edit your profile</li>
+                      <li>• Manage your trainer preferences</li>
+                      <li>• Track your fitness goals</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
             </ProtectedRoute>
           }
         />
