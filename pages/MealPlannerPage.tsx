@@ -68,26 +68,31 @@ const MealPlannerPage: React.FC<MealPlannerPageProps> = ({ user, onClose, onSave
     };
 
     return (
-        <div className="bg-slate-50 min-h-screen animate-fade-in flex flex-col relative pb-20">
-            <button onClick={onClose} className="absolute top-4 left-4 z-10 p-2 rounded-full bg-white/70 backdrop-blur-sm hover:bg-white transition-colors">
-                <ArrowLeft className="w-6 h-6 text-slate-700" />
-            </button>
+        <div className="bg-slate-50 min-h-screen flex flex-col pb-24">
+            {/* Header with gradient */}
+            <div className="bg-gradient-to-br from-orange-500 to-pink-500 pt-6 pb-8 px-4 relative">
+                <button onClick={onClose} className="absolute top-6 left-4 p-2 rounded-full bg-white/20 hover:bg-white/30 transition-colors">
+                    <ArrowLeft className="w-6 h-6 text-white" />
+                </button>
+                <div className="max-w-2xl mx-auto pt-8">
+                    <h1 className="text-2xl font-bold text-white flex items-center justify-center">
+                        <UtensilsCrossed className="w-6 h-6 mr-2" />
+                        AI Meal Planner
+                    </h1>
+                    <p className="text-white/90 text-sm mt-1 text-center">Create personalized meal plans with AI</p>
+                </div>
+            </div>
 
-            <main className="flex-1 p-4 space-y-4 pt-16 overflow-y-auto">
-                 <h1 className="text-2xl font-bold text-slate-800 flex items-center justify-center mb-2">
-                    <UtensilsCrossed className="w-6 h-6 mr-2 text-purple-600" />
-                    AI Meal Planner
-                </h1>
-
+            <main className="flex-1 px-4 space-y-4 -mt-4 overflow-y-auto">
                 {/* Preferences Form */}
-                <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200/80">
-                    <h3 className="font-bold text-slate-800 mb-2">1. Select Duration</h3>
+                <div className="bg-white p-4 rounded-2xl shadow-lg shadow-slate-200/60">
+                    <h3 className="font-bold text-slate-900 mb-3">1. Select Duration</h3>
                     <div className="bg-slate-100 p-1 rounded-xl grid grid-cols-3 gap-1">
                         {(['day', 'week', 'month'] as Duration[]).map(d => (
                             <button
                                 key={d}
                                 onClick={() => handlePrefChange('duration', d)}
-                                className={`px-4 py-2 text-sm font-bold rounded-lg transition-colors ${preferences.duration === d ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-500'}`}
+                                className={`px-4 py-2 text-sm font-bold rounded-lg transition-colors ${preferences.duration === d ? 'bg-[#FF6B35] text-white shadow-sm' : 'text-slate-600 hover:text-slate-900'}`}
                             >
                                 {d === 'day' && '1 Day'}
                                 {d === 'week' && '1 Week'}
@@ -95,41 +100,65 @@ const MealPlannerPage: React.FC<MealPlannerPageProps> = ({ user, onClose, onSave
                             </button>
                         ))}
                     </div>
-                     {preferences.duration === 'month' && (
+                    {preferences.duration === 'month' && (
                         <p className="text-xs text-slate-500 mt-2 text-center">We'll generate a sample 1-week plan for you to follow.</p>
                     )}
                 </div>
 
-                <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200/80 space-y-4">
-                    <h3 className="font-bold text-slate-800">2. Refine Details</h3>
+                <div className="bg-white p-4 rounded-2xl shadow-lg shadow-slate-200/60 space-y-4">
+                    <h3 className="font-bold text-slate-900">2. Refine Details</h3>
                     <div>
-                        <label className="block text-sm font-medium text-slate-600 mb-2">Eating Style</label>
+                        <label className="block text-sm font-medium text-slate-700 mb-2">Eating Style</label>
                         <div className="flex flex-col sm:flex-row gap-2">
-                             {EATING_STYLES.map(style => (
-                                <button key={style.id} onClick={() => handlePrefChange('eatingStyle', style.id)} className={`flex-1 text-center px-3 py-2 text-sm font-semibold rounded-lg border-2 transition-colors ${preferences.eatingStyle === style.id ? 'bg-blue-50 border-blue-500 text-blue-700' : 'bg-white border-slate-200 hover:bg-slate-50 text-slate-700'}`}>{style.label}</button>
+                            {EATING_STYLES.map(style => (
+                                <button 
+                                    key={style.id} 
+                                    onClick={() => handlePrefChange('eatingStyle', style.id)} 
+                                    className={`flex-1 text-center px-3 py-2 text-sm font-semibold rounded-lg border-2 transition-colors ${preferences.eatingStyle === style.id ? 'bg-orange-50 border-[#FF6B35] text-[#FF6B35]' : 'bg-white border-slate-200 hover:bg-slate-50 text-slate-700'}`}
+                                >
+                                    {style.label}
+                                </button>
                             ))}
                         </div>
                     </div>
-                     <div>
-                        <label className="block text-sm font-medium text-slate-600 mb-2">Dietary Needs</label>
-                        <select value={preferences.dietType} onChange={(e) => handlePrefChange('dietType', e.target.value)} className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-800">
-                             {DIET_TYPES.map(type => <option key={type.id} value={type.id}>{type.label}</option>)}
+                    <div>
+                        <label className="block text-sm font-medium text-slate-700 mb-2">Dietary Needs</label>
+                        <select 
+                            value={preferences.dietType} 
+                            onChange={(e) => handlePrefChange('dietType', e.target.value)} 
+                            className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#FF6B35] text-slate-900"
+                        >
+                            {DIET_TYPES.map(type => <option key={type.id} value={type.id}>{type.label}</option>)}
                         </select>
                     </div>
                     <div>
-                        <label htmlFor="allergies" className="block text-sm font-medium text-slate-600 mb-1">Allergies (e.g., peanuts, shellfish)</label>
-                        <input type="text" id="allergies" value={preferences.allergies} onChange={(e) => handlePrefChange('allergies', e.target.value)} placeholder="Comma-separated" className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-800 placeholder:text-slate-400" />
+                        <label htmlFor="allergies" className="block text-sm font-medium text-slate-700 mb-1">Allergies (e.g., peanuts, shellfish)</label>
+                        <input 
+                            type="text" 
+                            id="allergies" 
+                            value={preferences.allergies} 
+                            onChange={(e) => handlePrefChange('allergies', e.target.value)} 
+                            placeholder="Comma-separated" 
+                            className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#FF6B35] text-slate-900 placeholder:text-slate-400" 
+                        />
                     </div>
-                     <div>
-                        <label htmlFor="dislikes" className="block text-sm font-medium text-slate-600 mb-1">Dislikes (e.g., cilantro, mushrooms)</label>
-                        <input type="text" id="dislikes" value={preferences.dislikes} onChange={(e) => handlePrefChange('dislikes', e.target.value)} placeholder="Comma-separated" className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-800 placeholder:text-slate-400" />
+                    <div>
+                        <label htmlFor="dislikes" className="block text-sm font-medium text-slate-700 mb-1">Dislikes (e.g., cilantro, mushrooms)</label>
+                        <input 
+                            type="text" 
+                            id="dislikes" 
+                            value={preferences.dislikes} 
+                            onChange={(e) => handlePrefChange('dislikes', e.target.value)} 
+                            placeholder="Comma-separated" 
+                            className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#FF6B35] text-slate-900 placeholder:text-slate-400" 
+                        />
                     </div>
                 </div>
                 
                 <button 
                     onClick={handleGeneratePlan} 
                     disabled={isLoading}
-                    className="w-full flex items-center justify-center bg-gradient-to-r from-purple-500 to-indigo-600 text-white font-bold py-3 rounded-xl transition-all duration-200 shadow-lg hover:shadow-indigo-300 disabled:bg-slate-400 disabled:shadow-none disabled:cursor-wait"
+                    className="w-full flex items-center justify-center bg-gradient-to-r from-orange-500 to-pink-500 text-white font-bold py-3 rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                     {isLoading ? (
                         <> <Loader className="w-5 h-5 mr-2 animate-spin" /> Generating... </>
@@ -139,28 +168,40 @@ const MealPlannerPage: React.FC<MealPlannerPageProps> = ({ user, onClose, onSave
                 </button>
 
                 {/* Results */}
-                <div className="flex-1">
+                <div className="flex-1 pb-6">
                     {error && (
-                        <div className="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 rounded-lg flex items-center">
-                            <AlertTriangle className="w-5 h-5 mr-3" />
+                        <div className="bg-red-50 border-l-4 border-red-500 text-red-700 p-4 rounded-lg flex items-center">
+                            <AlertTriangle className="w-5 h-5 mr-3 flex-shrink-0" />
                             {error}
                         </div>
                     )}
                     {generatedPlan && (
                         <div className="space-y-3 animate-fade-in">
-                             <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200/80">
-                                <h2 className="text-lg font-bold text-slate-800 mb-3">Your Meal Plan</h2>
-                                 <div className="space-y-2">
-                                    <label htmlFor="planName" className="block text-sm font-medium text-slate-600">Plan Name</label>
-                                    <input type="text" id="planName" value={planNameToSave} onChange={(e) => setPlanNameToSave(e.target.value)} className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-800" />
+                            <div className="bg-white p-4 rounded-2xl shadow-lg shadow-slate-200/60">
+                                <h2 className="text-lg font-bold text-slate-900 mb-3">Your Meal Plan</h2>
+                                <div className="space-y-2">
+                                    <label htmlFor="planName" className="block text-sm font-medium text-slate-700">Plan Name</label>
+                                    <input 
+                                        type="text" 
+                                        id="planName" 
+                                        value={planNameToSave} 
+                                        onChange={(e) => setPlanNameToSave(e.target.value)} 
+                                        className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#FF6B35] text-slate-900" 
+                                    />
                                 </div>
-                                <button onClick={handleSavePlan} className="mt-3 w-full flex items-center justify-center bg-emerald-500 text-white font-bold py-2.5 rounded-xl transition-colors hover:bg-emerald-600">
+                                <button 
+                                    onClick={handleSavePlan} 
+                                    className="mt-3 w-full flex items-center justify-center bg-[#FF6B35] text-white font-bold py-2.5 rounded-xl transition-colors hover:bg-orange-600"
+                                >
                                     <Save className="w-5 h-5 mr-2" /> Save This Plan
                                 </button>
-                             </div>
+                            </div>
                             {generatedPlan.plan.map((dailyPlan) => (
-                                <div key={dailyPlan.day} className="bg-white rounded-lg border border-slate-200 overflow-hidden">
-                                    <button onClick={() => toggleDay(dailyPlan.day)} className="w-full flex justify-between items-center p-4 font-bold text-slate-700">
+                                <div key={dailyPlan.day} className="bg-white rounded-2xl shadow-md shadow-slate-200/60 overflow-hidden">
+                                    <button 
+                                        onClick={() => toggleDay(dailyPlan.day)} 
+                                        className="w-full flex justify-between items-center p-4 font-bold text-slate-900 hover:bg-slate-50 transition-colors"
+                                    >
                                         <span>{dailyPlan.day}</span>
                                         <div className="flex items-center text-xs text-slate-500 font-medium">
                                             <span>{dailyPlan.daily_summary.calories}</span>
@@ -168,15 +209,15 @@ const MealPlannerPage: React.FC<MealPlannerPageProps> = ({ user, onClose, onSave
                                         </div>
                                     </button>
                                     {activeDay === dailyPlan.day && (
-                                        <div className="p-4 border-t border-slate-200 space-y-3 animate-fade-in-fast">
+                                        <div className="p-4 border-t border-slate-200 space-y-3 animate-fade-in">
                                             {Object.keys(dailyPlan.meals).map((mealType) => {
                                                 const meal = dailyPlan.meals[mealType as keyof typeof dailyPlan.meals];
                                                 return (
                                                     <div key={mealType}>
-                                                        <h4 className="font-semibold text-slate-600 capitalize">{mealType}</h4>
-                                                        <div className="text-sm p-3 bg-slate-50 rounded-md mt-1 border border-slate-200/80">
-                                                            <p className="font-bold text-slate-800">{meal.name}</p>
-                                                            <p className="text-slate-500 mt-0.5">{meal.description}</p>
+                                                        <h4 className="font-semibold text-slate-700 capitalize">{mealType}</h4>
+                                                        <div className="text-sm p-3 bg-slate-50 rounded-lg mt-1 border border-slate-200">
+                                                            <p className="font-bold text-slate-900">{meal.name}</p>
+                                                            <p className="text-slate-600 mt-0.5">{meal.description}</p>
                                                         </div>
                                                     </div>
                                                 );
