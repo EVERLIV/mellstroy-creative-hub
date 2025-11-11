@@ -133,7 +133,9 @@ const ProfileContainer: React.FC = () => {
         .eq('user_id', user.id)
         .maybeSingle();
 
-      const dbRole = newRole === 'student' ? 'client' : 'trainer';
+      // Map UI role to database role
+      // student in UI = client in database
+      const dbRole = newRole === 'student' ? 'client' as const : 'trainer' as const;
 
       if (existingRole) {
         // Update existing role
@@ -142,34 +144,45 @@ const ProfileContainer: React.FC = () => {
           .update({ role: dbRole })
           .eq('user_id', user.id);
         
-        if (error) throw error;
+        if (error) {
+          console.error('Role update error:', error);
+          throw error;
+        }
       } else {
         // Insert new role
         const { error } = await supabase
           .from('user_roles')
           .insert({ user_id: user.id, role: dbRole });
         
-        if (error) throw error;
+        if (error) {
+          console.error('Role insert error:', error);
+          throw error;
+        }
       }
 
-      // Update local state immediately - don't reload from DB
+      // Update local state immediately
       setUserRole(newRole);
       
+      // Update currentUser role
+      if (currentUser) {
+        setCurrentUser({ ...currentUser, role: newRole });
+      }
+      
       // If switching to trainer, load classes
-      if (newRole === 'trainer' && currentUser) {
+      if (newRole === 'trainer') {
         const { data: classesData } = await supabase
           .from('classes')
           .select('*')
           .eq('trainer_id', user.id);
 
-        if (classesData) {
+        if (classesData && currentUser) {
           const classes = classesData.map((c, index) => ({
             id: Date.now() + index,
             name: c.name,
             description: c.description || '',
             duration: c.duration_minutes,
             price: parseFloat(c.price.toString()),
-            imageUrl: c.image_url || 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48',
+            imageUrl: c.image_urls && c.image_urls.length > 0 ? c.image_urls[0] : (c.image_url || 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48'),
             capacity: c.capacity,
             classType: c.class_type as any,
             schedule: c.schedule_days && c.schedule_time ? {
@@ -178,6 +191,7 @@ const ProfileContainer: React.FC = () => {
             } : undefined,
             bookings: [],
             _dbId: c.id,
+            image_urls: c.image_urls || (c.image_url ? [c.image_url] : []),
           }));
           
           setCurrentUser({ ...currentUser, classes, role: newRole });
@@ -196,7 +210,7 @@ const ProfileContainer: React.FC = () => {
       toast({
         variant: "destructive",
         title: "Error",
-        description: "Failed to change role.",
+        description: error.message || "Failed to change role.",
       });
     }
   };

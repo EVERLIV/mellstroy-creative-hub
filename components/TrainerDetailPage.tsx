@@ -148,9 +148,8 @@ const ClassCard: React.FC<ClassCardProps> = ({ cls, trainer, userRole, currentUs
                     <Button 
                         onClick={() => onInitiateBooking({ trainer, cls })}
                         disabled={isFull || isBookingDisabledForTrainer}
-                        variant="default"
                         size="default"
-                        className="flex-1"
+                        className={`flex-1 ${isFull || isBookingDisabledForTrainer ? '' : 'bg-[#FF6B35] hover:bg-[#FF6B35]/90 text-white'}`}
                     >
                         {isFull ? 'Full' : isBookingDisabledForTrainer ? 'N/A' : 'Book'}
                     </Button>
