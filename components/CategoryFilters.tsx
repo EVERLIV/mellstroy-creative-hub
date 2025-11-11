@@ -23,7 +23,7 @@ const iconMap: { [key: string]: React.FC<{ className?: string }> } = {
 
 const CategoryFilters: React.FC<CategoryFiltersProps> = ({ categories, selectedCategory, onSelectCategory }) => {
   return (
-    <div className="py-2">
+    <div className="py-2 pt-4">
       <div className="overflow-x-auto no-scrollbar">
         <div className="flex space-x-3 pb-2 px-4">
           {categories.map((category) => {
