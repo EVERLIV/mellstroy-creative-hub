@@ -134,25 +134,60 @@ const ProfileContainer: React.FC = () => {
 
       if (existingRole) {
         // Update existing role
-        await supabase
+        const { error } = await supabase
           .from('user_roles')
           .update({ role: dbRole })
           .eq('user_id', user.id);
+        
+        if (error) throw error;
       } else {
         // Insert new role
-        await supabase
+        const { error } = await supabase
           .from('user_roles')
           .insert({ user_id: user.id, role: dbRole });
+        
+        if (error) throw error;
       }
 
+      // Update local state immediately - don't reload from DB
       setUserRole(newRole);
+      
+      // If switching to trainer, load classes
+      if (newRole === 'trainer' && currentUser) {
+        const { data: classesData } = await supabase
+          .from('classes')
+          .select('*')
+          .eq('trainer_id', user.id);
+
+        if (classesData) {
+          const classes = classesData.map((c, index) => ({
+            id: Date.now() + index,
+            name: c.name,
+            description: c.description || '',
+            duration: c.duration_minutes,
+            price: parseFloat(c.price.toString()),
+            imageUrl: c.image_url || 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48',
+            capacity: c.capacity,
+            classType: c.class_type as any,
+            schedule: c.schedule_days && c.schedule_time ? {
+              days: c.schedule_days,
+              time: c.schedule_time
+            } : undefined,
+            bookings: [],
+            _dbId: c.id,
+          }));
+          
+          setCurrentUser({ ...currentUser, classes, role: newRole });
+        }
+      } else if (currentUser) {
+        // Switching to student - clear classes
+        setCurrentUser({ ...currentUser, classes: [], role: newRole });
+      }
+      
       toast({
         title: "Role updated",
         description: `Switched to ${newRole} mode.`,
       });
-
-      // Reload data to show appropriate profile
-      loadUserData();
     } catch (error: any) {
       console.error('Error changing role:', error);
       toast({
