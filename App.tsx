@@ -5,6 +5,7 @@ import { AuthProvider, useAuth } from './src/hooks/useAuth';
 import { Toaster } from './src/components/ui/toaster';
 import AuthPage from './src/pages/AuthPage';
 import WelcomePage from './pages/WelcomePage';
+import DashboardPage from './pages/DashboardPage';
 import HomePage from './pages/HomePage';
 import SearchPage from './pages/SearchPage';
 import FavoritesPage from './pages/FavoritesPage';
@@ -13,11 +14,14 @@ import ChatPage from './pages/ChatPage';
 import OnboardingPageContainer from './pages/OnboardingPageContainer';
 import ProfileContainer from './pages/ProfileContainer';
 import VerificationPage from './pages/VerificationPage';
+import EventsFlowPage from './pages/EventsFlowPage';
+import MealPlannerPage from './pages/MealPlannerPage';
+import AICoachPage from './pages/AICoachPage';
 import BottomNav from './components/BottomNav';
 import BookingModal from './components/BookingModal';
 import ReviewModal from './components/ReviewModal';
 import ReviewsModal from './components/ReviewsModal';
-import { Trainer, Class, Booking, UserRole } from './types';
+import { Trainer, Class, Booking, UserRole, Event } from './types';
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { user, loading } = useAuth();
@@ -50,13 +54,15 @@ const AppRoutes = () => {
   const [reviewModalData, setReviewModalData] = useState<{ booking: Booking; trainer: Trainer } | null>(null);
   const [reviewsModalTrainer, setReviewsModalTrainer] = useState<Trainer | null>(null);
   const [chatTrainer, setChatTrainer] = useState<Trainer | null>(null);
+  const [upcomingEvents, setUpcomingEvents] = useState<Event[]>([]);
 
   const currentUserId = user?.id || 'current-user-id';
 
-  // TODO: Load trainers from database
+  // TODO: Load trainers and events from database
   useEffect(() => {
     // Fetch trainers from Supabase here
-    // For now, starting with empty array
+    // Fetch events from Supabase here
+    // For now, starting with empty arrays
   }, []);
 
   const handleToggleFavorite = (trainerId: string) => {
@@ -89,6 +95,14 @@ const AppRoutes = () => {
           path="/"
           element={
             <ProtectedRoute>
+              <DashboardPage upcomingEvents={upcomingEvents} />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/explore"
+          element={
+            <ProtectedRoute>
               <HomePage
                 trainers={trainers}
                 onInitiateBooking={handleInitiateBooking}
@@ -101,6 +115,49 @@ const AppRoutes = () => {
                 onToggleFavorite={handleToggleFavorite}
                 onOpenReviewsModal={handleOpenReviewsModal}
               />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/category/:categoryId"
+          element={
+            <ProtectedRoute>
+              <HomePage
+                trainers={trainers}
+                onInitiateBooking={handleInitiateBooking}
+                onOpenChat={handleOpenChat}
+                selectedCategory={selectedCategory}
+                onSelectCategory={setSelectedCategory}
+                userRole={userRole}
+                currentUserId={currentUserId}
+                favoriteTrainerIds={favoriteTrainerIds}
+                onToggleFavorite={handleToggleFavorite}
+                onOpenReviewsModal={handleOpenReviewsModal}
+              />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/events"
+          element={
+            <ProtectedRoute>
+              <div>Events page coming soon</div>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/meal-planner"
+          element={
+            <ProtectedRoute>
+              <div>Meal Planner coming soon</div>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/ai-coach"
+          element={
+            <ProtectedRoute>
+              <div>AI Coach coming soon</div>
             </ProtectedRoute>
           }
         />

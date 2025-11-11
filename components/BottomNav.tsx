@@ -15,7 +15,7 @@ const BottomNav: React.FC = () => {
   
   const navItems: NavItem[] = [
     { name: 'Home', path: '/', icon: Home },
-    { name: 'Search', path: '/search', icon: Search },
+    { name: 'Explore', path: '/explore', icon: Search },
     { name: 'Favorites', path: '/favorites', icon: Heart },
     { name: 'Bookings', path: '/bookings', icon: Calendar },
     { name: 'Profile', path: '/profile', icon: User },
