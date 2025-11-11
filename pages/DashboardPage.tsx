@@ -182,7 +182,7 @@ const DashboardPage: React.FC<DashboardPageProps> = () => {
         <div className="max-w-2xl mx-auto">
           {/* Greeting */}
           <div className="mb-6">
-            <h1 className="text-2xl font-bold text-white">AI Premium Features - RhinoFit Premium</h1>
+            <h1 className="text-2xl font-bold text-white">Welcome to RhinoFit!</h1>
             <p className="text-white/90 text-sm mt-1">Find your perfect trainer today</p>
           </div>
 
@@ -239,7 +239,7 @@ const DashboardPage: React.FC<DashboardPageProps> = () => {
       {/* AI Premium Features */}
       <div className="px-4 mb-6">
         <div className="flex justify-between items-center mb-3">
-          <h2 className="font-bold text-slate-900 text-base">AI Premium Features</h2>
+          <h2 className="font-bold text-slate-900 text-base">RhinoFit Premium</h2>
           <span className="text-xs text-slate-500 bg-slate-200 px-2 py-1 rounded-full">New</span>
         </div>
         <div className="space-y-3">
