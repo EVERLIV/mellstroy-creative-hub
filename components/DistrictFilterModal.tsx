@@ -23,9 +23,9 @@ const DistrictFilterModal: React.FC<DistrictFilterModalProps> = ({ isOpen, onClo
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 bg-black/60 z-50 flex flex-col justify-end" onClick={onClose}>
+        <div className="fixed inset-0 bg-black/60 z-[90] flex flex-col justify-end animate-fade-in" onClick={onClose}>
             <div 
-                className="bg-white rounded-t-2xl w-full h-[85vh] flex flex-col transform animate-slide-up-full"
+                className="bg-white rounded-t-2xl w-full h-[85vh] flex flex-col transform animate-slide-up-full shadow-2xl"
                 onClick={e => e.stopPropagation()}
             >
                 <header className="p-4 border-b border-gray-200 flex-shrink-0">

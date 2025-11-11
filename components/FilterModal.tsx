@@ -73,7 +73,7 @@ const FilterModal: React.FC<FilterModalProps> = ({ isOpen, onClose, activeFilter
 
     return (
         <div 
-            className="fixed inset-0 bg-white z-50 animate-fade-in"
+            className="fixed inset-0 bg-white z-[100] animate-fade-in"
             role="dialog"
             aria-modal="true"
         >
@@ -91,7 +91,7 @@ const FilterModal: React.FC<FilterModalProps> = ({ isOpen, onClose, activeFilter
                 </div>
                 
                 {/* Content */}
-                <div className="flex-1 overflow-y-auto p-5 space-y-6">
+                <div className="flex-1 overflow-y-auto p-5 space-y-6 pb-32">
                      {/* Specialty */}
                     <div>
                         <div className="flex justify-between items-center mb-3">
@@ -199,10 +199,10 @@ const FilterModal: React.FC<FilterModalProps> = ({ isOpen, onClose, activeFilter
                 </div>
                 
                 {/* Footer */}
-                <div className="px-4 pt-4 bg-white border-t border-gray-200 flex-shrink-0 pb-[calc(1rem+env(safe-area-inset-bottom))]">
+                <div className="fixed bottom-0 left-0 right-0 px-4 pt-4 pb-6 bg-white border-t border-gray-200 shadow-[0_-4px_12px_rgba(0,0,0,0.1)]">
                     <button
                         onClick={() => onApplyFilters(tempFilters)}
-                        className="w-full bg-[#FF6B35] text-white font-bold py-3.5 rounded-xl transition-all duration-200 shadow-md hover:shadow-lg disabled:bg-gray-300 disabled:shadow-none disabled:cursor-not-allowed"
+                        className="w-full bg-[#FF6B35] text-white font-bold py-3.5 rounded-xl transition-all duration-200 shadow-md hover:shadow-lg active:scale-95 disabled:bg-gray-300 disabled:shadow-none disabled:cursor-not-allowed"
                     >
                         Apply Filters
                     </button>
