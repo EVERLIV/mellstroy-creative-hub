@@ -69,20 +69,15 @@ const MealPlannerPage: React.FC<MealPlannerPageProps> = ({ user, onClose, onSave
 
     return (
         <div className="bg-slate-50 min-h-screen flex flex-col pb-32">
-            {/* Header with gradient */}
-            <div className="bg-gradient-to-br from-orange-500 to-pink-500 pt-6 pb-8 px-4 relative">
-                <button onClick={onClose} className="absolute top-6 left-4 p-2 rounded-full bg-white/20 hover:bg-white/30 transition-colors">
-                    <ArrowLeft className="w-6 h-6 text-white" />
+            {/* Header */}
+            <div className="bg-gradient-to-br from-orange-500 to-pink-500 px-4 py-4 relative">
+                <button onClick={onClose} className="absolute top-4 left-4 p-2 rounded-full bg-white/20 hover:bg-white/30 transition-colors">
+                    <ArrowLeft className="w-5 h-5 text-white" />
                 </button>
-                <div className="max-w-2xl mx-auto pt-8">
-                    <h1 className="text-2xl font-bold text-white flex items-center justify-center">
-                        <UtensilsCrossed className="w-6 h-6 mr-2" />
-                        AI Meal Planner
-                    </h1>
-                </div>
+                <h1 className="text-lg font-semibold text-white text-center">AI Meal Planner</h1>
             </div>
 
-            <main className="flex-1 px-4 space-y-4 -mt-4 overflow-y-auto">
+            <main className="flex-1 px-4 space-y-4 mt-4 overflow-y-auto">
                 {/* Preferences Form */}
                 <div className="bg-white p-4 rounded-2xl shadow-lg shadow-slate-200/60">
                     <h3 className="font-bold text-slate-900 mb-3">1. Select Duration</h3>

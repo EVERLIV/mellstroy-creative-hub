@@ -47,20 +47,15 @@ const AICoachPage: React.FC<AICoachPageProps> = ({ messages, onSendMessage, isLo
 
     return (
         <div className="flex flex-col h-screen bg-slate-50">
-            {/* Gradient Header */}
-            <div className="bg-gradient-to-br from-orange-500 to-pink-500 pt-6 pb-8 px-4 relative shadow-lg">
+            {/* Header */}
+            <div className="bg-gradient-to-br from-orange-500 to-pink-500 px-4 py-4 relative">
                 <button 
                     onClick={onClose} 
-                    className="absolute top-6 left-4 p-2 rounded-full bg-white/20 hover:bg-white/30 transition-colors backdrop-blur-sm"
+                    className="absolute top-4 left-4 p-2 rounded-full bg-white/20 hover:bg-white/30 transition-colors"
                 >
-                    <ArrowLeft className="w-6 h-6 text-white" />
+                    <ArrowLeft className="w-5 h-5 text-white" />
                 </button>
-                <div className="max-w-4xl mx-auto pt-8 flex flex-col items-center">
-                    <div className="w-16 h-16 rounded-2xl flex items-center justify-center bg-white/20 backdrop-blur-sm mb-3 shadow-lg">
-                        <Sparkles className="w-8 h-8 text-white"/>
-                    </div>
-                    <h1 className="text-2xl font-bold text-white">AI Fitness Coach</h1>
-                </div>
+                <h1 className="text-lg font-semibold text-white text-center">AI Fitness Coach</h1>
             </div>
             
             {/* Messages Area */}
