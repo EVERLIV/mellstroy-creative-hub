@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Trainer, Class, ClassType, UserRole } from '../types';
 import { ArrowLeft, MessageCircle, Star, ShieldCheck, MapPin, Clock, Building, Sun, Home, Heart, Users, Crown, Camera } from 'lucide-react';
 import ImageGalleryModal from './ImageGalleryModal';
+import { Button } from '@/src/components/ui/button';
 
 // Helper functions
 const formatVND = (amount: number) => {
@@ -135,30 +136,33 @@ const ClassCard: React.FC<ClassCardProps> = ({ cls, trainer, userRole, currentUs
                     )}
                 </div>
                 
-                <div className="mt-4 flex items-center space-x-2">
-                    <button 
+                <div className="mt-4 flex items-center gap-2">
+                    <Button 
                         onClick={() => navigate(`/class/${cls.id}`)}
-                        className="flex-1 font-bold py-2.5 px-4 rounded-lg transition-all duration-200 text-sm bg-secondary text-secondary-foreground hover:bg-secondary/80"
+                        variant="outline"
+                        size="default"
+                        className="flex-1"
                     >
                         View Details
-                    </button>
-                    <button 
+                    </Button>
+                    <Button 
                         onClick={() => onInitiateBooking({ trainer, cls })}
                         disabled={isFull || isBookingDisabledForTrainer}
-                        className={`flex-1 font-bold py-2.5 px-4 rounded-lg transition-all duration-200 text-sm
-                        ${isFull || isBookingDisabledForTrainer
-                            ? 'bg-muted text-muted-foreground cursor-not-allowed' 
-                            : 'bg-primary text-primary-foreground hover:bg-primary/90'
-                        }`}
+                        variant="default"
+                        size="default"
+                        className="flex-1"
                     >
                         {isFull ? 'Full' : isBookingDisabledForTrainer ? 'N/A' : 'Book'}
-                    </button>
+                    </Button>
                     {hasUserBooked && (
-                         <button 
+                         <Button 
                             onClick={() => onOpenChat(trainer, { className: cls.name, bookingDate: userBooking?.date })}
-                            className="flex-shrink-0 w-auto bg-blue-500 text-white font-bold p-2.5 rounded-lg hover:bg-blue-600 transition-colors duration-200">
+                            variant="secondary"
+                            size="icon"
+                            className="flex-shrink-0"
+                         >
                              <MessageCircle className="w-5 h-5" />
-                         </button>
+                         </Button>
                     )}
                 </div>
             </div>
