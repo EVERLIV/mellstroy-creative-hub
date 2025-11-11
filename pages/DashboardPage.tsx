@@ -204,7 +204,7 @@ const DashboardPage: React.FC<DashboardPageProps> = () => {
       <div className="px-4 -mt-4 mb-6">
         <div className="bg-white rounded-2xl shadow-lg shadow-slate-200/60 p-4">
           <h2 className="font-bold text-slate-900 text-base mb-4">Categories</h2>
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-4 gap-2">
             {categories.map((category) => {
               const IconComponent = category.icon;
               return (
@@ -214,17 +214,17 @@ const DashboardPage: React.FC<DashboardPageProps> = () => {
                   className="flex flex-col items-center gap-1 group"
                 >
                   {category.imageUrl ? (
-                    <div className="relative w-[100px] h-[100px] flex items-center justify-center p-2 bg-white rounded-2xl overflow-hidden">
+                    <div className="relative w-[70px] h-[70px] flex items-center justify-center p-1.5 bg-white rounded-xl overflow-hidden">
                       <img 
                         src={category.imageUrl} 
                         alt={category.name}
                         className="w-full h-full object-contain transition-transform duration-200 group-hover:scale-105"
                       />
-                      <div className="absolute inset-0 bg-orange-500/0 group-hover:bg-orange-500/10 transition-colors duration-200 rounded-2xl"></div>
+                      <div className="absolute inset-0 bg-orange-500/0 group-hover:bg-orange-500/10 transition-colors duration-200 rounded-xl"></div>
                     </div>
                   ) : (
-                    <div className="relative w-[100px] h-[100px] flex items-center justify-center rounded-2xl bg-slate-100 overflow-hidden">
-                      <IconComponent className="w-12 h-12 text-slate-700" />
+                    <div className="relative w-[70px] h-[70px] flex items-center justify-center rounded-xl bg-slate-100 overflow-hidden">
+                      <IconComponent className="w-8 h-8 text-slate-700" />
                       <div className="absolute inset-0 bg-orange-500/0 group-hover:bg-orange-500/10 transition-colors duration-200"></div>
                     </div>
                   )}
