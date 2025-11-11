@@ -1,27 +1,54 @@
 import React from 'react';
-import { Event, Trainer } from '../types';
-import { ArrowLeft, Plus, Heart, Calendar, MapPin, User, Lock } from 'lucide-react';
+import { ArrowLeft, Plus, Heart, Calendar, MapPin, User, Lock, Clock } from 'lucide-react';
 
-const EventCard: React.FC<{ event: Event; onSelect: () => void; }> = ({ event, onSelect }) => {
+interface EventCardProps {
+  event: {
+    id: string;
+    title: string;
+    description: string;
+    date: string;
+    time: string;
+    location: string;
+    image_url: string | null;
+    organizer: { username: string }[];
+    status: string;
+    interests_count?: number;
+  };
+  onSelect: () => void;
+}
+
+const EventCard: React.FC<EventCardProps> = ({ event, onSelect }) => {
     const eventDate = new Date(event.date);
     const month = eventDate.toLocaleDateString('en-US', { month: 'short' }).toUpperCase();
     const day = eventDate.getDate();
+    const organizerName = event.organizer?.[0]?.username || 'Unknown';
+    const interestedCount = event.interests_count || 0;
 
     return (
         <button onClick={onSelect} className="w-full bg-white rounded-2xl shadow-md shadow-slate-200/60 overflow-hidden text-left hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1">
             <div className="relative">
-                <img src={event.imageUrl} alt={event.title} className="h-44 w-full object-cover" />
+                <img 
+                  src={event.image_url || 'https://images.unsplash.com/photo-1517836357463-d25dfeac3438?w=800'} 
+                  alt={event.title} 
+                  className="h-44 w-full object-cover" 
+                />
                 <div className="absolute top-3 right-3 bg-white/90 backdrop-blur-sm rounded-xl p-2 text-center shadow">
                     <p className="text-sm font-bold text-red-500">{month}</p>
                     <p className="text-2xl font-extrabold text-slate-800 -mt-1">{day}</p>
                 </div>
+                {event.status === 'pending' && (
+                  <div className="absolute top-3 left-3 bg-yellow-500 text-white text-xs font-bold px-2 py-1 rounded-lg flex items-center gap-1">
+                    <Clock className="w-3 h-3" />
+                    Pending Approval
+                  </div>
+                )}
             </div>
             <div className="p-4">
                 <h3 className="font-bold text-gray-800 text-lg truncate">{event.title}</h3>
                 <div className="mt-2 space-y-2 text-sm text-gray-600">
                     <div className="flex items-center">
                         <User className="w-4 h-4 mr-2 text-gray-400 flex-shrink-0" />
-                        <span className="truncate">Organized by <span className="font-semibold">{event.organizerName}</span></span>
+                        <span className="truncate">Organized by <span className="font-semibold">{organizerName}</span></span>
                     </div>
                     <div className="flex items-center">
                         <MapPin className="w-4 h-4 mr-2 text-gray-400 flex-shrink-0" />
@@ -31,7 +58,7 @@ const EventCard: React.FC<{ event: Event; onSelect: () => void; }> = ({ event, o
                 <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between">
                     <div className="flex items-center text-sm text-gray-500">
                         <Heart className="w-4 h-4 mr-1.5 text-red-400" />
-                        <span className="font-semibold">{event.interestedUserIds.length}</span>
+                        <span className="font-semibold">{interestedCount}</span>
                         <span className="ml-1">Interested</span>
                     </div>
                     <div className="flex items-center justify-center bg-[#FF6B35] text-white font-bold py-2 px-4 rounded-lg text-sm">
@@ -45,29 +72,28 @@ const EventCard: React.FC<{ event: Event; onSelect: () => void; }> = ({ event, o
 
 
 interface EventsPageProps {
-    events: Event[];
-    currentUser: Trainer;
+    events: any[];
+    isTrainer: boolean;
     onBack: () => void;
-    onSelectEvent: (event: Event) => void;
+    onSelectEvent: (event: any) => void;
     onOpenCreate: () => void;
 }
 
-const EventsPage: React.FC<EventsPageProps> = ({ events, currentUser, onBack, onSelectEvent, onOpenCreate }) => {
-    const isPremium = currentUser.isPremium;
+const EventsPage: React.FC<EventsPageProps> = ({ events, isTrainer, onBack, onSelectEvent, onOpenCreate }) => {
 
     const CreateEventButton = () => (
         <div className="relative group">
             <button 
-                onClick={isPremium ? onOpenCreate : undefined}
-                disabled={!isPremium}
+                onClick={isTrainer ? onOpenCreate : undefined}
+                disabled={!isTrainer}
                 className="w-full flex items-center justify-center bg-blue-500 text-white font-bold py-3 rounded-xl hover:bg-blue-600 transition-colors duration-200 shadow-md disabled:bg-slate-400 disabled:cursor-not-allowed"
             >
-                {isPremium ? <Plus className="w-5 h-5 mr-2" /> : <Lock className="w-5 h-5 mr-2" />}
+                {isTrainer ? <Plus className="w-5 h-5 mr-2" /> : <Lock className="w-5 h-5 mr-2" />}
                 Create New Event
             </button>
-            {!isPremium && (
+            {!isTrainer && (
                 <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-max px-3 py-1.5 bg-slate-700 text-white text-xs font-semibold rounded-md opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
-                    This is a premium feature
+                    Only trainers can create events
                 </div>
             )}
         </div>

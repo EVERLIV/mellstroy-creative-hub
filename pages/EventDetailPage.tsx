@@ -1,8 +1,6 @@
-import React from 'react';
-import { Event, Trainer } from '../types';
+import React, { useState, useEffect } from 'react';
 import { ArrowLeft, Heart, Calendar, Clock, MapPin, Users } from 'lucide-react';
-
-const getAvatarUrl = (userId: string) => `https://i.pravatar.cc/40?u=${userId}`;
+import { supabase } from '../src/integrations/supabase/client';
 
 const InfoItem: React.FC<{ icon: React.FC<any>, label: string, value: string }> = ({ icon: Icon, label, value }) => (
     <div className="flex items-center">
@@ -17,15 +15,45 @@ const InfoItem: React.FC<{ icon: React.FC<any>, label: string, value: string }> 
 );
 
 interface EventDetailPageProps {
-    event: Event;
-    currentUser: Trainer;
+    event: any;
+    currentUserId: string | null;
     onBack: () => void;
     onToggleInterest: (eventId: string) => void;
 }
 
-const EventDetailPage: React.FC<EventDetailPageProps> = ({ event, currentUser, onBack, onToggleInterest }) => {
-    
-    const isInterested = event.interestedUserIds.includes(currentUser.id);
+const EventDetailPage: React.FC<EventDetailPageProps> = ({ event, currentUserId, onBack, onToggleInterest }) => {
+    const [isInterested, setIsInterested] = useState(false);
+    const [interestCount, setInterestCount] = useState(0);
+
+    useEffect(() => {
+        const checkInterest = async () => {
+            if (!currentUserId) return;
+
+            try {
+                const { data } = await supabase
+                    .from('event_interests')
+                    .select()
+                    .eq('event_id', event.id)
+                    .eq('user_id', currentUserId)
+                    .maybeSingle();
+
+                setIsInterested(!!data);
+
+                const { count } = await supabase
+                    .from('event_interests')
+                    .select('*', { count: 'exact', head: true })
+                    .eq('event_id', event.id);
+
+                setInterestCount(count || 0);
+            } catch (error) {
+                console.error('Error checking interest:', error);
+            }
+        };
+
+        checkInterest();
+    }, [event.id, currentUserId]);
+
+    const organizerName = event.organizer?.[0]?.username || 'Unknown';
 
     const formatDateTime = () => {
         const date = new Date(event.date + 'T' + event.time);
@@ -47,13 +75,13 @@ const EventDetailPage: React.FC<EventDetailPageProps> = ({ event, currentUser, o
 
             <main className="flex-1 overflow-y-auto pb-28"> {/* Padding for footer */}
                 <div className="h-64 w-full">
-                    <img className="h-full w-full object-cover" src={event.imageUrl} alt={event.title} />
+                    <img className="h-full w-full object-cover" src={event.image_url || 'https://images.unsplash.com/photo-1517836357463-d25dfeac3438?w=800'} alt={event.title} />
                 </div>
 
                 <div className="bg-white p-5 rounded-t-2xl -mt-8 relative z-10 space-y-6">
                     <div>
                         <h1 className="text-2xl font-bold text-slate-900">{event.title}</h1>
-                        <p className="text-sm font-semibold text-blue-600 mt-1">Organized by {event.organizerName}</p>
+                        <p className="text-sm font-semibold text-blue-600 mt-1">Organized by {organizerName}</p>
                     </div>
 
                     <div className="bg-slate-50 p-4 rounded-2xl border border-slate-200/80 space-y-4">
@@ -72,15 +100,10 @@ const EventDetailPage: React.FC<EventDetailPageProps> = ({ event, currentUser, o
                            <Users className="w-5 h-5 mr-2" />
                            <h2>Who's Interested</h2>
                         </div>
-                        {event.interestedUserIds.length > 0 ? (
+                        {interestCount > 0 ? (
                             <div className="flex items-center">
-                                <div className="flex -space-x-3">
-                                    {event.interestedUserIds.slice(0, 7).map(id => (
-                                        <img key={id} src={getAvatarUrl(id)} alt={`User ${id}`} className="w-9 h-9 rounded-full border-2 border-white object-cover shadow-sm" />
-                                    ))}
-                                </div>
-                                <p className="text-sm text-slate-500 ml-4">
-                                    <span className="font-bold">{event.interestedUserIds.length}</span> people are interested
+                                <p className="text-sm text-slate-500">
+                                    <span className="font-bold">{interestCount}</span> {interestCount === 1 ? 'person is' : 'people are'} interested
                                 </p>
                             </div>
                         ) : (

@@ -1,22 +1,23 @@
 import React, { useState } from 'react';
-import { Event } from '../types';
-import { ArrowLeft, Save } from 'lucide-react';
+import { ArrowLeft, Save, Loader2 } from 'lucide-react';
+import { supabase } from '../src/integrations/supabase/client';
+import { useToast } from '../src/hooks/use-toast';
 
 interface CreateEventPageProps {
     onBack: () => void;
-    onCreateEvent: (eventData: Omit<Event, 'id' | 'organizerId' | 'organizerName' | 'interestedUserIds'>) => void;
+    onSuccess: () => void;
 }
 
-type FormData = Omit<Event, 'id' | 'organizerId' | 'organizerName' | 'interestedUserIds'>;
-
-const CreateEventPage: React.FC<CreateEventPageProps> = ({ onBack, onCreateEvent }) => {
-    const [formData, setFormData] = useState<FormData>({
+const CreateEventPage: React.FC<CreateEventPageProps> = ({ onBack, onSuccess }) => {
+    const { toast } = useToast();
+    const [loading, setLoading] = useState(false);
+    const [formData, setFormData] = useState({
         title: '',
         description: '',
         date: '',
         time: '',
         location: '',
-        imageUrl: 'https://picsum.photos/seed/newevent/800/400',
+        image_url: '',
     });
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -24,12 +25,40 @@ const CreateEventPage: React.FC<CreateEventPageProps> = ({ onBack, onCreateEvent
         setFormData(prev => ({ ...prev, [name]: value }));
     };
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        onCreateEvent(formData);
+        setLoading(true);
+
+        try {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) throw new Error('Not authenticated');
+
+            const { error } = await supabase.from('events').insert({
+                ...formData,
+                organizer_id: user.id,
+                status: 'pending',
+            });
+
+            if (error) throw error;
+
+            toast({
+                title: 'Event submitted',
+                description: 'Your event is pending admin approval',
+            });
+            onSuccess();
+        } catch (error: any) {
+            console.error('Error creating event:', error);
+            toast({
+                title: 'Error',
+                description: error.message || 'Failed to create event',
+                variant: 'destructive',
+            });
+        } finally {
+            setLoading(false);
+        }
     };
 
-    const isFormValid = formData.title && formData.description && formData.date && formData.time && formData.location && formData.imageUrl;
+    const isFormValid = formData.title && formData.description && formData.date && formData.time && formData.location;
 
     return (
         <div className="bg-slate-100 h-full flex flex-col relative">
@@ -63,8 +92,8 @@ const CreateEventPage: React.FC<CreateEventPageProps> = ({ onBack, onCreateEvent
                         <input type="text" id="location" name="location" value={formData.location} onChange={handleChange} required placeholder="e.g., Le Van Tam Park, District 1" className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" />
                     </div>
                     <div>
-                        <label htmlFor="imageUrl" className="block text-sm font-medium text-slate-600 mb-1">Image URL</label>
-                        <input type="text" id="imageUrl" name="imageUrl" value={formData.imageUrl} onChange={handleChange} required className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-slate-50" />
+                        <label htmlFor="image_url" className="block text-sm font-medium text-slate-600 mb-1">Image URL (optional)</label>
+                        <input type="url" id="image_url" name="image_url" value={formData.image_url} onChange={handleChange} placeholder="https://example.com/image.jpg" className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" />
                     </div>
                 </div>
             </form>
@@ -73,11 +102,14 @@ const CreateEventPage: React.FC<CreateEventPageProps> = ({ onBack, onCreateEvent
                 <button
                     type="submit"
                     onClick={handleSubmit}
-                    disabled={!isFormValid}
+                    disabled={!isFormValid || loading}
                     className="w-full flex items-center justify-center bg-[#FF6B35] text-white font-bold py-3.5 rounded-xl transition-all duration-200 shadow-md hover:shadow-lg disabled:bg-gray-300 disabled:shadow-none disabled:cursor-not-allowed"
                 >
-                    <Save className="w-5 h-5 mr-2" />
-                    Publish Event
+                    {loading ? (
+                        <><Loader2 className="w-5 h-5 mr-2 animate-spin" />Submitting...</>
+                    ) : (
+                        <><Save className="w-5 h-5 mr-2" />Submit Event</>
+                    )}
                 </button>
             </footer>
         </div>

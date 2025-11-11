@@ -58,7 +58,6 @@ const AppRoutes = () => {
   const [reviewModalData, setReviewModalData] = useState<{ booking: Booking; trainer: Trainer } | null>(null);
   const [reviewsModalTrainer, setReviewsModalTrainer] = useState<Trainer | null>(null);
   const [chatTrainer, setChatTrainer] = useState<Trainer | null>(null);
-  const [upcomingEvents, setUpcomingEvents] = useState<Event[]>([]);
   
   // AI Coach state
   const [aiCoachMessages, setAiCoachMessages] = useState<Message[]>([]);
@@ -144,7 +143,7 @@ const AppRoutes = () => {
           path="/"
           element={
             <ProtectedRoute>
-              <DashboardPage upcomingEvents={upcomingEvents} />
+              <DashboardPage />
             </ProtectedRoute>
           }
         />
@@ -190,7 +189,7 @@ const AppRoutes = () => {
           path="/events"
           element={
             <ProtectedRoute>
-              <div>Events page coming soon</div>
+              <EventsFlowPage onBack={() => navigate('/')} />
             </ProtectedRoute>
           }
         />

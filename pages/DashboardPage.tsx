@@ -1,15 +1,42 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Search, Dumbbell, Calendar, UtensilsCrossed, Sparkles, MapPin, Trophy, Users, TrendingUp, Heart } from 'lucide-react';
-import { Event } from '../types';
+import { supabase } from '../src/integrations/supabase/client';
 
-interface DashboardPageProps {
-  upcomingEvents?: Event[];
-}
+interface DashboardPageProps {}
 
-const DashboardPage: React.FC<DashboardPageProps> = ({ upcomingEvents = [] }) => {
+const DashboardPage: React.FC<DashboardPageProps> = () => {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
+  const [upcomingEvents, setUpcomingEvents] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchEvents = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('events')
+          .select(`
+            *,
+            organizer:organizer_id (username),
+            interests:event_interests (count)
+          `)
+          .eq('status', 'approved')
+          .gte('date', new Date().toISOString().split('T')[0])
+          .order('date', { ascending: true })
+          .limit(3);
+
+        if (error) throw error;
+        setUpcomingEvents(data || []);
+      } catch (error) {
+        console.error('Error fetching events:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchEvents();
+  }, []);
 
   const categories = [
     { id: 'gym', name: 'Gym', icon: Dumbbell, color: 'from-orange-100 to-orange-50' },
@@ -144,7 +171,7 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ upcomingEvents = [] }) =>
       </div>
 
       {/* Upcoming Events */}
-      {upcomingEvents.length > 0 && (
+      {!loading && upcomingEvents.length > 0 && (
         <div className="px-4 mb-6">
           <div className="flex justify-between items-center mb-3">
             <h2 className="font-bold text-slate-900 text-base">Upcoming Events</h2>
@@ -156,15 +183,15 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ upcomingEvents = [] }) =>
             </button>
           </div>
           <div className="space-y-3">
-            {upcomingEvents.slice(0, 3).map((event) => (
+            {upcomingEvents.map((event) => (
               <button
                 key={event.id}
-                onClick={() => navigate(`/events/${event.id}`)}
+                onClick={() => navigate('/events')}
                 className="w-full bg-white rounded-2xl shadow-md shadow-slate-200/60 overflow-hidden hover:shadow-lg transition-all duration-200"
               >
                 <div className="relative h-32">
                   <img
-                    src={event.imageUrl}
+                    src={event.image_url || 'https://images.unsplash.com/photo-1517836357463-d25dfeac3438?w=800'}
                     alt={event.title}
                     className="w-full h-full object-cover"
                   />
