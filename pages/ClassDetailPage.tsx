@@ -55,24 +55,47 @@ const ClassDetailPage: React.FC<ClassDetailPageProps> = ({
 
     try {
       setLoading(true);
+      console.log('Loading class data for ID:', classId);
 
       // Fetch class data
       const { data: classInfo, error: classError } = await supabase
         .from('classes')
         .select('*')
         .eq('id', classId)
-        .single();
+        .maybeSingle();
 
-      if (classError) throw classError;
+      if (classError) {
+        console.error('Error fetching class:', classError);
+        throw classError;
+      }
+
+      if (!classInfo) {
+        console.error('Class not found');
+        setLoading(false);
+        return;
+      }
+
+      console.log('Class data loaded:', classInfo);
 
       // Fetch trainer profile
       const { data: trainerProfile, error: trainerError } = await supabase
         .from('profiles')
         .select('*')
         .eq('id', classInfo.trainer_id)
-        .single();
+        .maybeSingle();
 
-      if (trainerError) throw trainerError;
+      if (trainerError) {
+        console.error('Error fetching trainer:', trainerError);
+        throw trainerError;
+      }
+
+      if (!trainerProfile) {
+        console.error('Trainer not found');
+        setLoading(false);
+        return;
+      }
+
+      console.log('Trainer data loaded:', trainerProfile);
 
       // Fetch bookings for this class
       const { data: bookings, error: bookingsError } = await supabase
@@ -80,7 +103,11 @@ const ClassDetailPage: React.FC<ClassDetailPageProps> = ({
         .select('*')
         .eq('class_id', classId);
 
-      if (bookingsError) throw bookingsError;
+      if (bookingsError) {
+        console.error('Error fetching bookings:', bookingsError);
+      }
+
+      console.log('Bookings loaded:', bookings?.length || 0);
 
       // Transform class data
       const cls: Class = {
@@ -118,6 +145,7 @@ const ClassDetailPage: React.FC<ClassDetailPageProps> = ({
 
       setClassData(cls);
       setTrainer(trainerData);
+      console.log('Class and trainer data set successfully');
     } catch (error) {
       console.error('Error loading class data:', error);
     } finally {
@@ -133,7 +161,10 @@ const ClassDetailPage: React.FC<ClassDetailPageProps> = ({
   if (loading) {
     return (
       <div className="h-screen flex items-center justify-center bg-background">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-foreground">Loading class details...</p>
+        </div>
       </div>
     );
   }
@@ -142,7 +173,12 @@ const ClassDetailPage: React.FC<ClassDetailPageProps> = ({
     return (
       <div className="h-screen flex flex-col items-center justify-center bg-background p-4">
         <p className="text-foreground mb-4">Class not found</p>
-        <button onClick={() => navigate(-1)} className="text-primary font-semibold">Go back</button>
+        <button 
+          onClick={() => navigate('/explore')} 
+          className="bg-primary text-primary-foreground px-6 py-2 rounded-lg font-semibold hover:bg-primary/90"
+        >
+          Back to Explore
+        </button>
       </div>
     );
   }
