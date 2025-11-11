@@ -126,38 +126,21 @@ const ProfileContainer: React.FC = () => {
     if (!user) return;
 
     try {
-      // Check if role exists
-      const { data: existingRole } = await supabase
-        .from('user_roles')
-        .select('role')
-        .eq('user_id', user.id)
-        .maybeSingle();
-
       // Map UI role to database role
       // student in UI = client in database
       const dbRole = newRole === 'student' ? 'client' as const : 'trainer' as const;
 
-      if (existingRole) {
-        // Update existing role
-        const { error } = await supabase
-          .from('user_roles')
-          .update({ role: dbRole })
-          .eq('user_id', user.id);
-        
-        if (error) {
-          console.error('Role update error:', error);
-          throw error;
-        }
-      } else {
-        // Insert new role
-        const { error } = await supabase
-          .from('user_roles')
-          .insert({ user_id: user.id, role: dbRole });
-        
-        if (error) {
-          console.error('Role insert error:', error);
-          throw error;
-        }
+      // Use upsert to handle both insert and update cases
+      const { error } = await supabase
+        .from('user_roles')
+        .upsert(
+          { user_id: user.id, role: dbRole },
+          { onConflict: 'user_id,role' }
+        );
+      
+      if (error) {
+        console.error('Role upsert error:', error);
+        throw error;
       }
 
       // Update local state immediately
