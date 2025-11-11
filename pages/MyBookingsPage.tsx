@@ -156,23 +156,29 @@ const MyBookingsPage: React.FC<MyBookingsPageProps> = ({ trainers, onOpenChat, o
     const [bookingToCancel, setBookingToCancel] = useState<BookingInfo | null>(null);
 
     const getBookings = () => {
-        let bookings: BookingInfo[];
+        let bookings: BookingInfo[] = [];
+        
         if (userRole === 'student') {
+            // Student view - show their bookings from all trainers
             bookings = trainers.flatMap(trainer =>
-                trainer.classes.flatMap(cls =>
+                (trainer.classes || []).flatMap(cls =>
                     (cls.bookings ?? [])
                         .filter(booking => booking.userId === currentUserId)
                         .map(booking => ({ trainer, cls, booking }))
                 )
             );
-        } else { // Trainer view
-            bookings = currentUser.classes.flatMap(cls => 
-                (cls.bookings ?? []).map(booking => {
-                    const student = trainers.find(t => t.id === booking.userId);
-                    return { trainer: currentUser, cls, booking, student };
-                })
-            );
+        } else {
+            // Trainer view - show bookings for their classes
+            if (currentUser && currentUser.classes) {
+                bookings = currentUser.classes.flatMap(cls => 
+                    (cls.bookings ?? []).map(booking => {
+                        const student = trainers.find(t => t.id === booking.userId);
+                        return { trainer: currentUser, cls, booking, student };
+                    })
+                );
+            }
         }
+        
         // Sort all bookings chronologically
         return bookings.sort((a, b) => parseBookingDateTime(a.booking).getTime() - parseBookingDateTime(b.booking).getTime());
     };
