@@ -31,23 +31,27 @@ const BottomNav: React.FC = () => {
               key={item.name}
               to={item.path}
               end
-              className={`relative flex items-center justify-center transition-all duration-300 ease-in-out rounded-full h-10 group
+              className={`relative flex items-center justify-center transition-all duration-300 ease-out rounded-full h-10 group
+                active:scale-90 active:opacity-80
                 ${
                   isActive
-                    ? 'bg-orange-100 text-[#FF6B35] px-4 gap-2'
-                    : 'w-10 text-gray-500 hover:bg-gray-100'
+                    ? 'bg-orange-100 text-[#FF6B35] px-4 gap-2 shadow-sm'
+                    : 'w-10 text-gray-500 hover:bg-gray-100 hover:scale-110'
                 }`
               }
               aria-label={item.name}
               aria-current={isActive ? 'page' : undefined}
             >
               <item.icon 
-                className={`h-6 w-6`} 
+                className={`h-6 w-6 transition-transform duration-200 ${isActive ? '' : 'group-active:scale-90'}`} 
                 strokeWidth={isActive ? 2.5 : 2} 
               />
-              <span className={`text-sm font-semibold whitespace-nowrap ${isActive ? 'block' : 'hidden'}`}>
+              <span className={`text-sm font-semibold whitespace-nowrap transition-opacity duration-200 ${isActive ? 'block animate-fade-in' : 'hidden'}`}>
                 {item.name}
               </span>
+              
+              {/* Ripple effect on tap */}
+              <span className={`absolute inset-0 rounded-full bg-gray-400 opacity-0 group-active:opacity-20 group-active:animate-ping`} />
             </NavLink>
           );
         })}
