@@ -23,9 +23,9 @@ const iconMap: { [key: string]: React.FC<{ className?: string }> } = {
 
 const CategoryFilters: React.FC<CategoryFiltersProps> = ({ categories, selectedCategory, onSelectCategory }) => {
   return (
-    <div className="py-2 pt-4">
-      <div className="overflow-x-auto no-scrollbar">
-        <div className="flex space-x-3 pb-2 px-4">
+    <div className="py-3">
+      <div className="overflow-x-auto overflow-y-visible no-scrollbar">
+        <div className="flex space-x-3 pb-2 px-4 pt-1">
           {categories.map((category) => {
             const IconComponent = iconMap[category.icon];
             return (

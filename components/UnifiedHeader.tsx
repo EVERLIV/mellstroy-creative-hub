@@ -24,7 +24,7 @@ const UnifiedHeader: React.FC<UnifiedHeaderProps> = ({
     onSelectCategory,
 }) => {
     return (
-        <header className="sticky top-0 z-40 bg-white shadow-sm pt-3 pb-2">
+        <header className="sticky top-0 z-40 bg-white shadow-sm pt-3 pb-4">
             <div className="px-4">
                 {/* Top Bar: Menu and District */}
                 <div className="flex items-center justify-between">
@@ -50,7 +50,7 @@ const UnifiedHeader: React.FC<UnifiedHeaderProps> = ({
             </div>
 
             {/* Category Filters */}
-            <div className="mt-3 relative z-10">
+            <div className="mt-4 relative z-10 overflow-visible">
                 <CategoryFilters
                     categories={categories}
                     selectedCategory={selectedCategory}
