@@ -78,15 +78,69 @@ const DashboardPage: React.FC<DashboardPageProps> = () => {
     // fetchEvents();
   }, []);
 
+  // Helper to get Supabase storage URL for category icons
+  const getCategoryIconUrl = (iconName: string) => {
+    const supabaseUrl = supabase.storage.from('category-icons').getPublicUrl(iconName);
+    return supabaseUrl.data.publicUrl;
+  };
+
   const categories = [
-    { id: 'gym', name: 'Gym', icon: Dumbbell, color: 'from-orange-100 to-orange-50' },
-    { id: 'yoga', name: 'Yoga', icon: Heart, color: 'from-purple-100 to-purple-50' },
-    { id: 'boxing', name: 'Boxing', icon: Trophy, color: 'from-red-100 to-red-50' },
-    { id: 'running', name: 'Running', icon: TrendingUp, color: 'from-blue-100 to-blue-50' },
-    { id: 'swimming', name: 'Swimming', icon: Users, color: 'from-cyan-100 to-cyan-50' },
-    { id: 'dance', name: 'Dance', icon: Sparkles, color: 'from-pink-100 to-pink-50' },
-    { id: 'tennis', name: 'Tennis', icon: Trophy, color: 'from-green-100 to-green-50' },
-    { id: 'more', name: 'More', icon: MapPin, color: 'from-slate-100 to-slate-50' },
+    { 
+      id: 'gym', 
+      name: 'Gym', 
+      icon: Dumbbell, 
+      imageUrl: null, // Replace with: getCategoryIconUrl('gym.png') after uploading
+      color: 'from-orange-100 to-orange-50' 
+    },
+    { 
+      id: 'yoga', 
+      name: 'Yoga', 
+      icon: Heart, 
+      imageUrl: null, // Replace with: getCategoryIconUrl('yoga.png') after uploading
+      color: 'from-purple-100 to-purple-50' 
+    },
+    { 
+      id: 'boxing', 
+      name: 'Boxing', 
+      icon: Trophy, 
+      imageUrl: null, // Replace with: getCategoryIconUrl('boxing.png') after uploading
+      color: 'from-red-100 to-red-50' 
+    },
+    { 
+      id: 'running', 
+      name: 'Running', 
+      icon: TrendingUp, 
+      imageUrl: null, // Replace with: getCategoryIconUrl('running.png') after uploading
+      color: 'from-blue-100 to-blue-50' 
+    },
+    { 
+      id: 'swimming', 
+      name: 'Swimming', 
+      icon: Users, 
+      imageUrl: null, // Replace with: getCategoryIconUrl('swimming.png') after uploading
+      color: 'from-cyan-100 to-cyan-50' 
+    },
+    { 
+      id: 'dance', 
+      name: 'Dance', 
+      icon: Sparkles, 
+      imageUrl: null, // Replace with: getCategoryIconUrl('dance.png') after uploading
+      color: 'from-pink-100 to-pink-50' 
+    },
+    { 
+      id: 'tennis', 
+      name: 'Tennis', 
+      icon: Trophy, 
+      imageUrl: null, // Replace with: getCategoryIconUrl('tennis.png') after uploading
+      color: 'from-green-100 to-green-50' 
+    },
+    { 
+      id: 'more', 
+      name: 'More', 
+      icon: MapPin, 
+      imageUrl: null, // Replace with: getCategoryIconUrl('more.png') after uploading
+      color: 'from-slate-100 to-slate-50' 
+    },
   ];
 
   const aiFeatures = [
@@ -163,8 +217,16 @@ const DashboardPage: React.FC<DashboardPageProps> = () => {
                   onClick={() => handleCategoryClick(category.id)}
                   className="flex flex-col items-center gap-2 group"
                 >
-                  <div className={`w-16 h-16 rounded-2xl bg-gradient-to-br ${category.color} flex items-center justify-center shadow-md group-hover:shadow-lg transition-all duration-200 group-hover:scale-105`}>
-                    <IconComponent className="w-7 h-7 text-slate-700" />
+                  <div className={`w-16 h-16 rounded-2xl bg-gradient-to-br ${category.color} flex items-center justify-center shadow-md group-hover:shadow-lg transition-all duration-200 group-hover:scale-105 overflow-hidden`}>
+                    {category.imageUrl ? (
+                      <img 
+                        src={category.imageUrl} 
+                        alt={category.name}
+                        className="w-10 h-10 object-contain"
+                      />
+                    ) : (
+                      <IconComponent className="w-7 h-7 text-slate-700" />
+                    )}
                   </div>
                   <span className="text-xs font-medium text-slate-700 text-center">{category.name}</span>
                 </button>

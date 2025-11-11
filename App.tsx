@@ -18,6 +18,7 @@ import VerificationPage from './pages/VerificationPage';
 import EventsFlowPage from './pages/EventsFlowPage';
 import MealPlannerPage from './pages/MealPlannerPage';
 import AICoachPage from './pages/AICoachPage';
+import UploadCategoryIconsPage from './pages/UploadCategoryIconsPage';
 import BottomNav from './components/BottomNav';
 import BookingModal from './components/BookingModal';
 import ReviewModal from './components/ReviewModal';
@@ -270,6 +271,14 @@ const AppRoutes = () => {
                 onBack={() => window.history.back()}
                 onComplete={() => window.history.back()}
               />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/upload-category-icons"
+          element={
+            <ProtectedRoute>
+              <UploadCategoryIconsPage />
             </ProtectedRoute>
           }
         />
