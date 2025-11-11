@@ -221,6 +221,11 @@ const DashboardPage: React.FC<DashboardPageProps> = () => {
                         className="w-full h-full object-contain transition-transform duration-200 group-hover:scale-105"
                       />
                       <div className="absolute inset-0 bg-orange-500/0 group-hover:bg-orange-500/10 transition-colors duration-200 rounded-xl"></div>
+                      {category.id === 'gym' && (
+                        <div className="absolute top-1 right-1 text-xs animate-pulse">
+                          🔥
+                        </div>
+                      )}
                     </div>
                   ) : (
                     <div className="relative w-[70px] h-[70px] flex items-center justify-center rounded-xl bg-slate-100 overflow-hidden">
