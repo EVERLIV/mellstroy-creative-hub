@@ -133,6 +133,10 @@ const Explore: React.FC<ExploreProps> = ({
             imageUrls: c.image_urls || [],
             capacity: c.capacity,
             classType: c.class_type as 'Indoor' | 'Outdoor' | 'Home',
+            schedule: c.schedule_days && c.schedule_time ? {
+              days: c.schedule_days,
+              time: c.schedule_time
+            } : undefined,
           })),
         chatHistory: [],
       }));
