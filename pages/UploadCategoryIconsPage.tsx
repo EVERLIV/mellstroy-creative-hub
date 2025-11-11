@@ -7,6 +7,7 @@ import { useNavigate } from 'react-router-dom';
 const categories = [
   { id: 'gym', name: 'Gym' },
   { id: 'yoga', name: 'Yoga' },
+  { id: 'tennis', name: 'Tennis' },
   { id: 'boxing', name: 'Boxing' },
   { id: 'running', name: 'Running' },
   { id: 'swimming', name: 'Swimming' },

@@ -100,6 +100,13 @@ const DashboardPage: React.FC<DashboardPageProps> = () => {
       color: 'from-purple-100 to-purple-50' 
     },
     { 
+      id: 'tennis', 
+      name: 'Tennis', 
+      icon: Trophy, 
+      imageUrl: getCategoryIconUrl('tennis.png'),
+      color: 'from-green-100 to-green-50' 
+    },
+    { 
       id: 'boxing', 
       name: 'Boxing', 
       icon: Trophy, 

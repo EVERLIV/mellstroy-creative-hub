@@ -64,6 +64,7 @@ export const DIET_TYPES: { id: DietType, label: string }[] = [
 export const CATEGORIES: Category[] = [
   { id: 'gym', name: 'Gym', icon: 'dumbbell' },
   { id: 'yoga', name: 'Yoga', icon: 'flower-2' },
+  { id: 'tennis', name: 'Tennis', icon: 'trophy' },
   { id: 'boxing', name: 'Boxing', icon: 'hand' },
   { id: 'swimming', name: 'Swimming', icon: 'waves' },
   { id: 'pickleball', name: 'Pickleball', icon: 'disc-3' },

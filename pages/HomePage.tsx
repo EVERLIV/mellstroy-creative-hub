@@ -45,6 +45,7 @@ const HomePage: React.FC<HomePageProps> = ({ trainers, onInitiateBooking, onOpen
       const categorySpecialtyMap: { [key: string]: string[] } = {
           gym: ['strength training', 'hiit', 'personal training', 'gym coach'],
           yoga: ['yoga', 'pilates'],
+          tennis: ['tennis'],
           boxing: ['boxing', 'kickboxing', 'mma'],
           swimming: ['swimming'],
           pickleball: ['pickleball'],
