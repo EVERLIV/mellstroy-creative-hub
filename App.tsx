@@ -321,10 +321,16 @@ const AppRoutes = () => {
       {user && <BottomNav />}
       {bookingModalData && (
         <BookingModal
-          trainer={bookingModalData.trainer}
-          cls={bookingModalData.cls}
+          bookingTarget={bookingModalData}
+          onConfirmBooking={(trainerId, classId, startDate, period) => {
+            // Handle booking confirmation
+            toast({
+              title: "Booking Confirmed!",
+              description: `Your booking has been confirmed for ${period === 'once' ? '1 session' : '4 weeks'}`,
+            });
+            setBookingModalData(null);
+          }}
           onClose={() => setBookingModalData(null)}
-          onBook={() => setBookingModalData(null)}
         />
       )}
       {reviewModalData && (
