@@ -7,6 +7,7 @@ import { Trainer, UserRole, Class } from '../types';
 import ProfilePage from './ProfilePage';
 import StudentProfilePage from './StudentProfilePage';
 import EditAboutMePage from './EditAboutMePage';
+import EditTrainerProfilePage from './EditTrainerProfilePage';
 import AddEditClassModal from '../components/AddEditClassModal';
 
 const ProfileContainer: React.FC = () => {
@@ -98,6 +99,7 @@ const ProfileContainer: React.FC = () => {
         verificationStatus: profile.is_verified ? 'verified' : 'unverified',
         isPremium: profile.is_premium || false,
         bio: profile.bio || '',
+        phone: profile.phone || '',
         reviewsData: [],
         classes,
         chatHistory: [],
@@ -203,22 +205,30 @@ const ProfileContainer: React.FC = () => {
     if (!user) return;
 
     try {
+      const updateData: any = {
+        username: updatedUser.name,
+        bio: updatedUser.bio,
+        location: updatedUser.location,
+        avatar_url: updatedUser.imageUrl,
+      };
+
+      // Add role-specific fields
+      if (userRole === 'trainer') {
+        updateData.specialty = updatedUser.specialty;
+        updateData.price_per_hour = updatedUser.price;
+        updateData.phone = updatedUser.phone;
+      } else {
+        // Student fields
+        updateData.age = updatedUser.age;
+        updateData.height = updatedUser.height;
+        updateData.weight = updatedUser.weight;
+        updateData.goals = updatedUser.goals;
+        updateData.interests = updatedUser.interests;
+      }
+
       const { error } = await supabase
         .from('profiles')
-        .update({
-          username: updatedUser.name,
-          bio: updatedUser.bio,
-          location: updatedUser.location,
-          specialty: updatedUser.specialty,
-          age: updatedUser.age,
-          height: updatedUser.height,
-          weight: updatedUser.weight,
-          goals: updatedUser.goals,
-          interests: updatedUser.interests,
-          avatar_url: updatedUser.imageUrl,
-          price_per_hour: updatedUser.price,
-          phone: updatedUser.name, // Can be extended later
-        })
+        .update(updateData)
         .eq('id', user.id);
 
       if (error) throw error;
@@ -354,15 +364,25 @@ const ProfileContainer: React.FC = () => {
     );
   }
 
-  // Show edit profile page for students
-  if (isEditingProfile && userRole === 'student') {
-    return (
-      <EditAboutMePage
-        user={currentUser}
-        onSave={handleSaveProfile}
-        onCancel={() => setIsEditingProfile(false)}
-      />
-    );
+  // Show edit profile page
+  if (isEditingProfile) {
+    if (userRole === 'trainer') {
+      return (
+        <EditTrainerProfilePage
+          user={currentUser}
+          onSave={handleSaveProfile}
+          onCancel={() => setIsEditingProfile(false)}
+        />
+      );
+    } else {
+      return (
+        <EditAboutMePage
+          user={currentUser}
+          onSave={handleSaveProfile}
+          onCancel={() => setIsEditingProfile(false)}
+        />
+      );
+    }
   }
 
   return (

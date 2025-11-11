@@ -56,6 +56,7 @@ export interface Trainer {
   favoriteTrainerIds?: string[];
   onboardingCompleted?: boolean;
   role?: UserRole;
+  phone?: string;
   // New student profile fields
   age?: number;
   height?: number; // in cm
