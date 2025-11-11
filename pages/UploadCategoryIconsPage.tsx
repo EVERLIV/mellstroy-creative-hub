@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { ArrowLeft, Upload, Check, X, FolderUp } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { ArrowLeft, FolderUp, Image } from 'lucide-react';
 import { supabase } from '../src/integrations/supabase/client';
 import { useToast } from '../src/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
@@ -18,8 +18,29 @@ const categories = [
 const UploadCategoryIconsPage: React.FC = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
-  const [uploadStatus, setUploadStatus] = useState<Record<string, 'idle' | 'uploading' | 'success' | 'error'>>({});
   const [isDragging, setIsDragging] = useState(false);
+  const [uploadedFiles, setUploadedFiles] = useState<string[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchUploadedFiles();
+  }, []);
+
+  const fetchUploadedFiles = async () => {
+    try {
+      const { data, error } = await supabase.storage
+        .from('category-icons')
+        .list();
+
+      if (error) throw error;
+      
+      setUploadedFiles(data?.map(file => file.name) || []);
+    } catch (error) {
+      console.error('Error fetching files:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleFileUpload = async (file: File) => {
     // Extract category id from filename (e.g., "gym.png" -> "gym")
@@ -36,8 +57,6 @@ const UploadCategoryIconsPage: React.FC = () => {
       });
       return;
     }
-
-    setUploadStatus(prev => ({ ...prev, [categoryId]: 'uploading' }));
 
     try {
       // Validate file type
@@ -71,14 +90,15 @@ const UploadCategoryIconsPage: React.FC = () => {
 
       if (uploadError) throw uploadError;
 
-      setUploadStatus(prev => ({ ...prev, [categoryId]: 'success' }));
+      // Refresh the uploaded files list
+      await fetchUploadedFiles();
+      
       toast({
         title: 'Success',
         description: `${category.name} icon uploaded successfully`,
       });
     } catch (error: any) {
       console.error('Upload error:', error);
-      setUploadStatus(prev => ({ ...prev, [categoryId]: 'error' }));
       toast({
         title: 'Upload failed',
         description: error.message || 'Failed to upload icon',
@@ -92,18 +112,6 @@ const UploadCategoryIconsPage: React.FC = () => {
     
     // Upload all files in parallel
     await Promise.all(fileArray.map(file => handleFileUpload(file)));
-    
-    const successCount = fileArray.filter(f => {
-      const categoryId = f.name.toLowerCase().split('.')[0];
-      return uploadStatus[categoryId] === 'success';
-    }).length;
-    
-    if (successCount === fileArray.length) {
-      toast({
-        title: 'All uploads complete',
-        description: `Successfully uploaded ${successCount} icon${successCount > 1 ? 's' : ''}`,
-      });
-    }
   };
 
   const handleDrop = (e: React.DragEvent) => {
@@ -178,49 +186,41 @@ const UploadCategoryIconsPage: React.FC = () => {
           </label>
         </div>
 
-        {/* Individual Category Status */}
-        <div className="bg-white rounded-2xl shadow-lg p-6 space-y-4">
-          <h2 className="text-lg font-semibold text-slate-900 mb-4">Upload Status</h2>
-          {categories.map((category) => {
-            const status = uploadStatus[category.id] || 'idle';
-            return (
-              <div
-                key={category.id}
-                className="flex items-center justify-between p-4 bg-slate-50 rounded-xl"
-              >
-                <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-orange-100 to-pink-100 flex items-center justify-center">
-                    {status === 'success' ? (
-                      <Check className="w-6 h-6 text-green-600" />
-                    ) : status === 'error' ? (
-                      <X className="w-6 h-6 text-red-600" />
-                    ) : status === 'uploading' ? (
-                      <div className="w-6 h-6 border-2 border-orange-500 border-t-transparent rounded-full animate-spin" />
-                    ) : (
-                      <Upload className="w-6 h-6 text-slate-600" />
-                    )}
+        {/* Uploaded Files */}
+        <div className="bg-white rounded-2xl shadow-lg p-6">
+          <h2 className="text-lg font-semibold text-slate-900 mb-4">Uploaded Files</h2>
+          {loading ? (
+            <div className="text-center py-8 text-slate-500">Loading files...</div>
+          ) : uploadedFiles.length === 0 ? (
+            <div className="text-center py-8 text-slate-500">No files uploaded yet</div>
+          ) : (
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+              {uploadedFiles.map((fileName) => {
+                const fileUrl = supabase.storage
+                  .from('category-icons')
+                  .getPublicUrl(fileName).data.publicUrl;
+                
+                return (
+                  <div key={fileName} className="flex flex-col items-center gap-2 p-3 bg-slate-50 rounded-xl">
+                    <div className="w-20 h-20 rounded-lg overflow-hidden bg-white flex items-center justify-center">
+                      <img 
+                        src={fileUrl} 
+                        alt={fileName}
+                        className="w-full h-full object-contain"
+                        onError={(e) => {
+                          e.currentTarget.src = '';
+                          e.currentTarget.style.display = 'none';
+                        }}
+                      />
+                    </div>
+                    <span className="text-xs font-medium text-slate-700 text-center break-all">
+                      {fileName}
+                    </span>
                   </div>
-                  <div>
-                    <h3 className="font-semibold text-slate-900">{category.name}</h3>
-                    <p className="text-xs text-slate-500">
-                      Expected filename: {category.id}.png/jpg/webp/svg
-                    </p>
-                  </div>
-                </div>
-                <div className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                  status === 'success' ? 'bg-green-100 text-green-700' :
-                  status === 'error' ? 'bg-red-100 text-red-700' :
-                  status === 'uploading' ? 'bg-blue-100 text-blue-700' :
-                  'bg-slate-200 text-slate-600'
-                }`}>
-                  {status === 'uploading' ? 'Uploading...' :
-                   status === 'success' ? 'Uploaded' :
-                   status === 'error' ? 'Failed' :
-                   'Pending'}
-                </div>
-              </div>
-            );
-          })}
+                );
+              })}
+            </div>
+          )}
         </div>
 
         <div className="mt-6 bg-blue-50 border border-blue-200 rounded-xl p-4">
