@@ -6,7 +6,8 @@ import TrainerGrid from '../components/TrainerGrid';
 import ViewToggle from '../components/ViewToggle';
 import TrainerDetailPage from '../components/TrainerDetailPage';
 import CategoryFilters from '../components/CategoryFilters';
-import { Search } from 'lucide-react';
+import DistrictFilterModal from '../components/DistrictFilterModal';
+import { Search, MapPin } from 'lucide-react';
 
 interface ExploreProps {
   onInitiateBooking?: (target: { trainer: Trainer; cls: Class }) => void;
@@ -35,6 +36,8 @@ const Explore: React.FC<ExploreProps> = ({
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(true);
+  const [selectedDistrict, setSelectedDistrict] = useState<string>('All Districts');
+  const [isDistrictModalOpen, setIsDistrictModalOpen] = useState(false);
 
   useEffect(() => {
     loadTrainers();
@@ -42,7 +45,7 @@ const Explore: React.FC<ExploreProps> = ({
 
   useEffect(() => {
     filterTrainers();
-  }, [trainers, selectedCategory, searchQuery]);
+  }, [trainers, selectedCategory, searchQuery, selectedDistrict]);
 
   const loadTrainers = async () => {
     try {
@@ -145,6 +148,13 @@ const Explore: React.FC<ExploreProps> = ({
       );
     }
 
+    // Filter by district
+    if (selectedDistrict && selectedDistrict !== 'All Districts') {
+      filtered = filtered.filter(trainer =>
+        trainer.location.includes(selectedDistrict)
+      );
+    }
+
     // Filter by search query
     if (searchQuery) {
       const query = searchQuery.toLowerCase();
@@ -178,6 +188,17 @@ const Explore: React.FC<ExploreProps> = ({
           <div className="p-4">
             <h1 className="text-xl font-bold text-slate-800 mb-3">Explore Trainers</h1>
             
+            {/* District Filter Button */}
+            <button
+              onClick={() => setIsDistrictModalOpen(true)}
+              className="w-full mb-3 px-4 py-2.5 bg-slate-100 rounded-xl flex items-center justify-between text-sm hover:bg-slate-200 transition-colors"
+            >
+              <div className="flex items-center gap-2">
+                <MapPin className="w-5 h-5 text-slate-600" />
+                <span className="text-slate-700 font-medium">{selectedDistrict}</span>
+              </div>
+            </button>
+
             {/* Search Bar */}
             <div className="relative mb-3">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-5 h-5" />
@@ -238,6 +259,17 @@ const Explore: React.FC<ExploreProps> = ({
           </div>
         </div>
       )}
+
+      {/* District Filter Modal */}
+      <DistrictFilterModal
+        isOpen={isDistrictModalOpen}
+        onClose={() => setIsDistrictModalOpen(false)}
+        onSelectDistrict={(district) => {
+          setSelectedDistrict(district);
+          setIsDistrictModalOpen(false);
+        }}
+        currentDistrict={selectedDistrict}
+      />
     </div>
   );
 };
