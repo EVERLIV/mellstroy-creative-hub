@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { ArrowLeft, CheckCircle, FileText, UploadCloud, Loader, AlertTriangle } from 'lucide-react';
-import { uploadFile } from '../firebase';
+import { supabase } from '../src/integrations/supabase/client';
 import { Trainer } from '../types';
 
 interface VerificationPageProps {
@@ -31,13 +31,25 @@ const VerificationPage: React.FC<VerificationPageProps> = ({ currentUser, onBack
         setError(null);
         try {
             // Upload ID file (mandatory)
-            const idPath = `verification_documents/${currentUser.id}/id_${Date.now()}_${idFile.name}`;
-            await uploadFile(idFile, idPath);
+            const idExt = idFile.name.split('.').pop();
+            const idFileName = `${currentUser.id}/id_${Date.now()}.${idExt}`;
+            
+            const { error: idError } = await supabase.storage
+                .from('verification-docs')
+                .upload(idFileName, idFile);
+
+            if (idError) throw idError;
 
             // Upload cert file (optional)
             if (certFile) {
-                const certPath = `verification_documents/${currentUser.id}/cert_${Date.now()}_${certFile.name}`;
-                await uploadFile(certFile, certPath);
+                const certExt = certFile.name.split('.').pop();
+                const certFileName = `${currentUser.id}/cert_${Date.now()}.${certExt}`;
+                
+                const { error: certError } = await supabase.storage
+                    .from('verification-docs')
+                    .upload(certFileName, certFile);
+
+                if (certError) throw certError;
             }
             
             // If uploads succeed, proceed

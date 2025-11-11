@@ -2,7 +2,7 @@ import React, { useState, useRef } from 'react';
 import { Trainer } from '../types';
 import { HCMC_DISTRICTS, FITNESS_ACTIVITIES, FITNESS_GOALS } from '../constants';
 import { Save, Camera, Loader } from 'lucide-react';
-import { uploadFile } from '../firebase';
+import { supabase } from '../src/integrations/supabase/client';
 
 interface EditAboutMePageProps {
     user: Trainer;
@@ -45,9 +45,20 @@ const EditAboutMePage: React.FC<EditAboutMePageProps> = ({ user, onSave, onCance
 
         setIsUploading(true);
         try {
-            const path = `profile_pictures/${user.id}/${Date.now()}_${file.name}`;
-            const downloadURL = await uploadFile(file, path);
-            setFormData(prev => ({ ...prev, imageUrl: downloadURL }));
+            const fileExt = file.name.split('.').pop();
+            const fileName = `${user.id}/${Date.now()}.${fileExt}`;
+            
+            const { error: uploadError } = await supabase.storage
+                .from('avatars')
+                .upload(fileName, file);
+
+            if (uploadError) throw uploadError;
+
+            const { data: { publicUrl } } = supabase.storage
+                .from('avatars')
+                .getPublicUrl(fileName);
+
+            setFormData(prev => ({ ...prev, imageUrl: publicUrl }));
         } catch (error) {
             console.error("Failed to upload image:", error);
             alert("Image upload failed. Please try again.");
