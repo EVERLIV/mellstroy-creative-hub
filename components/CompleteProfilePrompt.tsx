@@ -24,21 +24,21 @@ const CompleteProfilePrompt: React.FC<CompleteProfilePromptProps> = ({ role, onC
     const content = messages[role];
 
     return (
-        <div className="bg-gradient-to-br from-orange-50 to-blue-50 p-4 rounded-xl shadow-sm border border-slate-200/80">
+        <div className="bg-gradient-to-br from-orange-50 to-blue-50 p-3 rounded-xl shadow-sm border border-slate-200/80">
             <div className="flex items-start gap-3 mb-3">
                 <div className="flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center bg-white shadow-inner">
                     <UserCheck className="w-6 h-6 text-emerald-500" />
                 </div>
                 <div className="flex-1 min-w-0">
-                    <h3 className="font-bold text-slate-800">{content.title}</h3>
-                    <p className="text-sm text-slate-500 mt-1">{content.description}</p>
+                    <h3 className="font-bold text-slate-800 text-sm">{content.title}</h3>
+                    <p className="text-xs text-slate-600 mt-0.5">{content.description}</p>
                 </div>
             </div>
             <button 
                 onClick={onComplete} 
-                className="w-full flex items-center justify-center gap-2 bg-[#FF6B35] text-white font-semibold py-2.5 px-4 rounded-lg hover:bg-orange-600 transition-colors text-sm"
+                className="w-full flex items-center justify-center gap-2 bg-[#FF6B35] text-white font-semibold py-2 px-4 rounded-lg hover:bg-orange-600 transition-all duration-200 text-sm shadow-md"
             >
-                {content.button}
+                <span>{content.button}</span>
                 <ArrowRight className="w-4 h-4" />
             </button>
         </div>
