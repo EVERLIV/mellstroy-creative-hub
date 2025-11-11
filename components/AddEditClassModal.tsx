@@ -1,6 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { Class, ClassType } from '../types';
-import { X, Save, Building, Sun, Home } from 'lucide-react';
+import { X, Save, Building, Sun, Home, Upload, Trash2 } from 'lucide-react';
+import { supabase } from '@/src/integrations/supabase/client';
+import { useAuth } from '@/src/hooks/useAuth';
+import { useToast } from '@/src/hooks/use-toast';
 
 interface AddEditClassModalProps {
     cls: Class | null | undefined;
@@ -13,6 +16,12 @@ const dayOptions = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 type FormData = Omit<Class, 'id' | 'bookings'>;
 
 const AddEditClassModal: React.FC<AddEditClassModalProps> = ({ cls, onSave, onCancel }) => {
+    const { user } = useAuth();
+    const { toast } = useToast();
+    const [uploading, setUploading] = useState(false);
+    const [uploadedImages, setUploadedImages] = useState<string[]>([]);
+    const [isPremium, setIsPremium] = useState(false);
+    
     const [formData, setFormData] = useState<FormData>({
         name: '',
         description: '',
@@ -23,6 +32,21 @@ const AddEditClassModal: React.FC<AddEditClassModalProps> = ({ cls, onSave, onCa
         schedule: { days: [], time: '09:00' },
         classType: 'Indoor'
     });
+    
+    useEffect(() => {
+        const fetchUserProfile = async () => {
+            if (!user) return;
+            const { data } = await supabase
+                .from('profiles')
+                .select('is_premium')
+                .eq('id', user.id)
+                .single();
+            if (data) {
+                setIsPremium(data.is_premium || false);
+            }
+        };
+        fetchUserProfile();
+    }, [user]);
     
     useEffect(() => {
         if (cls) {
@@ -36,6 +60,13 @@ const AddEditClassModal: React.FC<AddEditClassModalProps> = ({ cls, onSave, onCa
                 schedule: cls.schedule || { days: [], time: '09:00' },
                 classType: cls.classType || 'Indoor',
             });
+            // Load existing images if available
+            const dbCls = cls as any;
+            if (dbCls.image_urls && dbCls.image_urls.length > 0) {
+                setUploadedImages(dbCls.image_urls);
+            } else if (cls.imageUrl) {
+                setUploadedImages([cls.imageUrl]);
+            }
         } else {
             // Reset to default for new class
             setFormData({
@@ -48,6 +79,7 @@ const AddEditClassModal: React.FC<AddEditClassModalProps> = ({ cls, onSave, onCa
                 schedule: { days: [], time: '09:00' },
                 classType: 'Indoor'
             });
+            setUploadedImages([]);
         }
     }, [cls]);
 
@@ -80,13 +112,106 @@ const AddEditClassModal: React.FC<AddEditClassModalProps> = ({ cls, onSave, onCa
         });
     };
     
+    const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const files = e.target.files;
+        if (!files || !user) return;
+
+        const maxPhotos = isPremium ? 6 : 1;
+        const remainingSlots = maxPhotos - uploadedImages.length;
+
+        if (files.length > remainingSlots) {
+            toast({
+                title: "Upload limit exceeded",
+                description: `You can only upload ${remainingSlots} more photo${remainingSlots !== 1 ? 's' : ''}. ${isPremium ? 'Premium' : 'Basic'} users can upload up to ${maxPhotos} photo${maxPhotos !== 1 ? 's' : ''}.`,
+                variant: "destructive"
+            });
+            return;
+        }
+
+        const MAX_FILE_SIZE = 3 * 1024 * 1024; // 3MB
+
+        for (let i = 0; i < files.length; i++) {
+            const file = files[i];
+            if (file.size > MAX_FILE_SIZE) {
+                toast({
+                    title: "File too large",
+                    description: `${file.name} exceeds 3MB limit. Please choose a smaller image.`,
+                    variant: "destructive"
+                });
+                continue;
+            }
+
+            if (!file.type.startsWith('image/')) {
+                toast({
+                    title: "Invalid file type",
+                    description: `${file.name} is not an image file.`,
+                    variant: "destructive"
+                });
+                continue;
+            }
+
+            setUploading(true);
+            try {
+                const fileExt = file.name.split('.').pop();
+                const fileName = `${user.id}/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+
+                const { data, error } = await supabase.storage
+                    .from('class-images')
+                    .upload(fileName, file);
+
+                if (error) throw error;
+
+                const { data: { publicUrl } } = supabase.storage
+                    .from('class-images')
+                    .getPublicUrl(fileName);
+
+                setUploadedImages(prev => [...prev, publicUrl]);
+                
+                toast({
+                    title: "Image uploaded",
+                    description: "Your image has been uploaded successfully.",
+                });
+            } catch (error) {
+                console.error('Upload error:', error);
+                toast({
+                    title: "Upload failed",
+                    description: "Failed to upload image. Please try again.",
+                    variant: "destructive"
+                });
+            } finally {
+                setUploading(false);
+            }
+        }
+        
+        // Reset input
+        e.target.value = '';
+    };
+
+    const handleRemoveImage = (index: number) => {
+        setUploadedImages(prev => prev.filter((_, i) => i !== index));
+    };
+
     const handleSave = (e: React.FormEvent) => {
         e.preventDefault();
+        
+        if (uploadedImages.length === 0) {
+            toast({
+                title: "No images",
+                description: "Please upload at least one image for your class.",
+                variant: "destructive"
+            });
+            return;
+        }
+        
         const finalData: Class = {
             id: cls?.id || 0,
             bookings: cls?.bookings || [],
             ...formData,
-            ...(cls as any)?._dbId && { _dbId: (cls as any)._dbId }
+            imageUrl: uploadedImages[0], // Keep backward compatibility
+            ...(cls as any)?._dbId && { 
+                _dbId: (cls as any)._dbId,
+                image_urls: uploadedImages
+            }
         };
         onSave(finalData);
     };
@@ -184,8 +309,59 @@ const AddEditClassModal: React.FC<AddEditClassModalProps> = ({ cls, onSave, onCa
                              </div>
                         </div>
                         <div>
-                            <label htmlFor="imageUrl" className="block text-sm font-medium text-slate-600 mb-1">Image URL</label>
-                            <input type="text" id="imageUrl" name="imageUrl" value={formData.imageUrl} onChange={handleChange} required className="w-full px-3 py-2 bg-slate-50 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-slate-800" />
+                            <label className="block text-sm font-medium text-slate-600 mb-2">
+                                Class Photos ({uploadedImages.length}/{isPremium ? 6 : 1})
+                                <span className="ml-2 text-xs text-slate-400">Max 3MB per image</span>
+                            </label>
+                            
+                            {uploadedImages.length > 0 && (
+                                <div className="grid grid-cols-3 gap-2 mb-3">
+                                    {uploadedImages.map((url, index) => (
+                                        <div key={index} className="relative group">
+                                            <img 
+                                                src={url} 
+                                                alt={`Class photo ${index + 1}`}
+                                                className="w-full h-20 object-cover rounded-lg"
+                                            />
+                                            <button
+                                                type="button"
+                                                onClick={() => handleRemoveImage(index)}
+                                                className="absolute top-1 right-1 p-1 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                                            >
+                                                <Trash2 className="w-3 h-3" />
+                                            </button>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                            
+                            {uploadedImages.length < (isPremium ? 6 : 1) && (
+                                <label className="flex flex-col items-center justify-center w-full h-24 border-2 border-dashed border-slate-300 rounded-lg cursor-pointer bg-slate-50 hover:bg-slate-100 transition-colors">
+                                    <div className="flex flex-col items-center justify-center pt-3 pb-2">
+                                        <Upload className="w-6 h-6 text-slate-400 mb-1" />
+                                        <p className="text-xs text-slate-500">
+                                            {uploading ? 'Uploading...' : 'Click to upload'}
+                                        </p>
+                                        <p className="text-xs text-slate-400">
+                                            {isPremium ? 'Up to 6 photos' : '1 photo only'}
+                                        </p>
+                                    </div>
+                                    <input
+                                        type="file"
+                                        className="hidden"
+                                        accept="image/*"
+                                        multiple={isPremium}
+                                        onChange={handleImageUpload}
+                                        disabled={uploading}
+                                    />
+                                </label>
+                            )}
+                            
+                            {!isPremium && (
+                                <p className="text-xs text-amber-600 mt-2">
+                                    💎 Upgrade to Premium to upload up to 6 photos
+                                </p>
+                            )}
                         </div>
                     </div>
                 

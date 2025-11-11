@@ -72,7 +72,7 @@ const ProfileContainer: React.FC = () => {
             description: c.description || '',
             duration: c.duration_minutes,
             price: parseFloat(c.price.toString()),
-            imageUrl: c.image_url || 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48',
+            imageUrl: c.image_urls && c.image_urls.length > 0 ? c.image_urls[0] : (c.image_url || 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48'),
             capacity: c.capacity,
             classType: c.class_type as any,
             schedule: c.schedule_days && c.schedule_time ? {
@@ -81,6 +81,7 @@ const ProfileContainer: React.FC = () => {
             } : undefined,
             bookings: [],
             _dbId: c.id, // Store actual DB ID separately
+            image_urls: c.image_urls || (c.image_url ? [c.image_url] : []),
           }));
         }
       }
@@ -239,7 +240,7 @@ const ProfileContainer: React.FC = () => {
     }
   };
 
-  const handleClassSave = async (cls: Class & { _dbId?: string }) => {
+  const handleClassSave = async (cls: Class & { _dbId?: string; image_urls?: string[] }) => {
     if (!user) return;
 
     try {
@@ -256,6 +257,7 @@ const ProfileContainer: React.FC = () => {
             capacity: cls.capacity,
             class_type: cls.classType,
             image_url: cls.imageUrl,
+            image_urls: cls.image_urls || [cls.imageUrl],
             schedule_days: cls.schedule?.days,
             schedule_time: cls.schedule?.time,
           });
@@ -273,6 +275,7 @@ const ProfileContainer: React.FC = () => {
             capacity: cls.capacity,
             class_type: cls.classType,
             image_url: cls.imageUrl,
+            image_urls: cls.image_urls || [cls.imageUrl],
             schedule_days: cls.schedule?.days,
             schedule_time: cls.schedule?.time,
           })

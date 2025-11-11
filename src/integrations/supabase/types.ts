@@ -160,6 +160,7 @@ export type Database = {
           duration_minutes: number
           id: string
           image_url: string | null
+          image_urls: string[] | null
           name: string
           price: number
           schedule_days: string[] | null
@@ -175,6 +176,7 @@ export type Database = {
           duration_minutes: number
           id?: string
           image_url?: string | null
+          image_urls?: string[] | null
           name: string
           price: number
           schedule_days?: string[] | null
@@ -190,6 +192,7 @@ export type Database = {
           duration_minutes?: number
           id?: string
           image_url?: string | null
+          image_urls?: string[] | null
           name?: string
           price?: number
           schedule_days?: string[] | null
