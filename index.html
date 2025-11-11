@@ -1,24 +1,141 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Mellstroy Challenge - Community Challenge Platform</title>
-    <meta name="description" content="Create, join and complete challenges with the community. Vote for ideas and track your progress" />
-    <meta name="author" content="Mellstroy" />
+    <title>RhinoFit</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+      body {
+        font-family: 'Inter', sans-serif;
+      }
+      /* Hide scrollbar for Chrome, Safari and Opera */
+      .no-scrollbar::-webkit-scrollbar {
+          display: none;
+      }
+      /* Hide scrollbar for IE, Edge and Firefox */
+      .no-scrollbar {
+          -ms-overflow-style: none;  /* IE and Edge */
+          scrollbar-width: none;  /* Firefox */
+      }
+      /* Toast Animation */
+      @keyframes fade-in-down {
+        from {
+          opacity: 0;
+          transform: translate(-50%, -20px);
+        }
+        to {
+          opacity: 1;
+          transform: translate(-50%, 0);
+        }
+      }
+      .animate-fade-in-down {
+        animation: fade-in-down 0.5s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+      }
 
-    <meta property="og:title" content="Mellstroy Challenge - Community Challenge Platform" />
-    <meta property="og:description" content="Create, join and complete challenges with the community. Vote for ideas and track your progress" />
-    <meta property="og:type" content="website" />
-    <meta property="og:image" content="https://lovable.dev/opengraph-image-p98pqg.png" />
+      /* Page Transitions */
+      @keyframes slide-in-from-right {
+        from { transform: translateX(100%); }
+        to { transform: translateX(0); }
+      }
+      .animate-slide-in-from-right {
+        animation: slide-in-from-right 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+      }
 
-    <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:site" content="@lovable_dev" />
-    <meta name="twitter:image" content="https://lovable.dev/opengraph-image-p98pqg.png" />
-  </head>
+      @keyframes slide-out-to-left {
+        from { transform: translateX(0); opacity: 1; }
+        to { transform: translateX(-50%); opacity: 0; }
+      }
+      .animate-slide-out-to-left {
+        animation: slide-out-to-left 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+      }
 
-  <body>
+      @keyframes slide-in-from-left {
+        from { transform: translateX(-50%); opacity: 0; }
+        to { transform: translateX(0); opacity: 1; }
+      }
+      .animate-slide-in-from-left {
+        animation: slide-in-from-left 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+      }
+      
+      @keyframes slide-out-to-right {
+        from { transform: translateX(0); }
+        to { transform: translateX(100%); }
+      }
+      .animate-slide-out-to-right {
+        animation: slide-out-to-right 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+      }
+
+      @keyframes slide-up-full {
+        from { transform: translateY(100%); }
+        to { transform: translateY(0); }
+      }
+      .animate-slide-up-full {
+        animation: slide-up-full 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+      }
+      
+      @keyframes slide-down-full {
+        from { transform: translateY(0); }
+        to { transform: translateY(100%); }
+      }
+      .animate-slide-down-full {
+        animation: slide-down-full 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+      }
+
+      /* Auth Page Animations */
+      @keyframes pulse-slow {
+        50% {
+          opacity: 0.5;
+        }
+      }
+      .animate-pulse-slow {
+        animation: pulse-slow 8s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+      }
+
+      @keyframes text-focus-in {
+        0% {
+          -webkit-filter: blur(12px);
+                  filter: blur(12px);
+          opacity: 0;
+        }
+        100% {
+          -webkit-filter: blur(0px);
+                  filter: blur(0px);
+          opacity: 1;
+        }
+      }
+      .animate-text-focus-in {
+	      animation: text-focus-in 1s cubic-bezier(0.550, 0.085, 0.680, 0.530) both;
+      }
+
+    </style>
+  <script type="importmap">
+{
+  "imports": {
+    "react/": "https://aistudiocdn.com/react@^19.2.0/",
+    "react": "https://aistudiocdn.com/react@^19.2.0",
+    "react-dom/": "https://aistudiocdn.com/react-dom@^19.2.0/",
+    "immer": "https://aistudiocdn.com/immer@^10.2.0",
+    "lucide-react": "https://aistudiocdn.com/lucide-react@^0.417.0",
+    "@google/genai": "https://aistudiocdn.com/@google/genai@^1.29.0",
+    "react-dom": "https://aistudiocdn.com/react-dom@^19.2.0",
+    "firebase/app": "https://www.gstatic.com/firebasejs/10.12.3/firebase-app.js",
+    "firebase/analytics": "https://www.gstatic.com/firebasejs/10.12.3/firebase-analytics.js",
+    "firebase/firestore": "https://www.gstatic.com/firebasejs/10.12.3/firebase-firestore.js",
+    "firebase/auth": "https://www.gstatic.com/firebasejs/10.12.3/firebase-auth.js",
+    "firebase/storage": "https://www.gstatic.com/firebasejs/10.12.3/firebase-storage.js",
+    "firebase/": "https://aistudiocdn.com/firebase@^12.5.0/"
+  }
+}
+</script>
+<link rel="stylesheet" href="/index.css">
+</head>
+  <body class="bg-slate-100">
     <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
+    <script type="module" src="/index.tsx"></script>
   </body>
 </html>
