@@ -215,7 +215,7 @@ const DashboardPage: React.FC<DashboardPageProps> = () => {
                 <button
                   key={category.id}
                   onClick={() => handleCategoryClick(category.id)}
-                  className="flex flex-col items-center gap-2 group"
+                  className="flex flex-col items-center gap-1 group"
                 >
                   {category.imageUrl ? (
                     <img 
