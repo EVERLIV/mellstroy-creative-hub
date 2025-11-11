@@ -46,7 +46,10 @@ const ClassDetailPage: React.FC<ClassDetailPageProps> = ({
   const [isGalleryOpen, setIsGalleryOpen] = useState(false);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
 
+  console.log('ClassDetailPage mounted, classId:', classId);
+
   useEffect(() => {
+    console.log('useEffect triggered for classId:', classId);
     loadClassData();
   }, [classId]);
 
@@ -158,6 +161,8 @@ const ClassDetailPage: React.FC<ClassDetailPageProps> = ({
     setIsGalleryOpen(true);
   };
 
+  console.log('ClassDetailPage render state:', { loading, hasClassData: !!classData, hasTrainer: !!trainer });
+
   if (loading) {
     return (
       <div className="h-screen flex items-center justify-center bg-background">
@@ -172,7 +177,8 @@ const ClassDetailPage: React.FC<ClassDetailPageProps> = ({
   if (!classData || !trainer) {
     return (
       <div className="h-screen flex flex-col items-center justify-center bg-background p-4">
-        <p className="text-foreground mb-4">Class not found</p>
+        <p className="text-foreground text-lg mb-2">Class not found</p>
+        <p className="text-muted-foreground text-sm mb-4">Class ID: {classId}</p>
         <button 
           onClick={() => navigate('/explore')} 
           className="bg-primary text-primary-foreground px-6 py-2 rounded-lg font-semibold hover:bg-primary/90"
@@ -202,6 +208,7 @@ const ClassDetailPage: React.FC<ClassDetailPageProps> = ({
 
   return (
     <div className="bg-background min-h-screen pb-24">
+      {console.log('Rendering ClassDetailPage content with data:', { classId, className: classData.name })}
       {/* Header Image */}
       <div className="relative">
         <img 
