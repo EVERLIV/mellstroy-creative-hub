@@ -1,17 +1,15 @@
 import React, { useState, useRef, useEffect } from 'react';
 import ReactDOM from 'react-dom';
+import { useNavigate } from 'react-router-dom';
 import { Menu, X, Calendar, Settings, HelpCircle } from 'lucide-react';
 
-interface HamburgerMenuProps {
-    onNavigate: (page: string) => void;
-}
-
-const HamburgerMenu: React.FC<HamburgerMenuProps> = ({ onNavigate }) => {
+const HamburgerMenu: React.FC = () => {
     const [isOpen, setIsOpen] = useState(false);
     const menuRef = useRef<HTMLDivElement>(null);
+    const navigate = useNavigate();
 
     const handleNavigation = (page: string) => {
-        onNavigate(page);
+        navigate(page);
         setIsOpen(false);
     };
 
@@ -45,19 +43,19 @@ const HamburgerMenu: React.FC<HamburgerMenuProps> = ({ onNavigate }) => {
                 <nav className="p-4">
                     <ul className="space-y-2">
                         <li>
-                            <button onClick={() => handleNavigation('events')} className="w-full flex items-center p-3 text-left rounded-lg text-slate-700 font-semibold hover:bg-slate-100 transition-colors">
+                            <button onClick={() => handleNavigation('/bookings')} className="w-full flex items-center p-3 text-left rounded-lg text-slate-700 font-semibold hover:bg-slate-100 transition-colors">
                                 <Calendar className="w-5 h-5 mr-4 text-slate-500" />
-                                Events
+                                My Bookings
                             </button>
                         </li>
                         <li>
-                             <button onClick={() => handleNavigation('settings')} className="w-full flex items-center p-3 text-left rounded-lg text-slate-700 font-semibold hover:bg-slate-100 transition-colors">
+                             <button onClick={() => handleNavigation('/profile')} className="w-full flex items-center p-3 text-left rounded-lg text-slate-700 font-semibold hover:bg-slate-100 transition-colors">
                                 <Settings className="w-5 h-5 mr-4 text-slate-500" />
                                 Settings
                             </button>
                         </li>
                          <li>
-                             <button onClick={() => handleNavigation('support')} className="w-full flex items-center p-3 text-left rounded-lg text-slate-700 font-semibold hover:bg-slate-100 transition-colors">
+                             <button onClick={() => alert('Help & Support coming soon!')} className="w-full flex items-center p-3 text-left rounded-lg text-slate-700 font-semibold hover:bg-slate-100 transition-colors">
                                 <HelpCircle className="w-5 h-5 mr-4 text-slate-500" />
                                 Help & Support
                             </button>

@@ -49,7 +49,6 @@ const AppRoutes = () => {
   const [bookingModalData, setBookingModalData] = useState<{ trainer: Trainer; cls: Class } | null>(null);
   const [reviewModalData, setReviewModalData] = useState<{ booking: Booking; trainer: Trainer } | null>(null);
   const [reviewsModalTrainer, setReviewsModalTrainer] = useState<Trainer | null>(null);
-  const [currentPage, setCurrentPage] = useState<string>('home');
   const [chatTrainer, setChatTrainer] = useState<Trainer | null>(null);
 
   const currentUserId = user?.id || 'current-user-id';
@@ -74,11 +73,6 @@ const AppRoutes = () => {
 
   const handleOpenChat = (trainer: Trainer) => {
     setChatTrainer(trainer);
-    setCurrentPage('chat');
-  };
-
-  const handleNavigate = (page: string) => {
-    setCurrentPage(page);
   };
 
   const handleOpenReviewsModal = (trainer: Trainer) => {
@@ -89,8 +83,8 @@ const AppRoutes = () => {
     <div className="min-h-screen bg-background">
       <Routes>
         <Route path="/auth" element={user ? <Navigate to="/" replace /> : <AuthPage />} />
-        <Route path="/welcome" element={<WelcomePage onGetStarted={() => handleNavigate('home')} />} />
-        <Route path="/onboarding" element={<ProtectedRoute><OnboardingPage onComplete={() => handleNavigate('home')} /></ProtectedRoute>} />
+        <Route path="/welcome" element={<WelcomePage />} />
+        <Route path="/onboarding" element={<ProtectedRoute><OnboardingPage /></ProtectedRoute>} />
         <Route
           path="/"
           element={
@@ -105,7 +99,6 @@ const AppRoutes = () => {
                 currentUserId={currentUserId}
                 favoriteTrainerIds={favoriteTrainerIds}
                 onToggleFavorite={handleToggleFavorite}
-                onNavigate={handleNavigate}
                 onOpenReviewsModal={handleOpenReviewsModal}
               />
             </ProtectedRoute>
@@ -123,7 +116,6 @@ const AppRoutes = () => {
                 currentUserId={currentUserId}
                 favoriteTrainerIds={favoriteTrainerIds}
                 onToggleFavorite={handleToggleFavorite}
-                onNavigate={handleNavigate}
                 onOpenReviewsModal={handleOpenReviewsModal}
               />
             </ProtectedRoute>
@@ -141,7 +133,6 @@ const AppRoutes = () => {
                 currentUserId={currentUserId}
                 favoriteTrainerIds={favoriteTrainerIds}
                 onToggleFavorite={handleToggleFavorite}
-                onNavigate={handleNavigate}
                 onOpenReviewsModal={handleOpenReviewsModal}
               />
             </ProtectedRoute>
@@ -152,9 +143,9 @@ const AppRoutes = () => {
           element={
             <ProtectedRoute>
               {userRole === 'trainer' ? (
-                <ProfilePage currentUser={trainers.find(t => t.id === currentUserId)!} onNavigate={handleNavigate} />
+                <ProfilePage currentUser={trainers.find(t => t.id === currentUserId)!} />
               ) : (
-                <StudentProfilePage currentUser={trainers.find(t => t.id === currentUserId)!} onNavigate={handleNavigate} />
+                <StudentProfilePage currentUser={trainers.find(t => t.id === currentUserId)!} />
               )}
             </ProtectedRoute>
           }
@@ -166,7 +157,6 @@ const AppRoutes = () => {
               <MyBookingsPage
                 trainers={trainers}
                 currentUserId={currentUserId}
-                onNavigate={handleNavigate}
               />
             </ProtectedRoute>
           }
@@ -175,7 +165,7 @@ const AppRoutes = () => {
           path="/chat"
           element={
             <ProtectedRoute>
-              {chatTrainer && <ChatPage trainer={chatTrainer} onBack={() => handleNavigate('home')} />}
+              {chatTrainer && <ChatPage trainer={chatTrainer} />}
             </ProtectedRoute>
           }
         />
@@ -183,7 +173,7 @@ const AppRoutes = () => {
           path="/create-profile"
           element={
             <ProtectedRoute>
-              <CreateProfilePage onComplete={() => handleNavigate('profile')} />
+              <CreateProfilePage />
             </ProtectedRoute>
           }
         />

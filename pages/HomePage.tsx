@@ -17,13 +17,12 @@ interface HomePageProps {
     currentUserId: string;
     favoriteTrainerIds: string[];
     onToggleFavorite: (trainerId: string) => void;
-    onNavigate: (page: string) => void;
     onOpenReviewsModal: (trainer: Trainer) => void;
 }
 
 const allCategories = [{ id: 'all', name: 'All', icon: 'grid' }, ...CATEGORIES];
 
-const HomePage: React.FC<HomePageProps> = ({ trainers, onInitiateBooking, onOpenChat, selectedCategory, onSelectCategory, userRole, currentUserId, favoriteTrainerIds, onToggleFavorite, onNavigate, onOpenReviewsModal }) => {
+const HomePage: React.FC<HomePageProps> = ({ trainers, onInitiateBooking, onOpenChat, selectedCategory, onSelectCategory, userRole, currentUserId, favoriteTrainerIds, onToggleFavorite, onOpenReviewsModal }) => {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [selectedTrainer, setSelectedTrainer] = useState<Trainer | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -112,7 +111,6 @@ const HomePage: React.FC<HomePageProps> = ({ trainers, onInitiateBooking, onOpen
         
         <div className={`transition-opacity duration-300 ${selectedTrainer ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
            <UnifiedHeader
-              onNavigate={onNavigate}
               selectedDistrict={selectedDistrict}
               onOpenDistrictModal={() => setIsDistrictModalOpen(true)}
               searchQuery={searchQuery}

@@ -5,7 +5,6 @@ import CategoryFilters from './CategoryFilters';
 import { MapPin, ChevronDown, Search } from 'lucide-react';
 
 interface UnifiedHeaderProps {
-    onNavigate: (page: string) => void;
     selectedDistrict: string;
     onOpenDistrictModal: () => void;
     searchQuery: string;
@@ -16,7 +15,6 @@ interface UnifiedHeaderProps {
 }
 
 const UnifiedHeader: React.FC<UnifiedHeaderProps> = ({
-    onNavigate,
     selectedDistrict,
     onOpenDistrictModal,
     searchQuery,
@@ -30,7 +28,7 @@ const UnifiedHeader: React.FC<UnifiedHeaderProps> = ({
             <div className="px-4">
                 {/* Top Bar: Menu and District */}
                 <div className="flex items-center justify-between">
-                    <HamburgerMenu onNavigate={onNavigate} />
+                    <HamburgerMenu />
                     <button onClick={onOpenDistrictModal} className="flex items-center space-x-1 bg-white border border-slate-200 px-3 py-2 rounded-full text-sm font-medium text-gray-700 hover:bg-slate-50 transition-colors">
                         <MapPin className="h-5 w-5 text-gray-500" />
                         <span className="max-w-[120px] truncate">{selectedDistrict}</span>
