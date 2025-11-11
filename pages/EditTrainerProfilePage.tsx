@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Trainer } from '../types';
 import { HCMC_DISTRICTS, FITNESS_ACTIVITIES } from '../constants';
 import { Save, Camera, Loader, X } from 'lucide-react';
@@ -15,8 +15,51 @@ const EditTrainerProfilePage: React.FC<EditTrainerProfilePageProps> = ({ user, o
     const [formData, setFormData] = useState<Trainer>(user);
     const [isUploading, setIsUploading] = useState(false);
     const [phoneError, setPhoneError] = useState<string>('');
+    const [autoSaveStatus, setAutoSaveStatus] = useState<'saved' | 'saving' | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const { toast } = useToast();
+    const autoSaveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+    // Load auto-saved data on mount
+    useEffect(() => {
+        const savedData = localStorage.getItem(`trainer-profile-draft-${user.id}`);
+        if (savedData) {
+            try {
+                const parsed = JSON.parse(savedData);
+                setFormData(parsed);
+                toast({
+                    title: "Draft restored",
+                    description: "Your previous changes have been restored.",
+                });
+            } catch (error) {
+                console.error('Failed to load draft:', error);
+            }
+        }
+    }, [user.id]);
+
+    // Auto-save to localStorage
+    useEffect(() => {
+        if (autoSaveTimeoutRef.current) {
+            clearTimeout(autoSaveTimeoutRef.current);
+        }
+
+        setAutoSaveStatus('saving');
+        autoSaveTimeoutRef.current = setTimeout(() => {
+            try {
+                localStorage.setItem(`trainer-profile-draft-${user.id}`, JSON.stringify(formData));
+                setAutoSaveStatus('saved');
+                setTimeout(() => setAutoSaveStatus(null), 2000);
+            } catch (error) {
+                console.error('Failed to auto-save:', error);
+            }
+        }, 1000);
+
+        return () => {
+            if (autoSaveTimeoutRef.current) {
+                clearTimeout(autoSaveTimeoutRef.current);
+            }
+        };
+    }, [formData, user.id]);
 
     const validatePhoneNumber = (phone: string): boolean => {
         if (!phone || phone.trim() === '') {
@@ -176,7 +219,15 @@ const EditTrainerProfilePage: React.FC<EditTrainerProfilePageProps> = ({ user, o
             return;
         }
 
+        // Clear auto-saved draft on successful save
+        localStorage.removeItem(`trainer-profile-draft-${user.id}`);
         onSave(formData);
+    };
+
+    const handleCancel = () => {
+        // Clear auto-saved draft on cancel
+        localStorage.removeItem(`trainer-profile-draft-${user.id}`);
+        onCancel();
     };
 
     return (
@@ -186,13 +237,20 @@ const EditTrainerProfilePage: React.FC<EditTrainerProfilePageProps> = ({ user, o
                 <div className="flex items-center justify-between p-4">
                     <button 
                         type="button"
-                        onClick={onCancel} 
+                        onClick={handleCancel} 
                         className="flex items-center gap-2 text-slate-600 hover:text-slate-900 transition-colors"
                     >
                         <X className="w-5 h-5" />
                         <span className="font-medium">Cancel</span>
                     </button>
-                    <h1 className="text-lg font-bold text-slate-900">Edit Profile</h1>
+                    <div className="flex flex-col items-center">
+                        <h1 className="text-lg font-bold text-slate-900">Edit Profile</h1>
+                        {autoSaveStatus && (
+                            <span className="text-xs text-slate-500 animate-fade-in">
+                                {autoSaveStatus === 'saving' ? '💾 Saving...' : '✓ Saved'}
+                            </span>
+                        )}
+                    </div>
                     <button 
                         type="button"
                         onClick={handleSave}
