@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { supabase } from '../src/integrations/supabase/client';
 import { Trainer, Class, ClassType, UserRole } from '../types';
 import { ArrowLeft, MessageCircle, Star, ShieldCheck, MapPin, Clock, Building, Sun, Home, Heart, Users, Crown, Camera } from 'lucide-react';
 import ImageGalleryModal from './ImageGalleryModal';
@@ -70,12 +71,55 @@ interface ClassCardProps {
 }
 const ClassCard: React.FC<ClassCardProps> = ({ cls, trainer, userRole, currentUserId, onInitiateBooking, onOpenChat, onBack }) => {
     const navigate = useNavigate();
-    const enrolledCount = cls.bookings?.length || 0;
+    const [enrolledCount, setEnrolledCount] = useState(0);
+    const [userBooking, setUserBooking] = useState<any>(null);
+    
     const enrollmentPercentage = cls.capacity > 0 ? (enrolledCount / cls.capacity) * 100 : 0;
     const isFull = enrolledCount >= cls.capacity;
     const isBookingDisabledForTrainer = userRole === 'trainer';
-    const userBooking = cls.bookings?.find(b => b.userId === currentUserId);
     const hasUserBooked = !!userBooking;
+
+    // Load bookings on mount and subscribe to realtime updates
+    useEffect(() => {
+        const classId = (cls as any)._dbId || cls.id;
+        
+        const loadBookings = async () => {
+            const { data, error } = await supabase
+                .from('bookings')
+                .select('*')
+                .eq('class_id', classId);
+            
+            if (!error && data) {
+                setEnrolledCount(data.length);
+                const currentUserBooking = data.find(b => b.client_id === currentUserId);
+                setUserBooking(currentUserBooking);
+            }
+        };
+
+        loadBookings();
+
+        // Subscribe to realtime changes
+        const channel = supabase
+            .channel(`class-bookings-${classId}`)
+            .on(
+                'postgres_changes',
+                {
+                    event: '*',
+                    schema: 'public',
+                    table: 'bookings',
+                    filter: `class_id=eq.${classId}`
+                },
+                (payload) => {
+                    console.log('Booking change detected:', payload);
+                    loadBookings(); // Reload bookings on any change
+                }
+            )
+            .subscribe();
+
+        return () => {
+            supabase.removeChannel(channel);
+        };
+    }, [cls, currentUserId]);
 
     // Premium class styling
     const isPremiumClass = trainer.isPremium;

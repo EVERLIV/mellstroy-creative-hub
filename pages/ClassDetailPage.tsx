@@ -45,6 +45,7 @@ const ClassDetailPage: React.FC<ClassDetailPageProps> = ({
   const [loading, setLoading] = useState(true);
   const [isGalleryOpen, setIsGalleryOpen] = useState(false);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
+  const [enrolledCount, setEnrolledCount] = useState(0);
 
   console.log('🎯 ClassDetailPage MOUNTED');
   console.log('📋 Props received:', { userRole, currentUserId, classId });
@@ -57,6 +58,46 @@ const ClassDetailPage: React.FC<ClassDetailPageProps> = ({
       return;
     }
     loadClassData();
+  }, [classId]);
+
+  // Subscribe to realtime bookings updates
+  useEffect(() => {
+    if (!classId) return;
+
+    const loadBookings = async () => {
+      const { data, error } = await supabase
+        .from('bookings')
+        .select('*')
+        .eq('class_id', classId);
+      
+      if (!error && data) {
+        setEnrolledCount(data.length);
+      }
+    };
+
+    loadBookings();
+
+    // Subscribe to realtime changes
+    const channel = supabase
+      .channel(`class-detail-bookings-${classId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'bookings',
+          filter: `class_id=eq.${classId}`
+        },
+        (payload) => {
+          console.log('🔄 Realtime booking update:', payload);
+          loadBookings();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [classId]);
 
   const loadClassData = async () => {
@@ -125,6 +166,7 @@ const ClassDetailPage: React.FC<ClassDetailPageProps> = ({
       }
 
       console.log('Bookings loaded:', bookings?.length || 0);
+      setEnrolledCount(bookings?.length || 0);
 
       // Transform class data
       const cls: Class = {
@@ -213,7 +255,6 @@ const ClassDetailPage: React.FC<ClassDetailPageProps> = ({
     );
   }
 
-  const enrolledCount = 0; // TODO: Get from bookings
   const enrollmentPercentage = classData.capacity > 0 ? (enrolledCount / classData.capacity) * 100 : 0;
   const isFull = enrolledCount >= classData.capacity;
   const isBookingDisabled = userRole === 'trainer' || isFull;
