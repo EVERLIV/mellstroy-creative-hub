@@ -3,6 +3,8 @@ import { Category } from '../types';
 import HamburgerMenu from './HamburgerMenu';
 import CategoryFilters from './CategoryFilters';
 import { MapPin, ChevronDown, Search } from 'lucide-react';
+import { NotificationBell } from './NotificationBell';
+import { useAuth } from '@/src/hooks/useAuth';
 
 interface UnifiedHeaderProps {
     selectedDistrict: string;
@@ -23,17 +25,22 @@ const UnifiedHeader: React.FC<UnifiedHeaderProps> = ({
     selectedCategory,
     onSelectCategory,
 }) => {
+    const { user } = useAuth();
+    
     return (
         <header className="sticky top-0 z-40 bg-white shadow-sm pt-3 pb-4">
             <div className="px-4">
-                {/* Top Bar: Menu and District */}
+                {/* Top Bar: Menu, District, and Notifications */}
                 <div className="flex items-center justify-between">
                     <HamburgerMenu />
-                    <button onClick={onOpenDistrictModal} className="flex items-center space-x-1 bg-white border border-slate-200 px-3 py-2 rounded-full text-sm font-medium text-gray-700 hover:bg-slate-50 transition-colors shadow-sm">
-                        <MapPin className="h-5 w-5 text-gray-500" />
-                        <span className="max-w-[120px] truncate">{selectedDistrict}</span>
-                        <ChevronDown className="h-5 w-5 text-gray-400" />
-                    </button>
+                    <div className="flex items-center gap-2">
+                        <button onClick={onOpenDistrictModal} className="flex items-center space-x-1 bg-white border border-slate-200 px-3 py-2 rounded-full text-sm font-medium text-gray-700 hover:bg-slate-50 transition-colors shadow-sm">
+                            <MapPin className="h-5 w-5 text-gray-500" />
+                            <span className="max-w-[120px] truncate">{selectedDistrict}</span>
+                            <ChevronDown className="h-5 w-5 text-gray-400" />
+                        </button>
+                        {user && <NotificationBell />}
+                    </div>
                 </div>
 
                 {/* Search Bar */}
