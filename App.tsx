@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import { User } from 'lucide-react';
 import { AuthProvider, useAuth } from './src/hooks/useAuth';
 import { Toaster } from './src/components/ui/toaster';
+import { useToast } from './src/hooks/use-toast';
 import AuthPage from './src/pages/AuthPage';
 import WelcomePage from './pages/WelcomePage';
 import DashboardPage from './pages/DashboardPage';
@@ -21,7 +22,8 @@ import BottomNav from './components/BottomNav';
 import BookingModal from './components/BookingModal';
 import ReviewModal from './components/ReviewModal';
 import ReviewsModal from './components/ReviewsModal';
-import { Trainer, Class, Booking, UserRole, Event } from './types';
+import { Trainer, Class, Booking, UserRole, Event, Message, MealPlan } from './types';
+import { getAICoachResponse } from './utils/ai';
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { user, loading } = useAuth();
@@ -46,6 +48,8 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
 
 const AppRoutes = () => {
   const { user } = useAuth();
+  const { toast } = useToast();
+  const navigate = useNavigate();
   const [userRole, setUserRole] = useState<UserRole>('student');
   const [trainers, setTrainers] = useState<Trainer[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
@@ -55,6 +59,10 @@ const AppRoutes = () => {
   const [reviewsModalTrainer, setReviewsModalTrainer] = useState<Trainer | null>(null);
   const [chatTrainer, setChatTrainer] = useState<Trainer | null>(null);
   const [upcomingEvents, setUpcomingEvents] = useState<Event[]>([]);
+  
+  // AI Coach state
+  const [aiCoachMessages, setAiCoachMessages] = useState<Message[]>([]);
+  const [isAiCoachLoading, setIsAiCoachLoading] = useState(false);
 
   const currentUserId = user?.id || 'current-user-id';
 
@@ -83,6 +91,47 @@ const AppRoutes = () => {
 
   const handleOpenReviewsModal = (trainer: Trainer) => {
     setReviewsModalTrainer(trainer);
+  };
+
+  const handleSendAICoachMessage = async (messageText: string) => {
+    const userMessage: Message = {
+      id: Date.now(),
+      sender: 'user',
+      text: messageText,
+      timestamp: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
+    };
+
+    setAiCoachMessages(prev => [...prev, userMessage]);
+    setIsAiCoachLoading(true);
+
+    try {
+      const response = await getAICoachResponse(messageText);
+      const aiMessage: Message = {
+        id: Date.now(),
+        sender: 'trainer',
+        text: response,
+        timestamp: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }),
+      };
+      setAiCoachMessages(prev => [...prev, aiMessage]);
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to get response from AI Coach. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsAiCoachLoading(false);
+    }
+  };
+
+  const handleSaveMealPlan = (plan: Omit<MealPlan, 'id' | 'createdAt'>) => {
+    // TODO: Save meal plan to database
+    console.log('Saving meal plan:', plan);
+    toast({
+      title: "Meal Plan Saved",
+      description: `"${plan.name}" has been saved successfully!`,
+    });
+    navigate('/');
   };
 
   return (
@@ -149,7 +198,13 @@ const AppRoutes = () => {
           path="/meal-planner"
           element={
             <ProtectedRoute>
-              <div>Meal Planner coming soon</div>
+              {user && (
+                <MealPlannerPage
+                  user={user as any}
+                  onClose={() => navigate('/')}
+                  onSavePlan={handleSaveMealPlan}
+                />
+              )}
             </ProtectedRoute>
           }
         />
@@ -157,7 +212,12 @@ const AppRoutes = () => {
           path="/ai-coach"
           element={
             <ProtectedRoute>
-              <div>AI Coach coming soon</div>
+              <AICoachPage
+                messages={aiCoachMessages}
+                onSendMessage={handleSendAICoachMessage}
+                isLoading={isAiCoachLoading}
+                onClose={() => navigate('/')}
+              />
             </ProtectedRoute>
           }
         />
