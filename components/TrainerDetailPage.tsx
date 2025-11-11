@@ -66,8 +66,9 @@ interface ClassCardProps {
     currentUserId: string;
     onInitiateBooking: (target: { trainer: Trainer; cls: Class }) => void;
     onOpenChat: (trainer: Trainer, context?: { className: string; bookingDate?: string; }) => void;
+    onBack: () => void;
 }
-const ClassCard: React.FC<ClassCardProps> = ({ cls, trainer, userRole, currentUserId, onInitiateBooking, onOpenChat }) => {
+const ClassCard: React.FC<ClassCardProps> = ({ cls, trainer, userRole, currentUserId, onInitiateBooking, onOpenChat, onBack }) => {
     const navigate = useNavigate();
     const enrolledCount = cls.bookings?.length || 0;
     const enrollmentPercentage = cls.capacity > 0 ? (enrolledCount / cls.capacity) * 100 : 0;
@@ -145,7 +146,12 @@ const ClassCard: React.FC<ClassCardProps> = ({ cls, trainer, userRole, currentUs
                         onClick={() => {
                             const classId = (cls as any)._dbId || cls.id;
                             console.log('Navigating to class detail:', classId, 'cls:', cls);
-                            navigate(`/class/${classId}`);
+                            // Close the trainer detail overlay before navigating
+                            onBack();
+                            // Small delay to allow overlay close animation
+                            setTimeout(() => {
+                                navigate(`/class/${classId}`);
+                            }, 100);
                         }}
                         variant="outline"
                         size="default"
@@ -276,7 +282,7 @@ const TrainerDetailPage: React.FC<TrainerDetailPageProps> = ({ trainer, userRole
                     <h2 className="text-lg font-bold text-gray-800 mb-3">Classes Offered</h2>
                     <div className="space-y-4">
                         {trainer.classes.map(cls => (
-                           <ClassCard key={cls.id} cls={cls} trainer={trainer} userRole={userRole} currentUserId={currentUserId} onInitiateBooking={onInitiateBooking} onOpenChat={onOpenChat} />
+                           <ClassCard key={cls.id} cls={cls} trainer={trainer} userRole={userRole} currentUserId={currentUserId} onInitiateBooking={onInitiateBooking} onOpenChat={onOpenChat} onBack={onBack} />
                         ))}
                     </div>
                 </div>
