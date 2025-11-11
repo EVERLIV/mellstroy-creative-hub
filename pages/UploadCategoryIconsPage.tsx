@@ -11,8 +11,7 @@ const categories = [
   { id: 'running', name: 'Running' },
   { id: 'swimming', name: 'Swimming' },
   { id: 'dance', name: 'Dance' },
-  { id: 'tennis', name: 'Tennis' },
-  { id: 'more', name: 'More' },
+  { id: 'pickleball', name: 'Pickleball' },
 ];
 
 const UploadCategoryIconsPage: React.FC = () => {
