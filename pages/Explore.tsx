@@ -80,6 +80,17 @@ const Explore: React.FC<ExploreProps> = ({
 
       if (classesError) throw classesError;
 
+      // Fetch reviews with client profiles
+      const { data: reviews, error: reviewsError } = await supabase
+        .from('reviews')
+        .select(`
+          *,
+          client:profiles!reviews_client_id_fkey(username)
+        `)
+        .in('trainer_id', trainerIds);
+
+      if (reviewsError) throw reviewsError;
+
       // Transform data
       const trainersData: Trainer[] = (profiles || []).map(profile => ({
         id: profile.id,
@@ -93,7 +104,13 @@ const Explore: React.FC<ExploreProps> = ({
         verificationStatus: profile.is_verified ? 'verified' : 'unverified',
         isPremium: profile.is_premium || false,
         bio: profile.bio || '',
-        reviewsData: [],
+        reviewsData: (reviews || [])
+          .filter(r => r.trainer_id === profile.id)
+          .map(r => ({
+            reviewerName: (r.client as any)?.username || 'Anonymous',
+            rating: r.rating,
+            comment: r.comment || '',
+          })),
         classes: (classes || [])
           .filter(c => c.trainer_id === profile.id)
           .map(c => ({
