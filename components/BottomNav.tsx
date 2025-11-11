@@ -1,5 +1,5 @@
 import React from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { NavLink } from './NavLink';
 import { Home, Search, Heart, Calendar, User } from 'lucide-react';
 
@@ -11,6 +11,7 @@ interface NavItem {
 
 const BottomNav: React.FC = () => {
   const location = useLocation();
+  const navigate = useNavigate();
   
   const navItems: NavItem[] = [
     { name: 'Home', path: '/', icon: Home },
@@ -19,6 +20,23 @@ const BottomNav: React.FC = () => {
     { name: 'Bookings', path: '/bookings', icon: Calendar },
     { name: 'Profile', path: '/profile', icon: User },
   ];
+
+  // Haptic feedback function
+  const triggerHapticFeedback = () => {
+    // Check if Vibration API is supported
+    if ('vibrate' in navigator) {
+      // Short vibration for tap feedback (15ms)
+      navigator.vibrate(15);
+    }
+  };
+
+  const handleNavClick = (path: string, e: React.MouseEvent) => {
+    // Trigger haptic feedback
+    triggerHapticFeedback();
+    
+    // Let the NavLink handle the navigation
+    // No need to prevent default or manually navigate
+  };
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 w-full bg-white border-t border-gray-100 z-50 shadow-[0_-1px_4px_rgba(0,0,0,0.05)] pb-[env(safe-area-inset-bottom)]">
@@ -31,6 +49,7 @@ const BottomNav: React.FC = () => {
               key={item.name}
               to={item.path}
               end
+              onClick={(e) => handleNavClick(item.path, e)}
               className={`relative flex items-center justify-center transition-all duration-300 ease-out rounded-full h-10 group
                 active:scale-90 active:opacity-80
                 ${
