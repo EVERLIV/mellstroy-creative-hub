@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../src/integrations/supabase/client';
 import { Trainer, Class, UserRole } from '../types';
+import { CATEGORIES } from '../constants';
 import TrainerGrid from '../components/TrainerGrid';
 import ViewToggle from '../components/ViewToggle';
 import TrainerDetailPage from '../components/TrainerDetailPage';
@@ -173,7 +174,8 @@ const Explore: React.FC<ExploreProps> = ({
 
             {/* Category Filters */}
             <CategoryFilters
-              selectedCategory={selectedCategory}
+              categories={CATEGORIES}
+              selectedCategory={selectedCategory || ''}
               onSelectCategory={setSelectedCategory}
             />
           </div>
