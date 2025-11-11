@@ -114,6 +114,13 @@ const DashboardPage: React.FC<DashboardPageProps> = () => {
       color: 'from-blue-100 to-blue-50' 
     },
     { 
+      id: 'tennis', 
+      name: 'Tennis', 
+      icon: Trophy, 
+      imageUrl: getCategoryIconUrl('tennis.png'),
+      color: 'from-green-100 to-green-50' 
+    },
+    { 
       id: 'swimming', 
       name: 'Swimming', 
       icon: Users, 
@@ -128,18 +135,11 @@ const DashboardPage: React.FC<DashboardPageProps> = () => {
       color: 'from-pink-100 to-pink-50' 
     },
     { 
-      id: 'tennis', 
-      name: 'Tennis', 
+      id: 'pickleball', 
+      name: 'Pickleball', 
       icon: Trophy, 
-      imageUrl: getCategoryIconUrl('tennis.png'),
-      color: 'from-green-100 to-green-50' 
-    },
-    { 
-      id: 'more', 
-      name: 'More', 
-      icon: MapPin, 
-      imageUrl: getCategoryIconUrl('more.png'),
-      color: 'from-slate-100 to-slate-50' 
+      imageUrl: getCategoryIconUrl('pickleball.png'),
+      color: 'from-yellow-100 to-yellow-50' 
     },
   ];
 
@@ -172,11 +172,7 @@ const DashboardPage: React.FC<DashboardPageProps> = () => {
   };
 
   const handleCategoryClick = (categoryId: string) => {
-    if (categoryId === 'more') {
-      navigate('/explore');
-    } else {
-      navigate(`/category/${categoryId}`);
-    }
+    navigate(`/category/${categoryId}`);
   };
 
   return (
@@ -208,7 +204,7 @@ const DashboardPage: React.FC<DashboardPageProps> = () => {
       <div className="px-4 -mt-4 mb-6">
         <div className="bg-white rounded-2xl shadow-lg shadow-slate-200/60 p-4">
           <h2 className="font-bold text-slate-900 text-base mb-4">Categories</h2>
-          <div className="grid grid-cols-4 gap-3">
+          <div className="grid grid-cols-3 gap-4">
             {categories.map((category) => {
               const IconComponent = category.icon;
               return (
@@ -221,11 +217,11 @@ const DashboardPage: React.FC<DashboardPageProps> = () => {
                     <img 
                       src={category.imageUrl} 
                       alt={category.name}
-                      className="w-20 h-20 object-contain rounded-2xl transition-all duration-200 group-hover:scale-105"
+                      className="w-[100px] h-[100px] object-contain rounded-2xl transition-all duration-200 group-hover:scale-105"
                     />
                   ) : (
-                    <div className="w-20 h-20 flex items-center justify-center rounded-2xl transition-all duration-200 group-hover:scale-105">
-                      <IconComponent className="w-10 h-10 text-slate-700" />
+                    <div className="w-[100px] h-[100px] flex items-center justify-center rounded-2xl transition-all duration-200 group-hover:scale-105">
+                      <IconComponent className="w-12 h-12 text-slate-700" />
                     </div>
                   )}
                   <span className="text-xs font-medium text-slate-700 text-center">{category.name}</span>
