@@ -277,7 +277,7 @@ const DashboardPage: React.FC<DashboardPageProps> = () => {
         </div>
       </div>
 
-      {/* Upcoming Events - Blog Style Carousel */}
+      {/* Upcoming Events - Compact Carousel */}
       {!loading && upcomingEvents.length > 0 && (
         <div className="mb-6">
           <div className="flex justify-between items-center mb-3 px-4">
@@ -295,32 +295,31 @@ const DashboardPage: React.FC<DashboardPageProps> = () => {
                 display: none;
               }
             `}</style>
-            <div className="flex gap-3 hide-scrollbar" style={{ width: 'max-content' }}>
+            <div className="flex gap-2 hide-scrollbar" style={{ width: 'max-content' }}>
               {upcomingEvents.map((event) => (
                 <button
                   key={event.id}
-                  onClick={() => navigate('/events')}
-                  className="bg-white rounded-2xl shadow-md shadow-slate-200/60 overflow-hidden hover:shadow-lg transition-all duration-200 text-left"
-                  style={{ width: '280px', flexShrink: 0 }}
+                  onClick={() => navigate('/events', { state: { selectedEvent: event } })}
+                  className="bg-white rounded-xl shadow-md shadow-slate-200/60 overflow-hidden hover:shadow-lg transition-all duration-200"
+                  style={{ width: '140px', flexShrink: 0 }}
                 >
-                  <div className="relative h-40">
+                  <div className="relative h-20">
                     <img
                       src={event.image_url || 'https://images.unsplash.com/photo-1517836357463-d25dfeac3438?w=800'}
                       alt={event.title}
                       className="w-full h-full object-cover"
                     />
-                    <div className="absolute top-2 right-2 bg-white/95 backdrop-blur-sm px-2 py-1 rounded-lg flex items-center gap-1">
-                      <Calendar className="w-3 h-3 text-[#FF6B35]" />
-                      <span className="text-xs font-semibold text-slate-700">
+                    <div className="absolute top-1 right-1 bg-white/95 backdrop-blur-sm px-1.5 py-0.5 rounded-md flex items-center gap-0.5">
+                      <Calendar className="w-2.5 h-2.5 text-[#FF6B35]" />
+                      <span className="text-[10px] font-semibold text-slate-700">
                         {new Date(event.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                       </span>
                     </div>
                   </div>
-                  <div className="p-4">
-                    <h3 className="font-bold text-slate-900 text-sm mb-2 line-clamp-2 min-h-[2.5rem]">{event.title}</h3>
-                    <p className="text-xs text-slate-600 mb-3 line-clamp-2 min-h-[2rem]">{event.description}</p>
-                    <div className="flex items-center gap-1 text-xs text-slate-500">
-                      <MapPin className="w-3 h-3 flex-shrink-0" />
+                  <div className="p-2">
+                    <h3 className="font-semibold text-slate-900 text-xs mb-1 line-clamp-2">{event.title}</h3>
+                    <div className="flex items-center gap-0.5 text-[10px] text-slate-500">
+                      <MapPin className="w-2.5 h-2.5 flex-shrink-0" />
                       <span className="line-clamp-1">{event.location}</span>
                     </div>
                   </div>

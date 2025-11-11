@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { supabase } from '../src/integrations/supabase/client';
 import EventsPage from './EventsPage';
 import EventDetailPage from './EventDetailPage';
@@ -10,13 +11,24 @@ interface EventsFlowPageProps {
 }
 
 const EventsFlowPage: React.FC<EventsFlowPageProps> = ({ onBack, initialEvent }) => {
-    const [view, setView] = useState<'list' | 'detail' | 'create'>(initialEvent ? 'detail' : 'list');
+    const location = useLocation();
+    const [view, setView] = useState<'list' | 'detail' | 'create'>('list');
     const [selectedEvent, setSelectedEvent] = useState<any | null>(initialEvent || null);
     const [isExiting, setIsExiting] = useState(false);
     const [events, setEvents] = useState<any[]>([]);
     const [isTrainer, setIsTrainer] = useState(false);
     const [currentUserId, setCurrentUserId] = useState<string | null>(null);
     const [loading, setLoading] = useState(true);
+
+    // Check for event passed via navigation state
+    useEffect(() => {
+        if (location.state?.selectedEvent) {
+            setSelectedEvent(location.state.selectedEvent);
+            setView('detail');
+        } else if (initialEvent) {
+            setView('detail');
+        }
+    }, [location.state, initialEvent]);
 
     useEffect(() => {
         const fetchData = async () => {
