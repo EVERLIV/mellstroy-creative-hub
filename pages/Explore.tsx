@@ -1,13 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../src/integrations/supabase/client';
-import { Trainer, Class, UserRole } from '../types';
+import { Trainer, Class, UserRole, ClassType } from '../types';
 import { CATEGORIES } from '../constants';
 import TrainerGrid from '../components/TrainerGrid';
 import ViewToggle from '../components/ViewToggle';
 import TrainerDetailPage from '../components/TrainerDetailPage';
 import CategoryFilters from '../components/CategoryFilters';
-import DistrictFilterModal from '../components/DistrictFilterModal';
-import { Search, MapPin } from 'lucide-react';
+import FilterModal from '../components/FilterModal';
+import { Search, SlidersHorizontal } from 'lucide-react';
 
 interface ExploreProps {
   onInitiateBooking?: (target: { trainer: Trainer; cls: Class }) => void;
@@ -36,8 +36,15 @@ const Explore: React.FC<ExploreProps> = ({
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(true);
-  const [selectedDistrict, setSelectedDistrict] = useState<string>('All Districts');
-  const [isDistrictModalOpen, setIsDistrictModalOpen] = useState(false);
+  const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
+  const [activeFilters, setActiveFilters] = useState({
+    specialty: [] as string[],
+    verified: false,
+    topRated: false,
+    district: 'All',
+    time: 'any' as 'any' | 'morning' | 'afternoon' | 'evening',
+    classType: [] as ClassType[],
+  });
 
   useEffect(() => {
     loadTrainers();
@@ -45,7 +52,7 @@ const Explore: React.FC<ExploreProps> = ({
 
   useEffect(() => {
     filterTrainers();
-  }, [trainers, selectedCategory, searchQuery, selectedDistrict]);
+  }, [trainers, selectedCategory, searchQuery, activeFilters]);
 
   const loadTrainers = async () => {
     try {
@@ -148,11 +155,28 @@ const Explore: React.FC<ExploreProps> = ({
       );
     }
 
-    // Filter by district
-    if (selectedDistrict && selectedDistrict !== 'All Districts') {
+    // Filter by specialty from filters
+    if (activeFilters.specialty.length > 0) {
       filtered = filtered.filter(trainer =>
-        trainer.location.includes(selectedDistrict)
+        activeFilters.specialty.some(s => trainer.specialty.includes(s))
       );
+    }
+
+    // Filter by district
+    if (activeFilters.district && activeFilters.district !== 'All') {
+      filtered = filtered.filter(trainer =>
+        trainer.location.includes(activeFilters.district)
+      );
+    }
+
+    // Filter by verified
+    if (activeFilters.verified) {
+      filtered = filtered.filter(trainer => trainer.verificationStatus === 'verified');
+    }
+
+    // Filter by top rated
+    if (activeFilters.topRated) {
+      filtered = filtered.filter(trainer => trainer.rating >= 4.8);
     }
 
     // Filter by search query
@@ -166,6 +190,22 @@ const Explore: React.FC<ExploreProps> = ({
     }
 
     setFilteredTrainers(filtered);
+  };
+
+  const handleApplyFilters = (newFilters: typeof activeFilters) => {
+    setActiveFilters(newFilters);
+    setIsFilterModalOpen(false);
+  };
+
+  const handleResetFilters = () => {
+    setActiveFilters({
+      specialty: [],
+      verified: false,
+      topRated: false,
+      district: 'All',
+      time: 'any',
+      classType: [],
+    });
   };
 
   const handleSelectTrainer = (trainer: Trainer) => {
@@ -185,29 +225,26 @@ const Explore: React.FC<ExploreProps> = ({
       <div className="flex flex-col h-full">
         {/* Header */}
         <div className="sticky top-0 bg-white z-10 shadow-sm flex-shrink-0">
-          <div className="p-4">
-            <h1 className="text-xl font-bold text-slate-800 mb-3">Explore Trainers</h1>
+          <div className="p-3">
+            <div className="flex items-center justify-between mb-2">
+              <h1 className="text-lg font-bold text-slate-800">Explore</h1>
+              <button
+                onClick={() => setIsFilterModalOpen(true)}
+                className="p-2 rounded-lg bg-slate-100 hover:bg-slate-200 transition-colors"
+              >
+                <SlidersHorizontal className="w-5 h-5 text-slate-700" />
+              </button>
+            </div>
             
-            {/* District Filter Button */}
-            <button
-              onClick={() => setIsDistrictModalOpen(true)}
-              className="w-full mb-3 px-4 py-2.5 bg-slate-100 rounded-xl flex items-center justify-between text-sm hover:bg-slate-200 transition-colors"
-            >
-              <div className="flex items-center gap-2">
-                <MapPin className="w-5 h-5 text-slate-600" />
-                <span className="text-slate-700 font-medium">{selectedDistrict}</span>
-              </div>
-            </button>
-
             {/* Search Bar */}
-            <div className="relative mb-3">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-5 h-5" />
+            <div className="relative mb-2">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400 w-4 h-4" />
               <input
                 type="text"
-                placeholder="Search trainers, location..."
+                placeholder="Search trainers..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-2.5 bg-slate-100 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
+                className="w-full pl-9 pr-3 py-2 bg-slate-100 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
               />
             </div>
 
@@ -260,15 +297,13 @@ const Explore: React.FC<ExploreProps> = ({
         </div>
       )}
 
-      {/* District Filter Modal */}
-      <DistrictFilterModal
-        isOpen={isDistrictModalOpen}
-        onClose={() => setIsDistrictModalOpen(false)}
-        onSelectDistrict={(district) => {
-          setSelectedDistrict(district);
-          setIsDistrictModalOpen(false);
-        }}
-        currentDistrict={selectedDistrict}
+      {/* Filter Modal */}
+      <FilterModal
+        isOpen={isFilterModalOpen}
+        onClose={() => setIsFilterModalOpen(false)}
+        activeFilters={activeFilters}
+        onApplyFilters={handleApplyFilters}
+        onResetFilters={handleResetFilters}
       />
     </div>
   );
