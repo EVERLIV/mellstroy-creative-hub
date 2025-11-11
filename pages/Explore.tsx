@@ -97,7 +97,7 @@ const Explore: React.FC<ExploreProps> = ({
         classes: (classes || [])
           .filter(c => c.trainer_id === profile.id)
           .map(c => ({
-            id: Number(c.id),
+            id: c.id as any, // UUID stored as string, cast to number type for compatibility
             name: c.name,
             description: c.description || '',
             duration: c.duration_minutes,
@@ -110,6 +110,7 @@ const Explore: React.FC<ExploreProps> = ({
       }));
 
       setTrainers(trainersData);
+      console.log('Loaded trainers:', trainersData.length, trainersData);
     } catch (error) {
       console.error('Error loading trainers:', error);
     } finally {
