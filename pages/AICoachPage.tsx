@@ -39,8 +39,8 @@ const AICoachPage: React.FC<AICoachPageProps> = ({ messages, onSendMessage, isLo
     };
 
     return (
-        <div className="flex flex-col h-screen bg-slate-100">
-            <div className="p-4 flex items-center justify-center relative">
+        <div className="flex flex-col h-screen bg-slate-100 pb-20">
+            <div className="p-4 flex items-center justify-center relative bg-slate-100 z-10">
                 <button onClick={onClose} className="absolute left-4 p-2 rounded-full hover:bg-gray-100">
                     <ArrowLeft className="w-6 h-6 text-gray-700" />
                 </button>
@@ -52,7 +52,7 @@ const AICoachPage: React.FC<AICoachPageProps> = ({ messages, onSendMessage, isLo
                 </div>
             </div>
             
-            <div className="flex-1 overflow-y-auto p-4 space-y-4">
+            <div className="flex-1 overflow-y-auto p-4 space-y-4 pb-24">
                 {messages.map(msg => (
                     <div key={msg.id} className={`flex items-end ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
                         {msg.sender === 'trainer' && 
@@ -87,7 +87,7 @@ const AICoachPage: React.FC<AICoachPageProps> = ({ messages, onSendMessage, isLo
                  <div ref={messagesEndRef} />
             </div>
 
-            <div className="px-3 pt-3 bg-white border-t border-slate-200 pb-[calc(1.25rem+env(safe-area-inset-bottom))]">
+            <div className="fixed bottom-20 left-0 right-0 px-3 pt-3 bg-white border-t border-slate-200 pb-3 z-10">
                 <div className="flex items-end space-x-3 bg-slate-100 rounded-2xl p-2">
                     <textarea
                         ref={textareaRef}

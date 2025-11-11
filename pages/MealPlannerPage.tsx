@@ -68,12 +68,12 @@ const MealPlannerPage: React.FC<MealPlannerPageProps> = ({ user, onClose, onSave
     };
 
     return (
-        <div className="bg-slate-50 min-h-screen animate-fade-in flex flex-col relative">
+        <div className="bg-slate-50 min-h-screen animate-fade-in flex flex-col relative pb-20">
             <button onClick={onClose} className="absolute top-4 left-4 z-10 p-2 rounded-full bg-white/70 backdrop-blur-sm hover:bg-white transition-colors">
                 <ArrowLeft className="w-6 h-6 text-slate-700" />
             </button>
 
-            <main className="flex-1 p-4 space-y-4 pt-16">
+            <main className="flex-1 p-4 space-y-4 pt-16 overflow-y-auto">
                  <h1 className="text-2xl font-bold text-slate-800 flex items-center justify-center mb-2">
                     <UtensilsCrossed className="w-6 h-6 mr-2 text-purple-600" />
                     AI Meal Planner
