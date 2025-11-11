@@ -11,31 +11,71 @@ const DashboardPage: React.FC<DashboardPageProps> = () => {
   const [upcomingEvents, setUpcomingEvents] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
+  // Mock events data for testing
+  const mockEvents = [
+    {
+      id: '1',
+      title: 'Morning Yoga Session',
+      description: 'Start your day with energizing yoga flow',
+      date: '2025-11-15',
+      location: 'Le Van Tam Park, District 1',
+      image_url: 'https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=800',
+    },
+    {
+      id: '2',
+      title: 'CrossFit Community WOD',
+      description: 'Join us for an intense group workout',
+      date: '2025-11-18',
+      location: 'District 2 Fitness Center',
+      image_url: 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=800',
+    },
+    {
+      id: '3',
+      title: 'Sunset Running Club',
+      description: '5K run along the riverside',
+      date: '2025-11-20',
+      location: 'Thu Thiem Park, District 2',
+      image_url: 'https://images.unsplash.com/photo-1552674605-db6ffd4facb5?w=800',
+    },
+    {
+      id: '4',
+      title: 'Boxing Technique Workshop',
+      description: 'Learn proper boxing fundamentals',
+      date: '2025-11-22',
+      location: 'Fight Club Gym, District 3',
+      image_url: 'https://images.unsplash.com/photo-1549719386-74dfcbf7dbed?w=800',
+    },
+  ];
+
   useEffect(() => {
-    const fetchEvents = async () => {
-      try {
-        const { data, error } = await supabase
-          .from('events')
-          .select(`
-            *,
-            organizer:organizer_id (username),
-            interests:event_interests (count)
-          `)
-          .eq('status', 'approved')
-          .gte('date', new Date().toISOString().split('T')[0])
-          .order('date', { ascending: true })
-          .limit(3);
-
-        if (error) throw error;
-        setUpcomingEvents(data || []);
-      } catch (error) {
-        console.error('Error fetching events:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchEvents();
+    // Use mock data for now
+    setUpcomingEvents(mockEvents);
+    setLoading(false);
+    
+    // Uncomment to fetch real data:
+    // const fetchEvents = async () => {
+    //   try {
+    //     const { data, error } = await supabase
+    //       .from('events')
+    //       .select(`
+    //         *,
+    //         organizer:organizer_id (username),
+    //         interests:event_interests (count)
+    //       `)
+    //       .eq('status', 'approved')
+    //       .gte('date', new Date().toISOString().split('T')[0])
+    //       .order('date', { ascending: true })
+    //       .limit(4);
+    //
+    //     if (error) throw error;
+    //     setUpcomingEvents(data || []);
+    //   } catch (error) {
+    //     console.error('Error fetching events:', error);
+    //   } finally {
+    //     setLoading(false);
+    //   }
+    // };
+    // fetchEvents();
   }, []);
 
   const categories = [
@@ -170,10 +210,10 @@ const DashboardPage: React.FC<DashboardPageProps> = () => {
         </div>
       </div>
 
-      {/* Upcoming Events */}
+      {/* Upcoming Events - Blog Style Carousel */}
       {!loading && upcomingEvents.length > 0 && (
-        <div className="px-4 mb-6">
-          <div className="flex justify-between items-center mb-3">
+        <div className="mb-6">
+          <div className="flex justify-between items-center mb-3 px-4">
             <h2 className="font-bold text-slate-900 text-base">Upcoming Events</h2>
             <button
               onClick={() => navigate('/events')}
@@ -182,36 +222,44 @@ const DashboardPage: React.FC<DashboardPageProps> = () => {
               See All
             </button>
           </div>
-          <div className="space-y-3">
-            {upcomingEvents.map((event) => (
-              <button
-                key={event.id}
-                onClick={() => navigate('/events')}
-                className="w-full bg-white rounded-2xl shadow-md shadow-slate-200/60 overflow-hidden hover:shadow-lg transition-all duration-200"
-              >
-                <div className="relative h-32">
-                  <img
-                    src={event.image_url || 'https://images.unsplash.com/photo-1517836357463-d25dfeac3438?w=800'}
-                    alt={event.title}
-                    className="w-full h-full object-cover"
-                  />
-                  <div className="absolute top-2 right-2 bg-white/95 backdrop-blur-sm px-2 py-1 rounded-lg flex items-center gap-1">
-                    <Calendar className="w-3 h-3 text-[#FF6B35]" />
-                    <span className="text-xs font-semibold text-slate-700">
-                      {new Date(event.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-                    </span>
+          <div className="overflow-x-auto px-4 pb-2" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+            <style>{`
+              .hide-scrollbar::-webkit-scrollbar {
+                display: none;
+              }
+            `}</style>
+            <div className="flex gap-3 hide-scrollbar" style={{ width: 'max-content' }}>
+              {upcomingEvents.map((event) => (
+                <button
+                  key={event.id}
+                  onClick={() => navigate('/events')}
+                  className="bg-white rounded-2xl shadow-md shadow-slate-200/60 overflow-hidden hover:shadow-lg transition-all duration-200 text-left"
+                  style={{ width: '280px', flexShrink: 0 }}
+                >
+                  <div className="relative h-40">
+                    <img
+                      src={event.image_url || 'https://images.unsplash.com/photo-1517836357463-d25dfeac3438?w=800'}
+                      alt={event.title}
+                      className="w-full h-full object-cover"
+                    />
+                    <div className="absolute top-2 right-2 bg-white/95 backdrop-blur-sm px-2 py-1 rounded-lg flex items-center gap-1">
+                      <Calendar className="w-3 h-3 text-[#FF6B35]" />
+                      <span className="text-xs font-semibold text-slate-700">
+                        {new Date(event.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                      </span>
+                    </div>
                   </div>
-                </div>
-                <div className="p-3">
-                  <h3 className="font-bold text-slate-900 text-sm mb-1 line-clamp-1">{event.title}</h3>
-                  <p className="text-xs text-slate-600 mb-2 line-clamp-2">{event.description}</p>
-                  <div className="flex items-center gap-1 text-xs text-slate-500">
-                    <MapPin className="w-3 h-3" />
-                    <span className="line-clamp-1">{event.location}</span>
+                  <div className="p-4">
+                    <h3 className="font-bold text-slate-900 text-sm mb-2 line-clamp-2 min-h-[2.5rem]">{event.title}</h3>
+                    <p className="text-xs text-slate-600 mb-3 line-clamp-2 min-h-[2rem]">{event.description}</p>
+                    <div className="flex items-center gap-1 text-xs text-slate-500">
+                      <MapPin className="w-3 h-3 flex-shrink-0" />
+                      <span className="line-clamp-1">{event.location}</span>
+                    </div>
                   </div>
-                </div>
-              </button>
-            ))}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
       )}
