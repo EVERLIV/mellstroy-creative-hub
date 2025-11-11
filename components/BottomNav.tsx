@@ -21,8 +21,8 @@ const BottomNav: React.FC = () => {
   ];
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-100 z-50 max-w-md mx-auto shadow-[0_-1px_4px_rgba(0,0,0,0.05)] pb-[env(safe-area-inset-bottom)]">
-      <div className="flex justify-around items-center h-16 px-2">
+    <nav className="fixed bottom-0 left-0 right-0 w-full bg-white border-t border-gray-100 z-50 shadow-[0_-1px_4px_rgba(0,0,0,0.05)] pb-[env(safe-area-inset-bottom)]">
+      <div className="flex justify-around items-center h-16 px-4 sm:px-6 md:px-8 lg:px-12 max-w-full">
         {navItems.map((item) => {
           const isActive = location.pathname === item.path;
 
