@@ -180,7 +180,7 @@ const EditTrainerProfilePage: React.FC<EditTrainerProfilePageProps> = ({ user, o
     };
 
     return (
-        <div className="bg-slate-50 min-h-screen overflow-y-auto">
+        <div className="bg-slate-50 min-h-screen overflow-y-auto scroll-smooth">
             {/* Fixed Header */}
             <div className="sticky top-0 z-50 bg-white/95 backdrop-blur-sm border-b border-slate-200">
                 <div className="flex items-center justify-between p-4">
@@ -233,7 +233,7 @@ const EditTrainerProfilePage: React.FC<EditTrainerProfilePageProps> = ({ user, o
                 </div>
 
                 {/* Basic Info */}
-                <div className="bg-white p-4 rounded-2xl shadow-md shadow-slate-200/60 space-y-4">
+                <div id="basic-info" className="bg-white p-4 rounded-2xl shadow-md shadow-slate-200/60 space-y-4 scroll-mt-20">
                     <h3 className="font-bold text-slate-900 text-base">Basic Information</h3>
                     
                     <div>
@@ -316,7 +316,7 @@ const EditTrainerProfilePage: React.FC<EditTrainerProfilePageProps> = ({ user, o
                 </div>
 
                 {/* Pricing */}
-                <div className="bg-white p-4 rounded-2xl shadow-md shadow-slate-200/60">
+                <div id="pricing" className="bg-white p-4 rounded-2xl shadow-md shadow-slate-200/60 scroll-mt-20">
                     <h3 className="font-bold text-slate-900 text-base mb-3">Pricing</h3>
                     <div>
                         <label htmlFor="price" className="block text-sm font-medium text-slate-700 mb-1.5">
@@ -339,7 +339,7 @@ const EditTrainerProfilePage: React.FC<EditTrainerProfilePageProps> = ({ user, o
                 </div>
                 
                 {/* Specialties */}
-                <div className="bg-white p-4 rounded-2xl shadow-md shadow-slate-200/60">
+                <div id="specialties" className="bg-white p-4 rounded-2xl shadow-md shadow-slate-200/60 scroll-mt-20">
                     <div className="flex justify-between items-center mb-3">
                         <h3 className="font-bold text-slate-900 text-base">
                             Training Specialties <span className="text-red-500">*</span>

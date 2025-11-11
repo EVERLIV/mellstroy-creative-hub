@@ -105,7 +105,7 @@ const EditAboutMePage: React.FC<EditAboutMePageProps> = ({ user, onSave, onCance
     };
 
     return (
-        <div className="bg-slate-50 min-h-screen overflow-y-auto">
+        <div className="bg-slate-50 min-h-screen overflow-y-auto scroll-smooth">
             {/* Fixed Header */}
             <div className="sticky top-0 z-50 bg-white/95 backdrop-blur-sm border-b border-slate-200">
                 <div className="flex items-center justify-between p-4">
@@ -158,7 +158,7 @@ const EditAboutMePage: React.FC<EditAboutMePageProps> = ({ user, onSave, onCance
                 </div>
 
                 {/* Basic Info */}
-                <div className="bg-white p-4 rounded-2xl shadow-md shadow-slate-200/60 space-y-4">
+                <div id="basic-info" className="bg-white p-4 rounded-2xl shadow-md shadow-slate-200/60 space-y-4 scroll-mt-20">
                     <h3 className="font-bold text-slate-900 text-base">Basic Information</h3>
                     
                     <div>
@@ -211,7 +211,7 @@ const EditAboutMePage: React.FC<EditAboutMePageProps> = ({ user, onSave, onCance
                 </div>
                 
                 {/* Fitness Stats */}
-                <div className="bg-white p-4 rounded-2xl shadow-md shadow-slate-200/60">
+                <div id="fitness-stats" className="bg-white p-4 rounded-2xl shadow-md shadow-slate-200/60 scroll-mt-20">
                     <h3 className="font-bold text-slate-900 text-base mb-3">Fitness Stats</h3>
                     <div className="grid grid-cols-3 gap-3">
                         <div>
@@ -260,7 +260,7 @@ const EditAboutMePage: React.FC<EditAboutMePageProps> = ({ user, onSave, onCance
                 </div>
 
                 {/* Goals */}
-                <div className="bg-white p-4 rounded-2xl shadow-md shadow-slate-200/60">
+                <div id="goals" className="bg-white p-4 rounded-2xl shadow-md shadow-slate-200/60 scroll-mt-20">
                     <div className="flex justify-between items-center mb-3">
                         <h3 className="font-bold text-slate-900 text-base">Fitness Goals</h3>
                         <span className="text-xs text-slate-500 bg-slate-100 px-2 py-1 rounded-full">
@@ -289,7 +289,7 @@ const EditAboutMePage: React.FC<EditAboutMePageProps> = ({ user, onSave, onCance
                 </div>
                 
                 {/* Interests */}
-                <div className="bg-white p-4 rounded-2xl shadow-md shadow-slate-200/60">
+                <div id="interests" className="bg-white p-4 rounded-2xl shadow-md shadow-slate-200/60 scroll-mt-20">
                     <div className="flex justify-between items-center mb-3">
                         <h3 className="font-bold text-slate-900 text-base">Sport Interests</h3>
                         <span className="text-xs text-slate-500 bg-slate-100 px-2 py-1 rounded-full">
