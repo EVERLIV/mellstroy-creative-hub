@@ -8,6 +8,7 @@ import AuthPage from './src/pages/AuthPage';
 import WelcomePage from './pages/WelcomePage';
 import DashboardPage from './pages/DashboardPage';
 import HomePage from './pages/HomePage';
+import Explore from './pages/Explore';
 import SearchPage from './pages/SearchPage';
 import FavoritesPage from './pages/FavoritesPage';
 import MyBookingsPage from './pages/MyBookingsPage';
@@ -154,12 +155,9 @@ const AppRoutes = () => {
           path="/explore"
           element={
             <ProtectedRoute>
-              <HomePage
-                trainers={trainers}
+              <Explore
                 onInitiateBooking={handleInitiateBooking}
                 onOpenChat={handleOpenChat}
-                selectedCategory={selectedCategory}
-                onSelectCategory={setSelectedCategory}
                 userRole={userRole}
                 currentUserId={currentUserId}
                 favoriteTrainerIds={favoriteTrainerIds}
