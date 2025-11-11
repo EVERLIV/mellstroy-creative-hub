@@ -182,7 +182,7 @@ const DashboardPage: React.FC<DashboardPageProps> = () => {
         <div className="max-w-2xl mx-auto">
           {/* Greeting */}
           <div className="mb-6">
-            <h1 className="text-2xl font-bold text-white">Welcome to RhinoFit!</h1>
+            <h1 className="text-2xl font-bold text-white">AI Premium Features - RhinoFit Premium</h1>
             <p className="text-white/90 text-sm mt-1">Find your perfect trainer today</p>
           </div>
 
