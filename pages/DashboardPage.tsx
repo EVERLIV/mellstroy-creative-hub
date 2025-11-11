@@ -333,21 +333,22 @@ const DashboardPage: React.FC<DashboardPageProps> = () => {
 
       {/* Quick Actions Banner */}
       <div className="px-4 mb-6">
-        <div className="bg-gradient-to-r from-blue-500 to-cyan-500 rounded-2xl p-6 shadow-lg">
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="font-bold text-white text-lg mb-1">Start Your Journey</h3>
-              <p className="text-white/90 text-sm mb-3">Book your first training session today!</p>
-              <button
-                onClick={() => navigate('/explore')}
-                className="bg-white text-blue-600 font-semibold px-4 py-2 rounded-lg text-sm hover:bg-blue-50 transition-colors shadow-md"
-              >
-                Find Trainers
-              </button>
-            </div>
-            <div className="w-20 h-20 bg-white/20 rounded-full flex items-center justify-center backdrop-blur-sm">
-              <Dumbbell className="w-10 h-10 text-white" />
-            </div>
+        <div 
+          className="bg-gradient-to-r from-blue-500 to-cyan-500 rounded-2xl p-6 shadow-lg bg-cover bg-center relative overflow-hidden"
+          style={{
+            backgroundImage: `url('')`, // Add your background image URL here
+            backgroundBlendMode: 'overlay'
+          }}
+        >
+          <div className="relative z-10">
+            <h3 className="font-bold text-white text-lg mb-1">Start Your Journey</h3>
+            <p className="text-white/90 text-sm mb-3">Book your first training session today!</p>
+            <button
+              onClick={() => navigate('/explore')}
+              className="bg-white text-blue-600 font-semibold px-4 py-2 rounded-lg text-sm hover:bg-blue-50 transition-colors shadow-md"
+            >
+              Find Trainers
+            </button>
           </div>
         </div>
       </div>
