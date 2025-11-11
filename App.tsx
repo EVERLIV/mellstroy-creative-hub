@@ -13,7 +13,7 @@ import StudentProfilePage from './pages/StudentProfilePage';
 import MyBookingsPage from './pages/MyBookingsPage';
 import ChatPage from './pages/ChatPage';
 import CreateProfilePage from './pages/CreateProfilePage';
-import OnboardingPage from './pages/OnboardingPage';
+import OnboardingPageContainer from './pages/OnboardingPageContainer';
 import BottomNav from './components/BottomNav';
 import BookingModal from './components/BookingModal';
 import ReviewModal from './components/ReviewModal';
@@ -85,7 +85,7 @@ const AppRoutes = () => {
       <Routes>
         <Route path="/auth" element={user ? <Navigate to="/" replace /> : <AuthPage />} />
         <Route path="/welcome" element={<WelcomePage />} />
-        <Route path="/onboarding" element={<ProtectedRoute><OnboardingPage /></ProtectedRoute>} />
+        <Route path="/onboarding" element={<ProtectedRoute><OnboardingPageContainer /></ProtectedRoute>} />
         <Route
           path="/"
           element={

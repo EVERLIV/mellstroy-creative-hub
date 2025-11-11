@@ -209,13 +209,18 @@ export type Database = {
       }
       profiles: {
         Row: {
+          age: number | null
           avatar_url: string | null
           bio: string | null
           created_at: string | null
+          goals: string[] | null
+          height: number | null
           id: string
+          interests: string[] | null
           is_premium: boolean | null
           is_verified: boolean | null
           location: string | null
+          onboarding_completed: boolean | null
           phone: string | null
           price_per_hour: number | null
           rating: number | null
@@ -223,15 +228,21 @@ export type Database = {
           specialty: string[] | null
           updated_at: string | null
           username: string
+          weight: number | null
         }
         Insert: {
+          age?: number | null
           avatar_url?: string | null
           bio?: string | null
           created_at?: string | null
+          goals?: string[] | null
+          height?: number | null
           id: string
+          interests?: string[] | null
           is_premium?: boolean | null
           is_verified?: boolean | null
           location?: string | null
+          onboarding_completed?: boolean | null
           phone?: string | null
           price_per_hour?: number | null
           rating?: number | null
@@ -239,15 +250,21 @@ export type Database = {
           specialty?: string[] | null
           updated_at?: string | null
           username: string
+          weight?: number | null
         }
         Update: {
+          age?: number | null
           avatar_url?: string | null
           bio?: string | null
           created_at?: string | null
+          goals?: string[] | null
+          height?: number | null
           id?: string
+          interests?: string[] | null
           is_premium?: boolean | null
           is_verified?: boolean | null
           location?: string | null
+          onboarding_completed?: boolean | null
           phone?: string | null
           price_per_hour?: number | null
           rating?: number | null
@@ -255,6 +272,7 @@ export type Database = {
           specialty?: string[] | null
           updated_at?: string | null
           username?: string
+          weight?: number | null
         }
         Relationships: []
       }

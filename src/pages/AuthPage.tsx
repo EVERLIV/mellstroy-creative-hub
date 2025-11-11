@@ -13,15 +13,19 @@ const AuthPage = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
   const [isConfirmPasswordVisible, setIsConfirmPasswordVisible] = useState(false);
-  const { signIn, signUp, user } = useAuth();
+  const { signIn, signUp, user, checkOnboardingStatus } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
 
   useEffect(() => {
-    if (user) {
-      navigate('/');
-    }
-  }, [user, navigate]);
+    const checkAndRedirect = async () => {
+      if (user) {
+        const isOnboarded = await checkOnboardingStatus(user.id);
+        navigate(isOnboarded ? '/' : '/onboarding');
+      }
+    };
+    checkAndRedirect();
+  }, [user, navigate, checkOnboardingStatus]);
 
   const handleLoginSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
