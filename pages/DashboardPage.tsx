@@ -214,19 +214,19 @@ const DashboardPage: React.FC<DashboardPageProps> = () => {
                   className="flex flex-col items-center gap-1 group"
                 >
                   {category.imageUrl ? (
-                    <div className="w-[100px] h-[100px] flex items-center justify-center p-2 bg-white rounded-2xl">
+                    <div className="w-[100px] h-[100px] flex items-center justify-center p-2 bg-white rounded-2xl transition-all duration-300 group-hover:shadow-lg group-hover:shadow-orange-200 group-hover:-translate-y-1">
                       <img 
                         src={category.imageUrl} 
                         alt={category.name}
-                        className="w-full h-full object-contain transition-all duration-200 group-hover:scale-110"
+                        className="w-full h-full object-contain transition-all duration-300 group-hover:scale-110 group-hover:brightness-110 group-hover:contrast-110"
                       />
                     </div>
                   ) : (
-                    <div className="w-[100px] h-[100px] flex items-center justify-center rounded-2xl bg-slate-100 transition-all duration-200 group-hover:scale-105">
-                      <IconComponent className="w-12 h-12 text-slate-700" />
+                    <div className="w-[100px] h-[100px] flex items-center justify-center rounded-2xl bg-slate-100 transition-all duration-300 group-hover:scale-105 group-hover:shadow-lg group-hover:shadow-slate-200 group-hover:-translate-y-1">
+                      <IconComponent className="w-12 h-12 text-slate-700 transition-colors duration-300 group-hover:text-orange-500" />
                     </div>
                   )}
-                  <span className="text-xs font-medium text-slate-700 text-center">{category.name}</span>
+                  <span className="text-xs font-medium text-slate-700 text-center transition-colors duration-300 group-hover:text-orange-500">{category.name}</span>
                 </button>
               );
             })}
