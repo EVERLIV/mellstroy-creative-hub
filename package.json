@@ -9,12 +9,13 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "react": "^19.2.0",
-    "react-dom": "^19.2.0",
+    "@google/genai": "^1.29.0",
+    "@supabase/supabase-js": "^2.81.0",
+    "firebase": "^12.5.0",
     "immer": "^10.2.0",
     "lucide-react": "^0.417.0",
-    "@google/genai": "^1.29.0",
-    "firebase": "^12.5.0"
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0"
   },
   "devDependencies": {
     "@types/node": "^22.14.0",
