@@ -13,30 +13,23 @@ import CompleteProfilePrompt from '../components/CompleteProfilePrompt'; // New 
 const ANIMATION_DURATION = 350;
 
 interface StudentProfilePageProps {
-    user: Trainer;
+    currentUser: Trainer;
     userRole: UserRole;
     onRoleChange: (role: UserRole) => void;
-    onNavigateTab: (tab: 'My Classes' | 'Messages') => void;
-    // Props for sub-pages
-    trainers: Trainer[];
-    favoriteTrainerIds: string[];
-    onToggleFavorite: (trainerId: string) => void;
-    onInitiateBooking: (target: { trainer: Trainer; cls: Class }) => void;
-    onOpenChat: (trainer: Trainer) => void;
-    savedMealPlans: MealPlan[];
-    onDeleteMealPlan: (planId: number) => void;
-    onUpdateProfile: (updatedUser: Trainer) => void;
-    onOpenReviewsModal: (trainer: Trainer) => void;
+    onNavigateToBookings: () => void;
+    onNavigateToChats: () => void;
+    onEditProfile: () => void;
+    onSaveProfile: (updatedUser: Trainer) => void;
     onLogout: () => void;
 }
 
 type SubPage = 'about' | 'edit-about' | 'favorites' | 'meal-plans';
 
 const StudentProfilePage: React.FC<StudentProfilePageProps> = (props) => {
-    const { user, userRole, onRoleChange, onNavigateTab, onUpdateProfile, onLogout } = props;
+    const { currentUser, userRole, onRoleChange, onNavigateToBookings, onNavigateToChats, onEditProfile, onSaveProfile, onLogout } = props;
     const [activeSubPage, setActiveSubPage] = useState<SubPage | null>(null);
     const [isExiting, setIsExiting] = useState(false);
-    const profileIsIncomplete = !isStudentProfileComplete(user);
+    const profileIsIncomplete = !isStudentProfileComplete(currentUser);
 
 
     const handleNavigateTo = (page: SubPage) => {
@@ -64,20 +57,20 @@ const StudentProfilePage: React.FC<StudentProfilePageProps> = (props) => {
 
         switch (activeSubPage) {
             case 'about':
-                return <AboutMePage user={user} onBack={handleBack} onEdit={() => handleNavigateTo('edit-about')} />;
+                return <AboutMePage user={currentUser} onBack={handleBack} onEdit={() => handleNavigateTo('edit-about')} />;
             case 'edit-about':
                 return <EditAboutMePage 
-                    user={user} 
+                    user={currentUser} 
                     onCancel={() => handleBackToParent('about')} 
                     onSave={(updatedUser) => {
-                        onUpdateProfile(updatedUser);
+                        onSaveProfile(updatedUser);
                         handleBackToParent('about');
                     }} 
                 />;
             case 'favorites':
-                return <FavoritesPage {...props} onBack={handleBack} />;
+                return null; // Will be integrated separately
             case 'meal-plans':
-                return <MyMealPlansPage plans={props.savedMealPlans} onDelete={props.onDeleteMealPlan} onBack={handleBack} />;
+                return null; // Will be integrated separately
             default:
                 return null;
         }
@@ -90,12 +83,12 @@ const StudentProfilePage: React.FC<StudentProfilePageProps> = (props) => {
                      <h1 className="text-2xl font-bold text-slate-800 text-center">My Profile</h1>
                     <div className="flex flex-col items-center pt-2">
                         <img 
-                            src={user.imageUrl} 
-                            alt={user.name} 
+                            src={currentUser.imageUrl} 
+                            alt={currentUser.name} 
                             className="w-24 h-24 rounded-full object-cover border-4 border-white shadow-lg"
                         />
-                        <h2 className="text-2xl font-bold text-slate-800 mt-3">{user.name}</h2>
-                        <p className="text-sm text-slate-500 mt-1">{user.location}</p>
+                        <h2 className="text-2xl font-bold text-slate-800 mt-3">{currentUser.name}</h2>
+                        <p className="text-sm text-slate-500 mt-1">{currentUser.location}</p>
                     </div>
                 </div>
                 
@@ -134,7 +127,7 @@ const StudentProfilePage: React.FC<StudentProfilePageProps> = (props) => {
                                 </button>
                             </li>
                              <li className="p-2">
-                                <button onClick={() => onNavigateTab('My Classes')} className="w-full flex items-center justify-between hover:bg-slate-50 p-2 rounded-lg">
+                                <button onClick={onNavigateToBookings} className="w-full flex items-center justify-between hover:bg-slate-50 p-2 rounded-lg">
                                     <div className="flex items-center">
                                         <Calendar className="w-5 h-5 mr-3 text-slate-500"/>
                                         <span className="font-semibold text-slate-700">My Bookings</span>
@@ -143,7 +136,7 @@ const StudentProfilePage: React.FC<StudentProfilePageProps> = (props) => {
                                 </button>
                             </li>
                             <li className="p-2">
-                                 <button onClick={() => onNavigateTab('Messages')} className="w-full flex items-center justify-between hover:bg-slate-50 p-2 rounded-lg">
+                                 <button onClick={onNavigateToChats} className="w-full flex items-center justify-between hover:bg-slate-50 p-2 rounded-lg">
                                     <div className="flex items-center">
                                         <MessageCircle className="w-5 h-5 mr-3 text-slate-500"/>
                                         <span className="font-semibold text-slate-700">My Chats</span>
