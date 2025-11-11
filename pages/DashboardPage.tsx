@@ -217,17 +217,17 @@ const DashboardPage: React.FC<DashboardPageProps> = () => {
                   onClick={() => handleCategoryClick(category.id)}
                   className="flex flex-col items-center gap-2 group"
                 >
-                  <div className={`w-[163px] h-[163px] rounded-2xl bg-gradient-to-br ${category.color} flex items-center justify-center shadow-md group-hover:shadow-lg transition-all duration-200 group-hover:scale-105 overflow-hidden border-2 border-slate-200`}>
-                    {category.imageUrl ? (
-                      <img 
-                        src={category.imageUrl} 
-                        alt={category.name}
-                        className="w-full h-full object-contain p-4"
-                      />
-                    ) : (
-                      <IconComponent className="w-16 h-16 text-slate-700" />
-                    )}
-                  </div>
+                  {category.imageUrl ? (
+                    <img 
+                      src={category.imageUrl} 
+                      alt={category.name}
+                      className="w-20 h-20 object-contain border-2 border-slate-200 rounded-2xl transition-all duration-200 group-hover:scale-105"
+                    />
+                  ) : (
+                    <div className="w-20 h-20 flex items-center justify-center border-2 border-slate-200 rounded-2xl transition-all duration-200 group-hover:scale-105">
+                      <IconComponent className="w-10 h-10 text-slate-700" />
+                    </div>
+                  )}
                   <span className="text-xs font-medium text-slate-700 text-center">{category.name}</span>
                 </button>
               );
