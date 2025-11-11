@@ -19,6 +19,7 @@ import EventsFlowPage from './pages/EventsFlowPage';
 import MealPlannerPage from './pages/MealPlannerPage';
 import AICoachPage from './pages/AICoachPage';
 import UploadCategoryIconsPage from './pages/UploadCategoryIconsPage';
+import MediaUploadPage from './pages/MediaUploadPage';
 import AdminDashboardPage from './pages/AdminDashboardPage';
 import BottomNav from './components/BottomNav';
 import BookingModal from './components/BookingModal';
@@ -280,6 +281,14 @@ const AppRoutes = () => {
           element={
             <ProtectedRoute>
               <UploadCategoryIconsPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/media-upload"
+          element={
+            <ProtectedRoute>
+              <MediaUploadPage />
             </ProtectedRoute>
           }
         />

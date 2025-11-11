@@ -403,13 +403,13 @@ const AdminDashboardPage: React.FC = () => {
               <h2 className="text-lg font-semibold text-foreground mb-4">Quick Actions</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <button
-                  onClick={() => navigate('/upload-category-icons')}
+                  onClick={() => navigate('/media-upload')}
                   className="flex items-center gap-3 p-4 bg-muted/50 hover:bg-muted rounded-lg transition-colors"
                 >
                   <Upload className="w-6 h-6 text-primary" />
                   <div className="text-left">
-                    <p className="font-semibold text-foreground">Upload Category Icons</p>
-                    <p className="text-sm text-muted-foreground">Manage category images</p>
+                    <p className="font-semibold text-foreground">Upload Media Files</p>
+                    <p className="text-sm text-muted-foreground">Upload images to storage buckets</p>
                   </div>
                 </button>
 
