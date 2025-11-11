@@ -14,16 +14,44 @@ interface EditTrainerProfilePageProps {
 const EditTrainerProfilePage: React.FC<EditTrainerProfilePageProps> = ({ user, onSave, onCancel }) => {
     const [formData, setFormData] = useState<Trainer>(user);
     const [isUploading, setIsUploading] = useState(false);
+    const [phoneError, setPhoneError] = useState<string>('');
     const fileInputRef = useRef<HTMLInputElement>(null);
     const { toast } = useToast();
+
+    const validatePhoneNumber = (phone: string): boolean => {
+        if (!phone || phone.trim() === '') {
+            setPhoneError('');
+            return true; // Optional field
+        }
+
+        // Remove all spaces, dashes, and parentheses for validation
+        const cleanPhone = phone.replace(/[\s\-()]/g, '');
+        
+        // Vietnam phone format: +84 followed by 9-10 digits
+        const vietnamPhoneRegex = /^\+84[0-9]{9,10}$/;
+        
+        if (!vietnamPhoneRegex.test(cleanPhone)) {
+            setPhoneError('Invalid format. Use: +84 xxx xxx xxx (9-10 digits after +84)');
+            return false;
+        }
+        
+        setPhoneError('');
+        return true;
+    };
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
         const { name, value } = e.target;
         const isNumeric = ['price'].includes(name);
+        
         setFormData(prev => ({
             ...prev,
             [name]: isNumeric ? (value === '' ? 0 : parseFloat(value)) : value
         }));
+
+        // Validate phone number on change
+        if (name === 'phone') {
+            validatePhoneNumber(value);
+        }
     };
 
     const handleToggleSpecialty = (specialty: string) => {
@@ -138,6 +166,16 @@ const EditTrainerProfilePage: React.FC<EditTrainerProfilePageProps> = ({ user, o
             return;
         }
 
+        // Validate phone number if provided
+        if (formData.phone && !validatePhoneNumber(formData.phone)) {
+            toast({
+                variant: "destructive",
+                title: "Validation error",
+                description: "Please enter a valid Vietnam phone number.",
+            });
+            return;
+        }
+
         onSave(formData);
     };
 
@@ -247,8 +285,16 @@ const EditTrainerProfilePage: React.FC<EditTrainerProfilePageProps> = ({ user, o
                                 value={formData.phone || ''} 
                                 onChange={handleChange} 
                                 placeholder="+84 xxx xxx xxx"
-                                className="w-full px-3 py-2 border border-border rounded-lg bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary" 
+                                className={`w-full px-3 py-2 border rounded-lg bg-background text-foreground focus:outline-none focus:ring-2 ${
+                                    phoneError 
+                                        ? 'border-destructive focus:ring-destructive' 
+                                        : 'border-border focus:ring-primary'
+                                }`}
                             />
+                            {phoneError && (
+                                <p className="text-xs text-destructive mt-1">{phoneError}</p>
+                            )}
+                            <p className="text-xs text-muted-foreground mt-1">Format: +84 followed by 9-10 digits</p>
                         </div>
                     </div>
                 </div>
