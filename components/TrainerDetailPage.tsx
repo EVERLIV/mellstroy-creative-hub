@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Trainer, Class, ClassType, UserRole } from '../types';
 import { ArrowLeft, MessageCircle, Star, ShieldCheck, MapPin, Clock, Building, Sun, Home, Heart, Users, Crown, Camera } from 'lucide-react';
 import ImageGalleryModal from './ImageGalleryModal';
@@ -66,6 +67,7 @@ interface ClassCardProps {
     onOpenChat: (trainer: Trainer, context?: { className: string; bookingDate?: string; }) => void;
 }
 const ClassCard: React.FC<ClassCardProps> = ({ cls, trainer, userRole, currentUserId, onInitiateBooking, onOpenChat }) => {
+    const navigate = useNavigate();
     const enrolledCount = cls.bookings?.length || 0;
     const enrollmentPercentage = cls.capacity > 0 ? (enrolledCount / cls.capacity) * 100 : 0;
     const isFull = enrolledCount >= cls.capacity;
@@ -73,8 +75,21 @@ const ClassCard: React.FC<ClassCardProps> = ({ cls, trainer, userRole, currentUs
     const userBooking = cls.bookings?.find(b => b.userId === currentUserId);
     const hasUserBooked = !!userBooking;
 
+    // Premium class styling
+    const isPremiumClass = trainer.isPremium;
+
     return (
-        <div className="bg-white rounded-2xl shadow-md shadow-slate-200/60 overflow-hidden">
+        <div className={`bg-card rounded-2xl overflow-hidden transition-all duration-300 ${
+            isPremiumClass 
+                ? 'shadow-lg shadow-amber-200/50 ring-2 ring-amber-400/30 hover:shadow-xl hover:shadow-amber-200/60' 
+                : 'shadow-md shadow-slate-200/60 hover:shadow-lg'
+        }`}>
+            {isPremiumClass && (
+                <div className="bg-gradient-to-r from-amber-400 to-yellow-500 px-3 py-1 flex items-center justify-center">
+                    <Crown className="w-3 h-3 text-white mr-1.5" />
+                    <span className="text-xs font-bold text-white">PREMIUM CLASS</span>
+                </div>
+            )}
             <img src={cls.imageUrl} alt={cls.name} className="h-40 w-full object-cover" />
             <div className="p-4">
                 <div className="flex justify-between items-start">
@@ -122,15 +137,21 @@ const ClassCard: React.FC<ClassCardProps> = ({ cls, trainer, userRole, currentUs
                 
                 <div className="mt-4 flex items-center space-x-2">
                     <button 
+                        onClick={() => navigate(`/class/${cls.id}`)}
+                        className="flex-1 font-bold py-2.5 px-4 rounded-lg transition-all duration-200 text-sm bg-secondary text-secondary-foreground hover:bg-secondary/80"
+                    >
+                        View Details
+                    </button>
+                    <button 
                         onClick={() => onInitiateBooking({ trainer, cls })}
                         disabled={isFull || isBookingDisabledForTrainer}
-                        className={`w-full font-bold py-2.5 px-4 rounded-lg transition-all duration-200 text-sm
+                        className={`flex-1 font-bold py-2.5 px-4 rounded-lg transition-all duration-200 text-sm
                         ${isFull || isBookingDisabledForTrainer
-                            ? 'bg-gray-300 text-gray-500 cursor-not-allowed' 
-                            : 'bg-[#FF6B35] text-white hover:bg-orange-600'
+                            ? 'bg-muted text-muted-foreground cursor-not-allowed' 
+                            : 'bg-primary text-primary-foreground hover:bg-primary/90'
                         }`}
                     >
-                        {isFull ? 'Class Full' : isBookingDisabledForTrainer ? 'Trainers cannot book' : 'Book Now'}
+                        {isFull ? 'Full' : isBookingDisabledForTrainer ? 'N/A' : 'Book'}
                     </button>
                     {hasUserBooked && (
                          <button 

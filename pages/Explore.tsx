@@ -124,12 +124,13 @@ const Explore: React.FC<ExploreProps> = ({
         classes: (classes || [])
           .filter(c => c.trainer_id === profile.id)
           .map(c => ({
-            id: c.id as any, // UUID stored as string, cast to number type for compatibility
+            id: c.id as any,
             name: c.name,
             description: c.description || '',
             duration: c.duration_minutes,
             price: Number(c.price),
             imageUrl: c.image_url || '',
+            imageUrls: c.image_urls || [],
             capacity: c.capacity,
             classType: c.class_type as 'Indoor' | 'Outdoor' | 'Home',
           })),

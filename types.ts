@@ -22,6 +22,7 @@ export interface Class {
   duration: number; // in minutes
   price: number;
   imageUrl: string;
+  imageUrls?: string[]; // Multiple images for premium trainers
   capacity: number;
   schedule?: { days: string[]; time: string; };
   bookings?: Booking[];

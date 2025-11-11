@@ -22,6 +22,7 @@ import AICoachPage from './pages/AICoachPage';
 import UploadCategoryIconsPage from './pages/UploadCategoryIconsPage';
 import MediaUploadPage from './pages/MediaUploadPage';
 import AdminDashboardPage from './pages/AdminDashboardPage';
+import ClassDetailPage from './pages/ClassDetailPage';
 import BottomNav from './components/BottomNav';
 import BookingModal from './components/BookingModal';
 import ReviewModal from './components/ReviewModal';
@@ -163,6 +164,19 @@ const AppRoutes = () => {
                 favoriteTrainerIds={favoriteTrainerIds}
                 onToggleFavorite={handleToggleFavorite}
                 onOpenReviewsModal={handleOpenReviewsModal}
+              />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/class/:classId"
+          element={
+            <ProtectedRoute>
+              <ClassDetailPage
+                userRole={userRole}
+                currentUserId={currentUserId}
+                onInitiateBooking={handleInitiateBooking}
+                onOpenChat={handleOpenChat}
               />
             </ProtectedRoute>
           }
