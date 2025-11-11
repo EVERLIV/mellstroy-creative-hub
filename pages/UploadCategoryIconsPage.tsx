@@ -33,7 +33,14 @@ const UploadCategoryIconsPage: React.FC = () => {
 
       if (error) throw error;
       
-      setUploadedFiles(data?.map(file => file.name) || []);
+      // Filter to only show files that match valid categories
+      const validCategoryIds = categories.map(c => c.id);
+      const filteredFiles = data?.filter(file => {
+        const fileNameWithoutExt = file.name.split('.')[0];
+        return validCategoryIds.includes(fileNameWithoutExt);
+      }).map(file => file.name) || [];
+      
+      setUploadedFiles(filteredFiles);
     } catch (error) {
       console.error('Error fetching files:', error);
     } finally {
