@@ -395,7 +395,7 @@ const TrainerDetailPage: React.FC<TrainerDetailPageProps> = ({
                     url: window.location.href,
                 });
             } catch (error) {
-                console.log('Error sharing:', error);
+                // Sharing cancelled or failed
             }
         }
     };

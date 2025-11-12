@@ -106,17 +106,17 @@ const AppRoutes = () => {
     if (!user?.id) return;
 
     // Update immediately on mount
-    updateLastSeen(user.id).catch(err => console.error('Failed to update last_seen on mount:', err));
+    updateLastSeen(user.id).catch(() => {});
 
     // Update every 2 minutes while user is active
     const interval = setInterval(() => {
-      updateLastSeen(user.id).catch(err => console.error('Failed to update last_seen:', err));
+      updateLastSeen(user.id).catch(() => {});
     }, 120000); // 2 minutes
 
     // Update on visibility change (when user comes back to tab)
     const handleVisibilityChange = () => {
       if (!document.hidden && user.id) {
-        updateLastSeen(user.id).catch(err => console.error('Failed to update last_seen on visibility change:', err));
+        updateLastSeen(user.id).catch(() => {});
       }
     };
     document.addEventListener('visibilitychange', handleVisibilityChange);
@@ -124,7 +124,7 @@ const AppRoutes = () => {
     // Update on user interactions (scroll, click, etc.)
     const handleUserActivity = () => {
       if (user.id) {
-        updateLastSeen(user.id).catch(err => console.error('Failed to update last_seen on activity:', err));
+        updateLastSeen(user.id).catch(() => {});
       }
     };
     
@@ -468,7 +468,6 @@ const AppRoutes = () => {
                 .single();
 
               if (error) {
-                console.error('Booking error:', error);
                 toast({
                   title: "Booking Failed",
                   description: error.message || "Failed to create booking. Please try again.",
@@ -483,10 +482,9 @@ const AppRoutes = () => {
               });
               setBookingModalData(null);
               
-              // Refresh the page to show updated bookings
-              window.location.reload();
+              // Navigate to bookings page to see the new booking
+              navigate('/bookings');
             } catch (error) {
-              console.error('Unexpected booking error:', error);
               toast({
                 title: "Error",
                 description: "An unexpected error occurred. Please try again.",

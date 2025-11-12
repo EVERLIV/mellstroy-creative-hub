@@ -52,7 +52,7 @@ const TrainerCard: React.FC<TrainerCardProps> = React.memo(({ trainer, onSelect,
 
         setVerifiedDocuments(data || []);
       } catch (error) {
-        console.error('Error loading documents:', error);
+        // Silently fail - not critical
       }
     };
 

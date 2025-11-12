@@ -55,34 +55,35 @@ const DashboardPage: React.FC<DashboardPageProps> = () => {
   ];
 
   useEffect(() => {
-    // Use mock data for now
-    setUpcomingEvents(mockEvents);
-    setLoading(false);
+    const fetchEvents = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('events')
+          .select(`
+            *,
+            organizer:profiles!events_organizer_id_fkey (username),
+            interests:event_interests (count)
+          `)
+          .eq('status', 'approved')
+          .gte('date', new Date().toISOString().split('T')[0])
+          .order('date', { ascending: true })
+          .limit(4);
+
+        if (error) {
+          // Fallback to mock data if fetch fails
+          setUpcomingEvents(mockEvents);
+        } else {
+          setUpcomingEvents(data && data.length > 0 ? data : mockEvents);
+        }
+      } catch (error) {
+        // Fallback to mock data on error
+        setUpcomingEvents(mockEvents);
+      } finally {
+        setLoading(false);
+      }
+    };
     
-    // Uncomment to fetch real data:
-    // const fetchEvents = async () => {
-    //   try {
-    //     const { data, error } = await supabase
-    //       .from('events')
-    //       .select(`
-    //         *,
-    //         organizer:organizer_id (username),
-    //         interests:event_interests (count)
-    //       `)
-    //       .eq('status', 'approved')
-    //       .gte('date', new Date().toISOString().split('T')[0])
-    //       .order('date', { ascending: true })
-    //       .limit(4);
-    //
-    //     if (error) throw error;
-    //     setUpcomingEvents(data || []);
-    //   } catch (error) {
-    //     console.error('Error fetching events:', error);
-    //   } finally {
-    //     setLoading(false);
-    //   }
-    // };
-    // fetchEvents();
+    fetchEvents();
   }, []);
 
   // Helper to get Supabase storage URL for category icons

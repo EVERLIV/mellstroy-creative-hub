@@ -185,7 +185,7 @@ const ClassDetailPage: React.FC<ClassDetailPageProps> = ({
       setClassData(cls);
       setTrainer(trainerData);
     } catch (error) {
-      console.error('Error loading class data:', error);
+      // Error will result in "Class not found" UI
     } finally {
       setLoading(false);
     }
@@ -200,7 +200,7 @@ const ClassDetailPage: React.FC<ClassDetailPageProps> = ({
           url: window.location.href,
         });
       } catch (error) {
-        console.log('Error sharing:', error);
+        // Sharing cancelled or failed
       }
     } else {
       // Fallback: copy to clipboard

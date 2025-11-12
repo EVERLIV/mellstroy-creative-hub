@@ -184,7 +184,6 @@ const AddEditClassModal: React.FC<AddEditClassModalProps> = ({ cls, onSave, onCa
                     description: "Your image has been uploaded successfully.",
                 });
             } catch (error) {
-                console.error('Upload error:', error);
                 toast({
                     title: "Upload failed",
                     description: "Failed to upload image. Please try again.",
@@ -219,22 +218,16 @@ const AddEditClassModal: React.FC<AddEditClassModalProps> = ({ cls, onSave, onCa
             id: cls?.id || 0,
             bookings: cls?.bookings || [],
             ...formData,
-            language: formData.language || [], // Ensure language is always an array
-            level: formData.level || '', // Ensure level is always a string
+            language: formData.language || [],
+            level: formData.level || '',
             kids_friendly: formData.kids_friendly || false,
             disability_friendly: formData.disability_friendly || false,
-            imageUrl: uploadedImages[0], // Keep backward compatibility
+            imageUrl: uploadedImages[0],
             image_urls: uploadedImages,
             ...(cls as any)?._dbId && { 
                 _dbId: (cls as any)._dbId
             }
         };
-        
-        console.log('AddEditClassModal - Saving with formData:', {
-            language: formData.language,
-            level: formData.level,
-            finalData: finalData
-        });
         
         onSave(finalData);
     };
