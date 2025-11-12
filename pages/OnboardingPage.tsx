@@ -109,19 +109,21 @@ const OnboardingPage: React.FC<OnboardingPageProps> = ({ currentUser, onComplete
     const renderRoleSelection = () => (
         <div className="text-center">
             <h1 className="text-2xl font-bold text-slate-800">Welcome to RhinoFit!</h1>
-            <p className="text-slate-500 mt-2">To get started, tell us who you are.</p>
+            <p className="text-slate-500 mt-2 mb-6">First, tell us what brings you here:</p>
+            <p className="text-lg font-semibold text-slate-700 mb-8">Do you want to teach or learn?</p>
             <div className="mt-8 space-y-4">
                 <button onClick={() => handleRoleSelect('student')} className="w-full max-w-xs p-6 bg-white border-2 border-slate-200 rounded-2xl text-left hover:border-orange-400 hover:bg-orange-50 transition-all duration-300 group">
                     <User className="w-8 h-8 text-orange-500 mb-3" />
-                    <h2 className="font-bold text-lg text-slate-800">I'm a Student</h2>
-                    <p className="text-sm text-slate-500">I want to find trainers and book classes.</p>
+                    <h2 className="font-bold text-lg text-slate-800">I Want to Learn</h2>
+                    <p className="text-sm text-slate-500">Find trainers and book fitness classes</p>
                 </button>
                 <button onClick={() => handleRoleSelect('trainer')} className="w-full max-w-xs p-6 bg-white border-2 border-slate-200 rounded-2xl text-left hover:border-blue-400 hover:bg-blue-50 transition-all duration-300 group">
                     <Briefcase className="w-8 h-8 text-blue-500 mb-3" />
-                    <h2 className="font-bold text-lg text-slate-800">I'm a Trainer</h2>
-                    <p className="text-sm text-slate-500">I want to offer classes and manage clients.</p>
+                    <h2 className="font-bold text-lg text-slate-800">I Want to Teach</h2>
+                    <p className="text-sm text-slate-500">Offer classes and manage students</p>
                 </button>
             </div>
+            <p className="text-xs text-slate-400 mt-6">⚠️ You can only choose one role per account</p>
         </div>
     );
     

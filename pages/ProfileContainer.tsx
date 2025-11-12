@@ -48,14 +48,24 @@ const ProfileContainer: React.FC = () => {
         return;
       }
 
-      // Load user role directly from Supabase database
+      // Load user role directly from Supabase database (ONE role per user)
       const { data: roleData } = await supabase
         .from('user_roles')
         .select('role')
         .eq('user_id', user.id)
-        .maybeSingle();
+        .single(); // Use single() since there's only one role per user now
 
-      const role: UserRole = roleData?.role === 'trainer' ? 'trainer' : 'student';
+      if (!roleData) {
+        toast({
+          variant: "destructive",
+          title: "Role not found",
+          description: "Please complete onboarding first.",
+        });
+        navigate('/onboarding');
+        return;
+      }
+
+      const role: UserRole = roleData.role === 'trainer' ? 'trainer' : 'student';
       setUserRole(role);
 
       // Load classes if trainer
@@ -141,83 +151,8 @@ const ProfileContainer: React.FC = () => {
     }
   };
 
-  const handleRoleChange = async (newRole: UserRole) => {
-    if (!user) return;
-
-    try {
-      // Map UI role to database role
-      // student in UI = client in database
-      const dbRole = newRole === 'student' ? 'client' as const : 'trainer' as const;
-
-      // Use upsert to handle both insert and update cases
-      const { error } = await supabase
-        .from('user_roles')
-        .upsert(
-          { user_id: user.id, role: dbRole },
-          { onConflict: 'user_id,role' }
-        );
-      
-      if (error) {
-        console.error('Role upsert error:', error);
-        throw error;
-      }
-
-      // Update local state immediately after saving to Supabase
-      setUserRole(newRole);
-      
-      // Update currentUser role
-      if (currentUser) {
-        setCurrentUser({ ...currentUser, role: newRole });
-      }
-      
-      // If switching to trainer, load classes
-      if (newRole === 'trainer') {
-        const { data: classesData } = await supabase
-          .from('classes')
-          .select('*')
-          .eq('trainer_id', user.id);
-
-        if (classesData && currentUser) {
-          const classes = classesData.map((c, index) => ({
-            id: Date.now() + index,
-            name: c.name,
-            description: c.description || '',
-            duration: c.duration_minutes,
-            price: parseFloat(c.price.toString()),
-            imageUrl: c.image_urls && c.image_urls.length > 0 ? c.image_urls[0] : (c.image_url || 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48'),
-            capacity: c.capacity,
-            classType: c.class_type as any,
-            schedule: c.schedule_days && c.schedule_time ? {
-              days: c.schedule_days,
-              time: c.schedule_time
-            } : undefined,
-            bookings: [],
-            _dbId: c.id,
-            image_urls: c.image_urls || (c.image_url ? [c.image_url] : []),
-            language: (c as any).language || [],
-            level: (c as any).level || '',
-          }));
-          
-          setCurrentUser({ ...currentUser, classes, role: newRole });
-        }
-      } else if (currentUser) {
-        // Switching to student - clear classes
-        setCurrentUser({ ...currentUser, classes: [], role: newRole });
-      }
-      
-      toast({
-        title: "Role updated",
-        description: `Switched to ${newRole} mode.`,
-      });
-    } catch (error: any) {
-      console.error('Error changing role:', error);
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: error.message || "Failed to change role.",
-      });
-    }
-  };
+  // Role switching is no longer allowed - one role per account
+  // Removed handleRoleChange function
 
   const handleSaveProfile = async (updatedUser: Trainer) => {
     if (!user) return;
@@ -510,7 +445,6 @@ const ProfileContainer: React.FC = () => {
           onManageClass={(cls) => setEditingClass(cls)}
           onDeleteClass={handleDeleteClass}
           userRole={userRole}
-          onRoleChange={handleRoleChange}
           onStartVerification={handleStartVerification}
           onLogout={handleLogout}
         />
@@ -519,7 +453,6 @@ const ProfileContainer: React.FC = () => {
           <StudentProfilePage
             currentUser={currentUser}
             userRole={userRole}
-            onRoleChange={handleRoleChange}
             onLogout={handleLogout}
             onNavigateToBookings={() => navigate('/bookings')}
             onNavigateToChats={() => navigate('/chat')}

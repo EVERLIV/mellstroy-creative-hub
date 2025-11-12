@@ -1,7 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Trainer, Class, UserRole } from '../types';
 import { Star, Users, BookOpen, Pencil, ShieldCheck, Plus, MoreVertical, Edit3, Trash2, Clock, LogOut, Shield, FileText, Crown, MapPin, Sparkles } from 'lucide-react';
-import RoleSwitcher from '../components/RoleSwitcher';
 import { isTrainerProfileComplete } from '../utils/profile';
 import CompleteProfilePrompt from '../components/CompleteProfilePrompt';
 import { supabase } from '../src/integrations/supabase/client';
@@ -22,12 +21,11 @@ interface ProfilePageProps {
     onManageClass: (cls: Class | null) => void;
     onDeleteClass: (classId: number) => void;
     userRole: UserRole;
-    onRoleChange: (role: UserRole) => void;
     onStartVerification: () => void;
     onLogout: () => void;
 }
 
-const ProfilePage: React.FC<ProfilePageProps> = ({ trainer, onEdit, onManageClass, onDeleteClass, userRole, onRoleChange, onStartVerification, onLogout }) => {
+const ProfilePage: React.FC<ProfilePageProps> = ({ trainer, onEdit, onManageClass, onDeleteClass, userRole, onStartVerification, onLogout }) => {
     const [menuOpenFor, setMenuOpenFor] = useState<number | null>(null);
     const [isAdmin, setIsAdmin] = useState(false);
     const [showDocuments, setShowDocuments] = useState(false);
@@ -225,12 +223,6 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ trainer, onEdit, onManageClas
                 {profileIsIncomplete && (
                     <CompleteProfilePrompt role="trainer" onComplete={onEdit} />
                 )}
-
-                {/* Role Switcher */}
-                    <div className="bg-white p-3 rounded-lg shadow-sm mb-3">
-                    <h3 className="text-sm font-bold text-gray-900 mb-2">Account Type</h3>
-                    <RoleSwitcher currentRole={userRole} onRoleChange={onRoleChange} />
-                </div>
 
                 {/* Verification */}
                 <VerificationStatus />

@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { Trainer, UserRole } from '../types';
-import RoleSwitcher from '../components/RoleSwitcher';
 import { ArrowLeft, Calendar, MessageCircle, User as UserIcon, UtensilsCrossed, Heart, LogOut, Pencil, ChevronRight, Crown, ShieldCheck, MapPin, Sparkles } from 'lucide-react';
 import AboutMePage from './AboutMePage';
 import EditAboutMePage from './EditAboutMePage';
@@ -14,7 +13,6 @@ const ANIMATION_DURATION = 300;
 interface StudentProfilePageProps {
     currentUser: Trainer | null;
     userRole: UserRole;
-    onRoleChange: (role: UserRole) => void;
     onNavigateToBookings: () => void;
     onNavigateToChats: () => void;
     onEditProfile: () => void;
@@ -25,10 +23,9 @@ interface StudentProfilePageProps {
 type SubPage = 'about' | 'edit-about' | 'favorites' | 'meal-plans';
 
 const StudentProfilePage: React.FC<StudentProfilePageProps> = (props) => {
-    const { currentUser, userRole, onRoleChange, onNavigateToBookings, onNavigateToChats, onEditProfile, onSaveProfile, onLogout } = props;
+    const { currentUser, userRole, onNavigateToBookings, onNavigateToChats, onEditProfile, onSaveProfile, onLogout } = props;
     const [activeSubPage, setActiveSubPage] = useState<SubPage | null>(null);
     const [isExiting, setIsExiting] = useState(false);
-    const [isRoleChanging, setIsRoleChanging] = useState(false);
     const profileIsIncomplete = currentUser ? !isStudentProfileComplete(currentUser) : false;
 
     const handleNavigateTo = (page: SubPage) => {
@@ -49,14 +46,6 @@ const StudentProfilePage: React.FC<StudentProfilePageProps> = (props) => {
             setActiveSubPage(page);
         }, ANIMATION_DURATION);
     }
-
-    const handleRoleChange = async (newRole: UserRole) => {
-        setIsRoleChanging(true);
-        await onRoleChange(newRole);
-        setTimeout(() => {
-            setIsRoleChanging(false);
-        }, 500);
-    };
 
     const renderSubPage = () => {
         if (!activeSubPage || !currentUser) return null;
@@ -181,15 +170,6 @@ const StudentProfilePage: React.FC<StudentProfilePageProps> = (props) => {
                             <CompleteProfilePrompt role="student" onComplete={() => handleNavigateTo('edit-about')} />
                         </div>
                     )}
-
-                    {/* Role Switcher Card */}
-                    <div className="bg-white rounded-lg p-3 mb-3 shadow-sm">
-                        <h3 className="text-sm font-bold text-gray-900 mb-2">Account Type</h3>
-                        <div className={`transition-all duration-500 ${isRoleChanging ? 'opacity-50 scale-95' : 'opacity-100 scale-100'}`}>
-                            <RoleSwitcher currentRole={userRole} onRoleChange={handleRoleChange} />
-                        </div>
-                        <p className="text-xs text-gray-500 mt-2 text-center">Switch to trainer mode to manage your classes</p>
-                    </div>
                     
                     {/* Menu Card */}
                     <div className="bg-white rounded-lg p-3 mb-3 shadow-sm">
