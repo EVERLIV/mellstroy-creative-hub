@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
-import { User } from 'lucide-react';
+import { User, X } from 'lucide-react';
 import { AuthProvider, useAuth } from './src/hooks/useAuth';
 import { supabase } from './src/integrations/supabase/client';
 import { Toaster } from './src/components/ui/toaster';
@@ -36,6 +36,7 @@ import BottomNav from './components/BottomNav';
 import BookingModal from './components/BookingModal';
 import ReviewModal from './components/ReviewModal';
 import ReviewsModal from './components/ReviewsModal';
+import BookingVerificationDisplay from './components/BookingVerificationDisplay';
 import { Trainer, Class, Booking, UserRole, Event, Message, MealPlan, Venue } from './types';
 import { mockVenues } from './data/mockVenues';
 import { getAICoachResponse } from './utils/ai';
@@ -78,6 +79,7 @@ const AppRoutes = () => {
   const [reviewModalData, setReviewModalData] = useState<{ booking: Booking; trainer: Trainer } | null>(null);
   const [reviewsModalTrainer, setReviewsModalTrainer] = useState<Trainer | null>(null);
   const [chatTrainer, setChatTrainer] = useState<Trainer | null>(null);
+  const [verificationCode, setVerificationCode] = useState<{ code: string; bookingId: string } | null>(null);
   
   // AI Coach state
   const [aiCoachMessages, setAiCoachMessages] = useState<Message[]>([]);
@@ -476,14 +478,19 @@ const AppRoutes = () => {
                 return;
               }
 
+              // Show verification code modal
+              if (data && data.verification_code) {
+                setVerificationCode({
+                  code: data.verification_code,
+                  bookingId: data.id
+                });
+              }
+
               toast({
                 title: "Booking Confirmed!",
                 description: `Your booking has been confirmed for ${period === 'once' ? '1 session' : '4 weeks'}`,
               });
               setBookingModalData(null);
-              
-              // Navigate to bookings page to see the new booking
-              navigate('/bookings');
             } catch (error) {
               toast({
                 title: "Error",
@@ -508,6 +515,39 @@ const AppRoutes = () => {
           trainer={reviewsModalTrainer}
           onClose={() => setReviewsModalTrainer(null)}
         />
+      )}
+      {verificationCode && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-md animate-in fade-in slide-in-from-bottom-4 duration-300">
+            <div className="flex items-center justify-between p-4 border-b border-gray-200">
+              <h2 className="text-lg font-bold text-gray-900">Booking Confirmed!</h2>
+              <button
+                onClick={() => {
+                  setVerificationCode(null);
+                  navigate('/bookings');
+                }}
+                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              >
+                <X className="w-5 h-5 text-gray-600" />
+              </button>
+            </div>
+            <div className="p-6">
+              <BookingVerificationDisplay 
+                verificationCode={verificationCode.code}
+                bookingId={verificationCode.bookingId}
+              />
+              <button
+                onClick={() => {
+                  setVerificationCode(null);
+                  navigate('/bookings');
+                }}
+                className="w-full mt-4 bg-[#FF6B35] text-white py-3 px-4 rounded-xl font-semibold hover:bg-orange-600 transition-all active:scale-95"
+              >
+                Go to My Bookings
+              </button>
+            </div>
+          </div>
+        </div>
       )}
       <Toaster />
     </div>

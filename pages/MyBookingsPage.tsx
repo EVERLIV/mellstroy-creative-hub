@@ -1,6 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Trainer, Class, Booking, UserRole } from '../types';
-import { X, Calendar, MapPin, Edit } from 'lucide-react';
+import { X, Calendar, MapPin, Edit, QrCode, CheckCircle } from 'lucide-react';
+import { supabase } from '../src/integrations/supabase/client';
+import { useAuth } from '../src/hooks/useAuth';
+import BookingVerificationDisplay from '../components/BookingVerificationDisplay';
+import VerifyAttendanceModal from '../components/VerifyAttendanceModal';
 
 type BookingInfo = { trainer: Trainer; cls: Class; booking: Booking; student?: Trainer };
 
@@ -51,9 +55,19 @@ interface BookedClassCardProps {
     onStartCancellation: (bookingInfo: BookingInfo) => void;
     onOpenReviewModal: (trainer: Trainer, cls: Class, booking: Booking) => void;
     userRole: UserRole;
+    onShowVerificationCode?: (code: string, bookingId: string) => void;
+    onVerifyAttendance?: () => void;
 }
 
-const BookedClassCard: React.FC<BookedClassCardProps> = ({ bookingInfo, onOpenChat, onStartCancellation, onOpenReviewModal, userRole }) => {
+const BookedClassCard: React.FC<BookedClassCardProps> = ({ 
+    bookingInfo, 
+    onOpenChat, 
+    onStartCancellation, 
+    onOpenReviewModal, 
+    userRole,
+    onShowVerificationCode,
+    onVerifyAttendance 
+}) => {
     const { trainer, cls, booking, student } = bookingInfo;
     const isStudentView = userRole === 'student';
 
@@ -90,9 +104,30 @@ const BookedClassCard: React.FC<BookedClassCardProps> = ({ bookingInfo, onOpenCh
                             <button onClick={handleChatClick} className="flex-1 text-center bg-blue-50 text-blue-700 text-xs font-bold py-2 px-2 rounded-lg hover:bg-blue-100 transition-colors duration-200">
                                 Chat
                             </button>
-                             {isStudentView && <button onClick={() => onStartCancellation(bookingInfo)} className="flex-1 text-center bg-slate-100 text-slate-700 text-xs font-bold py-2 px-2 rounded-lg hover:bg-slate-200 transition-colors duration-200">
-                                Cancel
-                            </button>}
+                             {isStudentView ? (
+                                <>
+                                    {(booking as any).verification_code && (
+                                        <button 
+                                            onClick={() => onShowVerificationCode && onShowVerificationCode((booking as any).verification_code, (booking as any).id)}
+                                            className="flex-1 text-center bg-orange-50 text-orange-700 text-xs font-bold py-2 px-2 rounded-lg hover:bg-orange-100 transition-colors duration-200 flex items-center justify-center gap-1"
+                                        >
+                                            <QrCode className="w-3 h-3" />
+                                            Code
+                                        </button>
+                                    )}
+                                    <button onClick={() => onStartCancellation(bookingInfo)} className="flex-1 text-center bg-slate-100 text-slate-700 text-xs font-bold py-2 px-2 rounded-lg hover:bg-slate-200 transition-colors duration-200">
+                                        Cancel
+                                    </button>
+                                </>
+                             ) : (
+                                <button 
+                                    onClick={onVerifyAttendance}
+                                    className="flex-1 text-center bg-green-50 text-green-700 text-xs font-bold py-2 px-2 rounded-lg hover:bg-green-100 transition-colors duration-200 flex items-center justify-center gap-1"
+                                >
+                                    <CheckCircle className="w-3 h-3" />
+                                    Verify
+                                </button>
+                             )}
                         </>
                     )}
                     {booking.status === 'attended' && isStudentView && (
@@ -154,33 +189,167 @@ const parseBookingDateTime = (booking: Booking): Date => {
 const MyBookingsPage: React.FC<MyBookingsPageProps> = ({ trainers, onOpenChat, onCancelBooking, currentUserId, currentUser, userRole, onOpenReviewModal }) => {
     const [activeTab, setActiveTab] = useState<'upcoming' | 'past'>('upcoming');
     const [bookingToCancel, setBookingToCancel] = useState<BookingInfo | null>(null);
+    const [verificationCodeModal, setVerificationCodeModal] = useState<{ code: string; bookingId: string } | null>(null);
+    const [verifyAttendanceModal, setVerifyAttendanceModal] = useState(false);
+    const { user } = useAuth();
+    const [bookings, setBookings] = useState<BookingInfo[]>([]);
+    const [loading, setLoading] = useState(true);
+
+    // Load bookings from database
+    useEffect(() => {
+        loadBookings();
+    }, [user?.id, userRole]);
+
+    const loadBookings = async () => {
+        if (!user?.id) return;
+
+        try {
+            setLoading(true);
+            
+            if (userRole === 'student') {
+                // Student view - load their bookings
+                const { data, error } = await supabase
+                    .from('bookings')
+                    .select(`
+                        *,
+                        class:classes(*),
+                        trainer:classes(trainer_id, profiles(*))
+                    `)
+                    .eq('client_id', user.id)
+                    .order('booking_date', { ascending: true });
+
+                if (error) throw error;
+
+                const bookingsData: BookingInfo[] = (data || []).map(b => ({
+                    booking: {
+                        id: b.id,
+                        userId: b.client_id,
+                        date: new Date(b.booking_date).toLocaleDateString('en-US', { 
+                            weekday: 'short', 
+                            day: '2-digit', 
+                            month: 'short' 
+                        }).replace(/,/g, ','),
+                        time: b.booking_time,
+                        status: b.status,
+                        hasLeftReview: b.has_left_review,
+                        verification_code: b.verification_code,
+                        verified_at: b.verified_at,
+                    } as any,
+                    cls: {
+                        id: (b.class as any).id,
+                        name: (b.class as any).name,
+                        description: (b.class as any).description || '',
+                        duration: (b.class as any).duration_minutes,
+                        price: Number((b.class as any).price),
+                        imageUrl: (b.class as any).image_url || '',
+                        imageUrls: (b.class as any).image_urls || [],
+                        capacity: (b.class as any).capacity,
+                        classType: (b.class as any).class_type,
+                        schedule: (b.class as any).schedule_days && (b.class as any).schedule_time ? {
+                            days: (b.class as any).schedule_days,
+                            time: (b.class as any).schedule_time
+                        } : undefined,
+                    } as Class,
+                    trainer: {
+                        id: (b.class as any).trainer_id,
+                        name: '',
+                        specialty: [],
+                        rating: 0,
+                        reviews: 0,
+                        location: '',
+                        price: 0,
+                        imageUrl: '',
+                        verificationStatus: 'unverified',
+                        isPremium: false,
+                        bio: '',
+                        classes: [],
+                        reviewsData: [],
+                        chatHistory: []
+                    } as Trainer
+                }));
+
+                setBookings(bookingsData);
+            } else {
+                // Trainer view - load bookings for their classes
+                const { data: classes, error: classesError } = await supabase
+                    .from('classes')
+                    .select('id')
+                    .eq('trainer_id', user.id);
+
+                if (classesError) throw classesError;
+
+                const classIds = (classes || []).map(c => c.id);
+
+                if (classIds.length > 0) {
+                    const { data, error } = await supabase
+                        .from('bookings')
+                        .select(`
+                            *,
+                            class:classes(*),
+                            student:profiles!bookings_client_id_fkey(*)
+                        `)
+                        .in('class_id', classIds)
+                        .order('booking_date', { ascending: true });
+
+                    if (error) throw error;
+
+                    const bookingsData: BookingInfo[] = (data || []).map(b => ({
+                        booking: {
+                            id: b.id,
+                            userId: b.client_id,
+                            date: new Date(b.booking_date).toLocaleDateString('en-US', { 
+                                weekday: 'short', 
+                                day: '2-digit', 
+                                month: 'short' 
+                            }).replace(/,/g, ','),
+                            time: b.booking_time,
+                            status: b.status,
+                            hasLeftReview: b.has_left_review,
+                            verification_code: b.verification_code,
+                            verified_at: b.verified_at,
+                        } as any,
+                        cls: {
+                            id: (b.class as any).id,
+                            name: (b.class as any).name,
+                            description: (b.class as any).description || '',
+                            duration: (b.class as any).duration_minutes,
+                            price: Number((b.class as any).price),
+                            imageUrl: (b.class as any).image_url || '',
+                            imageUrls: (b.class as any).image_urls || [],
+                            capacity: (b.class as any).capacity,
+                            classType: (b.class as any).class_type,
+                        } as Class,
+                        trainer: currentUser,
+                        student: b.student ? {
+                            id: (b.student as any).id,
+                            name: (b.student as any).username,
+                            specialty: [],
+                            rating: 0,
+                            reviews: 0,
+                            location: '',
+                            price: 0,
+                            imageUrl: (b.student as any).avatar_url || '',
+                            verificationStatus: 'unverified',
+                            isPremium: false,
+                            bio: '',
+                            classes: [],
+                            reviewsData: [],
+                            chatHistory: []
+                        } as Trainer : undefined
+                    }));
+
+                    setBookings(bookingsData);
+                }
+            }
+        } catch (error) {
+            // Silent fail
+        } finally {
+            setLoading(false);
+        }
+    };
 
     const getBookings = () => {
-        let bookings: BookingInfo[] = [];
-        
-        if (userRole === 'student') {
-            // Student view - show their bookings from all trainers
-            bookings = trainers.flatMap(trainer =>
-                (trainer.classes || []).flatMap(cls =>
-                    (cls.bookings ?? [])
-                        .filter(booking => booking.userId === currentUserId)
-                        .map(booking => ({ trainer, cls, booking }))
-                )
-            );
-        } else {
-            // Trainer view - show bookings for their classes
-            if (currentUser && currentUser.classes) {
-                bookings = currentUser.classes.flatMap(cls => 
-                    (cls.bookings ?? []).map(booking => {
-                        const student = trainers.find(t => t.id === booking.userId);
-                        return { trainer: currentUser, cls, booking, student };
-                    })
-                );
-            }
-        }
-        
-        // Sort all bookings chronologically
-        return bookings.sort((a, b) => parseBookingDateTime(a.booking).getTime() - parseBookingDateTime(b.booking).getTime());
+        return bookings;
     };
     
     const allBookings = getBookings();
@@ -231,6 +400,8 @@ const MyBookingsPage: React.FC<MyBookingsPageProps> = ({ trainers, onOpenChat, o
                                 onStartCancellation={setBookingToCancel}
                                 onOpenReviewModal={onOpenReviewModal}
                                 userRole={userRole}
+                                onShowVerificationCode={(code, bookingId) => setVerificationCodeModal({ code, bookingId })}
+                                onVerifyAttendance={() => setVerifyAttendanceModal(true)}
                             />
                         ))}
                     </div>
@@ -251,6 +422,40 @@ const MyBookingsPage: React.FC<MyBookingsPageProps> = ({ trainers, onOpenChat, o
                     bookingInfo={bookingToCancel}
                     onConfirm={handleConfirmCancellation}
                     onClose={() => setBookingToCancel(null)}
+                />
+            )}
+            
+            {verificationCodeModal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+                    <div className="bg-white rounded-xl shadow-xl w-full max-w-md animate-in fade-in slide-in-from-bottom-4 duration-300">
+                        <div className="flex items-center justify-between p-4 border-b border-gray-200">
+                            <h2 className="text-lg font-bold text-gray-900">Your Verification Code</h2>
+                            <button
+                                onClick={() => setVerificationCodeModal(null)}
+                                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+                            >
+                                <X className="w-5 h-5 text-gray-600" />
+                            </button>
+                        </div>
+                        <div className="p-6">
+                            <BookingVerificationDisplay 
+                                verificationCode={verificationCodeModal.code}
+                                bookingId={verificationCodeModal.bookingId}
+                            />
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {verifyAttendanceModal && user && (
+                <VerifyAttendanceModal
+                    isOpen={verifyAttendanceModal}
+                    onClose={() => setVerifyAttendanceModal(false)}
+                    onVerified={() => {
+                        setVerifyAttendanceModal(false);
+                        loadBookings(); // Reload bookings after verification
+                    }}
+                    trainerId={user.id}
                 />
             )}
         </div>
