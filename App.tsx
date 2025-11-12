@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import { User } from 'lucide-react';
 import { AuthProvider, useAuth } from './src/hooks/useAuth';
+import { supabase } from './src/integrations/supabase/client';
 import { Toaster } from './src/components/ui/toaster';
 import { useToast } from './src/hooks/use-toast';
 import { useTrainers } from './src/hooks/useTrainers';
@@ -438,13 +439,60 @@ const AppRoutes = () => {
       {bookingModalData && (
         <BookingModal
           bookingTarget={bookingModalData}
-          onConfirmBooking={(trainerId, classId, startDate, period) => {
-            // Handle booking confirmation
-            toast({
-              title: "Booking Confirmed!",
-              description: `Your booking has been confirmed for ${period === 'once' ? '1 session' : '4 weeks'}`,
-            });
-            setBookingModalData(null);
+          onConfirmBooking={async (trainerId, classId, startDate, period) => {
+            try {
+              if (!user?.id) {
+                toast({
+                  title: "Error",
+                  description: "You must be logged in to book a class",
+                  variant: "destructive",
+                });
+                return;
+              }
+
+              // Format the date
+              const bookingDate = startDate.toISOString().split('T')[0];
+              const bookingTime = bookingModalData.cls.schedule?.time || '00:00';
+
+              // Insert booking into database
+              const { data, error } = await supabase
+                .from('bookings')
+                .insert({
+                  class_id: classId,
+                  client_id: user.id,
+                  booking_date: bookingDate,
+                  booking_time: bookingTime,
+                  status: 'booked'
+                })
+                .select()
+                .single();
+
+              if (error) {
+                console.error('Booking error:', error);
+                toast({
+                  title: "Booking Failed",
+                  description: error.message || "Failed to create booking. Please try again.",
+                  variant: "destructive",
+                });
+                return;
+              }
+
+              toast({
+                title: "Booking Confirmed!",
+                description: `Your booking has been confirmed for ${period === 'once' ? '1 session' : '4 weeks'}`,
+              });
+              setBookingModalData(null);
+              
+              // Refresh the page to show updated bookings
+              window.location.reload();
+            } catch (error) {
+              console.error('Unexpected booking error:', error);
+              toast({
+                title: "Error",
+                description: "An unexpected error occurred. Please try again.",
+                variant: "destructive",
+              });
+            }
           }}
           onClose={() => setBookingModalData(null)}
         />

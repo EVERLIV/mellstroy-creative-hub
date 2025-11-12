@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { Trainer, Class } from '../types';
-import { Calendar, Clock, X, Info } from 'lucide-react';
+import { Calendar, Clock, X, Info, Shield } from 'lucide-react';
 
 interface BookingModalProps {
     bookingTarget: {
@@ -25,6 +25,8 @@ const BookingModal: React.FC<BookingModalProps> = ({ bookingTarget, onConfirmBoo
     const { trainer, cls } = bookingTarget;
     const [selectedDate, setSelectedDate] = useState<Date | null>(null);
     const [bookingPeriod, setBookingPeriod] = useState<'once' | '4weeks'>('once');
+    const [acceptPrivacy, setAcceptPrivacy] = useState(false);
+    const [acceptTerms, setAcceptTerms] = useState(false);
 
     const availableScheduleDays = useMemo(() => new Set(cls.schedule?.days || []), [cls.schedule]);
 
@@ -146,7 +148,37 @@ const BookingModal: React.FC<BookingModalProps> = ({ bookingTarget, onConfirmBoo
                                         <Info className="w-4 h-4 mt-0.5 flex-shrink-0"/>
                                         <span>This will book all recurring classes for 4 weeks starting from your selected date.</span>
                                     </div>
-                                )}
+                                 )}
+                            </div>
+
+                            {/* Privacy Policy & Terms */}
+                            <div className="mt-5 space-y-3">
+                                <div className="flex items-center gap-2 text-gray-700">
+                                    <Shield className="w-5 h-5 text-gray-400 flex-shrink-0" />
+                                    <h3 className="text-md font-semibold">Agreements</h3>
+                                </div>
+                                <label className="flex items-start gap-3 p-3 rounded-lg border-2 border-gray-200 has-[:checked]:border-orange-400 has-[:checked]:bg-orange-50 transition-colors cursor-pointer">
+                                    <input 
+                                        type="checkbox" 
+                                        checked={acceptPrivacy} 
+                                        onChange={(e) => setAcceptPrivacy(e.target.checked)}
+                                        className="mt-0.5 h-4 w-4 text-orange-600 focus:ring-orange-500 border-gray-300 rounded"
+                                    />
+                                    <span className="text-xs text-gray-600 leading-relaxed">
+                                        I have read and accept the <span className="font-semibold text-orange-600">Privacy Policy</span>
+                                    </span>
+                                </label>
+                                <label className="flex items-start gap-3 p-3 rounded-lg border-2 border-gray-200 has-[:checked]:border-orange-400 has-[:checked]:bg-orange-50 transition-colors cursor-pointer">
+                                    <input 
+                                        type="checkbox" 
+                                        checked={acceptTerms} 
+                                        onChange={(e) => setAcceptTerms(e.target.checked)}
+                                        className="mt-0.5 h-4 w-4 text-orange-600 focus:ring-orange-500 border-gray-300 rounded"
+                                    />
+                                    <span className="text-xs text-gray-600 leading-relaxed">
+                                        I acknowledge the <span className="font-semibold text-orange-600">booking terms</span> and cancellation policy
+                                    </span>
+                                </label>
                             </div>
                         </div>
                     )}
@@ -156,7 +188,7 @@ const BookingModal: React.FC<BookingModalProps> = ({ bookingTarget, onConfirmBoo
                 <div className="p-4 bg-gray-50 border-t border-gray-200 flex-shrink-0">
                     <button
                         onClick={handleConfirm}
-                        disabled={!selectedDate || !cls.schedule?.time}
+                        disabled={!selectedDate || !cls.schedule?.time || !acceptPrivacy || !acceptTerms}
                         className="w-full bg-[#FF6B35] text-white font-medium py-2.5 rounded-md transition-all duration-200 shadow-sm hover:bg-orange-600 disabled:bg-gray-300 disabled:shadow-none disabled:cursor-not-allowed text-sm"
                     >
                         Confirm Booking for {formatVND(totalPrice)}
