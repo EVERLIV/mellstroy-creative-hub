@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import { User } from 'lucide-react';
 import { AuthProvider, useAuth } from './src/hooks/useAuth';
+import { useActivityTracker } from './src/hooks/useActivityTracker';
 import { Toaster } from './src/components/ui/toaster';
 import { useToast } from './src/hooks/use-toast';
 import AuthPage from './src/pages/AuthPage';
@@ -55,6 +56,9 @@ const AppRoutes = () => {
   const { user } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
+  
+  // Track user activity and update last_seen
+  useActivityTracker();
   const [userRole, setUserRole] = useState<UserRole>('student');
   const [trainers, setTrainers] = useState<Trainer[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
