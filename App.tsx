@@ -29,6 +29,7 @@ import UploadCategoryIconsPage from './pages/UploadCategoryIconsPage';
 import MediaUploadPage from './pages/MediaUploadPage';
 import AdminDashboardPage from './pages/AdminDashboardPage';
 import ClassDetailPage from './pages/ClassDetailPage';
+import TrainerProfileViewPage from './pages/TrainerProfileViewPage';
 import VenuesPage from './pages/VenuesPage';
 import BottomNav from './components/BottomNav';
 import BookingModal from './components/BookingModal';
@@ -255,6 +256,21 @@ const AppRoutes = () => {
                 currentUserId={currentUserId}
                 onInitiateBooking={handleInitiateBooking}
                 onOpenChat={handleOpenChat}
+              />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/trainer/:trainerId"
+          element={
+            <ProtectedRoute>
+              <TrainerProfileViewPage
+                userRole={userRole}
+                currentUserId={currentUserId}
+                favoriteTrainerIds={favoriteTrainerIds}
+                onToggleFavorite={toggleFavorite}
+                onInitiateBooking={handleInitiateBooking}
+                onOpenReviewsModal={handleOpenReviewsModal}
               />
             </ProtectedRoute>
           }
