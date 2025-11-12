@@ -25,6 +25,9 @@ export type Database = {
           id: string
           status: string
           updated_at: string | null
+          verification_code: string | null
+          verified_at: string | null
+          verified_by: string | null
         }
         Insert: {
           booking_date: string
@@ -36,6 +39,9 @@ export type Database = {
           id?: string
           status?: string
           updated_at?: string | null
+          verification_code?: string | null
+          verified_at?: string | null
+          verified_by?: string | null
         }
         Update: {
           booking_date?: string
@@ -47,6 +53,9 @@ export type Database = {
           id?: string
           status?: string
           updated_at?: string | null
+          verification_code?: string | null
+          verified_at?: string | null
+          verified_by?: string | null
         }
         Relationships: [
           {
@@ -740,6 +749,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      generate_verification_code: { Args: never; Returns: string }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
