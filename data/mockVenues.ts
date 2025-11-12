@@ -1,9 +1,4 @@
 import { Venue } from '../types';
-import tennisClubImg from '../src/assets/venues/tennis-club.jpg';
-import pickleballArenaImg from '../src/assets/venues/pickleball-arena.jpg';
-import boxingGymImg from '../src/assets/venues/boxing-gym.jpg';
-import fitnessGymImg from '../src/assets/venues/fitness-gym.jpg';
-import billiardsClubImg from '../src/assets/venues/billiards-club.jpg';
 
 export const mockVenues: Venue[] = [
     {
@@ -13,11 +8,11 @@ export const mockVenues: Venue[] = [
         description: 'Premium tennis facility with 8 professional courts, including 4 indoor and 4 outdoor courts. Features state-of-the-art lighting, high-quality court surfaces, and professional coaching services. Perfect for both recreational players and competitive training.',
         address: '123 Nguyen Hue Boulevard',
         district: 'District 1',
-        imageUrl: tennisClubImg,
+        imageUrl: '/venues/tennis-club.jpg',
         imageUrls: [
-            tennisClubImg,
-            tennisClubImg,
-            tennisClubImg
+            '/venues/tennis-club.jpg',
+            '/venues/tennis-club.jpg',
+            '/venues/tennis-club.jpg'
         ],
         pricePerHour: 500000,
         pricePerMonth: 8000000,
@@ -62,10 +57,10 @@ export const mockVenues: Venue[] = [
         description: 'Modern pickleball facility with 6 dedicated courts, perfect for players of all skill levels. Features climate-controlled environment, professional-grade surfaces, and organized tournaments. Great community atmosphere with regular social events.',
         address: '456 Le Loi Street',
         district: 'District 3',
-        imageUrl: pickleballArenaImg,
+        imageUrl: '/venues/pickleball-arena.jpg',
         imageUrls: [
-            pickleballArenaImg,
-            pickleballArenaImg
+            '/venues/pickleball-arena.jpg',
+            '/venues/pickleball-arena.jpg'
         ],
         pricePerHour: 300000,
         pricePerMonth: 5000000,
@@ -101,10 +96,10 @@ export const mockVenues: Venue[] = [
         description: 'Professional boxing training facility with full-size ring, heavy bags, speed bags, and complete training equipment. Experienced coaches available for all skill levels. Perfect for fitness enthusiasts and competitive boxers.',
         address: '789 Tran Hung Dao Street',
         district: 'District 5',
-        imageUrl: boxingGymImg,
+        imageUrl: '/venues/boxing-gym.jpg',
         imageUrls: [
-            boxingGymImg,
-            boxingGymImg
+            '/venues/boxing-gym.jpg',
+            '/venues/boxing-gym.jpg'
         ],
         pricePerHour: 200000,
         pricePerMonth: 3000000,
@@ -142,11 +137,11 @@ export const mockVenues: Venue[] = [
         description: 'State-of-the-art fitness center with modern equipment, spacious workout areas, and professional trainers. Features cardio zone, strength training area, functional training space, and group fitness studios.',
         address: '321 Vo Van Tan Street',
         district: 'District 3',
-        imageUrl: fitnessGymImg,
+        imageUrl: '/venues/fitness-gym.jpg',
         imageUrls: [
-            fitnessGymImg,
-            fitnessGymImg,
-            fitnessGymImg
+            '/venues/fitness-gym.jpg',
+            '/venues/fitness-gym.jpg',
+            '/venues/fitness-gym.jpg'
         ],
         pricePerHour: 150000,
         pricePerMonth: 2500000,
@@ -190,10 +185,10 @@ export const mockVenues: Venue[] = [
         description: 'Premium billiards club with 12 professional tables, elegant atmosphere, and full bar service. Perfect for casual games, tournaments, and social gatherings. Professional-grade tables with premium cues available.',
         address: '555 Nguyen Trai Street',
         district: 'District 1',
-        imageUrl: billiardsClubImg,
+        imageUrl: '/venues/billiards-club.jpg',
         imageUrls: [
-            billiardsClubImg,
-            billiardsClubImg
+            '/venues/billiards-club.jpg',
+            '/venues/billiards-club.jpg'
         ],
         pricePerHour: 200000,
         pricePerMonth: 4000000,
