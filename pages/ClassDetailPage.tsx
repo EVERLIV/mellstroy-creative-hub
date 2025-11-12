@@ -321,7 +321,8 @@ const ClassDetailPage: React.FC<ClassDetailPageProps> = ({
   }
 
   const isFull = enrolledCount >= classData.capacity;
-  const isBookingDisabled = userRole === 'trainer' || isFull;
+  const isTrainer = userRole === 'trainer';
+  const isBookingDisabled = isTrainer || isFull;
 
   const images = classData.imageUrls && classData.imageUrls.length > 0 
     ? classData.imageUrls 

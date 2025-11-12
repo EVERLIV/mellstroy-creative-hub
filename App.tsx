@@ -93,6 +93,25 @@ const AppRoutes = () => {
 
   const currentUserId = user?.id || 'current-user-id';
 
+  // Fetch user role from database
+  useEffect(() => {
+    const fetchUserRole = async () => {
+      if (!user?.id) return;
+      
+      const { data, error } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', user.id)
+        .maybeSingle();
+      
+      if (!error && data) {
+        setUserRole(data.role as UserRole);
+      }
+    };
+
+    fetchUserRole();
+  }, [user?.id]);
+
   // Validate environment variables on mount
   useEffect(() => {
     if (!validateEnv()) {
@@ -464,6 +483,16 @@ const AppRoutes = () => {
               // Format the date
               const bookingDate = startDate.toISOString().split('T')[0];
               const bookingTime = bookingModalData.cls.schedule?.time || '00:00';
+
+              // Check if user is a trainer
+              if (userRole === 'trainer') {
+                toast({
+                  title: "Booking Not Allowed",
+                  description: "Trainers cannot book classes. Only students can book classes.",
+                  variant: "destructive",
+                });
+                return;
+              }
 
               // Insert booking into database
               const { data, error } = await supabase
