@@ -1,23 +1,32 @@
 import { supabase } from '../integrations/supabase/client';
-import { MealPlan } from '../../types';
+import { MealPlan, DailyPlan, DietaryPreferences } from '../../types';
 
 export const saveMealPlan = async (
   userId: string,
   plan: Omit<MealPlan, 'id' | 'createdAt'>
 ): Promise<MealPlan | null> => {
   try {
-    // Using localStorage fallback as meal_plans table doesn't exist yet
-    const savedPlans = JSON.parse(localStorage.getItem(`meal_plans_${userId}`) || '[]');
-    const newPlan: MealPlan = {
-      id: Date.now(),
-      name: plan.name,
-      createdAt: new Date().toISOString(),
-      plan: plan.plan,
-      preferences: plan.preferences,
+    const { data, error } = await supabase
+      .from('meal_plans')
+      .insert([{
+        user_id: userId,
+        name: plan.name,
+        plan_data: plan.plan as unknown as any,
+        preferences: plan.preferences as unknown as any,
+      }])
+      .select()
+      .single();
+
+    if (error) throw error;
+    if (!data) return null;
+
+    return {
+      id: data.id,
+      name: data.name,
+      createdAt: data.created_at,
+      plan: data.plan_data as unknown as DailyPlan[],
+      preferences: data.preferences as unknown as DietaryPreferences,
     };
-    savedPlans.push(newPlan);
-    localStorage.setItem(`meal_plans_${userId}`, JSON.stringify(savedPlans));
-    return newPlan;
   } catch (error) {
     console.error('Error saving meal plan:', error);
     throw error;
@@ -26,9 +35,22 @@ export const saveMealPlan = async (
 
 export const loadMealPlans = async (userId: string): Promise<MealPlan[]> => {
   try {
-    // Using localStorage as meal_plans table doesn't exist yet
-    const savedPlans = JSON.parse(localStorage.getItem(`meal_plans_${userId}`) || '[]');
-    return savedPlans;
+    const { data, error } = await supabase
+      .from('meal_plans')
+      .select('*')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+    if (!data) return [];
+
+    return data.map(plan => ({
+      id: plan.id,
+      name: plan.name,
+      createdAt: plan.created_at,
+      plan: plan.plan_data as unknown as DailyPlan[],
+      preferences: plan.preferences as unknown as DietaryPreferences,
+    }));
   } catch (error) {
     console.error('Error loading meal plans:', error);
     return [];

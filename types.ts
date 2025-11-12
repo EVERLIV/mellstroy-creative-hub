@@ -111,7 +111,7 @@ export interface DietaryPreferences {
 }
 
 export interface MealPlan {
-  id: number;
+  id: string;
   name: string;
   createdAt: string;
   plan: DailyPlan[];
