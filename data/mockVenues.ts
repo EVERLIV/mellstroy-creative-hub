@@ -1,4 +1,9 @@
 import { Venue } from '../types';
+import tennisClubImg from '../src/assets/venues/tennis-club.jpg';
+import pickleballArenaImg from '../src/assets/venues/pickleball-arena.jpg';
+import boxingGymImg from '../src/assets/venues/boxing-gym.jpg';
+import fitnessGymImg from '../src/assets/venues/fitness-gym.jpg';
+import billiardsClubImg from '../src/assets/venues/billiards-club.jpg';
 
 export const mockVenues: Venue[] = [
     {
@@ -8,11 +13,11 @@ export const mockVenues: Venue[] = [
         description: 'Premium tennis facility with 8 professional courts, including 4 indoor and 4 outdoor courts. Features state-of-the-art lighting, high-quality court surfaces, and professional coaching services. Perfect for both recreational players and competitive training.',
         address: '123 Nguyen Hue Boulevard',
         district: 'District 1',
-        imageUrl: 'https://images.unsplash.com/photo-1622163642992-6b3273c8b390?w=800',
+        imageUrl: tennisClubImg,
         imageUrls: [
-            'https://images.unsplash.com/photo-1622163642992-6b3273c8b390?w=800',
-            'https://images.unsplash.com/photo-1551698618-1dfe5d97d256?w=800',
-            'https://images.unsplash.com/photo-1606107557195-0e29a4b5b4aa?w=800'
+            tennisClubImg,
+            tennisClubImg,
+            tennisClubImg
         ],
         pricePerHour: 500000,
         pricePerMonth: 8000000,
@@ -57,10 +62,10 @@ export const mockVenues: Venue[] = [
         description: 'Modern pickleball facility with 6 dedicated courts, perfect for players of all skill levels. Features climate-controlled environment, professional-grade surfaces, and organized tournaments. Great community atmosphere with regular social events.',
         address: '456 Le Loi Street',
         district: 'District 3',
-        imageUrl: 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=800',
+        imageUrl: pickleballArenaImg,
         imageUrls: [
-            'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=800',
-            'https://images.unsplash.com/photo-1517838277536-f5f99be501cd?w=800'
+            pickleballArenaImg,
+            pickleballArenaImg
         ],
         pricePerHour: 300000,
         pricePerMonth: 5000000,
@@ -96,10 +101,10 @@ export const mockVenues: Venue[] = [
         description: 'Professional boxing training facility with full-size ring, heavy bags, speed bags, and complete training equipment. Experienced coaches available for all skill levels. Perfect for fitness enthusiasts and competitive boxers.',
         address: '789 Tran Hung Dao Street',
         district: 'District 5',
-        imageUrl: 'https://images.unsplash.com/photo-1549060279-7e168fcee0c2?w=800',
+        imageUrl: boxingGymImg,
         imageUrls: [
-            'https://images.unsplash.com/photo-1549060279-7e168fcee0c2?w=800',
-            'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=800'
+            boxingGymImg,
+            boxingGymImg
         ],
         pricePerHour: 200000,
         pricePerMonth: 3000000,
@@ -137,11 +142,11 @@ export const mockVenues: Venue[] = [
         description: 'State-of-the-art fitness center with modern equipment, spacious workout areas, and professional trainers. Features cardio zone, strength training area, functional training space, and group fitness studios.',
         address: '321 Vo Van Tan Street',
         district: 'District 3',
-        imageUrl: 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=800',
+        imageUrl: fitnessGymImg,
         imageUrls: [
-            'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=800',
-            'https://images.unsplash.com/photo-1517838277536-f5f99be501cd?w=800',
-            'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=800'
+            fitnessGymImg,
+            fitnessGymImg,
+            fitnessGymImg
         ],
         pricePerHour: 150000,
         pricePerMonth: 2500000,
@@ -185,10 +190,10 @@ export const mockVenues: Venue[] = [
         description: 'Premium billiards club with 12 professional tables, elegant atmosphere, and full bar service. Perfect for casual games, tournaments, and social gatherings. Professional-grade tables with premium cues available.',
         address: '555 Nguyen Trai Street',
         district: 'District 1',
-        imageUrl: 'https://images.unsplash.com/photo-1606107557195-0e29a4b5b4aa?w=800',
+        imageUrl: billiardsClubImg,
         imageUrls: [
-            'https://images.unsplash.com/photo-1606107557195-0e29a4b5b4aa?w=800',
-            'https://images.unsplash.com/photo-1551698618-1dfe5d97d256?w=800'
+            billiardsClubImg,
+            billiardsClubImg
         ],
         pricePerHour: 200000,
         pricePerMonth: 4000000,
