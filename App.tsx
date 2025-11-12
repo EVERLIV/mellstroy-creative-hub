@@ -32,6 +32,7 @@ import AdminDashboardPage from './pages/AdminDashboardPage';
 import ClassDetailPage from './pages/ClassDetailPage';
 import TrainerProfileViewPage from './pages/TrainerProfileViewPage';
 import VenuesPage from './pages/VenuesPage';
+import SubscriptionManagementPage from './pages/SubscriptionManagementPage';
 import BottomNav from './components/BottomNav';
 import BookingModal from './components/BookingModal';
 import ReviewModal from './components/ReviewModal';
@@ -329,6 +330,14 @@ const AppRoutes = () => {
                 isLoading={isAiCoachLoading}
                 onClose={() => navigate('/')}
               />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/subscription"
+          element={
+            <ProtectedRoute>
+              <SubscriptionManagementPage onBack={() => navigate(-1)} />
             </ProtectedRoute>
           }
         />

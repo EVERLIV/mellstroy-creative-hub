@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Trainer, UserRole } from '../types';
 import { ArrowLeft, Calendar, MessageCircle, User as UserIcon, UtensilsCrossed, Heart, LogOut, Pencil, ChevronRight, Crown, ShieldCheck, MapPin, Sparkles } from 'lucide-react';
 import AboutMePage from './AboutMePage';
@@ -23,6 +24,7 @@ interface StudentProfilePageProps {
 type SubPage = 'about' | 'edit-about' | 'favorites' | 'meal-plans';
 
 const StudentProfilePage: React.FC<StudentProfilePageProps> = (props) => {
+    const navigate = useNavigate();
     const { currentUser, userRole, onNavigateToBookings, onNavigateToChats, onEditProfile, onSaveProfile, onLogout } = props;
     const [activeSubPage, setActiveSubPage] = useState<SubPage | null>(null);
     const [isExiting, setIsExiting] = useState(false);
@@ -172,19 +174,33 @@ const StudentProfilePage: React.FC<StudentProfilePageProps> = (props) => {
                     )}
                     
                     {/* Premium CTA */}
-                    {!currentUser.isPremium && (
+                    {!currentUser.isPremium ? (
                         <div className="bg-gradient-to-r from-amber-400 to-yellow-500 p-4 rounded-lg mb-3 shadow-sm">
                             <div className="flex items-start gap-3">
                                 <Crown className="w-6 h-6 text-white flex-shrink-0 mt-0.5" />
                                 <div className="flex-1">
                                     <h3 className="text-sm font-bold text-white mb-1">Upgrade to Premium</h3>
                                     <p className="text-xs text-white/90 mb-3">Access exclusive meal plans, AI fitness coach, priority bookings, and personalized workout programs</p>
-                                    <button className="w-full bg-white text-amber-600 px-4 py-2 rounded-lg text-xs font-bold hover:bg-amber-50 transition-colors">
+                                    <button 
+                                        onClick={() => navigate('/subscription')}
+                                        className="w-full bg-white text-amber-600 px-4 py-2 rounded-lg text-xs font-bold hover:bg-amber-50 transition-colors"
+                                    >
                                         Get Premium RhinoFit
                                     </button>
                                 </div>
                             </div>
                         </div>
+                    ) : (
+                        <button
+                            onClick={() => navigate('/subscription')}
+                            className="w-full bg-white p-3 rounded-lg shadow-sm mb-3 flex items-center justify-between hover:bg-gray-50 transition-colors"
+                        >
+                            <div className="flex items-center gap-2">
+                                <Crown className="w-5 h-5 text-amber-500" />
+                                <span className="text-sm font-bold text-gray-900">Manage Subscription</span>
+                            </div>
+                            <span className="text-xs text-gray-500">View details →</span>
+                        </button>
                     )}
                     
                     {/* Menu Card */}
