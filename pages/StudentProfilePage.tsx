@@ -171,6 +171,22 @@ const StudentProfilePage: React.FC<StudentProfilePageProps> = (props) => {
                         </div>
                     )}
                     
+                    {/* Premium CTA */}
+                    {!currentUser.isPremium && (
+                        <div className="bg-gradient-to-r from-amber-400 to-yellow-500 p-4 rounded-lg mb-3 shadow-sm">
+                            <div className="flex items-start gap-3">
+                                <Crown className="w-6 h-6 text-white flex-shrink-0 mt-0.5" />
+                                <div className="flex-1">
+                                    <h3 className="text-sm font-bold text-white mb-1">Upgrade to Premium</h3>
+                                    <p className="text-xs text-white/90 mb-3">Access exclusive meal plans, AI fitness coach, priority bookings, and personalized workout programs</p>
+                                    <button className="w-full bg-white text-amber-600 px-4 py-2 rounded-lg text-xs font-bold hover:bg-amber-50 transition-colors">
+                                        Get Premium RhinoFit
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                    
                     {/* Menu Card */}
                     <div className="bg-white rounded-lg p-3 mb-3 shadow-sm">
                         <h3 className="text-sm font-bold text-gray-900 mb-2">Menu</h3>

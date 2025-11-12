@@ -227,6 +227,22 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ trainer, onEdit, onManageClas
                 {/* Verification */}
                 <VerificationStatus />
 
+                {/* Premium CTA */}
+                {!trainer.isPremium && (
+                    <div className="bg-gradient-to-r from-amber-400 to-yellow-500 p-4 rounded-lg mb-3 shadow-sm">
+                        <div className="flex items-start gap-3">
+                            <Crown className="w-6 h-6 text-white flex-shrink-0 mt-0.5" />
+                            <div className="flex-1">
+                                <h3 className="text-sm font-bold text-white mb-1">Upgrade to Premium</h3>
+                                <p className="text-xs text-white/90 mb-3">Unlock 5 photos per class, priority listing, verified badge, and advanced analytics</p>
+                                <button className="w-full bg-white text-amber-600 px-4 py-2 rounded-lg text-xs font-bold hover:bg-amber-50 transition-colors">
+                                    Get Premium RhinoFit
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
                 {/* My Documents */}
                     <div className="bg-white p-3 rounded-lg shadow-sm mb-3">
                     <div className="flex justify-between items-center mb-3">
