@@ -161,6 +161,8 @@ export type Database = {
           id: string
           image_url: string | null
           image_urls: string[] | null
+          language: string[] | null
+          level: string | null
           name: string
           price: number
           schedule_days: string[] | null
@@ -177,6 +179,8 @@ export type Database = {
           id?: string
           image_url?: string | null
           image_urls?: string[] | null
+          language?: string[] | null
+          level?: string | null
           name: string
           price: number
           schedule_days?: string[] | null
@@ -193,6 +197,8 @@ export type Database = {
           id?: string
           image_url?: string | null
           image_urls?: string[] | null
+          language?: string[] | null
+          level?: string | null
           name?: string
           price?: number
           schedule_days?: string[] | null
