@@ -1,19 +1,18 @@
 import React, { useState } from 'react';
-import { Trainer, UserRole, Class, MealPlan } from '../types';
+import { Trainer, UserRole } from '../types';
 import RoleSwitcher from '../components/RoleSwitcher';
-import { ChevronRight, Calendar, MessageCircle, User as UserIcon, UtensilsCrossed, Heart, LogOut } from 'lucide-react';
+import { ArrowLeft, Calendar, MessageCircle, User as UserIcon, UtensilsCrossed, Heart, LogOut, Pencil, ChevronRight, Crown, ShieldCheck, MapPin, Sparkles } from 'lucide-react';
 import AboutMePage from './AboutMePage';
 import EditAboutMePage from './EditAboutMePage';
 import FavoritesPage from './FavoritesPage';
 import MyMealPlansPage from './MyMealPlansPage';
-import { isStudentProfileComplete } from '../utils/profile'; // New Import
-import CompleteProfilePrompt from '../components/CompleteProfilePrompt'; // New Import
+import { isStudentProfileComplete } from '../utils/profile';
+import CompleteProfilePrompt from '../components/CompleteProfilePrompt';
 
-
-const ANIMATION_DURATION = 350;
+const ANIMATION_DURATION = 300;
 
 interface StudentProfilePageProps {
-    currentUser: Trainer;
+    currentUser: Trainer | null;
     userRole: UserRole;
     onRoleChange: (role: UserRole) => void;
     onNavigateToBookings: () => void;
@@ -29,8 +28,8 @@ const StudentProfilePage: React.FC<StudentProfilePageProps> = (props) => {
     const { currentUser, userRole, onRoleChange, onNavigateToBookings, onNavigateToChats, onEditProfile, onSaveProfile, onLogout } = props;
     const [activeSubPage, setActiveSubPage] = useState<SubPage | null>(null);
     const [isExiting, setIsExiting] = useState(false);
-    const profileIsIncomplete = !isStudentProfileComplete(currentUser);
-
+    const [isRoleChanging, setIsRoleChanging] = useState(false);
+    const profileIsIncomplete = currentUser ? !isStudentProfileComplete(currentUser) : false;
 
     const handleNavigateTo = (page: SubPage) => {
         setActiveSubPage(page);
@@ -51,9 +50,16 @@ const StudentProfilePage: React.FC<StudentProfilePageProps> = (props) => {
         }, ANIMATION_DURATION);
     }
 
+    const handleRoleChange = async (newRole: UserRole) => {
+        setIsRoleChanging(true);
+        await onRoleChange(newRole);
+        setTimeout(() => {
+            setIsRoleChanging(false);
+        }, 500);
+    };
 
     const renderSubPage = () => {
-        if (!activeSubPage) return null;
+        if (!activeSubPage || !currentUser) return null;
 
         switch (activeSubPage) {
             case 'about':
@@ -68,106 +74,204 @@ const StudentProfilePage: React.FC<StudentProfilePageProps> = (props) => {
                     }} 
                 />;
             case 'favorites':
-                return null; // Will be integrated separately
+                return <FavoritesPage 
+                    trainers={[]} 
+                    favoriteTrainerIds={[]} 
+                    onToggleFavorite={() => {}} 
+                    onBack={handleBack}
+                    onInitiateBooking={() => {}}
+                    onOpenChat={() => {}}
+                    userRole="student"
+                    currentUserId=""
+                    onOpenReviewsModal={() => {}}
+                />;
             case 'meal-plans':
-                return null; // Will be integrated separately
+                return <MyMealPlansPage 
+                    plans={[]} 
+                    onBack={handleBack}
+                    onDelete={() => {}}
+                />;
             default:
                 return null;
         }
     };
     
-    return (
-        <div className="bg-slate-50 h-full relative overflow-hidden">
-             <div className={`transition-opacity duration-300 ${activeSubPage ? 'opacity-0' : 'opacity-100'}`}>
-                <div className="bg-white pb-6 pt-6">
-                     <h1 className="text-2xl font-bold text-slate-800 text-center">My Profile</h1>
-                    <div className="flex flex-col items-center pt-2">
-                        <img 
-                            src={currentUser.imageUrl} 
-                            alt={currentUser.name} 
-                            className="w-24 h-24 rounded-full object-cover border-4 border-white shadow-lg"
-                        />
-                        <h2 className="text-2xl font-bold text-slate-800 mt-3">{currentUser.name}</h2>
-                        <p className="text-sm text-slate-500 mt-1">{currentUser.location}</p>
-                    </div>
+    if (!currentUser) {
+        return (
+            <div className="bg-white h-full flex items-center justify-center">
+                <div className="text-center">
+                    <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+                    <p className="text-sm text-gray-600">Loading profile...</p>
                 </div>
-                
-                <div className="p-4 space-y-4 pb-[calc(5rem+env(safe-area-inset-bottom))]">
-                    {/* Complete Profile Prompt */}
-                    {profileIsIncomplete && (
-                        <CompleteProfilePrompt role="student" onComplete={() => handleNavigateTo('edit-about')} />
-                    )}
+            </div>
+        );
+    }
 
-                    {/* Role Switcher */}
-                    <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200/80">
-                         <h3 className="font-bold text-slate-800 mb-2">Account Type</h3>
-                        <RoleSwitcher currentRole={userRole} onRoleChange={onRoleChange} />
-                         <p className="text-xs text-slate-400 mt-2 text-center">Switch to trainer mode to manage your classes and profile.</p>
-                    </div>
-                    
-                    {/* Menu */}
-                    <div className="bg-white p-2 rounded-xl shadow-sm border border-slate-200/80">
-                        <ul className="divide-y divide-slate-100">
-                             <li className="p-2">
-                                <button onClick={() => handleNavigateTo('about')} className="w-full flex items-center justify-between hover:bg-slate-50 p-2 rounded-lg">
-                                    <div className="flex items-center">
-                                        <UserIcon className="w-5 h-5 mr-3 text-slate-500"/>
-                                        <span className="font-semibold text-slate-700">About Me</span>
-                                    </div>
-                                    <ChevronRight className="w-5 h-5 text-slate-400" />
-                                </button>
-                            </li>
-                             <li className="p-2">
-                                <button onClick={() => handleNavigateTo('favorites')} className="w-full flex items-center justify-between hover:bg-slate-50 p-2 rounded-lg">
-                                    <div className="flex items-center">
-                                        <Heart className="w-5 h-5 mr-3 text-slate-500"/>
-                                        <span className="font-semibold text-slate-700">My Favorites</span>
-                                    </div>
-                                    <ChevronRight className="w-5 h-5 text-slate-400" />
-                                </button>
-                            </li>
-                             <li className="p-2">
-                                <button onClick={onNavigateToBookings} className="w-full flex items-center justify-between hover:bg-slate-50 p-2 rounded-lg">
-                                    <div className="flex items-center">
-                                        <Calendar className="w-5 h-5 mr-3 text-slate-500"/>
-                                        <span className="font-semibold text-slate-700">My Bookings</span>
-                                    </div>
-                                    <ChevronRight className="w-5 h-5 text-slate-400" />
-                                </button>
-                            </li>
-                            <li className="p-2">
-                                 <button onClick={onNavigateToChats} className="w-full flex items-center justify-between hover:bg-slate-50 p-2 rounded-lg">
-                                    <div className="flex items-center">
-                                        <MessageCircle className="w-5 h-5 mr-3 text-slate-500"/>
-                                        <span className="font-semibold text-slate-700">My Chats</span>
-                                    </div>
-                                    <ChevronRight className="w-5 h-5 text-slate-400" />
-                                </button>
-                            </li>
-                             <li className="p-2">
-                                 <button onClick={() => handleNavigateTo('meal-plans')} className="w-full flex items-center justify-between hover:bg-slate-50 p-2 rounded-lg">
-                                    <div className="flex items-center">
-                                        <UtensilsCrossed className="w-5 h-5 mr-3 text-slate-500"/>
-                                        <span className="font-semibold text-slate-700">My Meal Plans</span>
-                                    </div>
-                                    <ChevronRight className="w-5 h-5 text-slate-400" />
-                                </button>
-                            </li>
-                        </ul>
+    return (
+        <div className="bg-white h-full flex flex-col overflow-hidden">
+            {/* Modern Compact Header */}
+            <div className="bg-white border-b border-gray-100 shadow-sm">
+                <div className="px-4 py-3">
+                    {/* Top Row: Title and Edit Button */}
+                    <div className="flex items-center justify-between mb-3">
+                        <h1 className="text-base font-bold text-gray-900">Profile</h1>
+                        <button 
+                            onClick={onEditProfile}
+                            className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors"
+                            aria-label="Edit profile"
+                        >
+                            <Pencil className="w-4 h-4 text-gray-600" />
+                        </button>
                     </div>
 
-                     <button 
-                        onClick={onLogout}
-                        className="w-full flex items-center justify-center bg-slate-200 text-slate-700 font-bold py-3 rounded-xl hover:bg-slate-300 transition-colors"
-                    >
-                        <LogOut className="w-5 h-5 mr-2" />
-                        Logout
-                    </button>
+                    {/* Profile Info Row: Avatar, Name, Badges */}
+                    <div className="flex items-center gap-3">
+                        {/* Avatar */}
+                        <div className="relative flex-shrink-0">
+                            <img 
+                                src={currentUser.imageUrl || 'https://via.placeholder.com/56'} 
+                                alt={currentUser.name || 'User'} 
+                                className="w-14 h-14 rounded-full object-cover border-2 border-white shadow-sm"
+                            />
+                            {currentUser.verificationStatus === 'verified' && (
+                                <div className="absolute -bottom-1 -right-1 bg-blue-500 rounded-full p-0.5 border-2 border-white">
+                                    <ShieldCheck className="w-3 h-3 text-white" />
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Name and Info */}
+                        <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 mb-1">
+                                <h2 className="text-base font-bold text-gray-900 truncate">
+                                    {currentUser.name || 'User'}
+                                </h2>
+                                {currentUser.isPremium && (
+                                    <div className="flex items-center gap-1 px-2 py-0.5 bg-gradient-to-r from-amber-400 to-yellow-500 rounded-full shadow-sm">
+                                        <Crown className="w-3 h-3 text-white" />
+                                        <span className="text-xs font-bold text-white">Premium</span>
+                                    </div>
+                                )}
+                            </div>
+                            <div className="flex items-center gap-2 flex-wrap">
+                                {!currentUser.isPremium && (
+                                    <div className="flex items-center gap-1 px-2 py-0.5 bg-gray-100 rounded-full">
+                                        <Sparkles className="w-3 h-3 text-gray-600" />
+                                        <span className="text-xs font-medium text-gray-700">Basic</span>
+                                    </div>
+                                )}
+                                {currentUser.location && (
+                                    <div className="flex items-center gap-1 text-xs text-gray-500">
+                                        <MapPin className="w-3 h-3" />
+                                        <span className="truncate">{currentUser.location}</span>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
 
-             {activeSubPage && (
-                <div className={`absolute inset-0 bg-slate-50 z-10 ${isExiting ? 'animate-slide-out-to-right' : 'animate-slide-in-from-right'}`}>
+            {/* Scrollable Content */}
+            <div className="flex-1 overflow-y-auto">
+                <div className="px-4 py-3 bg-gray-50">
+                    {/* Complete Profile Prompt */}
+                    {profileIsIncomplete && (
+                        <div className="mb-3">
+                            <CompleteProfilePrompt role="student" onComplete={() => handleNavigateTo('edit-about')} />
+                        </div>
+                    )}
+
+                    {/* Role Switcher Card */}
+                    <div className="bg-white rounded-lg p-3 mb-3 shadow-sm">
+                        <h3 className="text-sm font-bold text-gray-900 mb-2">Account Type</h3>
+                        <div className={`transition-all duration-500 ${isRoleChanging ? 'opacity-50 scale-95' : 'opacity-100 scale-100'}`}>
+                            <RoleSwitcher currentRole={userRole} onRoleChange={handleRoleChange} />
+                        </div>
+                        <p className="text-xs text-gray-500 mt-2 text-center">Switch to trainer mode to manage your classes</p>
+                    </div>
+                    
+                    {/* Menu Card */}
+                    <div className="bg-white rounded-lg p-3 mb-3 shadow-sm">
+                        <h3 className="text-sm font-bold text-gray-900 mb-2">Menu</h3>
+                        <div className="space-y-1">
+                            <button 
+                                onClick={() => handleNavigateTo('about')} 
+                                className="w-full flex items-center justify-between p-2.5 hover:bg-gray-50 rounded-lg transition-colors"
+                            >
+                                <div className="flex items-center gap-2.5">
+                                    <UserIcon className="w-4 h-4 text-gray-600"/>
+                                    <span className="text-xs font-semibold text-gray-900">About Me</span>
+                                </div>
+                                <ChevronRight className="w-4 h-4 text-gray-400" />
+                            </button>
+                            
+                            <button 
+                                onClick={() => handleNavigateTo('favorites')} 
+                                className="w-full flex items-center justify-between p-2.5 hover:bg-gray-50 rounded-lg transition-colors"
+                            >
+                                <div className="flex items-center gap-2.5">
+                                    <Heart className="w-4 h-4 text-gray-600"/>
+                                    <span className="text-xs font-semibold text-gray-900">My Favorites</span>
+                                </div>
+                                <ChevronRight className="w-4 h-4 text-gray-400" />
+                            </button>
+                            
+                            <button 
+                                onClick={onNavigateToBookings} 
+                                className="w-full flex items-center justify-between p-2.5 hover:bg-gray-50 rounded-lg transition-colors"
+                            >
+                                <div className="flex items-center gap-2.5">
+                                    <Calendar className="w-4 h-4 text-gray-600"/>
+                                    <span className="text-xs font-semibold text-gray-900">My Bookings</span>
+                                </div>
+                                <ChevronRight className="w-4 h-4 text-gray-400" />
+                            </button>
+                            
+                            <button 
+                                onClick={onNavigateToChats} 
+                                className="w-full flex items-center justify-between p-2.5 hover:bg-gray-50 rounded-lg transition-colors"
+                            >
+                                <div className="flex items-center gap-2.5">
+                                    <MessageCircle className="w-4 h-4 text-gray-600"/>
+                                    <span className="text-xs font-semibold text-gray-900">My Chats</span>
+                                </div>
+                                <ChevronRight className="w-4 h-4 text-gray-400" />
+                            </button>
+                            
+                            <button 
+                                onClick={() => handleNavigateTo('meal-plans')} 
+                                className="w-full flex items-center justify-between p-2.5 hover:bg-gray-50 rounded-lg transition-colors"
+                            >
+                                <div className="flex items-center gap-2.5">
+                                    <UtensilsCrossed className="w-4 h-4 text-gray-600"/>
+                                    <span className="text-xs font-semibold text-gray-900">My Meal Plans</span>
+                                </div>
+                                <ChevronRight className="w-4 h-4 text-gray-400" />
+                            </button>
+                        </div>
+                    </div>
+
+                    {/* Logout Button Card */}
+                    <div className="bg-white rounded-lg p-3 mb-3 shadow-sm">
+                        <button 
+                            onClick={onLogout}
+                            className="w-full flex items-center justify-center gap-2 py-2.5 px-4 bg-gray-100 text-gray-700 text-xs font-semibold rounded-lg hover:bg-gray-200 transition-colors"
+                        >
+                            <LogOut className="w-4 h-4" />
+                            Logout
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            {/* Sub Page Overlay */}
+            {activeSubPage && (
+                <div className={`absolute inset-0 bg-white z-30 transition-transform duration-300 ${
+                    isExiting 
+                        ? 'translate-x-full opacity-0' 
+                        : 'translate-x-0 opacity-100'
+                }`}>
                     {renderSubPage()}
                 </div>
             )}

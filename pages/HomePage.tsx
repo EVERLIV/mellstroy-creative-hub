@@ -99,7 +99,6 @@ const HomePage: React.FC<HomePageProps> = ({ trainers, onInitiateBooking, onOpen
               trainer={selectedTrainer} 
               onBack={handleBackToList}
               onInitiateBooking={onInitiateBooking}
-              onOpenChat={onOpenChat}
               userRole={userRole}
               currentUserId={currentUserId}
               isFavorite={favoriteTrainerIds.includes(selectedTrainer.id)}
@@ -121,7 +120,8 @@ const HomePage: React.FC<HomePageProps> = ({ trainers, onInitiateBooking, onOpen
             />
 
            <div className="px-4 pb-[calc(5rem+env(safe-area-inset-bottom))]">
-              <div className="mt-6 flex justify-between items-center">
+              {/* Trainers Section */}
+              <div className="mt-8 mb-6 flex justify-between items-center">
                 <h2 className="text-xl font-bold text-gray-800">Nearby Trainers</h2>
                 <ViewToggle viewMode={viewMode} setViewMode={setViewMode} />
               </div>

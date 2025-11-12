@@ -21,24 +21,24 @@ const iconMap: { [key: string]: React.FC<{ className?: string }> } = {
   grid: LayoutGrid,
 };
 
-const CategoryFilters: React.FC<CategoryFiltersProps> = ({ categories, selectedCategory, onSelectCategory }) => {
+const CategoryFilters: React.FC<CategoryFiltersProps> = React.memo(({ categories, selectedCategory, onSelectCategory }) => {
   return (
-    <div className="py-3">
+    <div className="py-2">
       <div className="overflow-x-auto overflow-y-visible no-scrollbar">
-        <div className="flex space-x-3 pb-2 px-4 pt-1">
+        <div className="flex space-x-2">
           {categories.map((category) => {
             const IconComponent = iconMap[category.icon];
             return (
               <button
                 key={category.id}
                 onClick={() => onSelectCategory(category.id)}
-                className={`flex-shrink-0 flex items-center space-x-2 px-4 py-2 text-sm font-semibold rounded-full transition-all duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-400 ${
+                className={`flex-shrink-0 flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-full transition-all duration-200 active:scale-95 ${
                   selectedCategory === category.id
-                    ? 'bg-[#FF6B35] text-white shadow-md'
-                    : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                    ? 'bg-[#FF6B35] text-white shadow-sm'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                 }`}
               >
-                {IconComponent && <IconComponent className="w-5 h-5" />}
+                {IconComponent && <IconComponent className="w-3.5 h-3.5" />}
                 <span>{category.name}</span>
               </button>
             )
@@ -47,6 +47,8 @@ const CategoryFilters: React.FC<CategoryFiltersProps> = ({ categories, selectedC
       </div>
     </div>
   );
-};
+});
+
+CategoryFilters.displayName = 'CategoryFilters';
 
 export default CategoryFilters;

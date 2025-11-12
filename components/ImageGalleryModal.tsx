@@ -36,7 +36,7 @@ const ImageGalleryModal: React.FC<ImageGalleryModalProps> = ({ images, startInde
 
     return (
         <div 
-            className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 animate-fade-in"
+            className="fixed inset-0 bg-gray-600 flex items-center justify-center z-50 animate-fade-in"
             onClick={onClose}
             role="dialog"
             aria-modal="true"
@@ -45,7 +45,7 @@ const ImageGalleryModal: React.FC<ImageGalleryModalProps> = ({ images, startInde
                 {/* Close Button */}
                 <button 
                     onClick={onClose} 
-                    className="absolute top-4 right-4 text-white bg-black/30 p-2 rounded-full hover:bg-black/50 transition-colors"
+                    className="absolute top-4 right-4 text-white bg-gray-700 p-2 rounded-full hover:bg-gray-800 transition-colors"
                     aria-label="Close gallery"
                 >
                     <X className="w-7 h-7" />
@@ -54,7 +54,7 @@ const ImageGalleryModal: React.FC<ImageGalleryModalProps> = ({ images, startInde
                 {/* Left Arrow */}
                 <button 
                     onClick={goToPrevious}
-                    className="absolute top-1/2 left-4 -translate-y-1/2 text-white bg-black/30 p-2 rounded-full hover:bg-black/50 transition-colors"
+                    className="absolute top-1/2 left-4 -translate-y-1/2 text-white bg-gray-700 p-2 rounded-full hover:bg-gray-800 transition-colors"
                     aria-label="Previous image"
                 >
                     <ChevronLeft className="w-8 h-8" />
@@ -63,7 +63,7 @@ const ImageGalleryModal: React.FC<ImageGalleryModalProps> = ({ images, startInde
                 {/* Right Arrow */}
                 <button 
                     onClick={goToNext}
-                    className="absolute top-1/2 right-4 -translate-y-1/2 text-white bg-black/30 p-2 rounded-full hover:bg-black/50 transition-colors"
+                    className="absolute top-1/2 right-4 -translate-y-1/2 text-white bg-gray-700 p-2 rounded-full hover:bg-gray-800 transition-colors"
                     aria-label="Next image"
                 >
                     <ChevronRight className="w-8 h-8" />
@@ -76,7 +76,7 @@ const ImageGalleryModal: React.FC<ImageGalleryModalProps> = ({ images, startInde
                         alt={`Gallery image ${currentIndex + 1}`}
                         className="max-w-full max-h-full object-contain rounded-lg shadow-2xl"
                     />
-                    <div className="absolute bottom-4 text-white bg-black/50 px-3 py-1 rounded-full text-sm font-semibold">
+                    <div className="absolute bottom-4 text-white bg-gray-700 px-3 py-1 rounded-full text-sm font-semibold">
                         {currentIndex + 1} / {images.length}
                     </div>
                 </div>

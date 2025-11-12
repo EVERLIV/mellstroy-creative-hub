@@ -2,8 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '../src/integrations/supabase/client';
 import { Class, Trainer, UserRole } from '../types';
-import { ArrowLeft, Clock, Users, MapPin, Building, Sun, Home, Star, Crown, Calendar } from 'lucide-react';
-import ImageGalleryModal from '../components/ImageGalleryModal';
+import { ArrowLeft, MapPin, Star, Calendar, Share2 } from 'lucide-react';
+import { Review } from '../types';
 
 const formatVND = (amount: number) => {
   return new Intl.NumberFormat('vi-VN', {
@@ -43,20 +43,12 @@ const ClassDetailPage: React.FC<ClassDetailPageProps> = ({
   const [classData, setClassData] = useState<Class | null>(null);
   const [trainer, setTrainer] = useState<Trainer | null>(null);
   const [loading, setLoading] = useState(true);
-  const [isGalleryOpen, setIsGalleryOpen] = useState(false);
-  const [selectedImageIndex, setSelectedImageIndex] = useState(0);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [enrolledCount, setEnrolledCount] = useState(0);
-
-  console.log('🎯 ClassDetailPage MOUNTED');
-  console.log('📋 Props received:', { userRole, currentUserId, classId });
-  console.log('🔗 URL params:', useParams());
+  const [classReviews, setClassReviews] = useState<Review[]>([]);
 
   useEffect(() => {
-    console.log('🔄 useEffect triggered for classId:', classId);
-    if (!classId) {
-      console.error('❌ No classId provided!');
-      return;
-    }
+    if (!classId) return;
     loadClassData();
   }, [classId]);
 
@@ -77,7 +69,6 @@ const ClassDetailPage: React.FC<ClassDetailPageProps> = ({
 
     loadBookings();
 
-    // Subscribe to realtime changes
     const channel = supabase
       .channel(`class-detail-bookings-${classId}`)
       .on(
@@ -88,8 +79,7 @@ const ClassDetailPage: React.FC<ClassDetailPageProps> = ({
           table: 'bookings',
           filter: `class_id=eq.${classId}`
         },
-        (payload) => {
-          console.log('🔄 Realtime booking update:', payload);
+        () => {
           loadBookings();
         }
       )
@@ -100,75 +90,59 @@ const ClassDetailPage: React.FC<ClassDetailPageProps> = ({
     };
   }, [classId]);
 
+
   const loadClassData = async () => {
-    if (!classId) {
-      console.error('❌ loadClassData: No classId');
-      return;
-    }
+    if (!classId) return;
 
     try {
       setLoading(true);
-      console.log('📥 Loading class data for ID:', classId);
 
-      // Fetch class data
       const { data: classInfo, error: classError } = await supabase
         .from('classes')
         .select('*')
         .eq('id', classId)
         .maybeSingle();
 
-      console.log('🔍 Supabase query result:', { classInfo, classError });
+      if (classError) throw classError;
+      if (!classInfo) return;
 
-      if (classError) {
-        console.error('❌ Error fetching class:', classError);
-        throw classError;
-      }
-
-      if (!classInfo) {
-        console.error('❌ Class not found for ID:', classId);
-        setLoading(false);
-        return;
-      }
-
-      console.log('✅ Class data loaded:', classInfo);
-
-      // Fetch trainer profile
-      console.log('📥 Loading trainer profile for ID:', classInfo.trainer_id);
       const { data: trainerProfile, error: trainerError } = await supabase
         .from('profiles')
         .select('*')
         .eq('id', classInfo.trainer_id)
         .maybeSingle();
 
-      console.log('🔍 Trainer query result:', { trainerProfile, trainerError });
+      if (trainerError) throw trainerError;
+      if (!trainerProfile) return;
 
-      if (trainerError) {
-        console.error('❌ Error fetching trainer:', trainerError);
-        throw trainerError;
-      }
-
-      if (!trainerProfile) {
-        console.error('❌ Trainer not found for ID:', classInfo.trainer_id);
-        setLoading(false);
-        return;
-      }
-
-      console.log('✅ Trainer data loaded:', trainerProfile);
-
-      // Fetch bookings for this class
-      const { data: bookings, error: bookingsError } = await supabase
+      const { data: bookings } = await supabase
         .from('bookings')
         .select('*')
         .eq('class_id', classId);
 
-      if (bookingsError) {
-        console.error('Error fetching bookings:', bookingsError);
-      }
-
-      console.log('Bookings loaded:', bookings?.length || 0);
       setEnrolledCount(bookings?.length || 0);
 
-      // Transform class data
+      // Load reviews for this class through bookings
+      let reviewsData: Review[] = [];
+      if (bookings && bookings.length > 0) {
+        const bookingIds = bookings.map(b => b.id);
+        const { data: reviews, error: reviewsError } = await supabase
+          .from('reviews')
+          .select(`
+            *,
+            client:profiles!reviews_client_id_fkey(username)
+          `)
+          .in('booking_id', bookingIds);
+
+        if (!reviewsError && reviews) {
+          reviewsData = reviews.map(r => ({
+            reviewerName: (r.client as any)?.username || 'Anonymous',
+            rating: r.rating,
+            comment: r.comment || '',
+          }));
+        }
+      }
+
       const cls: Class = {
         id: classInfo.id as any,
         name: classInfo.name,
@@ -183,7 +157,11 @@ const ClassDetailPage: React.FC<ClassDetailPageProps> = ({
           days: classInfo.schedule_days,
           time: classInfo.schedule_time
         } : undefined,
+        language: (classInfo as any).language || [],
+        level: (classInfo as any).level || '',
       };
+
+      setClassReviews(reviewsData);
 
       const trainerData: Trainer = {
         id: trainerProfile.id,
@@ -204,43 +182,43 @@ const ClassDetailPage: React.FC<ClassDetailPageProps> = ({
 
       setClassData(cls);
       setTrainer(trainerData);
-      console.log('✅✅✅ Class and trainer data set successfully');
-      console.log('📊 Final state:', { cls, trainerData });
     } catch (error) {
-      console.error('💥 ERROR in loadClassData:', error);
+      console.error('Error loading class data:', error);
     } finally {
       setLoading(false);
-      console.log('🏁 Loading complete, loading state set to false');
     }
   };
 
-  const openGallery = (index: number) => {
-    setSelectedImageIndex(index);
-    setIsGalleryOpen(true);
+  const handleShare = async () => {
+    if (navigator.share && classData) {
+      try {
+        await navigator.share({
+          title: classData.name,
+          text: classData.description,
+          url: window.location.href,
+        });
+      } catch (error) {
+        console.log('Error sharing:', error);
+      }
+    } else {
+      // Fallback: copy to clipboard
+      navigator.clipboard.writeText(window.location.href);
+    }
   };
 
-  console.log('🎨 RENDER - State:', { 
-    loading, 
-    hasClassData: !!classData, 
-    hasTrainer: !!trainer,
-    classId,
-    className: classData?.name 
-  });
 
   if (loading) {
-    console.log('⏳ Rendering loading state...');
     return (
       <div className="h-screen flex items-center justify-center bg-background">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-foreground">Loading class details...</p>
+        <div className="text-center space-y-4">
+          <div className="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto"></div>
+          <p className="text-foreground font-medium">Loading class details...</p>
         </div>
       </div>
     );
   }
 
   if (!classData || !trainer) {
-    console.log('❌ Rendering NOT FOUND state - classData:', !!classData, 'trainer:', !!trainer);
     return (
       <div className="h-screen flex flex-col items-center justify-center bg-background p-4">
         <p className="text-foreground text-lg mb-2">Class not found</p>
@@ -255,15 +233,8 @@ const ClassDetailPage: React.FC<ClassDetailPageProps> = ({
     );
   }
 
-  const enrollmentPercentage = classData.capacity > 0 ? (enrolledCount / classData.capacity) * 100 : 0;
   const isFull = enrolledCount >= classData.capacity;
   const isBookingDisabled = userRole === 'trainer' || isFull;
-
-  const classTypeIcon = {
-    Indoor: <Building className="w-5 h-5" />,
-    Outdoor: <Sun className="w-5 h-5" />,
-    Home: <Home className="w-5 h-5" />,
-  };
 
   const images = classData.imageUrls && classData.imageUrls.length > 0 
     ? classData.imageUrls 
@@ -272,160 +243,192 @@ const ClassDetailPage: React.FC<ClassDetailPageProps> = ({
     : [];
 
   return (
-    <div className="bg-background min-h-screen pb-24">
-      {console.log('✅ Rendering ClassDetailPage content - Class:', classData.name, 'Trainer:', trainer.name)}
-      {/* Header Image */}
-      <div className="relative">
-        <img 
-          src={images[0] || classData.imageUrl} 
-          alt={classData.name} 
-          className="h-72 w-full object-cover" 
-        />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
+    <div className="bg-white h-screen flex flex-col overflow-hidden">
+      {/* Header */}
+      <div className="flex items-center justify-between px-4 py-3 bg-white shadow-sm z-20">
         <button 
           onClick={() => navigate(-1)} 
-          className="absolute top-4 left-4 bg-background/80 backdrop-blur-sm p-2 rounded-full hover:bg-background transition-colors"
+          className="p-2 -ml-2"
         >
-          <ArrowLeft className="w-6 h-6 text-foreground" />
+          <ArrowLeft className="w-5 h-5 text-gray-800" />
         </button>
-        {trainer.isPremium && (
-          <div className="absolute top-4 right-4 bg-gradient-to-r from-amber-400 to-yellow-500 text-white text-xs font-bold px-3 py-1.5 rounded-full flex items-center shadow-lg">
-            <Crown className="w-4 h-4 mr-1" />
-            PREMIUM CLASS
-          </div>
-        )}
+        <h1 className="text-base font-bold text-gray-900">Class Details</h1>
+        <button 
+          onClick={handleShare}
+          className="p-2 -mr-2"
+          aria-label="Share class"
+        >
+          <Share2 className="w-5 h-5 text-gray-800" />
+        </button>
       </div>
 
-      {/* Content */}
-      <div className="p-4 bg-background -mt-8 rounded-t-2xl relative z-10">
-        {/* Class Info */}
-        <div className="flex items-start justify-between mb-4">
-          <div className="flex-1">
-            <h1 className="text-2xl font-bold text-foreground mb-2">{classData.name}</h1>
-            <div className="flex items-center gap-4 text-sm text-muted-foreground">
-              <div className="flex items-center gap-1">
-                <Clock className="w-4 h-4" />
-                <span>{classData.duration} min</span>
-              </div>
-              <div className="flex items-center gap-1">
-                {classTypeIcon[classData.classType]}
-                <span>{classData.classType}</span>
-              </div>
-            </div>
-          </div>
-          <div className="text-right">
-            <p className="text-2xl font-bold text-foreground">{formatVND(classData.price)}</p>
-            <p className="text-xs text-muted-foreground">per session</p>
-          </div>
-        </div>
-
-        {/* Trainer Info */}
-        <div 
-          onClick={() => navigate(`/trainer/${trainer.id}`)}
-          className="bg-card p-3 rounded-xl mb-6 flex items-center gap-3 cursor-pointer hover:bg-accent transition-colors"
-        >
-          <img src={trainer.imageUrl} alt={trainer.name} className="w-12 h-12 rounded-full object-cover" />
-          <div className="flex-1">
-            <p className="font-semibold text-foreground">{trainer.name}</p>
-            <div className="flex items-center gap-2 text-sm">
-              <div className="flex items-center">
-                <Star className="w-3 h-3 text-yellow-400 fill-yellow-400 mr-1" />
-                <span className="text-muted-foreground">{trainer.rating.toFixed(1)}</span>
-              </div>
-              <span className="text-muted-foreground">•</span>
-              <div className="flex items-center gap-1 text-muted-foreground">
-                <MapPin className="w-3 h-3" />
-                <span className="text-xs">{trainer.location}</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Description */}
-        <div className="mb-6">
-          <h2 className="text-lg font-bold text-foreground mb-2">About This Class</h2>
-          <p className="text-sm text-muted-foreground leading-relaxed">{classData.description}</p>
-        </div>
-
-        {/* Image Gallery for Premium */}
-        {trainer.isPremium && images.length > 1 && (
-          <div className="mb-6">
-            <h2 className="text-lg font-bold text-foreground mb-3">Class Gallery</h2>
-            <div className="grid grid-cols-3 gap-2">
-              {images.map((imgUrl, index) => (
-                <button 
-                  key={index} 
-                  onClick={() => openGallery(index)}
-                  className="aspect-square rounded-lg overflow-hidden"
-                >
-                  <img src={imgUrl} alt={`Gallery ${index + 1}`} className="w-full h-full object-cover hover:scale-105 transition-transform" />
-                </button>
+      {/* Scrollable Content */}
+      <div className="flex-1 overflow-y-auto">
+        {/* Hero Image */}
+        <div className="relative h-48 w-full">
+          <img 
+            src={images[currentImageIndex] || classData.imageUrl} 
+            alt={classData.name} 
+            className="h-full w-full object-cover" 
+          />
+          {images.length > 1 && (
+            <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1.5">
+              {images.map((_, index) => (
+                <div
+                  key={index}
+                  className={`h-1.5 rounded-full transition-all ${
+                    index === currentImageIndex 
+                      ? 'w-6 bg-white' 
+                      : 'w-1.5 bg-white/50'
+                  }`}
+                />
               ))}
             </div>
-          </div>
-        )}
-
-        {/* Schedule */}
-        {classData.schedule && (
-          <div className="mb-6">
-            <h2 className="text-lg font-bold text-foreground mb-3 flex items-center gap-2">
-              <Calendar className="w-5 h-5" />
-              Schedule
-            </h2>
-            <div className="bg-primary/10 rounded-xl p-4">
-              <p className="text-sm font-semibold text-foreground mb-1">
-                {classData.schedule.days.join(', ')}
-              </p>
-              <p className="text-sm text-muted-foreground">
-                {formatTime(classData.schedule.time)}
-              </p>
-            </div>
-          </div>
-        )}
-
-        {/* Enrollment Progress */}
-        <div className="mb-6">
-          <div className="flex items-center justify-between mb-2">
-            <div className="flex items-center gap-2">
-              <Users className="w-5 h-5 text-muted-foreground" />
-              <span className="text-sm font-semibold text-foreground">Enrollment</span>
-            </div>
-            <span className={`text-sm font-bold ${isFull ? 'text-destructive' : 'text-foreground'}`}>
-              {enrolledCount} / {classData.capacity}
-            </span>
-          </div>
-          <div className="w-full bg-secondary rounded-full h-2 overflow-hidden">
-            <div
-              className={`h-2 rounded-full transition-all duration-500 ${isFull ? 'bg-destructive' : 'bg-primary'}`}
-              style={{ width: `${enrollmentPercentage}%` }}
-            ></div>
-          </div>
+          )}
         </div>
 
-        {/* Book Button */}
+        {/* Main Content */}
+        <div className="px-4 py-3 bg-gray-50">
+          {/* Class Title and Coach Card */}
+          <div className="bg-white rounded-lg p-3 mb-3 shadow-sm">
+            <h2 className="text-lg font-bold text-gray-900 mb-0.5">{classData.name}</h2>
+            <p className="text-sm text-gray-600">with {trainer.name}</p>
+          </div>
+
+          {/* Price and Schedule Card */}
+          <div className="bg-white rounded-lg p-3 mb-3 shadow-sm">
+            <div className="space-y-1.5">
+              <p className="text-sm font-bold text-gray-900">
+                Price: {formatVND(classData.price)} / Session
+              </p>
+              {classData.schedule && (
+                <div className="flex items-start gap-2 text-xs text-gray-700">
+                  <Calendar className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" />
+                  <span>
+                    Schedule: {classData.schedule.days.join(', ')} | {formatTime(classData.schedule.time)}
+                  </span>
+                </div>
+              )}
+              <div className="flex items-start gap-2 text-xs text-gray-700">
+                <MapPin className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" />
+                <span>{trainer.location}</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Class Details Grid Card */}
+          <div className="bg-white rounded-lg p-3 mb-3 shadow-sm">
+            <div className="space-y-3">
+              {/* Level and Language as Bubbles */}
+              <div className="flex flex-wrap gap-2">
+                {classData.level && (
+                  <span className="px-2.5 py-1 bg-blue-100 text-blue-700 text-xs font-medium rounded-full">
+                    {classData.level}
+                  </span>
+                )}
+                {classData.language && classData.language.length > 0 && classData.language.map((lang, idx) => (
+                  <span key={idx} className="px-2.5 py-1 bg-green-100 text-green-700 text-xs font-medium rounded-full">
+                    {lang}
+                  </span>
+                ))}
+              </div>
+              {/* Duration and Capacity */}
+              <div className="grid grid-cols-2 gap-3 pt-2 border-t border-gray-100">
+                <div className="space-y-1.5">
+                  <p className="text-xs text-gray-500">Duration</p>
+                  <p className="text-xs text-gray-900">{classData.duration} minutes</p>
+                </div>
+                <div className="space-y-1.5">
+                  <p className="text-xs text-gray-500">Capacity</p>
+                  <p className="text-xs text-gray-900">{enrolledCount} / {classData.capacity}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* About This Class Card */}
+          <div className="bg-white rounded-lg p-3 mb-3 shadow-sm">
+            <h3 className="text-sm font-bold text-gray-900 mb-1.5">About this Class</h3>
+            <p className="text-xs text-gray-600 leading-relaxed line-clamp-3">
+              {classData.description}
+            </p>
+          </div>
+
+          {/* Your Coach Card */}
+          <div className="bg-white rounded-lg p-3 mb-3 shadow-sm">
+            <h3 className="text-sm font-bold text-gray-900 mb-1.5">Your Coach</h3>
+            <div 
+              onClick={() => navigate(`/trainer/${trainer.id}`)}
+              className="bg-gray-50 rounded-lg p-2.5 flex items-center gap-2.5 cursor-pointer hover:bg-gray-100 transition-colors"
+            >
+              <img src={trainer.imageUrl} alt={trainer.name} className="w-10 h-10 rounded-full object-cover flex-shrink-0" />
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-semibold text-gray-900 truncate">{trainer.name}</p>
+                <div className="flex items-center gap-1.5 text-xs text-gray-600">
+                  <Star className="w-3 h-3 text-yellow-400 fill-yellow-400" />
+                  <span>{trainer.rating.toFixed(1)}</span>
+                  <span>•</span>
+                  <span>{trainer.reviews} reviews</span>
+                </div>
+              </div>
+              <button className="text-xs font-medium text-blue-600 px-2 py-1 hover:text-blue-700">
+                View
+              </button>
+            </div>
+          </div>
+
+          {/* Reviews Section */}
+          {classReviews.length > 0 && (
+            <div className="bg-white rounded-lg p-3 mb-3 shadow-sm">
+              <h3 className="text-sm font-bold text-gray-900 mb-2">Reviews</h3>
+              <div className="space-y-2.5">
+                {classReviews.slice(0, 3).map((review, index) => (
+                  <div key={index} className="border-b border-gray-100 last:border-0 pb-2.5 last:pb-0">
+                    <div className="flex items-center justify-between mb-1">
+                      <p className="text-xs font-semibold text-gray-900">{review.reviewerName}</p>
+                      <div className="flex items-center gap-0.5">
+                        {[...Array(5)].map((_, i) => {
+                          const starValue = i + 1;
+                          return (
+                            <Star
+                              key={i}
+                              className={`w-2.5 h-2.5 ${
+                                review.rating >= starValue
+                                  ? 'text-yellow-400 fill-yellow-400'
+                                  : 'text-gray-300 fill-gray-300'
+                              }`}
+                            />
+                          );
+                        })}
+                      </div>
+                    </div>
+                    <p className="text-xs text-gray-600 leading-relaxed">"{review.comment}"</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Fixed Bottom Button */}
+      <div className="px-4 py-3 bg-white shadow-lg">
         <button
           onClick={() => onInitiateBooking && trainer && onInitiateBooking({ trainer, cls: classData })}
           disabled={isBookingDisabled}
-          className={`w-full font-bold py-3.5 px-4 rounded-xl transition-all duration-200 ${
+          className={`w-full font-bold py-3 px-4 rounded-lg transition-all duration-200 text-sm shadow-sm ${
             isBookingDisabled
-              ? 'bg-muted text-muted-foreground cursor-not-allowed'
-              : 'bg-primary text-primary-foreground hover:bg-primary/90 shadow-md hover:shadow-lg'
+              ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
+              : 'bg-blue-600 text-white hover:bg-blue-700 active:scale-95'
           }`}
         >
-          {isFull ? 'Class Full' : userRole === 'trainer' ? 'Trainers Cannot Book' : 'Book This Class'}
+          {isFull ? 'Class Full' : userRole === 'trainer' ? 'Trainers Cannot Book' : 'Book Class'}
         </button>
       </div>
 
-      {/* Image Gallery Modal */}
-      {isGalleryOpen && images.length > 0 && (
-        <ImageGalleryModal
-          images={images}
-          startIndex={selectedImageIndex}
-          onClose={() => setIsGalleryOpen(false)}
-        />
-      )}
     </div>
   );
 };
 
 export default ClassDetailPage;
+

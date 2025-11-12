@@ -121,7 +121,6 @@ const SearchPage: React.FC<SearchPageProps> = ({ trainers, onInitiateBooking, on
                 trainer={selectedTrainer} 
                 onBack={handleBackToList}
                 onInitiateBooking={onInitiateBooking}
-                onOpenChat={onOpenChat}
                 // Dummy props - SearchPage doesn't manage these states
                 userRole="student" 
                 currentUserId=""

@@ -1,10 +1,13 @@
--- Add trainer profile enhancement columns
+-- Простой скрипт для заполнения данных тренеров
+-- Запустите этот скрипт в Supabase SQL Editor
+
+-- 1. Добавляем колонки (если их нет)
 ALTER TABLE profiles
 ADD COLUMN IF NOT EXISTS short_description TEXT,
 ADD COLUMN IF NOT EXISTS experience_years INTEGER,
 ADD COLUMN IF NOT EXISTS last_seen TIMESTAMPTZ DEFAULT NOW();
 
--- Populate short descriptions and experience years for trainers
+-- 2. Заполняем краткие описания и годы опыта для всех тренеров
 UPDATE profiles
 SET 
   short_description = CASE 
@@ -47,7 +50,8 @@ WHERE id IN (
 )
 AND (short_description IS NULL OR experience_years IS NULL);
 
--- Set realistic last_seen timestamps
+-- 3. Устанавливаем реалистичные timestamps для last_seen
+-- Распределяем тренеров: часть онлайн, часть недавно видели, часть давно
 WITH trainer_ids AS (
   SELECT p.id, ROW_NUMBER() OVER (ORDER BY RANDOM()) as rn
   FROM profiles p
@@ -59,34 +63,34 @@ trainer_stats AS (
 )
 UPDATE profiles p
 SET last_seen = CASE 
-  -- First 30% - online (active in last 5 minutes)
+  -- Первые 30% - онлайн (активны в последние 5 минут)
   WHEN p.id IN (
     SELECT id FROM trainer_ids 
     WHERE rn <= (SELECT CEIL(total * 0.3) FROM trainer_stats)
   ) THEN NOW() - (RANDOM() * INTERVAL '4 minutes')
   
-  -- Next 30% - seen 10-60 minutes ago
+  -- Следующие 30% - видели 10-60 минут назад
   WHEN p.id IN (
     SELECT id FROM trainer_ids 
     WHERE rn > (SELECT CEIL(total * 0.3) FROM trainer_stats)
     AND rn <= (SELECT CEIL(total * 0.6) FROM trainer_stats)
   ) THEN NOW() - (INTERVAL '30 minutes' + RANDOM() * INTERVAL '30 minutes')
   
-  -- Next 20% - seen 2-6 hours ago
+  -- Следующие 20% - видели 2-6 часов назад
   WHEN p.id IN (
     SELECT id FROM trainer_ids 
     WHERE rn > (SELECT CEIL(total * 0.6) FROM trainer_stats)
     AND rn <= (SELECT CEIL(total * 0.8) FROM trainer_stats)
   ) THEN NOW() - (INTERVAL '2 hours' + RANDOM() * INTERVAL '4 hours')
   
-  -- Rest - seen 1-7 days ago
+  -- Остальные - видели 1-7 дней назад
   ELSE NOW() - (INTERVAL '1 day' + RANDOM() * INTERVAL '6 days')
 END
 FROM trainer_ids ti
 WHERE p.id = ti.id
 AND (p.last_seen IS NULL OR p.last_seen < NOW() - INTERVAL '1 day');
 
--- Ensure all trainers have last_seen
+-- 4. Убеждаемся, что у всех тренеров есть last_seen
 UPDATE profiles
 SET last_seen = COALESCE(last_seen, NOW() - (RANDOM() * INTERVAL '7 days'))
 WHERE id IN (
@@ -96,3 +100,23 @@ WHERE id IN (
   WHERE ur.role = 'trainer'
 )
 AND last_seen IS NULL;
+
+-- Проверка результатов
+SELECT 
+  p.username,
+  p.specialty,
+  LEFT(p.short_description, 50) || '...' as short_desc,
+  p.experience_years,
+  p.last_seen,
+  CASE 
+    WHEN p.last_seen > NOW() - INTERVAL '5 minutes' THEN '🟢 Online'
+    WHEN p.last_seen > NOW() - INTERVAL '1 hour' THEN '🟡 Seen ' || EXTRACT(EPOCH FROM (NOW() - p.last_seen))::int / 60 || ' min ago'
+    WHEN p.last_seen > NOW() - INTERVAL '1 day' THEN '🟠 Seen ' || EXTRACT(EPOCH FROM (NOW() - p.last_seen))::int / 3600 || ' hours ago'
+    ELSE '⚪ Seen ' || EXTRACT(EPOCH FROM (NOW() - p.last_seen))::int / 86400 || ' days ago'
+  END as status
+FROM profiles p
+INNER JOIN user_roles ur ON p.id = ur.user_id
+WHERE ur.role = 'trainer'
+ORDER BY p.last_seen DESC NULLS LAST
+LIMIT 20;
+

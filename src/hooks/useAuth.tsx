@@ -28,19 +28,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setSession(session);
         setUser(session?.user ?? null);
         setLoading(false);
-        
-        // Update last_seen when user signs in
-        if (event === 'SIGNED_IN' && session?.user) {
-          setTimeout(() => {
-            supabase
-              .from('profiles')
-              .update({ last_seen: new Date().toISOString() })
-              .eq('id', session.user.id)
-              .then(() => {
-                console.log('Updated last_seen on login');
-              });
-          }, 0);
-        }
       }
     );
 

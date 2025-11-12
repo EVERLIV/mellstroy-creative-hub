@@ -2,9 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import { User } from 'lucide-react';
 import { AuthProvider, useAuth } from './src/hooks/useAuth';
-import { useActivityTracker } from './src/hooks/useActivityTracker';
 import { Toaster } from './src/components/ui/toaster';
 import { useToast } from './src/hooks/use-toast';
+import { useTrainers } from './src/hooks/useTrainers';
+import { useFavorites } from './src/hooks/useFavorites';
+import { useEvents } from './src/hooks/useEvents';
+import { validateEnv } from './src/utils/env';
+import { saveMealPlan } from './src/utils/mealPlans';
 import AuthPage from './src/pages/AuthPage';
 import WelcomePage from './pages/WelcomePage';
 import DashboardPage from './pages/DashboardPage';
@@ -24,12 +28,15 @@ import UploadCategoryIconsPage from './pages/UploadCategoryIconsPage';
 import MediaUploadPage from './pages/MediaUploadPage';
 import AdminDashboardPage from './pages/AdminDashboardPage';
 import ClassDetailPage from './pages/ClassDetailPage';
+import VenuesPage from './pages/VenuesPage';
 import BottomNav from './components/BottomNav';
 import BookingModal from './components/BookingModal';
 import ReviewModal from './components/ReviewModal';
 import ReviewsModal from './components/ReviewsModal';
-import { Trainer, Class, Booking, UserRole, Event, Message, MealPlan } from './types';
+import { Trainer, Class, Booking, UserRole, Event, Message, MealPlan, Venue } from './types';
+import { mockVenues } from './data/mockVenues';
 import { getAICoachResponse } from './utils/ai';
+import { ErrorBoundary } from './src/components/ErrorBoundary';
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { user, loading } = useAuth();
@@ -52,17 +59,17 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   return <>{children}</>;
 };
 
+const VenuesPageWrapper = () => {
+  const navigate = useNavigate();
+  return <VenuesPage venues={mockVenues} onBack={() => navigate('/')} />;
+};
+
 const AppRoutes = () => {
   const { user } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
-  
-  // Track user activity and update last_seen
-  useActivityTracker();
   const [userRole, setUserRole] = useState<UserRole>('student');
-  const [trainers, setTrainers] = useState<Trainer[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
-  const [favoriteTrainerIds, setFavoriteTrainerIds] = useState<string[]>([]);
   const [bookingModalData, setBookingModalData] = useState<{ trainer: Trainer; cls: Class } | null>(null);
   const [reviewModalData, setReviewModalData] = useState<{ booking: Booking; trainer: Trainer } | null>(null);
   const [reviewsModalTrainer, setReviewsModalTrainer] = useState<Trainer | null>(null);
@@ -72,22 +79,71 @@ const AppRoutes = () => {
   const [aiCoachMessages, setAiCoachMessages] = useState<Message[]>([]);
   const [isAiCoachLoading, setIsAiCoachLoading] = useState(false);
 
+  // Use custom hooks for data fetching
+  const { trainers, loading: trainersLoading } = useTrainers();
+  const { favoriteTrainerIds, toggleFavorite } = useFavorites();
+  const { events } = useEvents();
+
   const currentUserId = user?.id || 'current-user-id';
 
-  // TODO: Load trainers and events from database
+  // Validate environment variables on mount
   useEffect(() => {
-    // Fetch trainers from Supabase here
-    // Fetch events from Supabase here
-    // For now, starting with empty arrays
-  }, []);
+    if (!validateEnv()) {
+      toast({
+        title: 'Configuration Warning',
+        description: 'Some environment variables are missing. Please check your .env.local file.',
+        variant: 'destructive',
+      });
+    }
+  }, [toast]);
 
-  const handleToggleFavorite = (trainerId: string) => {
-    setFavoriteTrainerIds(prev =>
-      prev.includes(trainerId)
-        ? prev.filter(id => id !== trainerId)
-        : [...prev, trainerId]
-    );
-  };
+  // Update last_seen timestamp periodically for online status
+  useEffect(() => {
+    if (!user?.id) return;
+
+    // Update immediately on mount
+    updateLastSeen(user.id).catch(err => console.error('Failed to update last_seen on mount:', err));
+
+    // Update every 2 minutes while user is active
+    const interval = setInterval(() => {
+      updateLastSeen(user.id).catch(err => console.error('Failed to update last_seen:', err));
+    }, 120000); // 2 minutes
+
+    // Update on visibility change (when user comes back to tab)
+    const handleVisibilityChange = () => {
+      if (!document.hidden && user.id) {
+        updateLastSeen(user.id).catch(err => console.error('Failed to update last_seen on visibility change:', err));
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    // Update on user interactions (scroll, click, etc.)
+    const handleUserActivity = () => {
+      if (user.id) {
+        updateLastSeen(user.id).catch(err => console.error('Failed to update last_seen on activity:', err));
+      }
+    };
+    
+    // Throttle activity updates to avoid too many calls
+    let activityTimeout: NodeJS.Timeout;
+    const throttledActivity = () => {
+      clearTimeout(activityTimeout);
+      activityTimeout = setTimeout(handleUserActivity, 30000); // Update every 30 seconds max
+    };
+    
+    window.addEventListener('scroll', throttledActivity, { passive: true });
+    window.addEventListener('click', throttledActivity, { passive: true });
+    window.addEventListener('keydown', throttledActivity, { passive: true });
+
+    return () => {
+      clearInterval(interval);
+      clearTimeout(activityTimeout);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('scroll', throttledActivity);
+      window.removeEventListener('click', throttledActivity);
+      window.removeEventListener('keydown', throttledActivity);
+    };
+  }, [user?.id]);
 
   const handleInitiateBooking = (data: { trainer: Trainer; cls: Class }) => {
     setBookingModalData(data);
@@ -132,14 +188,30 @@ const AppRoutes = () => {
     }
   };
 
-  const handleSaveMealPlan = (plan: Omit<MealPlan, 'id' | 'createdAt'>) => {
-    // TODO: Save meal plan to database
-    console.log('Saving meal plan:', plan);
-    toast({
-      title: "Meal Plan Saved",
-      description: `"${plan.name}" has been saved successfully!`,
-    });
-    navigate('/');
+  const handleSaveMealPlan = async (plan: Omit<MealPlan, 'id' | 'createdAt'>) => {
+    if (!user?.id) {
+      toast({
+        title: "Error",
+        description: "You must be logged in to save meal plans.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      await saveMealPlan(user.id, plan);
+      toast({
+        title: "Meal Plan Saved",
+        description: `"${plan.name}" has been saved successfully!`,
+      });
+      navigate('/');
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: error instanceof Error ? error.message : "Failed to save meal plan. Please try again.",
+        variant: "destructive",
+      });
+    }
   };
 
   return (
@@ -166,7 +238,7 @@ const AppRoutes = () => {
                 userRole={userRole}
                 currentUserId={currentUserId}
                 favoriteTrainerIds={favoriteTrainerIds}
-                onToggleFavorite={handleToggleFavorite}
+                onToggleFavorite={toggleFavorite}
                 onOpenReviewsModal={handleOpenReviewsModal}
               />
             </ProtectedRoute>
@@ -198,7 +270,7 @@ const AppRoutes = () => {
                 userRole={userRole}
                 currentUserId={currentUserId}
                 favoriteTrainerIds={favoriteTrainerIds}
-                onToggleFavorite={handleToggleFavorite}
+                onToggleFavorite={toggleFavorite}
                 onOpenReviewsModal={handleOpenReviewsModal}
               />
             </ProtectedRoute>
@@ -250,7 +322,7 @@ const AppRoutes = () => {
                 userRole={userRole}
                 currentUserId={currentUserId}
                 favoriteTrainerIds={favoriteTrainerIds}
-                onToggleFavorite={handleToggleFavorite}
+                onToggleFavorite={toggleFavorite}
                 onOpenReviewsModal={handleOpenReviewsModal}
               />
             </ProtectedRoute>
@@ -267,7 +339,7 @@ const AppRoutes = () => {
                 userRole={userRole}
                 currentUserId={currentUserId}
                 favoriteTrainerIds={favoriteTrainerIds}
-                onToggleFavorite={handleToggleFavorite}
+                onToggleFavorite={toggleFavorite}
                 onOpenReviewsModal={handleOpenReviewsModal}
               />
             </ProtectedRoute>
@@ -335,6 +407,14 @@ const AppRoutes = () => {
             </ProtectedRoute>
           }
         />
+        <Route
+          path="/venues"
+          element={
+            <ProtectedRoute>
+              <VenuesPageWrapper />
+            </ProtectedRoute>
+          }
+        />
       </Routes>
       {user && <BottomNav />}
       {bookingModalData && (
@@ -372,11 +452,13 @@ const AppRoutes = () => {
 
 const App = () => {
   return (
-    <Router>
-      <AuthProvider>
-        <AppRoutes />
-      </AuthProvider>
-    </Router>
+    <ErrorBoundary>
+      <Router>
+        <AuthProvider>
+          <AppRoutes />
+        </AuthProvider>
+      </Router>
+    </ErrorBoundary>
   );
 };
 

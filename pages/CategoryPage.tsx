@@ -84,7 +84,6 @@ const CategoryPage: React.FC<CategoryPageProps> = ({
               trainer={selectedTrainer} 
               onBack={handleBackFromDetail}
               onInitiateBooking={onInitiateBooking}
-              onOpenChat={onOpenChat}
               userRole={userRole}
               currentUserId={currentUserId}
               isFavorite={favoriteTrainerIds.includes(selectedTrainer.id)}

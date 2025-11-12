@@ -57,7 +57,7 @@ const UnifiedHeader: React.FC<UnifiedHeaderProps> = ({
             </div>
 
             {/* Category Filters */}
-            <div className="mt-4 relative z-10 overflow-visible">
+            <div className="mt-4 mb-2 px-4 relative z-10 overflow-visible">
                 <CategoryFilters
                     categories={categories}
                     selectedCategory={selectedCategory}

@@ -27,6 +27,8 @@ export interface Class {
   schedule?: { days: string[]; time: string; };
   bookings?: Booking[];
   classType: ClassType;
+  language?: string[]; // Languages spoken in the class
+  level?: string; // Class level (e.g., "Beginner", "Intermediate", "Advanced", "Beginner to Intermediate")
 }
 
 export interface Message {
@@ -49,6 +51,9 @@ export interface Trainer {
   verificationStatus: 'unverified' | 'pending' | 'verified';
   isPremium: boolean;
   bio: string;
+  shortDescription?: string; // Short description for cards
+  experienceYears?: number; // Years of experience
+  lastSeen?: string | null; // ISO timestamp of last activity
   reviewsData: Review[];
   classes: Class[];
   chatHistory: Message[];
@@ -124,4 +129,37 @@ export interface Event {
   location: string;
   imageUrl: string;
   interestedUserIds: string[];
+}
+
+export interface Venue {
+  id: string;
+  name: string;
+  category: 'tennis' | 'pickleball' | 'golf' | 'boxing' | 'gym' | 'billiards' | 'basketball' | 'swimming' | 'yoga' | 'other';
+  description: string;
+  address: string;
+  district: string;
+  imageUrl: string;
+  imageUrls: string[];
+  pricePerHour: number;
+  pricePerMonth: number;
+  membershipPlans: {
+    name: string;
+    duration: string; // "1 month", "3 months", "6 months", "1 year"
+    price: number;
+    features: string[];
+  }[];
+  amenities: string[]; // "Parking", "Locker Room", "Shower", "WiFi", etc.
+  equipment: string[];
+  trainerAvailability: boolean;
+  operatingHours: {
+    day: string;
+    open: string;
+    close: string;
+  }[];
+  capacity: number;
+  rating: number;
+  reviews: number;
+  phone?: string;
+  email?: string;
+  website?: string;
 }
