@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { X, CheckCircle, AlertCircle } from 'lucide-react';
+import { X, CheckCircle, AlertCircle, Camera } from 'lucide-react';
 import { supabase } from '../src/integrations/supabase/client';
 import { useToast } from '../src/hooks/use-toast';
+import { BarcodeScanner } from '@capacitor-community/barcode-scanner';
 
 interface VerifyAttendanceModalProps {
   isOpen: boolean;
@@ -19,10 +20,70 @@ const VerifyAttendanceModal: React.FC<VerifyAttendanceModalProps> = ({
   const [code, setCode] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [isScanning, setIsScanning] = useState(false);
   const { toast } = useToast();
 
-  const handleVerify = async () => {
-    if (!code || code.length !== 6) {
+  const handleCodeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value.replace(/\D/g, '').slice(0, 6);
+    setCode(value);
+    setError('');
+  };
+
+  const startScanning = async () => {
+    try {
+      setIsScanning(true);
+      setError('');
+
+      // Check camera permission
+      const status = await BarcodeScanner.checkPermission({ force: true });
+
+      if (!status.granted) {
+        setError('Camera permission denied. Please enable camera access in settings.');
+        setIsScanning(false);
+        return;
+      }
+
+      // Hide background to show camera
+      document.body.classList.add('scanner-active');
+      
+      // Start scanning
+      await BarcodeScanner.hideBackground();
+      const result = await BarcodeScanner.startScan();
+
+      // Stop scanning and show background again
+      document.body.classList.remove('scanner-active');
+      await BarcodeScanner.showBackground();
+
+      if (result.hasContent) {
+        const scannedCode = result.content;
+        
+        // Validate it's a 6-digit code
+        if (/^\d{6}$/.test(scannedCode)) {
+          setCode(scannedCode);
+          // Automatically verify after successful scan
+          handleVerifyWithCode(scannedCode);
+        } else {
+          setError('Invalid QR code. Please scan a valid verification code.');
+        }
+      }
+    } catch (err) {
+      setError('Failed to scan QR code. Please enter the code manually.');
+      document.body.classList.remove('scanner-active');
+      await BarcodeScanner.showBackground();
+    } finally {
+      setIsScanning(false);
+    }
+  };
+
+  const stopScanning = async () => {
+    await BarcodeScanner.stopScan();
+    await BarcodeScanner.showBackground();
+    document.body.classList.remove('scanner-active');
+    setIsScanning(false);
+  };
+
+  const handleVerifyWithCode = async (verificationCode: string) => {
+    if (!verificationCode || verificationCode.length !== 6) {
       setError('Please enter a valid 6-digit code');
       return;
     }
@@ -35,7 +96,7 @@ const VerifyAttendanceModal: React.FC<VerifyAttendanceModalProps> = ({
       const { data: booking, error: fetchError } = await supabase
         .from('bookings')
         .select('*, class:classes(trainer_id, name)')
-        .eq('verification_code', code)
+        .eq('verification_code', verificationCode)
         .maybeSingle();
 
       if (fetchError) throw fetchError;
@@ -87,16 +148,32 @@ const VerifyAttendanceModal: React.FC<VerifyAttendanceModalProps> = ({
     }
   };
 
-  const handleCodeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value.replace(/\D/g, '').slice(0, 6);
-    setCode(value);
-    setError('');
-  };
+  const handleVerify = () => handleVerifyWithCode(code);
 
   if (!isOpen) return null;
 
+  // Add scanner styles
+  React.useEffect(() => {
+    if (isScanning) {
+      const style = document.createElement('style');
+      style.id = 'scanner-styles';
+      style.innerHTML = `
+        body.scanner-active {
+          background: transparent !important;
+        }
+        body.scanner-active > *:not(.scanner-ui) {
+          visibility: hidden !important;
+        }
+      `;
+      document.head.appendChild(style);
+    } else {
+      const style = document.getElementById('scanner-styles');
+      if (style) style.remove();
+    }
+  }, [isScanning]);
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+    <div className={`fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm ${isScanning ? 'scanner-ui' : ''}`}>
       <div className="bg-white rounded-xl shadow-xl w-full max-w-md animate-in fade-in slide-in-from-bottom-4 duration-300">
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-gray-200">
@@ -112,17 +189,51 @@ const VerifyAttendanceModal: React.FC<VerifyAttendanceModalProps> = ({
 
         {/* Content */}
         <div className="p-6 space-y-4">
-          <div className="text-center space-y-2 mb-6">
-            <div className="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center mx-auto">
-              <CheckCircle className="w-8 h-8 text-orange-600" />
-            </div>
-            <p className="text-sm text-gray-600">
-              Enter the 6-digit verification code shown by the student
-            </p>
-          </div>
+          {!isScanning ? (
+            <>
+              <div className="text-center space-y-2 mb-6">
+                <div className="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center mx-auto">
+                  <CheckCircle className="w-8 h-8 text-orange-600" />
+                </div>
+                <p className="text-sm text-gray-600">
+                  Scan QR code or enter the 6-digit verification code
+                </p>
+              </div>
 
-          {/* Code Input */}
-          <div className="space-y-2">
+              {/* Scan QR Button */}
+              <button
+                onClick={startScanning}
+                disabled={loading}
+                className="w-full bg-gradient-to-r from-blue-500 to-blue-600 text-white py-3 px-4 rounded-xl font-semibold hover:from-blue-600 hover:to-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-all active:scale-95 flex items-center justify-center gap-2"
+              >
+                <Camera className="w-5 h-5" />
+                Scan QR Code
+              </button>
+
+              <div className="flex items-center gap-3">
+                <div className="flex-1 h-px bg-gray-300"></div>
+                <span className="text-xs text-gray-500 font-medium">OR</span>
+                <div className="flex-1 h-px bg-gray-300"></div>
+              </div>
+            </>
+          ) : (
+            <div className="text-center space-y-4 py-8">
+              <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto animate-pulse">
+                <Camera className="w-8 h-8 text-blue-600" />
+              </div>
+              <p className="text-sm text-gray-700 font-medium">Point camera at QR code</p>
+              <button
+                onClick={stopScanning}
+                className="text-sm text-red-600 font-semibold hover:text-red-700"
+              >
+                Cancel Scanning
+              </button>
+            </div>
+          )}
+
+          {/* Code Input - Only show when not scanning */}
+          {!isScanning && (
+            <div className="space-y-2">
             <label className="block text-sm font-medium text-gray-700">
               Verification Code
             </label>
@@ -138,6 +249,7 @@ const VerifyAttendanceModal: React.FC<VerifyAttendanceModalProps> = ({
               disabled={loading}
             />
           </div>
+          )}
 
           {/* Error Message */}
           {error && (
@@ -147,14 +259,16 @@ const VerifyAttendanceModal: React.FC<VerifyAttendanceModalProps> = ({
             </div>
           )}
 
-          {/* Verify Button */}
-          <button
-            onClick={handleVerify}
-            disabled={loading || code.length !== 6}
-            className="w-full bg-[#FF6B35] text-white py-3 px-4 rounded-xl font-semibold hover:bg-orange-600 disabled:bg-gray-300 disabled:cursor-not-allowed transition-all active:scale-95"
-          >
-            {loading ? 'Verifying...' : 'Verify Attendance'}
-          </button>
+          {/* Verify Button - Only show when not scanning */}
+          {!isScanning && (
+            <button
+              onClick={handleVerify}
+              disabled={loading || code.length !== 6}
+              className="w-full bg-[#FF6B35] text-white py-3 px-4 rounded-xl font-semibold hover:bg-orange-600 disabled:bg-gray-300 disabled:cursor-not-allowed transition-all active:scale-95"
+            >
+              {loading ? 'Verifying...' : 'Verify Attendance'}
+            </button>
+          )}
         </div>
       </div>
     </div>
