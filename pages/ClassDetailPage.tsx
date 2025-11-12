@@ -159,6 +159,8 @@ const ClassDetailPage: React.FC<ClassDetailPageProps> = ({
         } : undefined,
         language: (classInfo as any).language || [],
         level: (classInfo as any).level || '',
+        kids_friendly: (classInfo as any).kids_friendly || false,
+        disability_friendly: (classInfo as any).disability_friendly || false,
       };
 
       setClassReviews(reviewsData);
@@ -331,6 +333,16 @@ const ClassDetailPage: React.FC<ClassDetailPageProps> = ({
                     {lang}
                   </span>
                 ))}
+                {(classData as any).kids_friendly && (
+                  <span className="px-2.5 py-1 bg-pink-100 text-pink-700 text-xs font-medium rounded-full">
+                    <span className="text-sm">👶</span> Kids Friendly
+                  </span>
+                )}
+                {(classData as any).disability_friendly && (
+                  <span className="px-2.5 py-1 bg-purple-100 text-purple-700 text-xs font-medium rounded-full">
+                    <span className="text-sm">♿</span> Disability Friendly
+                  </span>
+                )}
               </div>
               {/* Duration and Capacity */}
               <div className="grid grid-cols-2 gap-3 pt-2 border-t border-gray-100">

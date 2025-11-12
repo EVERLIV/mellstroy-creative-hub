@@ -38,6 +38,8 @@ const transformClassData = (c: any): Class => ({
         time: c.schedule_time
     } : undefined,
     bookings: [],
+    kids_friendly: c.kids_friendly || false,
+    disability_friendly: c.disability_friendly || false,
 });
 
 // Helper function to transform review data

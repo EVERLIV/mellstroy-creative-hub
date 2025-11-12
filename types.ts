@@ -29,6 +29,8 @@ export interface Class {
   classType: ClassType;
   language?: string[]; // Languages spoken in the class
   level?: string; // Class level (e.g., "Beginner", "Intermediate", "Advanced", "Beginner to Intermediate")
+  kids_friendly?: boolean; // Indicates if the class is suitable for children
+  disability_friendly?: boolean; // Indicates if the class is accessible for people with disabilities
 }
 
 export interface Message {

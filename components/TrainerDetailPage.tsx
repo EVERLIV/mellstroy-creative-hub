@@ -76,6 +76,8 @@ const transformClassData = (c: any): Class => ({
         time: c.schedule_time
     } : undefined,
     bookings: [],
+    kids_friendly: c.kids_friendly || false,
+    disability_friendly: c.disability_friendly || false,
 });
 
 // Class Card Component
@@ -183,6 +185,25 @@ const ClassCard: React.FC<ClassCardProps> = React.memo(({ cls, trainer, userRole
                     ))}
                 </div>
             ) : null}
+
+            {/* Accessibility Badges */}
+            {((cls as any).kids_friendly || (cls as any).disability_friendly) && (
+                <div className="flex items-center gap-2 flex-wrap mb-3">
+                    {(cls as any).kids_friendly && (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-pink-100 text-pink-700 text-xs font-medium rounded-full">
+                            <span className="text-sm">👶</span>
+                            Kids Friendly
+                        </span>
+                    )}
+                    {(cls as any).disability_friendly && (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-purple-100 text-purple-700 text-xs font-medium rounded-full">
+                            <span className="text-sm">♿</span>
+                            Disability Friendly
+                        </span>
+                    )}
+                </div>
+            )}
+
 
             {/* Description */}
             {cls.description && (

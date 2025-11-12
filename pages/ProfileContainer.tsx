@@ -294,6 +294,8 @@ const ProfileContainer: React.FC = () => {
         image_urls: cls.image_urls || [cls.imageUrl],
         schedule_days: cls.schedule?.days || null,
         schedule_time: cls.schedule?.time || null,
+        kids_friendly: cls.kids_friendly || false,
+        disability_friendly: cls.disability_friendly || false,
       };
 
       // Always include language and level (they should always be present from form)

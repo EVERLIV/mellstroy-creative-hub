@@ -157,10 +157,12 @@ export type Database = {
           class_type: string
           created_at: string | null
           description: string | null
+          disability_friendly: boolean | null
           duration_minutes: number
           id: string
           image_url: string | null
           image_urls: string[] | null
+          kids_friendly: boolean | null
           language: string[] | null
           level: string | null
           name: string
@@ -175,10 +177,12 @@ export type Database = {
           class_type: string
           created_at?: string | null
           description?: string | null
+          disability_friendly?: boolean | null
           duration_minutes: number
           id?: string
           image_url?: string | null
           image_urls?: string[] | null
+          kids_friendly?: boolean | null
           language?: string[] | null
           level?: string | null
           name: string
@@ -193,10 +197,12 @@ export type Database = {
           class_type?: string
           created_at?: string | null
           description?: string | null
+          disability_friendly?: boolean | null
           duration_minutes?: number
           id?: string
           image_url?: string | null
           image_urls?: string[] | null
+          kids_friendly?: boolean | null
           language?: string[] | null
           level?: string | null
           name?: string

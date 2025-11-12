@@ -22,7 +22,7 @@ const AddEditClassModal: React.FC<AddEditClassModalProps> = ({ cls, onSave, onCa
     const [uploadedImages, setUploadedImages] = useState<string[]>([]);
     const [isPremium, setIsPremium] = useState(false);
     
-    const [formData, setFormData] = useState<FormData>({
+    const [formData, setFormData] = useState<FormData & { kids_friendly?: boolean; disability_friendly?: boolean }>({
         name: '',
         description: '',
         duration: 60,
@@ -32,7 +32,9 @@ const AddEditClassModal: React.FC<AddEditClassModalProps> = ({ cls, onSave, onCa
         schedule: { days: [], time: '09:00' },
         classType: 'Indoor',
         language: [],
-        level: ''
+        level: '',
+        kids_friendly: false,
+        disability_friendly: false
     });
     
     useEffect(() => {
@@ -62,7 +64,9 @@ const AddEditClassModal: React.FC<AddEditClassModalProps> = ({ cls, onSave, onCa
                 schedule: cls.schedule || { days: [], time: '09:00' },
                 classType: cls.classType || 'Indoor',
                 language: cls.language || [],
-                level: cls.level || ''
+                level: cls.level || '',
+                kids_friendly: (cls as any).kids_friendly || false,
+                disability_friendly: (cls as any).disability_friendly || false
             });
             // Load existing images if available
             const dbCls = cls as any;
@@ -83,7 +87,9 @@ const AddEditClassModal: React.FC<AddEditClassModalProps> = ({ cls, onSave, onCa
                 schedule: { days: [], time: '09:00' },
                 classType: 'Indoor',
                 language: [],
-                level: ''
+                level: '',
+                kids_friendly: false,
+                disability_friendly: false
             });
             setUploadedImages([]);
         }
@@ -209,12 +215,14 @@ const AddEditClassModal: React.FC<AddEditClassModalProps> = ({ cls, onSave, onCa
             return;
         }
         
-        const finalData: Class & { _dbId?: string; image_urls?: string[] } = {
+        const finalData: Class & { _dbId?: string; image_urls?: string[]; kids_friendly?: boolean; disability_friendly?: boolean } = {
             id: cls?.id || 0,
             bookings: cls?.bookings || [],
             ...formData,
             language: formData.language || [], // Ensure language is always an array
             level: formData.level || '', // Ensure level is always a string
+            kids_friendly: formData.kids_friendly || false,
+            disability_friendly: formData.disability_friendly || false,
             imageUrl: uploadedImages[0], // Keep backward compatibility
             image_urls: uploadedImages,
             ...(cls as any)?._dbId && { 
@@ -371,7 +379,50 @@ const AddEditClassModal: React.FC<AddEditClassModalProps> = ({ cls, onSave, onCa
                                     </div>
                                 </div>
                              </div>
+                         </div>
+                        
+                        {/* Additional Options */}
+                        <div>
+                            <label className="block text-sm font-medium text-slate-600 mb-2">Additional Options</label>
+                            <div className="space-y-2">
+                                {/* Kids Friendly Toggle */}
+                                <label htmlFor="kids-friendly-toggle" className="flex items-center justify-between cursor-pointer p-2.5 rounded-lg border border-slate-200 hover:bg-slate-50">
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-2xl">👶</span>
+                                        <span className="text-sm font-medium text-slate-700">Kids Friendly</span>
+                                    </div>
+                                    <div className="relative">
+                                        <input 
+                                            type="checkbox" 
+                                            id="kids-friendly-toggle" 
+                                            className="sr-only peer" 
+                                            checked={formData.kids_friendly || false} 
+                                            onChange={(e) => setFormData(prev => ({ ...prev, kids_friendly: e.target.checked }))} 
+                                        />
+                                        <div className="w-11 h-6 bg-slate-200 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#FF6B35]"></div>
+                                    </div>
+                                </label>
+
+                                {/* Disability Friendly Toggle */}
+                                <label htmlFor="disability-friendly-toggle" className="flex items-center justify-between cursor-pointer p-2.5 rounded-lg border border-slate-200 hover:bg-slate-50">
+                                    <div className="flex items-center gap-2">
+                                        <span className="text-2xl">♿</span>
+                                        <span className="text-sm font-medium text-slate-700">Disability Friendly</span>
+                                    </div>
+                                    <div className="relative">
+                                        <input 
+                                            type="checkbox" 
+                                            id="disability-friendly-toggle" 
+                                            className="sr-only peer" 
+                                            checked={formData.disability_friendly || false} 
+                                            onChange={(e) => setFormData(prev => ({ ...prev, disability_friendly: e.target.checked }))} 
+                                        />
+                                        <div className="w-11 h-6 bg-slate-200 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#FF6B35]"></div>
+                                    </div>
+                                </label>
+                            </div>
                         </div>
+
                         <div>
                             <label className="block text-sm font-medium text-slate-600 mb-1.5">
                                 Class Photos ({uploadedImages.length}/{isPremium ? 6 : 1})
