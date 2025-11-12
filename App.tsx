@@ -9,6 +9,7 @@ import { useFavorites } from './src/hooks/useFavorites';
 import { useEvents } from './src/hooks/useEvents';
 import { validateEnv } from './src/utils/env';
 import { saveMealPlan } from './src/utils/mealPlans';
+import { updateLastSeen } from './src/utils/onlineStatus';
 import AuthPage from './src/pages/AuthPage';
 import WelcomePage from './pages/WelcomePage';
 import DashboardPage from './pages/DashboardPage';
