@@ -42,14 +42,11 @@ const MyDocumentsPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
         
         try {
             setLoading(true);
-            // TODO: Re-enable when trainer_documents table is created
-            /* const { data, error } = await supabase
+            const { data, error } = await supabase
                 .from('trainer_documents')
                 .select('*')
                 .eq('trainer_id', user.id)
-                .order('created_at', { ascending: false }); */
-            const data: any[] = [];
-            const error = null;
+                .order('created_at', { ascending: false });
 
             if (error) throw error;
             setDocuments(data || []);
@@ -127,8 +124,7 @@ const MyDocumentsPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
             const priority = profile?.is_premium ? 10 : 0;
 
             // Save document record
-            // TODO: Re-enable when trainer_documents table is created
-            /* const { error: insertError } = await supabase
+            const { error: insertError } = await supabase
                 .from('trainer_documents')
                 .insert({
                     trainer_id: user.id,
@@ -136,8 +132,7 @@ const MyDocumentsPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                     title: uploadData.title.trim(),
                     file_url: publicUrl,
                     priority: priority
-                }); */
-            const insertError = null;
+                });
 
             if (insertError) throw insertError;
 
@@ -180,12 +175,10 @@ const MyDocumentsPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                 }
             }
 
-            // TODO: Re-enable when trainer_documents table is created
-            /* const { error } = await supabase
+            const { error } = await supabase
                 .from('trainer_documents')
                 .delete()
-                .eq('id', documentId); */
-            const error = null;
+                .eq('id', documentId);
 
             if (error) throw error;
 

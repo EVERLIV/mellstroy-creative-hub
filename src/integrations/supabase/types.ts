@@ -161,6 +161,8 @@ export type Database = {
           id: string
           image_url: string | null
           image_urls: string[] | null
+          language: string[] | null
+          level: string | null
           name: string
           price: number
           schedule_days: string[] | null
@@ -177,6 +179,8 @@ export type Database = {
           id?: string
           image_url?: string | null
           image_urls?: string[] | null
+          language?: string[] | null
+          level?: string | null
           name: string
           price: number
           schedule_days?: string[] | null
@@ -193,6 +197,8 @@ export type Database = {
           id?: string
           image_url?: string | null
           image_urls?: string[] | null
+          language?: string[] | null
+          level?: string | null
           name?: string
           price?: number
           schedule_days?: string[] | null
@@ -389,18 +395,21 @@ export type Database = {
           avatar_url: string | null
           bio: string | null
           created_at: string | null
+          experience_years: number | null
           goals: string[] | null
           height: number | null
           id: string
           interests: string[] | null
           is_premium: boolean | null
           is_verified: boolean | null
+          last_seen: string | null
           location: string | null
           onboarding_completed: boolean | null
           phone: string | null
           price_per_hour: number | null
           rating: number | null
           reviews_count: number | null
+          short_description: string | null
           specialty: string[] | null
           updated_at: string | null
           username: string
@@ -411,18 +420,21 @@ export type Database = {
           avatar_url?: string | null
           bio?: string | null
           created_at?: string | null
+          experience_years?: number | null
           goals?: string[] | null
           height?: number | null
           id: string
           interests?: string[] | null
           is_premium?: boolean | null
           is_verified?: boolean | null
+          last_seen?: string | null
           location?: string | null
           onboarding_completed?: boolean | null
           phone?: string | null
           price_per_hour?: number | null
           rating?: number | null
           reviews_count?: number | null
+          short_description?: string | null
           specialty?: string[] | null
           updated_at?: string | null
           username: string
@@ -433,18 +445,21 @@ export type Database = {
           avatar_url?: string | null
           bio?: string | null
           created_at?: string | null
+          experience_years?: number | null
           goals?: string[] | null
           height?: number | null
           id?: string
           interests?: string[] | null
           is_premium?: boolean | null
           is_verified?: boolean | null
+          last_seen?: string | null
           location?: string | null
           onboarding_completed?: boolean | null
           phone?: string | null
           price_per_hour?: number | null
           rating?: number | null
           reviews_count?: number | null
+          short_description?: string | null
           specialty?: string[] | null
           updated_at?: string | null
           username?: string
@@ -587,6 +602,45 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      trainer_documents: {
+        Row: {
+          created_at: string
+          document_type: string
+          file_url: string
+          id: string
+          is_verified: boolean
+          priority: number
+          rejection_reason: string | null
+          title: string
+          trainer_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          document_type: string
+          file_url: string
+          id?: string
+          is_verified?: boolean
+          priority?: number
+          rejection_reason?: string | null
+          title: string
+          trainer_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          document_type?: string
+          file_url?: string
+          id?: string
+          is_verified?: boolean
+          priority?: number
+          rejection_reason?: string | null
+          title?: string
+          trainer_id?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       user_roles: {
         Row: {

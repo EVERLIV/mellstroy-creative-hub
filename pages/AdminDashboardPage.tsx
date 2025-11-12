@@ -81,8 +81,7 @@ const AdminDashboardPage: React.FC = () => {
 
   const fetchPendingDocuments = async () => {
     try {
-      // TODO: Re-enable when trainer_documents table is created
-      /* const { data, error } = await supabase
+      const { data, error } = await supabase
         .from('trainer_documents')
         .select(`
           *,
@@ -90,9 +89,7 @@ const AdminDashboardPage: React.FC = () => {
         `)
         .eq('is_verified', false)
         .order('priority', { ascending: false })
-        .order('created_at', { ascending: true }); */
-      const data: any[] = [];
-      const error = null;
+        .order('created_at', { ascending: true });
 
       if (error) throw error;
       setPendingDocuments(data || []);
@@ -118,12 +115,10 @@ const AdminDashboardPage: React.FC = () => {
         updateData.rejection_reason = null;
       }
 
-      // TODO: Re-enable when trainer_documents table is created
-      /* const { error } = await supabase
+      const { error } = await supabase
         .from('trainer_documents')
         .update(updateData)
-        .eq('id', documentId); */
-      const error = null;
+        .eq('id', documentId);
 
       if (error) throw error;
 
