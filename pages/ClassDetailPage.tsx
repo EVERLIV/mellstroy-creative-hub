@@ -48,6 +48,7 @@ const ClassDetailPage: React.FC<ClassDetailPageProps> = ({
   const [classReviews, setClassReviews] = useState<Review[]>([]);
   const [trainerCertificates, setTrainerCertificates] = useState<any[]>([]);
   const [showAllReviews, setShowAllReviews] = useState(false);
+  const [similarClasses, setSimilarClasses] = useState<Class[]>([]);
 
   useEffect(() => {
     if (!classId) return;
@@ -197,10 +198,81 @@ const ClassDetailPage: React.FC<ClassDetailPageProps> = ({
 
       setClassData(cls);
       setTrainer(trainerData);
+
+      // Load similar classes
+      loadSimilarClasses(classInfo.trainer_id, classInfo.class_type, classId);
     } catch (error) {
       // Error will result in "Class not found" UI
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadSimilarClasses = async (trainerId: string, classType: string, currentClassId: string) => {
+    try {
+      // First try to get other classes from the same trainer
+      const { data: trainerClasses } = await supabase
+        .from('classes')
+        .select('*')
+        .eq('trainer_id', trainerId)
+        .neq('id', currentClassId)
+        .limit(3);
+
+      if (trainerClasses && trainerClasses.length > 0) {
+        const classes = trainerClasses.map(c => ({
+          id: c.id as any,
+          name: c.name,
+          description: c.description || '',
+          duration: c.duration_minutes,
+          price: Number(c.price),
+          imageUrl: c.image_url || '',
+          imageUrls: c.image_urls || [],
+          capacity: c.capacity,
+          classType: c.class_type as 'Indoor' | 'Outdoor' | 'Home',
+          schedule: c.schedule_days && c.schedule_time ? {
+            days: c.schedule_days,
+            time: c.schedule_time
+          } : undefined,
+          language: c.language || [],
+          level: c.level || '',
+          kids_friendly: c.kids_friendly || false,
+          disability_friendly: c.disability_friendly || false,
+        }));
+        setSimilarClasses(classes);
+      } else {
+        // If no trainer classes, get classes of the same type
+        const { data: similarTypeClasses } = await supabase
+          .from('classes')
+          .select('*')
+          .eq('class_type', classType)
+          .neq('id', currentClassId)
+          .limit(3);
+
+        if (similarTypeClasses) {
+          const classes = similarTypeClasses.map(c => ({
+            id: c.id as any,
+            name: c.name,
+            description: c.description || '',
+            duration: c.duration_minutes,
+            price: Number(c.price),
+            imageUrl: c.image_url || '',
+            imageUrls: c.image_urls || [],
+            capacity: c.capacity,
+            classType: c.class_type as 'Indoor' | 'Outdoor' | 'Home',
+            schedule: c.schedule_days && c.schedule_time ? {
+              days: c.schedule_days,
+              time: c.schedule_time
+            } : undefined,
+            language: c.language || [],
+            level: c.level || '',
+            kids_friendly: c.kids_friendly || false,
+            disability_friendly: c.disability_friendly || false,
+          }));
+          setSimilarClasses(classes);
+        }
+      }
+    } catch (error) {
+      // Silent fail
     }
   };
 
@@ -589,6 +661,36 @@ const ClassDetailPage: React.FC<ClassDetailPageProps> = ({
                   {showAllReviews ? 'Show Less' : `Show All ${classReviews.length} Reviews`}
                 </button>
               )}
+            </div>
+          )}
+
+          {/* Similar Classes Section */}
+          {similarClasses.length > 0 && (
+            <div className="bg-white rounded-xl p-4 shadow-sm border border-gray-100">
+              <h3 className="text-sm font-bold text-gray-900 mb-3">More Classes You Might Like</h3>
+              <div className="space-y-3">
+                {similarClasses.map((simClass) => (
+                  <div
+                    key={simClass.id}
+                    onClick={() => navigate(`/class/${simClass.id}`)}
+                    className="flex gap-3 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors cursor-pointer border border-gray-100"
+                  >
+                    <img
+                      src={simClass.imageUrl || '/placeholder-class.jpg'}
+                      alt={simClass.name}
+                      className="w-20 h-20 rounded-lg object-cover flex-shrink-0"
+                    />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-bold text-gray-900 mb-1 truncate">{simClass.name}</p>
+                      <p className="text-xs text-gray-600 mb-2 line-clamp-2">{simClass.description}</p>
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs font-semibold text-orange-600">{formatVND(simClass.price)}</span>
+                        <span className="text-xs text-gray-500">{simClass.duration} min</span>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
           )}
         </div>
