@@ -701,10 +701,10 @@ const ClassDetailPage: React.FC<ClassDetailPageProps> = ({
         <button
           onClick={() => onInitiateBooking && trainer && onInitiateBooking({ trainer, cls: classData })}
           disabled={isBookingDisabled}
-          className={`w-full font-bold py-3.5 px-4 rounded-xl transition-all duration-200 text-sm shadow-md ${
+          className={`w-full flex items-center justify-center text-xs font-semibold py-2.5 px-3 rounded-lg shadow-sm transition-all duration-200 ${
             isBookingDisabled
               ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
-              : 'bg-gradient-to-r from-orange-500 to-pink-500 text-white hover:from-orange-600 hover:to-pink-600 active:scale-95'
+              : 'bg-[#FF6B35] text-white hover:bg-orange-600 active:scale-95'
           }`}
         >
           {isFull ? '🔒 Class Full' : userRole === 'trainer' ? 'Trainers Cannot Book' : '📅 Book Now'}
