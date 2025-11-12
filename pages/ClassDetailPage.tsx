@@ -419,10 +419,10 @@ const ClassDetailPage: React.FC<ClassDetailPageProps> = ({
           className={`w-full font-bold py-3 px-4 rounded-lg transition-all duration-200 text-sm shadow-sm ${
             isBookingDisabled
               ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
-              : 'bg-blue-600 text-white hover:bg-blue-700 active:scale-95'
+              : 'bg-primary text-primary-foreground hover:bg-primary/90 active:scale-95'
           }`}
         >
-          {isFull ? 'Class Full' : userRole === 'trainer' ? 'Trainers Cannot Book' : 'Book Class'}
+          {isFull ? 'Class Full' : userRole === 'trainer' ? 'Trainers Cannot Book' : 'Book Now'}
         </button>
       </div>
 
