@@ -166,6 +166,24 @@ const ClassCard: React.FC<ClassCardProps> = React.memo(({ cls, trainer, userRole
                 </div>
             </div>
 
+            {/* Language & Level Badges */}
+            {((cls as any).language && (cls as any).language.length > 0) || (cls as any).level ? (
+                <div className="flex items-center gap-2 flex-wrap mb-3">
+                    {(cls as any).level && (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-blue-100 text-blue-700 text-xs font-medium rounded-full">
+                            <Star className="w-3 h-3" />
+                            {(cls as any).level}
+                        </span>
+                    )}
+                    {(cls as any).language && (cls as any).language.length > 0 && (cls as any).language.map((lang: string, idx: number) => (
+                        <span key={idx} className="inline-flex items-center gap-1 px-2.5 py-1 bg-green-100 text-green-700 text-xs font-medium rounded-full">
+                            <MessageCircle className="w-3 h-3" />
+                            {lang}
+                        </span>
+                    ))}
+                </div>
+            ) : null}
+
             {/* Description */}
             {cls.description && (
                 <p className="text-xs text-gray-600 mb-3 line-clamp-2 leading-relaxed">
