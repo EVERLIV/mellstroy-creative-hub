@@ -11,6 +11,8 @@ type Filters = {
     district: string;
     time: 'any' | 'morning' | 'afternoon' | 'evening';
     classType: ClassType[];
+    languages: string[];
+    level: string;
 };
 
 interface FilterModalProps {
@@ -170,6 +172,50 @@ const FilterModal: React.FC<FilterModalProps> = ({ isOpen, onClose, activeFilter
                                     {type}
                                 </button>
                             )})}
+                        </div>
+                    </div>
+                                        
+                    {/* Language */}
+                    <div>
+                        <h3 className="text-base font-bold text-slate-800 mb-3">Language</h3>
+                        <div className="grid grid-cols-2 gap-3">
+                            {['English', 'Vietnamese', 'Russian', 'Chinese'].map(lang => {
+                                const isSelected = tempFilters.languages.includes(lang);
+                                return (
+                                    <button
+                                        key={lang}
+                                        onClick={() => {
+                                            setTempFilters(prev => ({
+                                                ...prev,
+                                                languages: isSelected
+                                                    ? prev.languages.filter(l => l !== lang)
+                                                    : [...prev.languages, lang]
+                                            }));
+                                        }}
+                                        className={`px-4 py-2 text-sm font-semibold rounded-lg transition-colors border ${isSelected ? 'bg-[#FF6B35] border-[#FF6B35] text-white' : 'bg-white border-slate-300 text-slate-700 hover:bg-slate-100'}`}
+                                    >
+                                        {isSelected && <Check className="w-4 h-4 mr-1.5 inline" strokeWidth={3} />}
+                                        {lang}
+                                    </button>
+                                );
+                            })}
+                        </div>
+                    </div>
+
+                    {/* Difficulty Level */}
+                    <div>
+                        <h3 className="text-base font-bold text-slate-800 mb-3">Difficulty Level</h3>
+                        <div className="grid grid-cols-3 gap-3">
+                            {['Beginner', 'Intermediate', 'Advanced'].map(lvl => (
+                                <button
+                                    key={lvl}
+                                    onClick={() => setTempFilters(prev => ({ ...prev, level: prev.level === lvl ? '' : lvl }))}
+                                    className={`px-4 py-2 text-sm font-semibold rounded-lg transition-colors border ${tempFilters.level === lvl ? 'bg-[#FF6B35] border-[#FF6B35] text-white' : 'bg-white border-slate-300 text-slate-700 hover:bg-slate-100'}`}
+                                >
+                                    {tempFilters.level === lvl && <Check className="w-4 h-4 mr-1.5 inline" strokeWidth={3} />}
+                                    {lvl}
+                                </button>
+                            ))}
                         </div>
                     </div>
                                         

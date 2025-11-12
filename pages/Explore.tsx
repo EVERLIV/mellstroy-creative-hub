@@ -120,6 +120,8 @@ const Explore: React.FC<ExploreProps> = ({
     district: 'All',
     time: 'any' as 'any' | 'morning' | 'afternoon' | 'evening',
     classType: [] as ClassType[],
+    languages: [] as string[],
+    level: '',
   });
   const observerTarget = useRef<HTMLDivElement>(null);
 
@@ -233,6 +235,23 @@ const Explore: React.FC<ExploreProps> = ({
       filtered = filtered.filter(trainer => trainer?.isPremium === true);
     }
 
+    if (activeFilters?.languages && activeFilters.languages.length > 0) {
+      filtered = filtered.filter(trainer =>
+        trainer?.classes && trainer.classes.some(cls =>
+          (cls as any).language && Array.isArray((cls as any).language) &&
+          activeFilters.languages.some(lang => (cls as any).language.includes(lang))
+        )
+      );
+    }
+
+    if (activeFilters?.level && activeFilters.level !== '') {
+      filtered = filtered.filter(trainer =>
+        trainer?.classes && trainer.classes.some(cls =>
+          (cls as any).level && (cls as any).level === activeFilters.level
+        )
+      );
+    }
+
     if (searchQuery && searchQuery.trim()) {
       const query = searchQuery.toLowerCase().trim();
       filtered = filtered.filter(trainer =>
@@ -300,6 +319,8 @@ const Explore: React.FC<ExploreProps> = ({
       district: 'All',
       time: 'any',
       classType: [],
+      languages: [],
+      level: '',
     });
   };
 
