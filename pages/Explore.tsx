@@ -52,7 +52,7 @@ const transformTrainerData = (profile: any, classes: any[], reviews: any[]): Tra
     const lastSeenValue = profile.last_seen;
     
     // Debug: Log first trainer's last_seen value
-    if (profile.id && !window.__exploreDebugLogged) {
+    if (profile.id && !(window as any).__exploreDebugLogged) {
         console.log('[Explore] First trainer last_seen:', {
             trainerId: profile.id,
             trainerName: profile.username,

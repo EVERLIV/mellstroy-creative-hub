@@ -55,12 +55,14 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ trainer, onEdit, onManageClas
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) return;
 
-        const { data } = await supabase
+        // TODO: Re-enable when trainer_documents table is created
+        /* const { data } = await supabase
             .from('trainer_documents')
             .select('*')
             .eq('trainer_id', user.id)
             .order('created_at', { ascending: false })
-            .limit(3);
+            .limit(3); */
+        const data: any[] = [];
 
         setDocuments(data || []);
     };

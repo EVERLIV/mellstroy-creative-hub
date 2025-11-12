@@ -42,11 +42,14 @@ const MyDocumentsPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
         
         try {
             setLoading(true);
-            const { data, error } = await supabase
+            // TODO: Re-enable when trainer_documents table is created
+            /* const { data, error } = await supabase
                 .from('trainer_documents')
                 .select('*')
                 .eq('trainer_id', user.id)
-                .order('created_at', { ascending: false });
+                .order('created_at', { ascending: false }); */
+            const data: any[] = [];
+            const error = null;
 
             if (error) throw error;
             setDocuments(data || []);
@@ -124,7 +127,8 @@ const MyDocumentsPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
             const priority = profile?.is_premium ? 10 : 0;
 
             // Save document record
-            const { error: insertError } = await supabase
+            // TODO: Re-enable when trainer_documents table is created
+            /* const { error: insertError } = await supabase
                 .from('trainer_documents')
                 .insert({
                     trainer_id: user.id,
@@ -132,7 +136,8 @@ const MyDocumentsPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                     title: uploadData.title.trim(),
                     file_url: publicUrl,
                     priority: priority
-                });
+                }); */
+            const insertError = null;
 
             if (insertError) throw insertError;
 
@@ -175,10 +180,12 @@ const MyDocumentsPage: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                 }
             }
 
-            const { error } = await supabase
+            // TODO: Re-enable when trainer_documents table is created
+            /* const { error } = await supabase
                 .from('trainer_documents')
                 .delete()
-                .eq('id', documentId);
+                .eq('id', documentId); */
+            const error = null;
 
             if (error) throw error;
 

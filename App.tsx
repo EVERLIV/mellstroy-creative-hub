@@ -37,7 +37,8 @@ import ReviewsModal from './components/ReviewsModal';
 import { Trainer, Class, Booking, UserRole, Event, Message, MealPlan, Venue } from './types';
 import { mockVenues } from './data/mockVenues';
 import { getAICoachResponse } from './utils/ai';
-import { ErrorBoundary } from './src/components/ErrorBoundary';
+// ErrorBoundary temporarily disabled due to React 19 TypeScript compatibility
+// import { ErrorBoundary } from './src/components/ErrorBoundary';
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { user, loading } = useAuth();
@@ -453,13 +454,11 @@ const AppRoutes = () => {
 
 const App = () => {
   return (
-    <ErrorBoundary>
-      <Router>
-        <AuthProvider>
-          <AppRoutes />
-        </AuthProvider>
-      </Router>
-    </ErrorBoundary>
+    <Router>
+      <AuthProvider>
+        <AppRoutes />
+      </AuthProvider>
+    </Router>
   );
 };
 

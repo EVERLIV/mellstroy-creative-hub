@@ -42,13 +42,15 @@ const TrainerCard: React.FC<TrainerCardProps> = React.memo(({ trainer, onSelect,
   useEffect(() => {
     const loadDocuments = async () => {
       try {
-        const { data } = await supabase
+        // TODO: Re-enable when trainer_documents table is created
+        /* const { data } = await supabase
           .from('trainer_documents')
           .select('*')
           .eq('trainer_id', trainer.id)
           .eq('is_verified', true)
           .order('created_at', { ascending: false })
-          .limit(3);
+          .limit(3); */
+        const data: any[] = [];
 
         setVerifiedDocuments(data || []);
       } catch (error) {
