@@ -76,11 +76,8 @@ const transformClassData = (c: any): Class => ({
         time: c.schedule_time
     } : undefined,
     bookings: [],
-<<<<<<< HEAD
-=======
     kids_friendly: c.kids_friendly || false,
     disability_friendly: c.disability_friendly || false,
->>>>>>> f5b1c0859b80a5f6a8702140f10ec53e9a8acd25
 });
 
 // Class Card Component
@@ -149,38 +146,13 @@ const ClassCard: React.FC<ClassCardProps> = React.memo(({ cls, trainer, userRole
         e.stopPropagation();
         onInitiateBooking({ trainer, cls });
     };
-<<<<<<< HEAD
-=======
 
     const availableSlots = cls.capacity - enrolledCount;
     const enrollmentPercentage = (enrolledCount / cls.capacity) * 100;
->>>>>>> f5b1c0859b80a5f6a8702140f10ec53e9a8acd25
 
     return (
         <div 
             onClick={handleCardClick}
-<<<<<<< HEAD
-            className="bg-white rounded-lg p-3 mb-3 shadow-sm cursor-pointer transition-all duration-300 hover:shadow-md hover:-translate-y-0.5 border border-gray-200 hover:border-orange-300"
-        >
-            <div className="flex items-start justify-between mb-2">
-                <h3 className="text-sm font-bold text-gray-900 flex-1">{cls.name}</h3>
-            </div>
-            
-            {cls.schedule && cls.schedule.days && cls.schedule.time ? (
-                <div className="flex items-start gap-2 mb-2">
-                    <Calendar className="w-3.5 h-3.5 text-gray-500 mt-0.5 flex-shrink-0" />
-                    <span className="text-xs text-gray-700">{cls.schedule.days.join(', ')} - {formatTime(cls.schedule.time)}</span>
-                </div>
-            ) : null}
-
-            <div className="flex items-start gap-2 mb-2">
-                <MapPin className="w-3.5 h-3.5 text-[#FF6B35] mt-0.5 flex-shrink-0" />
-                <span className="text-xs text-gray-700">{trainer.location || 'Location TBD'}</span>
-            </div>
-
-            <div className="flex items-start gap-2 mb-3">
-                <span className="text-xs font-bold text-[#FF6B35]">{formatVND(cls.price)}/session</span>
-=======
             className="bg-white rounded-lg p-4 mb-3 shadow-sm cursor-pointer transition-all duration-300 hover:shadow-md hover:-translate-y-0.5 border border-gray-200 hover:border-orange-300"
         >
             {/* Class Header */}
@@ -296,26 +268,17 @@ const ClassCard: React.FC<ClassCardProps> = React.memo(({ cls, trainer, userRole
                     <span className="text-xs text-gray-700">{trainer.location || 'Location TBD'}</span>
                 </div>
                 <span className="text-sm font-bold text-[#FF6B35]">{formatVND(cls.price)}</span>
->>>>>>> f5b1c0859b80a5f6a8702140f10ec53e9a8acd25
             </div>
             
             {/* Action Button */}
             <button 
                 onClick={handleBookClick}
                 disabled={isFull || isBookingDisabledForTrainer}
-<<<<<<< HEAD
-                className={`w-full px-3 py-2 bg-[#FF6B35] text-white text-xs font-medium rounded-lg hover:bg-orange-600 active:scale-95 shadow-sm transition-all duration-200 ${
-                    isFull || isBookingDisabledForTrainer ? 'opacity-50 cursor-not-allowed' : ''
-                }`}
-            >
-                {isFull ? 'Class Full' : isBookingDisabledForTrainer ? 'N/A' : 'Book Now'}
-=======
                 className={`w-full px-4 py-2.5 bg-[#FF6B35] text-white text-sm font-semibold rounded-lg hover:bg-orange-600 active:scale-95 shadow-sm transition-all duration-200 ${
                     isFull || isBookingDisabledForTrainer ? 'opacity-50 cursor-not-allowed' : ''
                 }`}
             >
                 {isFull ? 'Class Full - No Slots Available' : isBookingDisabledForTrainer ? 'N/A for Trainers' : 'Book This Class'}
->>>>>>> f5b1c0859b80a5f6a8702140f10ec53e9a8acd25
             </button>
         </div>
     );
@@ -432,11 +395,7 @@ const TrainerDetailPage: React.FC<TrainerDetailPageProps> = ({
                     url: window.location.href,
                 });
             } catch (error) {
-<<<<<<< HEAD
-                console.log('Error sharing:', error);
-=======
                 // Sharing cancelled or failed
->>>>>>> f5b1c0859b80a5f6a8702140f10ec53e9a8acd25
             }
         }
     };

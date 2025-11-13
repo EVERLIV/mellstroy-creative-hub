@@ -1,11 +1,6 @@
 import React, { useState } from 'react';
-<<<<<<< HEAD
-import { Trainer, UserRole } from '../types';
-import RoleSwitcher from '../components/RoleSwitcher';
-=======
 import { useNavigate } from 'react-router-dom';
 import { Trainer, UserRole } from '../types';
->>>>>>> f5b1c0859b80a5f6a8702140f10ec53e9a8acd25
 import { ArrowLeft, Calendar, MessageCircle, User as UserIcon, UtensilsCrossed, Heart, LogOut, Pencil, ChevronRight, Crown, ShieldCheck, MapPin, Sparkles } from 'lucide-react';
 import AboutMePage from './AboutMePage';
 import EditAboutMePage from './EditAboutMePage';
@@ -33,10 +28,6 @@ const StudentProfilePage: React.FC<StudentProfilePageProps> = (props) => {
     const { currentUser, userRole, onNavigateToBookings, onNavigateToChats, onEditProfile, onSaveProfile, onLogout } = props;
     const [activeSubPage, setActiveSubPage] = useState<SubPage | null>(null);
     const [isExiting, setIsExiting] = useState(false);
-<<<<<<< HEAD
-    const [isRoleChanging, setIsRoleChanging] = useState(false);
-=======
->>>>>>> f5b1c0859b80a5f6a8702140f10ec53e9a8acd25
     const profileIsIncomplete = currentUser ? !isStudentProfileComplete(currentUser) : false;
 
     const handleNavigateTo = (page: SubPage) => {
@@ -58,17 +49,6 @@ const StudentProfilePage: React.FC<StudentProfilePageProps> = (props) => {
         }, ANIMATION_DURATION);
     }
 
-<<<<<<< HEAD
-    const handleRoleChange = async (newRole: UserRole) => {
-        setIsRoleChanging(true);
-        await onRoleChange(newRole);
-        setTimeout(() => {
-            setIsRoleChanging(false);
-        }, 500);
-    };
-
-=======
->>>>>>> f5b1c0859b80a5f6a8702140f10ec53e9a8acd25
     const renderSubPage = () => {
         if (!activeSubPage || !currentUser) return null;
 
@@ -192,17 +172,6 @@ const StudentProfilePage: React.FC<StudentProfilePageProps> = (props) => {
                             <CompleteProfilePrompt role="student" onComplete={() => handleNavigateTo('edit-about')} />
                         </div>
                     )}
-<<<<<<< HEAD
-
-                    {/* Role Switcher Card */}
-                    <div className="bg-white rounded-lg p-3 mb-3 shadow-sm">
-                        <h3 className="text-sm font-bold text-gray-900 mb-2">Account Type</h3>
-                        <div className={`transition-all duration-500 ${isRoleChanging ? 'opacity-50 scale-95' : 'opacity-100 scale-100'}`}>
-                            <RoleSwitcher currentRole={userRole} onRoleChange={handleRoleChange} />
-                        </div>
-                        <p className="text-xs text-gray-500 mt-2 text-center">Switch to trainer mode to manage your classes</p>
-                    </div>
-=======
                     
                     {/* Premium CTA */}
                     {!currentUser.isPremium ? (
@@ -233,7 +202,6 @@ const StudentProfilePage: React.FC<StudentProfilePageProps> = (props) => {
                             <span className="text-xs text-gray-500">View details →</span>
                         </button>
                     )}
->>>>>>> f5b1c0859b80a5f6a8702140f10ec53e9a8acd25
                     
                     {/* Menu Card */}
                     <div className="bg-white rounded-lg p-3 mb-3 shadow-sm">

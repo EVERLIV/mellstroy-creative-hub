@@ -60,16 +60,6 @@ const CancelBookingModal: React.FC<CancelBookingModalProps> = ({ bookingInfo, on
     };
 
     return (
-<<<<<<< HEAD
-        <div className="fixed inset-0 bg-gray-600 flex items-center justify-center z-50 p-4 pb-20 animate-fade-in" onClick={onClose}>
-            <div className="bg-gray-100 rounded-lg w-full max-w-sm overflow-hidden transform animate-slide-up shadow-2xl border border-gray-300" onClick={e => e.stopPropagation()}>
-                <div className="p-5 border-b border-gray-200 relative">
-                    <h2 className="text-lg font-bold text-gray-800 text-center">Cancel Booking</h2>
-                    <p className="text-sm text-gray-500 text-center">{cls.name}</p>
-                    <p className="text-xs text-gray-500 text-center mt-1">{booking.date} at {booking.time}</p>
-                    <button onClick={onClose} className="absolute top-3 right-3 p-2 rounded-full hover:bg-gray-100">
-                        <X className="w-5 h-5 text-gray-600" />
-=======
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 pb-20" onClick={onClose}>
             <div className="bg-card rounded-lg w-full max-w-sm overflow-hidden shadow-lg" onClick={e => e.stopPropagation()}>
                 <div className="px-4 py-3 border-b border-border flex items-center justify-between">
@@ -80,7 +70,6 @@ const CancelBookingModal: React.FC<CancelBookingModalProps> = ({ bookingInfo, on
                     </div>
                     <button onClick={onClose} className="p-2 -mr-2 rounded-lg hover:bg-muted transition-colors">
                         <X className="w-5 h-5 text-foreground" />
->>>>>>> f5b1c0859b80a5f6a8702140f10ec53e9a8acd25
                     </button>
                 </div>
                 <div className="p-4">

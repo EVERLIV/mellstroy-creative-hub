@@ -74,8 +74,3 @@ WHERE id IN (
   WHERE ur.role = 'trainer'
 );
 
-<<<<<<< HEAD
-
-
-=======
->>>>>>> f5b1c0859b80a5f6a8702140f10ec53e9a8acd25

@@ -126,35 +126,22 @@ const AppRoutes = () => {
     }
   }, [toast]);
 
->>>>>>> f5b1c0859b80a5f6a8702140f10ec53e9a8acd25
   // Update last_seen timestamp periodically for online status
   useEffect(() => {
     if (!user?.id) return;
 
     // Update immediately on mount
-<<<<<<< HEAD
-    updateLastSeen(user.id).catch(err => console.error('Failed to update last_seen on mount:', err));
-
-    // Update every 2 minutes while user is active
-    const interval = setInterval(() => {
-      updateLastSeen(user.id).catch(err => console.error('Failed to update last_seen:', err));
-=======
     updateLastSeen(user.id).catch(() => {});
 
     // Update every 2 minutes while user is active
     const interval = setInterval(() => {
       updateLastSeen(user.id).catch(() => {});
->>>>>>> f5b1c0859b80a5f6a8702140f10ec53e9a8acd25
     }, 120000); // 2 minutes
 
     // Update on visibility change (when user comes back to tab)
     const handleVisibilityChange = () => {
       if (!document.hidden && user.id) {
-<<<<<<< HEAD
-        updateLastSeen(user.id).catch(err => console.error('Failed to update last_seen on visibility change:', err));
-=======
         updateLastSeen(user.id).catch(() => {});
->>>>>>> f5b1c0859b80a5f6a8702140f10ec53e9a8acd25
       }
     };
     document.addEventListener('visibilitychange', handleVisibilityChange);
@@ -162,11 +149,7 @@ const AppRoutes = () => {
     // Update on user interactions (scroll, click, etc.)
     const handleUserActivity = () => {
       if (user.id) {
-<<<<<<< HEAD
-        updateLastSeen(user.id).catch(err => console.error('Failed to update last_seen on activity:', err));
-=======
         updateLastSeen(user.id).catch(() => {});
->>>>>>> f5b1c0859b80a5f6a8702140f10ec53e9a8acd25
       }
     };
     

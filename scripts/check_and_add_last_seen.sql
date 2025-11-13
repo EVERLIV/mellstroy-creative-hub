@@ -44,7 +44,3 @@ FROM profiles
 ORDER BY last_seen DESC NULLS LAST
 LIMIT 10;
 
-<<<<<<< HEAD
-
-=======
->>>>>>> f5b1c0859b80a5f6a8702140f10ec53e9a8acd25

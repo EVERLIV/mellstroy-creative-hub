@@ -38,11 +38,8 @@ const transformClassData = (c: any): Class => ({
         time: c.schedule_time
     } : undefined,
     bookings: [],
-<<<<<<< HEAD
-=======
     kids_friendly: c.kids_friendly || false,
     disability_friendly: c.disability_friendly || false,
->>>>>>> f5b1c0859b80a5f6a8702140f10ec53e9a8acd25
 });
 
 // Helper function to transform review data
@@ -56,25 +53,6 @@ const transformReviewData = (r: any) => ({
 const transformTrainerData = (profile: any, classes: any[], reviews: any[]): Trainer => {
     const lastSeenValue = profile.last_seen;
     
-<<<<<<< HEAD
-    // Debug: Log first trainer's last_seen value
-    if (profile.id && !window.__exploreDebugLogged) {
-        console.log('[Explore] First trainer last_seen:', {
-            trainerId: profile.id,
-            trainerName: profile.username,
-            raw: lastSeenValue,
-            type: typeof lastSeenValue,
-            isNull: lastSeenValue === null,
-            isUndefined: lastSeenValue === undefined,
-            isString: typeof lastSeenValue === 'string',
-            afterNullishCoalescing: lastSeenValue ?? null,
-            profileKeys: Object.keys(profile).filter(k => k.includes('last') || k.includes('seen'))
-        });
-        (window as any).__exploreDebugLogged = true;
-    }
-    
-=======
->>>>>>> f5b1c0859b80a5f6a8702140f10ec53e9a8acd25
     return {
     id: profile.id,
     name: profile.username,
@@ -243,11 +221,6 @@ const Explore: React.FC<ExploreProps> = ({
       filtered = filtered.filter(trainer => trainer?.isPremium === true);
     }
 
-<<<<<<< HEAD
-    if (searchQuery && searchQuery.trim()) {
-      const query = searchQuery.toLowerCase().trim();
-      filtered = filtered.filter(trainer =>
-=======
     if (activeFilters?.languages && activeFilters.languages.length > 0) {
       filtered = filtered.filter(trainer =>
         trainer?.classes && trainer.classes.some(cls =>
@@ -268,7 +241,6 @@ const Explore: React.FC<ExploreProps> = ({
     if (searchQuery && searchQuery.trim()) {
       const query = searchQuery.toLowerCase().trim();
       filtered = filtered.filter(trainer =>
->>>>>>> f5b1c0859b80a5f6a8702140f10ec53e9a8acd25
         (trainer?.name && trainer.name.toLowerCase().includes(query)) ||
         (trainer?.location && trainer.location.toLowerCase().includes(query)) ||
         (trainer?.specialty && Array.isArray(trainer.specialty) && 

@@ -1,20 +1,10 @@
 import React, { useState, useRef, useEffect } from 'react';
-<<<<<<< HEAD
-import { Trainer, Class, UserRole } from '../types';
-import { Star, Users, BookOpen, Pencil, ShieldCheck, Plus, MoreVertical, Edit3, Trash2, Clock, LogOut, Shield, FileText, Crown, MapPin, Sparkles } from 'lucide-react';
-import RoleSwitcher from '../components/RoleSwitcher';
-import { isTrainerProfileComplete } from '../utils/profile';
-import CompleteProfilePrompt from '../components/CompleteProfilePrompt';
-import { supabase } from '../src/integrations/supabase/client';
-import { useNavigate } from 'react-router-dom';
-=======
 import { useNavigate } from 'react-router-dom';
 import { Trainer, Class, UserRole } from '../types';
 import { Star, Users, BookOpen, Pencil, ShieldCheck, Plus, MoreVertical, Edit3, Trash2, Clock, LogOut, Shield, FileText, Crown, MapPin, Sparkles } from 'lucide-react';
 import { isTrainerProfileComplete } from '../utils/profile';
 import CompleteProfilePrompt from '../components/CompleteProfilePrompt';
 import { supabase } from '../src/integrations/supabase/client';
->>>>>>> f5b1c0859b80a5f6a8702140f10ec53e9a8acd25
 import MyDocumentsPage from './MyDocumentsPage';
 
 const formatVND = (amount: number) => {
@@ -234,17 +224,6 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ trainer, onEdit, onManageClas
                     <CompleteProfilePrompt role="trainer" onComplete={onEdit} />
                 )}
 
-<<<<<<< HEAD
-                {/* Role Switcher */}
-                    <div className="bg-white p-3 rounded-lg shadow-sm mb-3">
-                    <h3 className="text-sm font-bold text-gray-900 mb-2">Account Type</h3>
-                    <RoleSwitcher currentRole={userRole} onRoleChange={onRoleChange} />
-                </div>
-
-                {/* Verification */}
-                <VerificationStatus />
-
-=======
                 {/* Verification */}
                 <VerificationStatus />
 
@@ -278,7 +257,6 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ trainer, onEdit, onManageClas
                     </button>
                 )}
 
->>>>>>> f5b1c0859b80a5f6a8702140f10ec53e9a8acd25
                 {/* My Documents */}
                     <div className="bg-white p-3 rounded-lg shadow-sm mb-3">
                     <div className="flex justify-between items-center mb-3">

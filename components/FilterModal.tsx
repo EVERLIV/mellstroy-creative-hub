@@ -81,22 +81,6 @@ const FilterModal: React.FC<FilterModalProps> = ({ isOpen, onClose, activeFilter
             aria-modal="true"
         >
             <div 
-<<<<<<< HEAD
-                className="w-full h-full flex flex-col bg-white"
-                onClick={e => e.stopPropagation()}
-            >
-                {/* Header */}
-                <div className="p-4 border-b border-gray-200 flex items-center justify-between flex-shrink-0 bg-gray-50">
-                    <button onClick={onClose} className="p-2 rounded-md hover:bg-gray-200 transition-colors">
-                        <X className="w-5 h-5 text-gray-600" />
-                    </button>
-                    <h2 className="text-base font-semibold text-gray-900">Filters</h2>
-                    <button onClick={handleReset} className="font-medium text-gray-600 hover:text-gray-900 text-sm px-2 py-1">Reset</button>
-                </div>
-                
-                {/* Content */}
-                <div className="flex-1 overflow-y-auto p-4 space-y-5 pb-32 bg-white">
-=======
                 className="w-full h-full flex flex-col bg-card"
                 onClick={e => e.stopPropagation()}
             >
@@ -111,7 +95,6 @@ const FilterModal: React.FC<FilterModalProps> = ({ isOpen, onClose, activeFilter
                 
                 {/* Content */}
                 <div className="flex-1 overflow-y-auto p-4 space-y-5 pb-32 bg-card">
->>>>>>> f5b1c0859b80a5f6a8702140f10ec53e9a8acd25
                      {/* Specialty */}
                     <div>
                         <div className="flex justify-between items-center mb-3">
@@ -130,13 +113,8 @@ const FilterModal: React.FC<FilterModalProps> = ({ isOpen, onClose, activeFilter
                                         disabled={isDisabled}
                                         className={`px-3 py-1.5 text-sm font-semibold rounded-full transition-colors border ${
                                             isSelected 
-<<<<<<< HEAD
-                                                ? 'bg-[#FF6B35] border-[#FF6B35] text-white' 
-                                                : 'bg-white border-slate-300 text-slate-700 hover:bg-slate-100'
-=======
                                                 ? 'bg-primary border-primary text-primary-foreground' 
                                                 : 'bg-card border-border text-foreground hover:bg-muted'
->>>>>>> f5b1c0859b80a5f6a8702140f10ec53e9a8acd25
                                         } ${isDisabled ? 'opacity-50 cursor-not-allowed' : ''}`}
                                     >
                                         {activity}
@@ -153,11 +131,7 @@ const FilterModal: React.FC<FilterModalProps> = ({ isOpen, onClose, activeFilter
                             name="district"
                             value={tempFilters.district}
                             onChange={handleSelectChange}
-<<<<<<< HEAD
-                            className="w-full px-3 py-2.5 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#FF6B35] bg-white text-slate-800"
-=======
                             className="w-full px-3 py-2.5 border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-ring bg-card text-foreground"
->>>>>>> f5b1c0859b80a5f6a8702140f10ec53e9a8acd25
                         >
                             <option value="All">All Districts</option>
                             {HCMC_DISTRICTS.map(district => (
@@ -174,11 +148,7 @@ const FilterModal: React.FC<FilterModalProps> = ({ isOpen, onClose, activeFilter
                                 <button
                                     key={time}
                                     onClick={() => handleTimeChange(time)}
-<<<<<<< HEAD
-                                    className={`px-4 py-2 text-sm font-semibold rounded-lg transition-colors border ${tempFilters.time === time ? 'bg-[#FF6B35] border-[#FF6B35] text-white' : 'bg-white border-slate-300 text-slate-700 hover:bg-slate-100'}`}
-=======
                                     className={`px-4 py-2 text-sm font-semibold rounded-lg transition-colors border ${tempFilters.time === time ? 'bg-primary border-primary text-primary-foreground' : 'bg-card border-border text-foreground hover:bg-muted'}`}
->>>>>>> f5b1c0859b80a5f6a8702140f10ec53e9a8acd25
                                 >
                                     {time === 'any' ? 'Any Time' : time.charAt(0).toUpperCase() + time.slice(1)}
                                 </button>
@@ -196,11 +166,7 @@ const FilterModal: React.FC<FilterModalProps> = ({ isOpen, onClose, activeFilter
                                 <button
                                     key={type}
                                     onClick={() => handleClassTypeToggle(type)}
-<<<<<<< HEAD
-                                    className={`px-4 py-3 flex items-center justify-center text-sm font-semibold rounded-lg transition-colors border ${isSelected ? 'bg-[#FF6B35] border-[#FF6B35] text-white' : 'bg-white border-slate-300 text-slate-700 hover:bg-slate-100'}`}
-=======
                                     className={`px-4 py-3 flex items-center justify-center text-sm font-semibold rounded-lg transition-colors border ${isSelected ? 'bg-primary border-primary text-primary-foreground' : 'bg-card border-border text-foreground hover:bg-muted'}`}
->>>>>>> f5b1c0859b80a5f6a8702140f10ec53e9a8acd25
                                 >
                                     {isSelected && <Check className="w-4 h-4 mr-2" strokeWidth={3} />}
                                     {type}
@@ -262,11 +228,7 @@ const FilterModal: React.FC<FilterModalProps> = ({ isOpen, onClose, activeFilter
                             </div>
                             <div className="relative">
                                 <input type="checkbox" id="verified-toggle" className="sr-only peer" checked={tempFilters.verified} onChange={() => handleToggleChange('verified')} />
-<<<<<<< HEAD
-                                <div className="w-11 h-6 bg-slate-200 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#FF6B35]"></div>
-=======
                                 <div className="w-11 h-6 bg-muted rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-primary-foreground after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-card after:border-border after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
->>>>>>> f5b1c0859b80a5f6a8702140f10ec53e9a8acd25
                             </div>
                         </label>
                          <label htmlFor="toprated-toggle" className="flex items-center justify-between cursor-pointer p-2 rounded-lg hover:bg-muted">
@@ -294,17 +256,10 @@ const FilterModal: React.FC<FilterModalProps> = ({ isOpen, onClose, activeFilter
                 </div>
                 
                 {/* Footer */}
-<<<<<<< HEAD
-                <div className="fixed bottom-0 left-0 right-0 px-4 pt-4 pb-6 bg-gray-50 border-t border-gray-200 shadow-lg">
-                    <button
-                        onClick={() => onApplyFilters(tempFilters)}
-                        className="w-full bg-[#FF6B35] text-white font-medium py-2.5 rounded-md transition-all duration-200 shadow-sm hover:bg-orange-600 text-sm"
-=======
                 <div className="fixed bottom-0 left-0 right-0 px-4 pt-4 pb-6 bg-muted border-t border-border shadow-lg">
                     <button
                         onClick={() => onApplyFilters(tempFilters)}
                         className="w-full bg-primary text-primary-foreground font-medium py-2.5 rounded-md transition-all duration-200 shadow-sm hover:bg-primary/90 text-sm"
->>>>>>> f5b1c0859b80a5f6a8702140f10ec53e9a8acd25
                     >
                         Apply Filters
                     </button>
