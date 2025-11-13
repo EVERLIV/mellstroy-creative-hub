@@ -3,6 +3,7 @@ import { useAuth } from '@/src/hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
 import { Loader, Eye, EyeOff, Dumbbell, Activity, Heart } from 'lucide-react';
 import { useToast } from '@/src/hooks/use-toast';
+import rhinoLogo from '@/src/assets/rhino-logo.png';
 
 const AuthPage = () => {
   const [view, setView] = useState<'welcome' | 'login' | 'signup'>('welcome');
@@ -192,8 +193,8 @@ const AuthPage = () => {
             <span>Back</span>
           </button>
           <div className="flex items-center gap-2">
-            <div className="w-10 h-10 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center">
-              <span className="text-xl">🦏</span>
+            <div className="w-10 h-10 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center p-1.5">
+              <img src={rhinoLogo} alt="RhinoFit Logo" className="w-full h-full object-contain" />
             </div>
           </div>
         </div>

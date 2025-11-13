@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Trainer, Class, UserRole, ClassType } from '../types';
 import { HCMC_DISTRICTS, FITNESS_ACTIVITIES, FITNESS_GOALS, CLASS_TYPES } from '../constants';
 import { User, Briefcase, ArrowRight, Save, Building, Sun, Home } from 'lucide-react';
-import { AUTH_LOGO_URL } from '../config/assets';
+import rhinoLogo from '../src/assets/rhino-logo.png';
 
 
 interface OnboardingPageProps {
@@ -218,7 +218,7 @@ const OnboardingPage: React.FC<OnboardingPageProps> = ({ currentUser, onComplete
 
     return (
         <div className="bg-slate-100 min-h-screen flex flex-col items-center justify-center p-4">
-            <img src={AUTH_LOGO_URL} alt="RhinoFit Logo" className="w-16 h-16 mb-4" />
+            <img src={rhinoLogo} alt="RhinoFit Logo" className="w-16 h-16 mb-4 object-contain" />
             {renderContent()}
         </div>
     );
