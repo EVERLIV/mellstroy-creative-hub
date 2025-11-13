@@ -1,11 +1,12 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Trainer, Class, UserRole } from '../types';
-import { Star, Users, BookOpen, Pencil, ShieldCheck, Plus, MoreVertical, Edit3, Trash2, Clock, LogOut, Shield } from 'lucide-react';
+import { Star, Users, BookOpen, Pencil, ShieldCheck, Plus, MoreVertical, Edit3, Trash2, Clock, LogOut, Shield, FileText, Crown, MapPin, Sparkles } from 'lucide-react';
 import RoleSwitcher from '../components/RoleSwitcher';
-import { isTrainerProfileComplete } from '../utils/profile'; // New Import
-import CompleteProfilePrompt from '../components/CompleteProfilePrompt'; // New Import
+import { isTrainerProfileComplete } from '../utils/profile';
+import CompleteProfilePrompt from '../components/CompleteProfilePrompt';
 import { supabase } from '../src/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
+import MyDocumentsPage from './MyDocumentsPage';
 
 const formatVND = (amount: number) => {
     return new Intl.NumberFormat('vi-VN', {
@@ -18,7 +19,7 @@ const formatVND = (amount: number) => {
 interface ProfilePageProps {
     trainer: Trainer;
     onEdit: () => void;
-    onManageClass: (cls: Class | null) => void; // null for adding new
+    onManageClass: (cls: Class | null) => void;
     onDeleteClass: (classId: number) => void;
     userRole: UserRole;
     onRoleChange: (role: UserRole) => void;
@@ -29,6 +30,8 @@ interface ProfilePageProps {
 const ProfilePage: React.FC<ProfilePageProps> = ({ trainer, onEdit, onManageClass, onDeleteClass, userRole, onRoleChange, onStartVerification, onLogout }) => {
     const [menuOpenFor, setMenuOpenFor] = useState<number | null>(null);
     const [isAdmin, setIsAdmin] = useState(false);
+    const [showDocuments, setShowDocuments] = useState(false);
+    const [documents, setDocuments] = useState<any[]>([]);
     const menuRef = useRef<HTMLDivElement>(null);
     const profileIsIncomplete = !isTrainerProfileComplete(trainer);
     const navigate = useNavigate();
@@ -45,7 +48,22 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ trainer, onEdit, onManageClas
 
     useEffect(() => {
         checkAdminStatus();
+        loadDocuments();
     }, []);
+
+    const loadDocuments = async () => {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+
+        const { data } = await supabase
+            .from('trainer_documents')
+            .select('*')
+            .eq('trainer_id', user.id)
+            .order('created_at', { ascending: false })
+            .limit(3);
+
+        setDocuments(data || []);
+    };
 
     const checkAdminStatus = async () => {
         const { data: { user } } = await supabase.auth.getUser();
@@ -76,169 +94,288 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ trainer, onEdit, onManageClas
         switch (trainer.verificationStatus) {
             case 'unverified':
                 return (
-                    <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200/80 flex items-center justify-between">
+                    <div className="bg-white p-3 rounded-lg shadow-sm mb-3 flex items-center justify-between">
                         <div>
-                            <h3 className="font-bold text-slate-800">Become a Verified Trainer</h3>
-                            <p className="text-sm text-slate-500 mt-1">Build trust and attract more clients.</p>
+                            <h3 className="text-sm font-bold text-gray-900">Become a Verified Trainer</h3>
+                            <p className="text-xs text-gray-600 mt-1">Build trust and attract more clients.</p>
                         </div>
-                        <button onClick={onStartVerification} className="flex items-center bg-blue-500 text-white font-semibold py-2 px-3 rounded-lg hover:bg-blue-600 transition-colors text-sm">
-                            <ShieldCheck className="w-5 h-5 mr-1.5" />
-                            Get Verified
+                        <button
+                            onClick={onStartVerification}
+                            className="px-4 py-2 bg-blue-600 text-white rounded-lg text-xs font-medium hover:bg-blue-700 active:scale-95 shadow-sm transition-all duration-200"
+                        >
+                            Verify
                         </button>
                     </div>
                 );
             case 'pending':
-                 return (
-                    <div className="bg-amber-50 p-4 rounded-xl border border-amber-200 flex items-center">
-                        <Clock className="w-5 h-5 mr-3 text-amber-600 flex-shrink-0" />
-                        <div>
-                            <h3 className="font-bold text-amber-800">Verification Pending</h3>
-                            <p className="text-sm text-amber-700 mt-1">Your submission is under review. This usually takes 1-2 business days.</p>
+                return (
+                    <div className="bg-white p-3 rounded-lg shadow-sm mb-3 flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                            <Clock className="w-5 h-5 text-amber-500" />
+                            <div>
+                                <h3 className="text-sm font-bold text-gray-900">Verification Pending</h3>
+                                <p className="text-xs text-gray-600 mt-1">Your verification request is being reviewed.</p>
+                            </div>
                         </div>
                     </div>
                 );
             case 'verified':
-                return null; // Don't show anything if already verified
+                return (
+                    <div className="bg-white p-3 rounded-lg shadow-sm mb-3 flex items-center gap-3">
+                        <ShieldCheck className="w-5 h-5 text-green-500" />
+                        <div>
+                            <h3 className="text-sm font-bold text-gray-900">Verified Trainer</h3>
+                            <p className="text-xs text-gray-600 mt-1">Your profile is verified and trusted.</p>
+                        </div>
+                    </div>
+                );
+            default:
+                return null;
         }
     };
 
+    if (showDocuments) {
+        return <MyDocumentsPage onBack={() => { setShowDocuments(false); loadDocuments(); }} />;
+    }
 
     return (
-        <div className="bg-slate-50 h-full overflow-y-auto relative">
-            <button onClick={onEdit} className="absolute top-4 right-4 z-10 flex items-center space-x-2 bg-white/70 backdrop-blur-sm shadow px-3 py-2 rounded-full text-sm font-semibold text-slate-700 hover:bg-white transition-colors">
-                <Pencil className="w-4 h-4" />
-                <span>Edit</span>
-            </button>
-            
-            {/* Header */}
-            <div className="bg-white pb-6 pt-6">
-                 <h1 className="text-2xl font-bold text-slate-800 text-center mb-4">My Profile</h1>
-                <div className="flex flex-col items-center">
-                    <img 
-                        src={trainer.imageUrl} 
-                        alt={trainer.name} 
-                        className="w-24 h-24 rounded-full object-cover border-4 border-white shadow-lg"
-                    />
-                    <h2 className="text-2xl font-bold text-slate-800 mt-3">{trainer.name}</h2>
-                    <div className="mt-2 flex flex-wrap justify-center gap-2 px-4">
-                        {trainer.specialty.map(spec => (
-                            <span key={spec} className="text-xs font-semibold bg-blue-100 text-blue-800 px-2 py-1 rounded-full">{spec}</span>
-                        ))}
+        <div className="bg-gray-50 h-full overflow-y-auto relative">
+            {/* Modern Compact Header */}
+            <div className="bg-white border-b border-gray-100 shadow-sm sticky top-0 z-10">
+                <div className="px-4 py-3">
+                    {/* Top Row: Title and Edit Button */}
+                    <div className="flex items-center justify-between mb-3">
+                        <h1 className="text-base font-bold text-gray-900">Profile</h1>
+                        <button 
+                            onClick={onEdit}
+                            className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors"
+                            aria-label="Edit profile"
+                        >
+                            <Pencil className="w-4 h-4 text-gray-600" />
+                        </button>
                     </div>
 
-                    {/* Stats */}
-                    <div className="mt-4 flex items-center space-x-6 text-sm text-slate-600">
-                        <div className="flex items-center space-x-1.5">
-                            <Star className="w-4 h-4 text-yellow-500 fill-yellow-500"/>
-                            <span className="font-semibold">{trainer.rating.toFixed(1)}</span>
-                            <span className="text-slate-400">Rating</span>
+                    {/* Profile Info Row: Avatar, Name, Badges, Stats */}
+                    <div className="flex items-center gap-3">
+                        {/* Avatar */}
+                        <div className="relative flex-shrink-0">
+                            <img 
+                                src={trainer.imageUrl} 
+                                alt={trainer.name} 
+                                className="w-14 h-14 rounded-full object-cover border-2 border-white shadow-sm"
+                            />
+                            {trainer.verificationStatus === 'verified' && (
+                                <div className="absolute -bottom-1 -right-1 bg-green-500 rounded-full p-0.5 border-2 border-white">
+                                    <ShieldCheck className="w-3 h-3 text-white" />
+                                </div>
+                            )}
                         </div>
-                         <div className="flex items-center space-x-1.5">
-                            <Users className="w-4 h-4 text-sky-500"/>
-                            <span className="font-semibold">{trainer.reviews}</span>
-                            <span className="text-slate-400">Reviews</span>
-                        </div>
-                         <div className="flex items-center space-x-1.5">
-                            <BookOpen className="w-4 h-4 text-emerald-500"/>
-                            <span className="font-semibold">{trainer.classes.length}</span>
-                            <span className="text-slate-400">Classes</span>
+
+                        {/* Name and Info */}
+                        <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 mb-1 flex-wrap">
+                                <h2 className="text-base font-bold text-gray-900 truncate">
+                                    {trainer.name}
+                                </h2>
+                                {trainer.isPremium && (
+                                    <div className="flex items-center gap-1 px-2 py-0.5 bg-gradient-to-r from-amber-400 to-yellow-500 rounded-full shadow-sm">
+                                        <Crown className="w-3 h-3 text-white" />
+                                        <span className="text-xs font-bold text-white">Premium</span>
+                                    </div>
+                                )}
+                                {!trainer.isPremium && (
+                                    <div className="flex items-center gap-1 px-2 py-0.5 bg-gray-100 rounded-full">
+                                        <Sparkles className="w-3 h-3 text-gray-600" />
+                                        <span className="text-xs font-medium text-gray-700">Basic</span>
+                                    </div>
+                                )}
+                            </div>
+                            <div className="flex items-center gap-3 flex-wrap">
+                                {trainer.location && (
+                                    <div className="flex items-center gap-1 text-xs text-gray-500">
+                                        <MapPin className="w-3 h-3" />
+                                        <span className="truncate">{trainer.location}</span>
+                                    </div>
+                                )}
+                                <div className="flex items-center gap-1 text-xs text-gray-500">
+                                    <Star className="w-3 h-3 text-yellow-500 fill-yellow-500" />
+                                    <span className="font-medium text-gray-900">{trainer.rating.toFixed(1)}</span>
+                                    <span className="text-gray-400">({trainer.reviews})</span>
+                                </div>
+                                {trainer.specialty && trainer.specialty.length > 0 && (
+                                    <div className="flex items-center gap-1">
+                                        {trainer.specialty.slice(0, 2).map((spec, idx) => (
+                                            <span key={idx} className="text-xs font-medium bg-blue-50 text-blue-700 px-1.5 py-0.5 rounded">
+                                                {spec}
+                                            </span>
+                                        ))}
+                                        {trainer.specialty.length > 2 && (
+                                            <span className="text-xs text-gray-400">+{trainer.specialty.length - 2}</span>
+                                        )}
+                                    </div>
+                                )}
+                            </div>
                         </div>
                     </div>
                 </div>
             </div>
             
-            <div className="p-4 space-y-4 pb-[calc(5rem+env(safe-area-inset-bottom))]">
+            <div className="px-4 py-3 pb-[calc(5rem+env(safe-area-inset-bottom))]">
                 {/* Complete Profile Prompt */}
                 {profileIsIncomplete && (
                     <CompleteProfilePrompt role="trainer" onComplete={onEdit} />
                 )}
 
                 {/* Role Switcher */}
-                <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200/80">
-                    <h3 className="font-bold text-slate-800 mb-2">Account Type</h3>
+                    <div className="bg-white p-3 rounded-lg shadow-sm mb-3">
+                    <h3 className="text-sm font-bold text-gray-900 mb-2">Account Type</h3>
                     <RoleSwitcher currentRole={userRole} onRoleChange={onRoleChange} />
                 </div>
 
                 {/* Verification */}
                 <VerificationStatus />
-                
 
-                {/* About */}
-                <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200/80">
-                    <h3 className="font-bold text-slate-800 mb-2">About Me</h3>
-                    <p className="text-sm text-slate-600 leading-relaxed whitespace-pre-line">{trainer.bio}</p>
-                </div>
-                
-                {/* My Classes */}
-                <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200/80">
+                {/* My Documents */}
+                    <div className="bg-white p-3 rounded-lg shadow-sm mb-3">
                     <div className="flex justify-between items-center mb-3">
-                        <h3 className="font-bold text-slate-800">My Classes</h3>
-                        <button onClick={() => onManageClass(null)} className="flex items-center text-sm font-semibold text-white bg-[#FF6B35] hover:bg-orange-600 px-3 py-1.5 rounded-lg transition-colors">
-                           <Plus className="w-5 h-5 mr-1" />
-                           Add New
+                        <h3 className="text-sm font-bold text-gray-900">My Documents</h3>
+                        <button 
+                            onClick={() => setShowDocuments(true)} 
+                            className="flex items-center text-xs font-medium text-blue-600 hover:text-blue-700"
+                        >
+                            <FileText className="w-4 h-4 mr-1" />
+                            View All
                         </button>
                     </div>
-                    {trainer.classes.length > 0 ? (
-                        <div className="space-y-3">
-                            {trainer.classes.map(cls => (
-                                <div key={cls.id} className="flex items-start justify-between p-3 bg-slate-50 rounded-lg hover:bg-slate-100 transition-colors">
-                                    <div className="flex items-start overflow-hidden flex-1 min-w-0">
-                                        <img src={cls.imageUrl} alt={cls.name} className="w-14 h-14 rounded-md object-cover mr-3 flex-shrink-0" />
-                                        <div className="overflow-hidden flex-1 min-w-0">
-                                            <p className="font-semibold text-sm text-slate-700 truncate">{cls.name}</p>
-                                            <p className="text-xs text-slate-500">{cls.duration} min &bull; {formatVND(cls.price)}</p>
-                                            
-                                            {/* Schedule */}
-                                            {cls.schedule && cls.schedule.days && cls.schedule.time && (
-                                                <div className="mt-1 flex items-center gap-1 text-xs text-blue-600">
-                                                    <Clock className="w-3 h-3" />
-                                                    <span className="truncate">{cls.schedule.days.join(', ')} at {cls.schedule.time}</span>
-                                                </div>
-                                            )}
-                                            
-                                            {/* Capacity */}
-                                            <div className="mt-1 flex items-center gap-1 text-xs text-emerald-600">
-                                                <Users className="w-3 h-3" />
-                                                <span>Capacity: {cls.capacity} spots</span>
-                                            </div>
-                                        </div>
+                    {documents.length > 0 ? (
+                        <div className="space-y-2">
+                            {documents.map((doc) => (
+                                <div key={doc.id} className="flex items-center justify-between p-2.5 bg-gray-50 rounded-lg">
+                                    <div className="flex items-center gap-2 flex-1 min-w-0">
+                                        <FileText className="w-4 h-4 text-gray-500 flex-shrink-0" />
+                                        <span className="text-xs text-gray-900 truncate">{doc.title}</span>
                                     </div>
-                                    <div className="relative" ref={menuOpenFor === cls.id ? menuRef : null}>
-                                        <button onClick={() => handleMenuToggle(cls.id)} className="p-2 text-slate-500 hover:text-slate-800 rounded-full hover:bg-slate-200">
-                                            <MoreVertical className="w-5 h-5"/>
-                                        </button>
-                                        {menuOpenFor === cls.id && (
-                                            <div className="absolute right-0 top-10 mt-1 w-36 bg-white rounded-lg shadow-xl z-10 border border-slate-200 animate-fade-in-fast">
-                                                <button onClick={() => { onManageClass(cls); setMenuOpenFor(null); }} className="w-full text-left flex items-center px-3 py-2 text-sm text-slate-700 hover:bg-slate-100 rounded-t-lg">
-                                                    <Edit3 className="w-4 h-4 mr-2" /> Edit
-                                                </button>
-                                                <button onClick={() => handleDelete(cls.id)} className="w-full text-left flex items-center px-3 py-2 text-sm text-red-600 hover:bg-slate-100 rounded-b-lg">
-                                                    <Trash2 className="w-4 h-4 mr-2" /> Delete
-                                                </button>
-                                            </div>
-                                        )}
-                                    </div>
+                                    {doc.is_verified ? (
+                                        <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-medium">Verified</span>
+                                    ) : (
+                                        <span className="text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full font-medium">Not Verified</span>
+                                    )}
                                 </div>
                             ))}
                         </div>
                     ) : (
-                        <div className="text-center py-6">
-                            <p className="text-sm text-slate-500">You haven't added any classes yet.</p>
+                        <div className="text-center py-4">
+                            <p className="text-xs text-gray-600 mb-2">No documents uploaded</p>
+                            <button 
+                                onClick={() => setShowDocuments(true)}
+                                className="text-xs font-medium text-blue-600 hover:text-blue-700"
+                            >
+                                Upload Documents
+                            </button>
                         </div>
                     )}
                 </div>
+
+                {/* Classes Section */}
+                    <div className="bg-white p-3 rounded-lg shadow-sm mb-3">
+                    <div className="flex justify-between items-center mb-4">
+                        <h3 className="text-sm font-bold text-gray-900">My Classes ({trainer.classes.length})</h3>
+                        <button
+                            onClick={() => onManageClass(null)}
+                            className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 text-white rounded-lg text-xs font-medium hover:bg-blue-700 active:scale-95 shadow-sm transition-all duration-200"
+                        >
+                            <Plus className="w-4 h-4" />
+                            Add Class
+                        </button>
+                    </div>
+
+                    {trainer.classes.length === 0 ? (
+                        <div className="text-center py-8">
+                            <BookOpen className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+                            <p className="text-xs text-gray-900 font-medium mb-1">No classes yet</p>
+                            <p className="text-xs text-gray-600 mb-4">Create your first class to start teaching</p>
+                            <button
+                                onClick={() => onManageClass(null)}
+                                className="px-4 py-2 bg-blue-600 text-white rounded-lg text-xs font-medium hover:bg-blue-700 active:scale-95 shadow-sm transition-all duration-200"
+                            >
+                                Create Class
+                            </button>
+                        </div>
+                    ) : (
+                        <div className="space-y-3">
+                            {trainer.classes.map((cls) => (
+                                <div key={cls.id} className="bg-gray-50 rounded-lg p-3 border border-gray-200 hover:border-blue-300 transition-colors">
+                                    <div className="flex items-start justify-between gap-3">
+                                        <div className="flex-1 min-w-0">
+                                            <div className="flex items-start gap-2 mb-2">
+                                                <img 
+                                                    src={cls.imageUrl || 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48'} 
+                                                    alt={cls.name} 
+                                                    className="w-16 h-16 rounded-lg object-cover flex-shrink-0"
+                                                />
+                                                <div className="flex-1 min-w-0">
+                                                    <h4 className="text-xs font-bold text-gray-900 mb-1 truncate">{cls.name}</h4>
+                                                    <p className="text-xs text-gray-600 line-clamp-2 mb-2">{cls.description}</p>
+                                                    <div className="flex items-center gap-2 flex-wrap">
+                                                        <span className="text-xs font-medium text-blue-600">{formatVND(cls.price)}</span>
+                                                        <span className="text-gray-300">•</span>
+                                                        <span className="text-xs text-gray-500">{cls.duration} min</span>
+                                                        <span className="text-gray-300">•</span>
+                                                        <span className="text-xs text-gray-500">{cls.capacity} spots</span>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div className="relative flex-shrink-0" ref={menuRef}>
+                                            <button
+                                                onClick={() => handleMenuToggle(cls.id as number)}
+                                                className="p-2 hover:bg-gray-200 rounded-lg transition-colors"
+                                            >
+                                                <MoreVertical className="w-4 h-4 text-gray-600" />
+                                            </button>
+                                            {menuOpenFor === cls.id && (
+                                                <div className="absolute right-0 top-10 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-20 min-w-[120px]">
+                                                    <button
+                                                        onClick={() => {
+                                                            onManageClass(cls);
+                                                            setMenuOpenFor(null);
+                                                        }}
+                                                        className="w-full px-4 py-2 text-left text-xs text-gray-900 hover:bg-gray-50 flex items-center gap-2"
+                                                    >
+                                                        <Edit3 className="w-4 h-4" />
+                                                        Edit
+                                                    </button>
+                                                    <button
+                                                        onClick={() => handleDelete(cls.id as number)}
+                                                        className="w-full px-4 py-2 text-left text-xs text-red-600 hover:bg-red-50 flex items-center gap-2"
+                                                    >
+                                                        <Trash2 className="w-4 h-4" />
+                                                        Delete
+                                                    </button>
+                                                </div>
+                                            )}
+                                        </div>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </div>
+
+                {/* Admin Panel Link */}
                 {isAdmin && (
-                    <button 
+                    <button
                         onClick={() => navigate('/admin')}
-                        className="w-full flex items-center justify-center bg-gradient-to-r from-orange-500 to-pink-500 text-white font-bold py-3 rounded-xl hover:from-orange-600 hover:to-pink-600 transition-all shadow-md mb-3"
+                        className="w-full bg-purple-600 text-white p-4 rounded-lg shadow-sm text-xs font-medium hover:bg-purple-700 active:scale-95 transition-all duration-200"
                     >
-                        <Shield className="w-5 h-5 mr-2" />
                         Admin Dashboard
                     </button>
                 )}
-                 <button 
+
+                {/* Logout */}
+                <button 
                     onClick={onLogout}
-                    className="w-full flex items-center justify-center bg-slate-200 text-slate-700 font-bold py-3 rounded-xl hover:bg-slate-300 transition-colors"
+                    className="w-full flex items-center justify-center bg-gray-200 text-gray-700 text-xs font-medium py-3 rounded-lg hover:bg-gray-300 active:scale-95 transition-all duration-200"
                 >
                     <LogOut className="w-5 h-5 mr-2" />
                     Logout

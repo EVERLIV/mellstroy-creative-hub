@@ -23,15 +23,15 @@ const DistrictFilterModal: React.FC<DistrictFilterModalProps> = ({ isOpen, onClo
     if (!isOpen) return null;
 
     return (
-        <div className="fixed inset-0 bg-black/60 z-[90] flex flex-col justify-end animate-fade-in" onClick={onClose}>
+        <div className="fixed inset-0 bg-gray-600 z-[90] flex flex-col justify-end animate-fade-in" onClick={onClose}>
             <div 
-                className="bg-white rounded-t-2xl w-full h-[85vh] flex flex-col transform animate-slide-up-full shadow-2xl"
+                className="bg-gray-100 rounded-t-lg w-full h-[85vh] flex flex-col transform animate-slide-up-full shadow-2xl border-t border-gray-300"
                 onClick={e => e.stopPropagation()}
             >
-                <header className="p-4 border-b border-gray-200 flex-shrink-0">
+                <header className="p-4 border-b border-gray-200 flex-shrink-0 bg-white">
                     <div className="flex items-center justify-between">
-                        <h2 className="text-lg font-bold text-gray-800">Select District</h2>
-                        <button onClick={onClose} className="p-2 rounded-full hover:bg-gray-100">
+                        <h2 className="text-base font-semibold text-gray-900">Select District</h2>
+                        <button onClick={onClose} className="p-2 rounded-md hover:bg-gray-200 transition-colors">
                             <X className="w-5 h-5 text-gray-600" />
                         </button>
                     </div>
@@ -47,8 +47,8 @@ const DistrictFilterModal: React.FC<DistrictFilterModalProps> = ({ isOpen, onClo
                     </div>
                 </header>
                 
-                <div className="flex-1 overflow-y-auto">
-                    <ul className="divide-y divide-slate-100">
+                <div className="flex-1 overflow-y-auto bg-white">
+                    <ul className="divide-y divide-gray-100">
                         <li>
                             <button 
                                 onClick={() => handleSelect('All Districts')}

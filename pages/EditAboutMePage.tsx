@@ -1,7 +1,7 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef } from 'react';
 import { Trainer } from '../types';
 import { HCMC_DISTRICTS, FITNESS_ACTIVITIES, FITNESS_GOALS } from '../constants';
-import { Save, Camera, Loader, X } from 'lucide-react';
+import { ArrowLeft, Camera, Loader } from 'lucide-react';
 import { supabase } from '../src/integrations/supabase/client';
 import { useToast } from '../src/hooks/use-toast';
 
@@ -14,51 +14,8 @@ interface EditAboutMePageProps {
 const EditAboutMePage: React.FC<EditAboutMePageProps> = ({ user, onSave, onCancel }) => {
     const [formData, setFormData] = useState<Trainer>(user);
     const [isUploading, setIsUploading] = useState(false);
-    const [autoSaveStatus, setAutoSaveStatus] = useState<'saved' | 'saving' | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const { toast } = useToast();
-    const autoSaveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-
-    // Load auto-saved data on mount
-    useEffect(() => {
-        const savedData = localStorage.getItem(`profile-draft-${user.id}`);
-        if (savedData) {
-            try {
-                const parsed = JSON.parse(savedData);
-                setFormData(parsed);
-                toast({
-                    title: "Draft restored",
-                    description: "Your previous changes have been restored.",
-                });
-            } catch (error) {
-                console.error('Failed to load draft:', error);
-            }
-        }
-    }, [user.id]);
-
-    // Auto-save to localStorage
-    useEffect(() => {
-        if (autoSaveTimeoutRef.current) {
-            clearTimeout(autoSaveTimeoutRef.current);
-        }
-
-        setAutoSaveStatus('saving');
-        autoSaveTimeoutRef.current = setTimeout(() => {
-            try {
-                localStorage.setItem(`profile-draft-${user.id}`, JSON.stringify(formData));
-                setAutoSaveStatus('saved');
-                setTimeout(() => setAutoSaveStatus(null), 2000);
-            } catch (error) {
-                console.error('Failed to auto-save:', error);
-            }
-        }, 1000);
-
-        return () => {
-            if (autoSaveTimeoutRef.current) {
-                clearTimeout(autoSaveTimeoutRef.current);
-            }
-        };
-    }, [formData, user.id]);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
         const { name, value } = e.target;
@@ -73,7 +30,7 @@ const EditAboutMePage: React.FC<EditAboutMePageProps> = ({ user, onSave, onCance
         setFormData(prev => {
             const currentValues = prev[field] || [];
             const isSelected = currentValues.includes(value);
-            const maxSelections = field === 'goals' ? 5 : 5;
+            const maxSelections = 5;
 
             if (isSelected) {
                 return { ...prev, [field]: currentValues.filter(v => v !== value) };
@@ -88,7 +45,6 @@ const EditAboutMePage: React.FC<EditAboutMePageProps> = ({ user, onSave, onCance
         const file = e.target.files?.[0];
         if (!file) return;
 
-        // Validate file type
         if (!file.type.startsWith('image/')) {
             toast({
                 variant: "destructive",
@@ -98,7 +54,6 @@ const EditAboutMePage: React.FC<EditAboutMePageProps> = ({ user, onSave, onCance
             return;
         }
 
-        // Validate file size (max 3MB)
         if (file.size > 3 * 1024 * 1024) {
             toast({
                 variant: "destructive",
@@ -141,240 +96,239 @@ const EditAboutMePage: React.FC<EditAboutMePageProps> = ({ user, onSave, onCance
         }
     };
 
-
     const handleSave = (e: React.FormEvent) => {
         e.preventDefault();
-        // Clear auto-saved draft on successful save
-        localStorage.removeItem(`profile-draft-${user.id}`);
         onSave(formData);
     };
 
-    const handleCancel = () => {
-        // Clear auto-saved draft on cancel
-        localStorage.removeItem(`profile-draft-${user.id}`);
-        onCancel();
-    };
-
     return (
-        <div className="bg-slate-50 min-h-screen overflow-y-auto scroll-smooth">
-            {/* Fixed Header */}
-            <div className="sticky top-0 z-50 bg-white/95 backdrop-blur-sm border-b border-slate-200">
-                <div className="flex items-center justify-between p-4">
-                    <button 
-                        type="button"
-                        onClick={handleCancel} 
-                        className="flex items-center gap-2 text-slate-600 hover:text-slate-900 transition-colors"
-                    >
-                        <X className="w-5 h-5" />
-                        <span className="font-medium">Cancel</span>
-                    </button>
-                    <div className="flex flex-col items-center">
-                        <h1 className="text-lg font-bold text-slate-900">Edit Profile</h1>
-                        {autoSaveStatus && (
-                            <span className="text-xs text-slate-500 animate-fade-in">
-                                {autoSaveStatus === 'saving' ? '💾 Saving...' : '✓ Saved'}
-                            </span>
-                        )}
-                    </div>
-                    <button 
-                        type="button"
-                        onClick={handleSave}
-                        className="flex items-center gap-2 bg-[#FF6B35] text-white px-4 py-2 rounded-full hover:bg-orange-600 transition-all duration-200 font-semibold shadow-md"
-                    >
-                        <Save className="w-4 h-4" />
-                        Save
-                    </button>
+        <div className="bg-white h-screen flex flex-col overflow-hidden">
+            {/* Header */}
+            <div className="flex items-center justify-between px-4 py-3 bg-white shadow-sm z-20">
+                <button 
+                    type="button"
+                    onClick={onCancel} 
+                    className="p-2 -ml-2"
+                >
+                    <ArrowLeft className="w-5 h-5 text-gray-800" />
+                </button>
+                <h1 className="text-base font-bold text-gray-900">Edit Profile</h1>
+                <button 
+                    type="submit"
+                    form="edit-form"
+                    className="text-sm font-semibold text-blue-600 px-2 py-1 hover:text-blue-700"
+                >
+                    Save
+                </button>
+            </div>
+
+            {/* Scrollable Content */}
+            <div className="flex-1 overflow-y-auto">
+                <div className="px-4 py-3 bg-gray-50">
+                    <form id="edit-form" onSubmit={handleSave} className="space-y-3">
+                        {/* Avatar Upload Card */}
+                        <div className="bg-white rounded-lg p-3 mb-3 shadow-sm">
+                            <div className="flex flex-col items-center gap-2">
+                                <input
+                                    type="file"
+                                    ref={fileInputRef}
+                                    onChange={handleImageChange}
+                                    className="hidden"
+                                    accept="image/png, image/jpeg, image/jpg, image/webp"
+                                />
+                                <div className="relative">
+                                    <img 
+                                        src={formData.imageUrl} 
+                                        alt={formData.name} 
+                                        className="w-20 h-20 rounded-full object-cover"
+                                    />
+                                    <button 
+                                        type="button"
+                                        onClick={() => fileInputRef.current?.click()} 
+                                        disabled={isUploading}
+                                        className="absolute bottom-0 right-0 w-7 h-7 rounded-full bg-blue-600 text-white flex items-center justify-center shadow-sm hover:bg-blue-700 transition-colors disabled:opacity-50"
+                                    >
+                                        {isUploading ? <Loader className="w-3.5 h-3.5 animate-spin"/> : <Camera className="w-3.5 h-3.5" />}
+                                    </button>
+                                </div>
+                                <p className="text-xs text-gray-600">Tap to change photo</p>
+                            </div>
+                        </div>
+
+                        {/* Basic Information Card */}
+                        <div className="bg-white rounded-lg p-3 mb-3 shadow-sm">
+                            <h3 className="text-sm font-bold text-gray-900 mb-2">Basic Information</h3>
+                            <div className="space-y-2.5">
+                                <div>
+                                    <label htmlFor="name" className="block text-xs text-gray-500 mb-1">
+                                        Full Name
+                                    </label>
+                                    <input 
+                                        type="text" 
+                                        id="name" 
+                                        name="name" 
+                                        value={formData.name} 
+                                        onChange={handleChange}
+                                        className="w-full px-3 py-2 border border-gray-200 rounded-lg bg-white text-xs text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                        placeholder="Enter your name"
+                                    />
+                                </div>
+                                
+                                <div>
+                                    <label htmlFor="bio" className="block text-xs text-gray-500 mb-1">
+                                        About Me
+                                    </label>
+                                    <textarea 
+                                        id="bio" 
+                                        name="bio" 
+                                        value={formData.bio} 
+                                        onChange={handleChange} 
+                                        rows={3}
+                                        placeholder="Tell others about yourself..."
+                                        className="w-full px-3 py-2 border border-gray-200 rounded-lg bg-white text-xs text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none"
+                                    />
+                                </div>
+                                
+                                <div>
+                                    <label htmlFor="location" className="block text-xs text-gray-500 mb-1">
+                                        Location
+                                    </label>
+                                    <select 
+                                        id="location" 
+                                        name="location" 
+                                        value={formData.location} 
+                                        onChange={handleChange}
+                                        className="w-full px-3 py-2 border border-gray-200 rounded-lg bg-white text-xs text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 appearance-none cursor-pointer"
+                                    >
+                                        <option value="">Select district</option>
+                                        {HCMC_DISTRICTS.map(district => (
+                                            <option key={district} value={district}>{district}</option>
+                                        ))}
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        {/* Fitness Stats Card */}
+                        <div className="bg-white rounded-lg p-3 mb-3 shadow-sm">
+                            <h3 className="text-sm font-bold text-gray-900 mb-2">Fitness Stats</h3>
+                            <div className="grid grid-cols-3 gap-2">
+                                <div>
+                                    <label htmlFor="age" className="block text-xs text-gray-500 mb-1 text-center">
+                                        Age
+                                    </label>
+                                    <input 
+                                        type="number" 
+                                        id="age" 
+                                        name="age" 
+                                        value={formData.age || ''} 
+                                        onChange={handleChange}
+                                        placeholder="--"
+                                        className="w-full text-center px-2 py-2 border border-gray-200 rounded-lg bg-white text-xs text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                    />
+                                </div>
+                                <div>
+                                    <label htmlFor="height" className="block text-xs text-gray-500 mb-1 text-center">
+                                        Height
+                                    </label>
+                                    <input 
+                                        type="number" 
+                                        id="height" 
+                                        name="height" 
+                                        value={formData.height || ''} 
+                                        onChange={handleChange}
+                                        placeholder="cm"
+                                        className="w-full text-center px-2 py-2 border border-gray-200 rounded-lg bg-white text-xs text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                    />
+                                </div>
+                                <div>
+                                    <label htmlFor="weight" className="block text-xs text-gray-500 mb-1 text-center">
+                                        Weight
+                                    </label>
+                                    <input 
+                                        type="number" 
+                                        id="weight" 
+                                        name="weight" 
+                                        value={formData.weight || ''} 
+                                        onChange={handleChange}
+                                        placeholder="kg"
+                                        className="w-full text-center px-2 py-2 border border-gray-200 rounded-lg bg-white text-xs text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                    />
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Goals Card */}
+                        <div className="bg-white rounded-lg p-3 mb-3 shadow-sm">
+                            <div className="flex justify-between items-center mb-2">
+                                <h3 className="text-sm font-bold text-gray-900">Fitness Goals</h3>
+                                <span className="text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">
+                                    Max 5
+                                </span>
+                            </div>
+                            <div className="flex flex-wrap gap-1.5">
+                                {FITNESS_GOALS.map(goal => {
+                                    const isSelected = formData.goals?.includes(goal);
+                                    return (
+                                        <button 
+                                            type="button" 
+                                            key={goal} 
+                                            onClick={() => handleToggle('goals', goal)}
+                                            className={`px-2.5 py-1 text-xs font-medium rounded-full transition-colors ${
+                                                isSelected 
+                                                    ? 'bg-blue-600 text-white' 
+                                                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                                            }`}
+                                        >
+                                            {goal}
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                        
+                        {/* Interests Card */}
+                        <div className="bg-white rounded-lg p-3 mb-3 shadow-sm">
+                            <div className="flex justify-between items-center mb-2">
+                                <h3 className="text-sm font-bold text-gray-900">Sport Interests</h3>
+                                <span className="text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">
+                                    Max 5
+                                </span>
+                            </div>
+                            <div className="flex flex-wrap gap-1.5">
+                                {FITNESS_ACTIVITIES.map(interest => {
+                                    const isSelected = formData.interests?.includes(interest);
+                                    return (
+                                        <button 
+                                            type="button" 
+                                            key={interest} 
+                                            onClick={() => handleToggle('interests', interest)}
+                                            className={`px-2.5 py-1 text-xs font-medium rounded-full transition-colors ${
+                                                isSelected 
+                                                    ? 'bg-blue-600 text-white' 
+                                                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                                            }`}
+                                        >
+                                            {interest}
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                        </div>
+                    </form>
                 </div>
             </div>
-            
-            <form className="p-4 space-y-4 pb-32" onSubmit={handleSave}>
-                {/* Avatar Upload */}
-                <div className="flex flex-col items-center gap-3 py-2">
-                    <input
-                        type="file"
-                        ref={fileInputRef}
-                        onChange={handleImageChange}
-                        className="hidden"
-                        accept="image/png, image/jpeg, image/jpg, image/webp"
-                    />
-                    <div className="relative">
-                        <img 
-                            src={formData.imageUrl} 
-                            alt={formData.name} 
-                            className="w-28 h-28 rounded-full object-cover border-4 border-white shadow-lg"
-                        />
-                        <button 
-                            type="button"
-                            onClick={() => fileInputRef.current?.click()} 
-                            disabled={isUploading}
-                            className="absolute bottom-0 right-0 w-10 h-10 rounded-full bg-[#FF6B35] text-white flex items-center justify-center shadow-lg hover:bg-orange-600 transition-all duration-200 disabled:opacity-50"
-                        >
-                            {isUploading ? <Loader className="w-5 h-5 animate-spin"/> : <Camera className="w-5 h-5" />}
-                        </button>
-                    </div>
-                    <p className="text-sm text-slate-600">Tap to change photo</p>
-                </div>
 
-                {/* Basic Info */}
-                <div id="basic-info" className="bg-white p-4 rounded-2xl shadow-md shadow-slate-200/60 space-y-4 scroll-mt-20">
-                    <h3 className="font-bold text-slate-900 text-base">Basic Information</h3>
-                    
-                    <div>
-                        <label htmlFor="name" className="block text-sm font-medium text-slate-700 mb-1.5">
-                            Full Name
-                        </label>
-                        <input 
-                            type="text" 
-                            id="name" 
-                            name="name" 
-                            value={formData.name} 
-                            onChange={handleChange}
-                            className="w-full px-3 py-2.5 border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-orange-500 transition-all"
-                            placeholder="Enter your name"
-                        />
-                    </div>
-                    
-                    <div>
-                        <label htmlFor="bio" className="block text-sm font-medium text-slate-700 mb-1.5">
-                            About Me
-                        </label>
-                        <textarea 
-                            id="bio" 
-                            name="bio" 
-                            value={formData.bio} 
-                            onChange={handleChange} 
-                            rows={4}
-                            placeholder="Tell others about yourself, your fitness journey, and goals..."
-                            className="w-full px-3 py-2.5 border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-orange-500 transition-all resize-none"
-                        />
-                    </div>
-                    
-                    <div>
-                        <label htmlFor="location" className="block text-sm font-medium text-slate-700 mb-1.5">
-                            Location
-                        </label>
-                        <select 
-                            id="location" 
-                            name="location" 
-                            value={formData.location} 
-                            onChange={handleChange}
-                            className="w-full px-3 py-2.5 border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-orange-500 transition-all appearance-none cursor-pointer"
-                        >
-                            <option value="">Select district</option>
-                            {HCMC_DISTRICTS.map(district => (
-                                <option key={district} value={district}>{district}</option>
-                            ))}
-                        </select>
-                    </div>
-                </div>
-                
-                {/* Fitness Stats */}
-                <div id="fitness-stats" className="bg-white p-4 rounded-2xl shadow-md shadow-slate-200/60 scroll-mt-20">
-                    <h3 className="font-bold text-slate-900 text-base mb-3">Fitness Stats</h3>
-                    <div className="grid grid-cols-3 gap-3">
-                        <div>
-                            <label htmlFor="age" className="block text-sm font-medium text-slate-700 mb-1.5 text-center">
-                                Age
-                            </label>
-                            <input 
-                                type="number" 
-                                id="age" 
-                                name="age" 
-                                value={formData.age || ''} 
-                                onChange={handleChange}
-                                placeholder="--"
-                                className="w-full text-center px-2 py-2.5 border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-orange-500 transition-all"
-                            />
-                        </div>
-                        <div>
-                            <label htmlFor="height" className="block text-sm font-medium text-slate-700 mb-1.5 text-center">
-                                Height
-                            </label>
-                            <input 
-                                type="number" 
-                                id="height" 
-                                name="height" 
-                                value={formData.height || ''} 
-                                onChange={handleChange}
-                                placeholder="cm"
-                                className="w-full text-center px-2 py-2.5 border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-orange-500 transition-all"
-                            />
-                        </div>
-                        <div>
-                            <label htmlFor="weight" className="block text-sm font-medium text-slate-700 mb-1.5 text-center">
-                                Weight
-                            </label>
-                            <input 
-                                type="number" 
-                                id="weight" 
-                                name="weight" 
-                                value={formData.weight || ''} 
-                                onChange={handleChange}
-                                placeholder="kg"
-                                className="w-full text-center px-2 py-2.5 border border-slate-300 rounded-lg bg-white text-slate-900 focus:outline-none focus:ring-2 focus:ring-orange-500 transition-all"
-                            />
-                        </div>
-                    </div>
-                </div>
-
-                {/* Goals */}
-                <div id="goals" className="bg-white p-4 rounded-2xl shadow-md shadow-slate-200/60 scroll-mt-20">
-                    <div className="flex justify-between items-center mb-3">
-                        <h3 className="font-bold text-slate-900 text-base">Fitness Goals</h3>
-                        <span className="text-xs text-slate-500 bg-slate-100 px-2 py-1 rounded-full">
-                            Max 5
-                        </span>
-                    </div>
-                    <div className="flex flex-wrap gap-2">
-                        {FITNESS_GOALS.map(goal => {
-                            const isSelected = formData.goals?.includes(goal);
-                            return (
-                                <button 
-                                    type="button" 
-                                    key={goal} 
-                                    onClick={() => handleToggle('goals', goal)}
-                                    className={`px-4 py-2 text-sm font-semibold rounded-full transition-all duration-200 ease-in-out ${
-                                        isSelected 
-                                            ? 'bg-[#FF6B35] text-white shadow-md' 
-                                            : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
-                                    }`}
-                                >
-                                    {goal}
-                                </button>
-                            );
-                        })}
-                    </div>
-                </div>
-                
-                {/* Interests */}
-                <div id="interests" className="bg-white p-4 rounded-2xl shadow-md shadow-slate-200/60 scroll-mt-20">
-                    <div className="flex justify-between items-center mb-3">
-                        <h3 className="font-bold text-slate-900 text-base">Sport Interests</h3>
-                        <span className="text-xs text-slate-500 bg-slate-100 px-2 py-1 rounded-full">
-                            Max 5
-                        </span>
-                    </div>
-                    <div className="flex flex-wrap gap-2">
-                        {FITNESS_ACTIVITIES.map(interest => {
-                            const isSelected = formData.interests?.includes(interest);
-                            return (
-                                <button 
-                                    type="button" 
-                                    key={interest} 
-                                    onClick={() => handleToggle('interests', interest)}
-                                    className={`px-4 py-2 text-sm font-semibold rounded-full transition-all duration-200 ease-in-out ${
-                                        isSelected 
-                                            ? 'bg-[#FF6B35] text-white shadow-md' 
-                                            : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
-                                    }`}
-                                >
-                                    {interest}
-                                </button>
-                            );
-                        })}
-                    </div>
-                </div>
-            </form>
+            {/* Fixed Bottom Button */}
+            <div className="px-4 py-3 bg-white shadow-lg">
+                <button
+                    type="submit"
+                    form="edit-form"
+                    className="w-full font-bold py-3 px-4 rounded-lg transition-all duration-200 text-sm shadow-sm bg-blue-600 text-white hover:bg-blue-700 active:scale-95"
+                >
+                    Save Changes
+                </button>
+            </div>
         </div>
     );
 };

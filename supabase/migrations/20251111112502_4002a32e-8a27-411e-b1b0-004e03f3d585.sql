@@ -240,11 +240,12 @@ CREATE TRIGGER on_participation_change
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS TRIGGER AS $$
 BEGIN
-  INSERT INTO public.profiles (id, username, avatar_url)
+  INSERT INTO public.profiles (id, username, avatar_url, last_seen)
   VALUES (
     NEW.id,
     COALESCE(NEW.raw_user_meta_data->>'username', 'user_' || substr(NEW.id::text, 1, 8)),
-    NEW.raw_user_meta_data->>'avatar_url'
+    NEW.raw_user_meta_data->>'avatar_url',
+    NOW()
   );
   RETURN NEW;
 END;

@@ -32,15 +32,15 @@ const ReviewsModal: React.FC<ReviewsModalProps> = ({ trainer, onClose }) => {
     };
 
     return (
-        <div className="fixed inset-0 bg-slate-50 z-40 animate-slide-up-full flex flex-col">
+        <div className="fixed inset-0 bg-gray-50 z-40 animate-slide-up-full flex flex-col">
             {/* Header */}
-            <header className="sticky top-0 bg-white/80 backdrop-blur-sm z-10 shadow-sm p-4 flex items-center flex-shrink-0">
-                <button onClick={onClose} className="p-2 rounded-full hover:bg-slate-100 mr-2">
-                    <ArrowLeft className="w-6 h-6 text-slate-700" />
+            <header className="sticky top-0 bg-white z-10 shadow-sm p-4 flex items-center flex-shrink-0 border-b border-gray-200">
+                <button onClick={onClose} className="p-2 rounded-md hover:bg-gray-100 mr-2 transition-colors">
+                    <ArrowLeft className="w-5 h-5 text-gray-700" />
                 </button>
                 <div className="text-center flex-1">
-                    <h1 className="text-lg font-bold text-slate-800">Reviews for</h1>
-                    <p className="text-sm text-slate-600 -mt-1">{trainer.name}</p>
+                    <h1 className="text-base font-semibold text-gray-900">Reviews for</h1>
+                    <p className="text-sm text-gray-600 -mt-1">{trainer.name}</p>
                 </div>
                 <div className="w-10"></div> {/* Spacer */}
             </header>

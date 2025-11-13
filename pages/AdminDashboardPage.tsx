@@ -12,7 +12,9 @@ import {
   CheckCircle,
   XCircle,
   UserCheck,
-  UserX
+  UserX,
+  FileText,
+  Crown
 } from 'lucide-react';
 import { supabase } from '../src/integrations/supabase/client';
 import { useToast } from '../src/hooks/use-toast';
@@ -66,14 +68,75 @@ const AdminDashboardPage: React.FC = () => {
   });
   const [pendingEvents, setPendingEvents] = useState<PendingEvent[]>([]);
   const [users, setUsers] = useState<User[]>([]);
-  const [activeTab, setActiveTab] = useState<'overview' | 'events' | 'users'>('overview');
+  const [pendingDocuments, setPendingDocuments] = useState<any[]>([]);
+  const [activeTab, setActiveTab] = useState<'overview' | 'events' | 'users' | 'documents'>('overview');
 
   useEffect(() => {
     checkAdminAccess();
     fetchStats();
     fetchPendingEvents();
     fetchUsers();
+    fetchPendingDocuments();
   }, []);
+
+  const fetchPendingDocuments = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('trainer_documents')
+        .select(`
+          *,
+          trainer:profiles!trainer_documents_trainer_id_fkey(id, username, is_premium)
+        `)
+        .eq('is_verified', false)
+        .order('priority', { ascending: false })
+        .order('created_at', { ascending: true });
+
+      if (error) throw error;
+      setPendingDocuments(data || []);
+    } catch (error: any) {
+      console.error('Error fetching pending documents:', error);
+    }
+  };
+
+  const handleDocumentVerification = async (documentId: string, action: 'approve' | 'reject', rejectionReason?: string) => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const updateData: any = {
+        is_verified: action === 'approve',
+        verified_by: user.id,
+        verified_at: new Date().toISOString(),
+      };
+
+      if (action === 'reject' && rejectionReason) {
+        updateData.rejection_reason = rejectionReason;
+      } else {
+        updateData.rejection_reason = null;
+      }
+
+      const { error } = await supabase
+        .from('trainer_documents')
+        .update(updateData)
+        .eq('id', documentId);
+
+      if (error) throw error;
+
+      toast({
+        title: 'Success',
+        description: `Document ${action === 'approve' ? 'approved' : 'rejected'} successfully`,
+      });
+
+      fetchPendingDocuments();
+      fetchStats();
+    } catch (error: any) {
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to update document',
+        variant: 'destructive',
+      });
+    }
+  };
 
   const checkAdminAccess = async () => {
     const { data: { user } } = await supabase.auth.getUser();
@@ -326,6 +389,16 @@ const AdminDashboardPage: React.FC = () => {
           >
             Users
           </button>
+          <button
+            onClick={() => setActiveTab('documents')}
+            className={`flex-1 py-2 px-4 rounded-md font-medium transition-colors ${
+              activeTab === 'documents'
+                ? 'bg-primary text-primary-foreground'
+                : 'text-muted-foreground hover:text-foreground'
+            }`}
+          >
+            Documents ({pendingDocuments.length})
+          </button>
         </div>
 
         {/* Overview Tab */}
@@ -511,6 +584,88 @@ const AdminDashboardPage: React.FC = () => {
                   </div>
                 </div>
               ))
+            )}
+          </div>
+        )}
+
+        {/* Documents Tab */}
+        {activeTab === 'documents' && (
+          <div className="space-y-4">
+            <h2 className="text-xl font-semibold text-foreground mb-4">
+              Pending Document Verification ({pendingDocuments.length})
+            </h2>
+            {pendingDocuments.length === 0 ? (
+              <div className="bg-card rounded-lg border border-border p-8 text-center">
+                <FileText className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                <p className="text-muted-foreground">No pending documents to verify</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {pendingDocuments.map((doc) => {
+                  const trainer = doc.trainer as any;
+                  return (
+                    <div
+                      key={doc.id}
+                      className={`bg-card rounded-lg border p-4 ${
+                        trainer?.is_premium ? 'border-yellow-400 border-2' : 'border-border'
+                      }`}
+                    >
+                      <div className="flex items-start gap-4">
+                        <img
+                          src={doc.file_url}
+                          alt={doc.title}
+                          className="w-24 h-24 object-cover rounded-lg flex-shrink-0"
+                        />
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-start justify-between gap-2 mb-2">
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2 mb-1">
+                                <h3 className="font-semibold text-foreground truncate">{doc.title}</h3>
+                                {trainer?.is_premium && (
+                                  <Crown className="w-4 h-4 text-yellow-500 flex-shrink-0" title="Premium User - Priority" />
+                                )}
+                              </div>
+                              <p className="text-sm text-muted-foreground capitalize mb-1">{doc.document_type}</p>
+                              <p className="text-sm text-muted-foreground">Trainer: {trainer?.username || 'Unknown'}</p>
+                              <p className="text-xs text-muted-foreground mt-1">
+                                Uploaded: {new Date(doc.created_at).toLocaleDateString()}
+                              </p>
+                            </div>
+                          </div>
+                          {doc.rejection_reason && (
+                            <div className="bg-red-50 border border-red-200 rounded-lg p-2 mb-2">
+                              <p className="text-xs text-red-700">
+                                <strong>Previous rejection:</strong> {doc.rejection_reason}
+                              </p>
+                            </div>
+                          )}
+                          <div className="flex gap-2 mt-3">
+                            <button
+                              onClick={() => handleDocumentVerification(doc.id, 'approve')}
+                              className="flex items-center gap-2 px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg text-sm font-medium transition-colors"
+                            >
+                              <CheckCircle className="w-4 h-4" />
+                              Approve
+                            </button>
+                            <button
+                              onClick={() => {
+                                const reason = prompt('Rejection reason (optional):');
+                                if (reason !== null) {
+                                  handleDocumentVerification(doc.id, 'reject', reason || undefined);
+                                }
+                              }}
+                              className="flex items-center gap-2 px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg text-sm font-medium transition-colors"
+                            >
+                              <XCircle className="w-4 h-4" />
+                              Reject
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
             )}
           </div>
         )}

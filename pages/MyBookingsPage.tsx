@@ -19,8 +19,8 @@ const CancelBookingModal: React.FC<CancelBookingModalProps> = ({ bookingInfo, on
     };
 
     return (
-        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4 animate-fade-in" onClick={onClose}>
-            <div className="bg-white rounded-2xl w-full max-w-sm overflow-hidden transform animate-slide-up" onClick={e => e.stopPropagation()}>
+        <div className="fixed inset-0 bg-gray-600 flex items-center justify-center z-50 p-4 pb-20 animate-fade-in" onClick={onClose}>
+            <div className="bg-gray-100 rounded-lg w-full max-w-sm overflow-hidden transform animate-slide-up shadow-2xl border border-gray-300" onClick={e => e.stopPropagation()}>
                 <div className="p-5 border-b border-gray-200 relative">
                     <h2 className="text-lg font-bold text-gray-800 text-center">Cancel Booking</h2>
                     <p className="text-sm text-gray-500 text-center">{cls.name}</p>

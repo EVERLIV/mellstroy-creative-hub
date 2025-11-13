@@ -64,24 +64,24 @@ const BookingModal: React.FC<BookingModalProps> = ({ bookingTarget, onConfirmBoo
 
     return (
         <div 
-            className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4 animate-fade-in"
+            className="fixed inset-0 bg-gray-600 flex items-center justify-center z-50 p-4 pb-20 animate-fade-in"
             onClick={onClose}
             role="dialog"
             aria-modal="true"
         >
             <div 
-                className="bg-white rounded-2xl w-full max-w-sm transform animate-slide-up flex flex-col max-h-[90vh]"
+                className="bg-gray-100 rounded-lg w-full max-w-sm transform animate-slide-up flex flex-col max-h-[85vh] shadow-2xl border border-gray-300"
                 onClick={e => e.stopPropagation()}
             >
-                <div className="p-5 border-b border-gray-200 relative flex-shrink-0">
-                    <h2 className="text-lg font-bold text-gray-800 text-center">Schedule a Class</h2>
-                    <p className="text-sm text-gray-500 text-center">{cls.name}</p>
-                    <button onClick={onClose} className="absolute top-3 right-3 p-2 rounded-full hover:bg-gray-100">
-                        <X className="w-5 h-5 text-gray-600" />
+                <div className="p-4 bg-white border-b border-gray-200 relative flex-shrink-0">
+                    <h2 className="text-base font-semibold text-gray-900 text-center">Schedule a Class</h2>
+                    <p className="text-sm text-gray-600 text-center">{cls.name}</p>
+                    <button onClick={onClose} className="absolute top-3 right-3 p-1.5 rounded-md hover:bg-gray-200 transition-colors">
+                        <X className="w-4 h-4 text-gray-600" />
                     </button>
                 </div>
                 
-                <div className="p-5 overflow-y-auto">
+                <div className="p-4 bg-white overflow-y-auto flex-1">
                     {/* Date Picker */}
                     <div>
                         <div className="flex items-center text-md font-semibold text-gray-700 mb-2">
@@ -153,11 +153,11 @@ const BookingModal: React.FC<BookingModalProps> = ({ bookingTarget, onConfirmBoo
                 </div>
                 
                 {/* Footer */}
-                <div className="p-5 bg-gray-50 border-t border-gray-200 flex-shrink-0">
+                <div className="p-4 bg-gray-50 border-t border-gray-200 flex-shrink-0">
                     <button
                         onClick={handleConfirm}
                         disabled={!selectedDate || !cls.schedule?.time}
-                        className="w-full bg-[#FF6B35] text-white font-bold py-3 rounded-xl transition-all duration-200 shadow-md hover:shadow-lg disabled:bg-gray-300 disabled:shadow-none disabled:cursor-not-allowed"
+                        className="w-full bg-[#FF6B35] text-white font-medium py-2.5 rounded-md transition-all duration-200 shadow-sm hover:bg-orange-600 disabled:bg-gray-300 disabled:shadow-none disabled:cursor-not-allowed text-sm"
                     >
                         Confirm Booking for {formatVND(totalPrice)}
                     </button>

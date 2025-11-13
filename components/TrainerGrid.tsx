@@ -14,10 +14,10 @@ interface TrainerGridProps {
   onToggleFavorite: (trainerId: string) => void;
 }
 
-const TrainerGrid: React.FC<TrainerGridProps> = ({ trainers, viewMode, onSelectTrainer, isLoading, favoriteTrainerIds, onToggleFavorite }) => {
+const TrainerGrid: React.FC<TrainerGridProps> = React.memo(({ trainers, viewMode, onSelectTrainer, isLoading, favoriteTrainerIds, onToggleFavorite }) => {
   if (isLoading) {
     return (
-      <div className={`grid grid-cols-1 ${viewMode === 'grid' ? 'gap-6' : 'gap-4'} mt-4`}>
+      <div className={`grid grid-cols-1 ${viewMode === 'grid' ? 'gap-3' : 'gap-3'}`}>
         {Array.from({ length: 4 }).map((_, index) =>
           viewMode === 'grid' ? (
             <TrainerCardSkeleton key={index} />
@@ -29,8 +29,17 @@ const TrainerGrid: React.FC<TrainerGridProps> = ({ trainers, viewMode, onSelectT
     );
   }
 
+  if (trainers.length === 0) {
+    return (
+      <div className="text-center py-12">
+        <p className="text-sm text-gray-600 mb-2">No trainers found</p>
+        <p className="text-xs text-gray-500">Try adjusting your filters</p>
+      </div>
+    );
+  }
+
   return (
-    <div className={`grid grid-cols-1 ${viewMode === 'grid' ? 'gap-6' : 'gap-4'} mt-4`}>
+    <div className={`grid grid-cols-1 ${viewMode === 'grid' ? 'gap-3' : 'gap-3'}`}>
       {trainers.map((trainer) => (
         viewMode === 'grid' ? (
           <TrainerCard 
@@ -52,6 +61,8 @@ const TrainerGrid: React.FC<TrainerGridProps> = ({ trainers, viewMode, onSelectT
       ))}
     </div>
   );
-};
+});
+
+TrainerGrid.displayName = 'TrainerGrid';
 
 export default TrainerGrid;

@@ -1,7 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, Dumbbell, Calendar, UtensilsCrossed, Sparkles, MapPin, Trophy, Users, TrendingUp, Heart } from 'lucide-react';
+import { Search, Dumbbell, Calendar, UtensilsCrossed, Sparkles, MapPin, Trophy, Users, TrendingUp, Heart, Crown } from 'lucide-react';
 import { supabase } from '../src/integrations/supabase/client';
+import VenueSlider from '../components/VenueSlider';
+import VenueDetailPage from './VenueDetailPage';
+import PremiumDetailsModal from '../components/PremiumDetailsModal';
+import { mockVenues } from '../data/mockVenues';
+import { Venue } from '../types';
 
 interface DashboardPageProps {}
 
@@ -10,6 +15,8 @@ const DashboardPage: React.FC<DashboardPageProps> = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [upcomingEvents, setUpcomingEvents] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedVenue, setSelectedVenue] = useState<Venue | null>(null);
+  const [isPremiumModalOpen, setIsPremiumModalOpen] = useState(false);
 
   // Mock events data for testing
   const mockEvents = [
@@ -175,6 +182,17 @@ const DashboardPage: React.FC<DashboardPageProps> = () => {
     navigate(`/category/${categoryId}`);
   };
 
+  if (selectedVenue) {
+    return (
+      <div className="bg-white h-screen flex flex-col overflow-hidden">
+        <VenueDetailPage 
+          venue={selectedVenue}
+          onBack={() => setSelectedVenue(null)}
+        />
+      </div>
+    );
+  }
+
   return (
     <div className="bg-slate-50 min-h-screen pb-24">
       {/* Header Section */}
@@ -330,27 +348,45 @@ const DashboardPage: React.FC<DashboardPageProps> = () => {
         </div>
       )}
 
-      {/* Quick Actions Banner */}
+      {/* Sports Venues Slider */}
+      {mockVenues.length > 0 && (
+        <div className="mb-6">
+          <VenueSlider 
+            venues={mockVenues}
+            onSelectVenue={(venue) => setSelectedVenue(venue)}
+            onViewAll={() => navigate('/venues')}
+          />
+        </div>
+      )}
+
+      {/* Premium Banner */}
       <div className="px-4 mb-6">
         <div 
-          className="rounded-2xl p-6 shadow-lg bg-cover bg-center relative overflow-hidden"
-          style={{
-            backgroundImage: `url('${supabase.storage.from('class-images').getPublicUrl('1762885310608_jqsosa.png').data.publicUrl}')`
-          }}
+          className="rounded-2xl p-6 shadow-lg bg-gradient-to-r from-amber-500 via-orange-500 to-pink-500 relative overflow-hidden"
         >
-          <div className="absolute inset-0 bg-gradient-to-r from-blue-600/90 to-cyan-600/90"></div>
+          <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-16 -mt-16"></div>
+          <div className="absolute bottom-0 left-0 w-24 h-24 bg-white/10 rounded-full -ml-12 -mb-12"></div>
           <div className="relative z-10">
-            <h3 className="font-bold text-white text-lg mb-1 drop-shadow-lg">Start Your Journey</h3>
-            <p className="text-white text-sm mb-3 drop-shadow-md">Book your first training session today!</p>
+            <div className="flex items-center gap-2 mb-2">
+              <Crown className="w-6 h-6 text-white" />
+              <h3 className="font-bold text-white text-lg drop-shadow-lg">Get Your Premium</h3>
+            </div>
+            <p className="text-white text-sm mb-4 drop-shadow-md">Unlock exclusive features, discounts, and unlimited bookings!</p>
             <button
-              onClick={() => navigate('/explore')}
-              className="bg-white text-blue-600 font-semibold px-4 py-2 rounded-lg text-sm hover:bg-blue-50 transition-colors shadow-md"
+              onClick={() => setIsPremiumModalOpen(true)}
+              className="bg-white text-orange-600 font-semibold px-5 py-2.5 rounded-lg text-sm hover:bg-orange-50 transition-all duration-200 shadow-lg hover:shadow-xl active:scale-95 flex items-center gap-2"
             >
-              Find Trainers
+              <Sparkles className="w-4 h-4" />
+              View Premium Benefits
             </button>
           </div>
         </div>
       </div>
+
+      <PremiumDetailsModal 
+        isOpen={isPremiumModalOpen}
+        onClose={() => setIsPremiumModalOpen(false)}
+      />
     </div>
   );
 };

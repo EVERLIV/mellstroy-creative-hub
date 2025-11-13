@@ -48,14 +48,14 @@ const ProfileContainer: React.FC = () => {
         return;
       }
 
-      // Load user role
+      // Load user role directly from Supabase database
       const { data: roleData } = await supabase
         .from('user_roles')
         .select('role')
         .eq('user_id', user.id)
         .maybeSingle();
 
-      const role = roleData?.role === 'trainer' ? 'trainer' : 'student';
+      const role: UserRole = roleData?.role === 'trainer' ? 'trainer' : 'student';
       setUserRole(role);
 
       // Load classes if trainer
@@ -67,23 +67,39 @@ const ProfileContainer: React.FC = () => {
           .eq('trainer_id', user.id);
 
         if (classesData) {
-          classes = classesData.map((c, index) => ({
-            id: Date.now() + index, // Generate temp numeric ID
-            name: c.name,
-            description: c.description || '',
-            duration: c.duration_minutes,
-            price: parseFloat(c.price.toString()),
-            imageUrl: c.image_urls && c.image_urls.length > 0 ? c.image_urls[0] : (c.image_url || 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48'),
-            capacity: c.capacity,
-            classType: c.class_type as any,
-            schedule: c.schedule_days && c.schedule_time ? {
-              days: c.schedule_days,
-              time: c.schedule_time
-            } : undefined,
-            bookings: [],
-            _dbId: c.id, // Store actual DB ID separately
-            image_urls: c.image_urls || (c.image_url ? [c.image_url] : []),
-          }));
+          console.log('loadUserData - Loading classes from DB:', classesData);
+          
+          classes = classesData.map((c, index) => {
+            const classData = {
+              id: Date.now() + index, // Generate temp numeric ID
+              name: c.name,
+              description: c.description || '',
+              duration: c.duration_minutes,
+              price: parseFloat(c.price.toString()),
+              imageUrl: c.image_urls && c.image_urls.length > 0 ? c.image_urls[0] : (c.image_url || 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48'),
+              capacity: c.capacity,
+              classType: c.class_type as any,
+              schedule: c.schedule_days && c.schedule_time ? {
+                days: c.schedule_days,
+                time: c.schedule_time
+              } : undefined,
+              bookings: [],
+              _dbId: c.id, // Store actual DB ID separately
+              image_urls: c.image_urls || (c.image_url ? [c.image_url] : []),
+              language: (c as any).language || [],
+              level: (c as any).level || '',
+            };
+            
+            console.log(`loadUserData - Class ${c.id} loaded:`, {
+              dbId: c.id,
+              language: classData.language,
+              level: classData.level,
+              rawLanguage: (c as any).language,
+              rawLevel: (c as any).level
+            });
+            
+            return classData;
+          });
         }
       }
 
@@ -99,6 +115,9 @@ const ProfileContainer: React.FC = () => {
         verificationStatus: profile.is_verified ? 'verified' : 'unverified',
         isPremium: profile.is_premium || false,
         bio: profile.bio || '',
+        shortDescription: (profile as any).short_description || '',
+        experienceYears: (profile as any).experience_years || undefined,
+        lastSeen: (profile as any).last_seen ?? null,
         phone: profile.phone || '',
         reviewsData: [],
         classes,
@@ -143,7 +162,7 @@ const ProfileContainer: React.FC = () => {
         throw error;
       }
 
-      // Update local state immediately
+      // Update local state immediately after saving to Supabase
       setUserRole(newRole);
       
       // Update currentUser role
@@ -175,6 +194,8 @@ const ProfileContainer: React.FC = () => {
             bookings: [],
             _dbId: c.id,
             image_urls: c.image_urls || (c.image_url ? [c.image_url] : []),
+            language: (c as any).language || [],
+            level: (c as any).level || '',
           }));
           
           setCurrentUser({ ...currentUser, classes, role: newRole });
@@ -214,6 +235,8 @@ const ProfileContainer: React.FC = () => {
         updateData.specialty = updatedUser.specialty;
         updateData.price_per_hour = updatedUser.price;
         updateData.phone = updatedUser.phone;
+        updateData.short_description = updatedUser.shortDescription || null;
+        updateData.experience_years = updatedUser.experienceYears || null;
       } else {
         // Student fields
         updateData.age = updatedUser.age;
@@ -251,60 +274,154 @@ const ProfileContainer: React.FC = () => {
     if (!user) return;
 
     try {
-      if (editingClass === null) {
-        // Create new class
-        const { error } = await supabase
-          .from('classes')
-          .insert({
+      const dbId = (cls as any)?._dbId;
+      
+      console.log('handleClassSave - Received class data:', {
+        language: cls.language,
+        level: cls.level,
+        fullCls: cls
+      });
+      
+      // Prepare base update data with required fields
+      const baseData: any = {
+        name: cls.name,
+        description: cls.description,
+        duration_minutes: cls.duration,
+        price: cls.price,
+        capacity: cls.capacity,
+        class_type: cls.classType,
+        image_url: cls.imageUrl,
+        image_urls: cls.image_urls || [cls.imageUrl],
+        schedule_days: cls.schedule?.days || null,
+        schedule_time: cls.schedule?.time || null,
+      };
+
+      // Always include language and level (they should always be present from form)
+      const updateDataWithLanguage = { ...baseData };
+      // Language should always be an array (even if empty)
+      updateDataWithLanguage.language = Array.isArray(cls.language) 
+        ? cls.language 
+        : (cls.language ? [cls.language] : []);
+      // Level should be string or null
+      updateDataWithLanguage.level = (cls.level && cls.level.trim() !== '') ? cls.level : null;
+      
+      console.log('handleClassSave - Prepared data for save:', {
+        language: updateDataWithLanguage.language,
+        level: updateDataWithLanguage.level,
+        languageType: typeof updateDataWithLanguage.language,
+        levelType: typeof updateDataWithLanguage.level,
+        isArray: Array.isArray(updateDataWithLanguage.language),
+        fullData: updateDataWithLanguage
+      });
+      
+      const performSave = async (dataToSave: any) => {
+        console.log('performSave - Saving to database:', {
+          dbId,
+          isNew: editingClass === null || !dbId,
+          dataToSave
+        });
+        
+        if (editingClass === null || !dbId) {
+          // Create new class
+          const insertData = {
+            ...dataToSave,
             trainer_id: user.id,
-            name: cls.name,
-            description: cls.description,
-            duration_minutes: cls.duration,
-            price: cls.price,
-            capacity: cls.capacity,
-            class_type: cls.classType,
-            image_url: cls.imageUrl,
-            image_urls: cls.image_urls || [cls.imageUrl],
-            schedule_days: cls.schedule?.days,
-            schedule_time: cls.schedule?.time,
-          });
-        
-        if (error) throw error;
-      } else if ((cls as any)._dbId) {
-        // Update existing class using DB ID
-        const { error } = await supabase
-          .from('classes')
-          .update({
-            name: cls.name,
-            description: cls.description,
-            duration_minutes: cls.duration,
-            price: cls.price,
-            capacity: cls.capacity,
-            class_type: cls.classType,
-            image_url: cls.imageUrl,
-            image_urls: cls.image_urls || [cls.imageUrl],
-            schedule_days: cls.schedule?.days,
-            schedule_time: cls.schedule?.time,
-          })
-          .eq('id', (cls as any)._dbId)
-          .eq('trainer_id', user.id);
-        
-        if (error) throw error;
-      }
+          };
+          
+          console.log('performSave - Inserting new class:', insertData);
+          
+          const { data, error } = await supabase
+            .from('classes')
+            .insert(insertData)
+            .select();
+          
+          if (error) {
+            console.error('performSave - Insert error:', error);
+            throw error;
+          }
+          
+          console.log('performSave - Insert success:', data);
+        } else {
+          // Update existing class using DB ID
+          console.log('performSave - Updating class:', { dbId, dataToSave });
+          
+          const { data, error } = await supabase
+            .from('classes')
+            .update(dataToSave)
+            .eq('id', dbId)
+            .eq('trainer_id', user.id)
+            .select();
+          
+          if (error) {
+            console.error('performSave - Update error:', error);
+            throw error;
+          }
+          
+          console.log('performSave - Update success:', data);
+        }
+      };
+
+      // Save directly to Supabase - always include language and level
+      await performSave(updateDataWithLanguage);
 
       toast({
         title: "Class saved",
         description: editingClass === null ? "New class created!" : "Class updated!",
       });
 
+      // Reload data directly from Supabase to get updated values
       setEditingClass(undefined);
+      
+      // Reload classes from Supabase immediately
+      if (user) {
+        const { data: classesData } = await supabase
+          .from('classes')
+          .select('*')
+          .eq('trainer_id', user.id);
+
+        if (classesData && currentUser) {
+          const updatedClasses = classesData.map((c, index) => ({
+            id: Date.now() + index,
+            name: c.name,
+            description: c.description || '',
+            duration: c.duration_minutes,
+            price: parseFloat(c.price.toString()),
+            imageUrl: c.image_urls && c.image_urls.length > 0 ? c.image_urls[0] : (c.image_url || 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48'),
+            capacity: c.capacity,
+            classType: c.class_type as any,
+            schedule: c.schedule_days && c.schedule_time ? {
+              days: c.schedule_days,
+              time: c.schedule_time
+            } : undefined,
+            bookings: [],
+            _dbId: c.id,
+            image_urls: c.image_urls || (c.image_url ? [c.image_url] : []),
+            language: (c as any).language || [],
+            level: (c as any).level || '',
+          }));
+          
+          console.log('After save - Reloaded classes from Supabase:', updatedClasses);
+          
+          setCurrentUser({ ...currentUser, classes: updatedClasses });
+        }
+      }
+      
+      // Also call loadUserData to ensure everything is synced
       loadUserData();
     } catch (error: any) {
       console.error('Error saving class:', error);
+      const errorMessage = error?.message || '';
+      let userMessage = errorMessage || "Failed to save class. Please check all fields are filled correctly.";
+      
+      // Provide helpful message if language/level columns are missing
+      if (errorMessage.includes('language') || errorMessage.includes('level') || error?.code === '42703') {
+        userMessage = "Language/level columns not found in database. Please run the migration SQL in Supabase SQL Editor (see fix_language_column.sql file).";
+      }
+      
       toast({
         variant: "destructive",
         title: "Error",
-        description: "Failed to save class.",
+        description: userMessage,
       });
     }
   };
@@ -396,16 +513,18 @@ const ProfileContainer: React.FC = () => {
           onLogout={handleLogout}
         />
       ) : (
-        <StudentProfilePage
-          currentUser={currentUser}
-          userRole={userRole}
-          onRoleChange={handleRoleChange}
-          onLogout={handleLogout}
-          onNavigateToBookings={() => navigate('/bookings')}
-          onNavigateToChats={() => navigate('/chat')}
-          onEditProfile={() => setIsEditingProfile(true)}
-          onSaveProfile={handleSaveProfile}
-        />
+        currentUser ? (
+          <StudentProfilePage
+            currentUser={currentUser}
+            userRole={userRole}
+            onRoleChange={handleRoleChange}
+            onLogout={handleLogout}
+            onNavigateToBookings={() => navigate('/bookings')}
+            onNavigateToChats={() => navigate('/chat')}
+            onEditProfile={() => setIsEditingProfile(true)}
+            onSaveProfile={handleSaveProfile}
+          />
+        ) : null
       )}
 
       {editingClass !== undefined && (

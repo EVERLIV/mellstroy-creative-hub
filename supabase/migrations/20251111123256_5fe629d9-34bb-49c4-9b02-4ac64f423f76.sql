@@ -15,12 +15,13 @@ SECURITY DEFINER
 SET search_path = 'public'
 AS $function$
 BEGIN
-  INSERT INTO public.profiles (id, username, avatar_url, onboarding_completed)
+  INSERT INTO public.profiles (id, username, avatar_url, onboarding_completed, last_seen)
   VALUES (
     NEW.id,
     COALESCE(NEW.raw_user_meta_data->>'username', 'user_' || substr(NEW.id::text, 1, 8)),
     NEW.raw_user_meta_data->>'avatar_url',
-    false
+    false,
+    NOW()
   );
   RETURN NEW;
 END;
