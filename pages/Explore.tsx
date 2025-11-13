@@ -38,6 +38,11 @@ const transformClassData = (c: any): Class => ({
         time: c.schedule_time
     } : undefined,
     bookings: [],
+<<<<<<< HEAD
+=======
+    kids_friendly: c.kids_friendly || false,
+    disability_friendly: c.disability_friendly || false,
+>>>>>>> f5b1c0859b80a5f6a8702140f10ec53e9a8acd25
 });
 
 // Helper function to transform review data
@@ -51,6 +56,7 @@ const transformReviewData = (r: any) => ({
 const transformTrainerData = (profile: any, classes: any[], reviews: any[]): Trainer => {
     const lastSeenValue = profile.last_seen;
     
+<<<<<<< HEAD
     // Debug: Log first trainer's last_seen value
     if (profile.id && !window.__exploreDebugLogged) {
         console.log('[Explore] First trainer last_seen:', {
@@ -67,6 +73,8 @@ const transformTrainerData = (profile: any, classes: any[], reviews: any[]): Tra
         (window as any).__exploreDebugLogged = true;
     }
     
+=======
+>>>>>>> f5b1c0859b80a5f6a8702140f10ec53e9a8acd25
     return {
     id: profile.id,
     name: profile.username,
@@ -120,6 +128,8 @@ const Explore: React.FC<ExploreProps> = ({
     district: 'All',
     time: 'any' as 'any' | 'morning' | 'afternoon' | 'evening',
     classType: [] as ClassType[],
+    languages: [] as string[],
+    level: '',
   });
   const observerTarget = useRef<HTMLDivElement>(null);
 
@@ -186,7 +196,7 @@ const Explore: React.FC<ExploreProps> = ({
 
       setTrainers(trainersData);
     } catch (error) {
-      console.error('Error loading trainers:', error);
+      // Silently handle error - loading state will show empty
     } finally {
       setLoading(false);
     }
@@ -233,9 +243,32 @@ const Explore: React.FC<ExploreProps> = ({
       filtered = filtered.filter(trainer => trainer?.isPremium === true);
     }
 
+<<<<<<< HEAD
     if (searchQuery && searchQuery.trim()) {
       const query = searchQuery.toLowerCase().trim();
       filtered = filtered.filter(trainer =>
+=======
+    if (activeFilters?.languages && activeFilters.languages.length > 0) {
+      filtered = filtered.filter(trainer =>
+        trainer?.classes && trainer.classes.some(cls =>
+          (cls as any).language && Array.isArray((cls as any).language) &&
+          activeFilters.languages.some(lang => (cls as any).language.includes(lang))
+        )
+      );
+    }
+
+    if (activeFilters?.level && activeFilters.level !== '') {
+      filtered = filtered.filter(trainer =>
+        trainer?.classes && trainer.classes.some(cls =>
+          (cls as any).level && (cls as any).level === activeFilters.level
+        )
+      );
+    }
+
+    if (searchQuery && searchQuery.trim()) {
+      const query = searchQuery.toLowerCase().trim();
+      filtered = filtered.filter(trainer =>
+>>>>>>> f5b1c0859b80a5f6a8702140f10ec53e9a8acd25
         (trainer?.name && trainer.name.toLowerCase().includes(query)) ||
         (trainer?.location && trainer.location.toLowerCase().includes(query)) ||
         (trainer?.specialty && Array.isArray(trainer.specialty) && 
@@ -300,6 +333,8 @@ const Explore: React.FC<ExploreProps> = ({
       district: 'All',
       time: 'any',
       classType: [],
+      languages: [],
+      level: '',
     });
   };
 

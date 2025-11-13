@@ -57,7 +57,7 @@ const MediaUploadPage: React.FC = () => {
 
     toast({
       title: 'Upload Complete',
-      description: `Successfully uploaded ${uploadedFiles.length + 1} file(s)${failedFiles.length > 0 ? `, ${failedFiles.length} failed` : ''}`,
+      description: `Successfully uploaded ${uploadedFiles.length} file(s)${failedFiles.length > 0 ? `, ${failedFiles.length} failed` : ''}`,
     });
 
     // Reset file input

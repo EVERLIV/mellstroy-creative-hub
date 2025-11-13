@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Trainer, Class, UserRole, ClassType } from '../types';
 import { HCMC_DISTRICTS, FITNESS_ACTIVITIES, FITNESS_GOALS, CLASS_TYPES } from '../constants';
 import { User, Briefcase, ArrowRight, Save, Building, Sun, Home } from 'lucide-react';
-import { AUTH_LOGO_URL } from '../config/assets';
+import rhinoLogo from '../src/assets/rhino-logo.png';
 
 
 interface OnboardingPageProps {
@@ -109,19 +109,21 @@ const OnboardingPage: React.FC<OnboardingPageProps> = ({ currentUser, onComplete
     const renderRoleSelection = () => (
         <div className="text-center">
             <h1 className="text-2xl font-bold text-slate-800">Welcome to RhinoFit!</h1>
-            <p className="text-slate-500 mt-2">To get started, tell us who you are.</p>
+            <p className="text-slate-500 mt-2 mb-6">First, tell us what brings you here:</p>
+            <p className="text-lg font-semibold text-slate-700 mb-8">Do you want to teach or learn?</p>
             <div className="mt-8 space-y-4">
                 <button onClick={() => handleRoleSelect('student')} className="w-full max-w-xs p-6 bg-white border-2 border-slate-200 rounded-2xl text-left hover:border-orange-400 hover:bg-orange-50 transition-all duration-300 group">
                     <User className="w-8 h-8 text-orange-500 mb-3" />
-                    <h2 className="font-bold text-lg text-slate-800">I'm a Student</h2>
-                    <p className="text-sm text-slate-500">I want to find trainers and book classes.</p>
+                    <h2 className="font-bold text-lg text-slate-800">I Want to Learn</h2>
+                    <p className="text-sm text-slate-500">Find trainers and book fitness classes</p>
                 </button>
                 <button onClick={() => handleRoleSelect('trainer')} className="w-full max-w-xs p-6 bg-white border-2 border-slate-200 rounded-2xl text-left hover:border-blue-400 hover:bg-blue-50 transition-all duration-300 group">
                     <Briefcase className="w-8 h-8 text-blue-500 mb-3" />
-                    <h2 className="font-bold text-lg text-slate-800">I'm a Trainer</h2>
-                    <p className="text-sm text-slate-500">I want to offer classes and manage clients.</p>
+                    <h2 className="font-bold text-lg text-slate-800">I Want to Teach</h2>
+                    <p className="text-sm text-slate-500">Offer classes and manage students</p>
                 </button>
             </div>
+            <p className="text-xs text-slate-400 mt-6">⚠️ You can only choose one role per account</p>
         </div>
     );
     
@@ -216,7 +218,7 @@ const OnboardingPage: React.FC<OnboardingPageProps> = ({ currentUser, onComplete
 
     return (
         <div className="bg-slate-100 min-h-screen flex flex-col items-center justify-center p-4">
-            <img src={AUTH_LOGO_URL} alt="RhinoFit Logo" className="w-16 h-16 mb-4" />
+            <img src={rhinoLogo} alt="RhinoFit Logo" className="w-20 h-20 mb-4 object-contain" />
             {renderContent()}
         </div>
     );

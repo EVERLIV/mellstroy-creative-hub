@@ -52,39 +52,39 @@ const HamburgerMenu: React.FC = () => {
             />
             <div
                 ref={menuRef}
-                className={`fixed top-0 left-0 h-full w-72 bg-white shadow-2xl z-50 transform transition-transform duration-300 ease-in-out ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}
+                className={`fixed top-0 left-0 h-full w-72 bg-background shadow-2xl z-50 transform transition-transform duration-300 ease-in-out border-r border-border ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}
             >
-                <div className="p-4 border-b flex justify-between items-center">
-                    <h2 className="font-bold text-lg bg-gradient-to-r from-[#FF6B35] to-[#4A90E2] text-transparent bg-clip-text">Menu</h2>
-                    <button onClick={() => setIsOpen(false)} className="p-2 rounded-full hover:bg-slate-100">
-                        <X className="w-6 h-6 text-slate-600" />
+                <div className="p-4 border-b border-border flex justify-between items-center">
+                    <h2 className="font-bold text-lg text-primary">Menu</h2>
+                    <button onClick={() => setIsOpen(false)} className="p-2 rounded-full hover:bg-muted transition-colors">
+                        <X className="w-6 h-6 text-foreground" />
                     </button>
                 </div>
                 <nav className="p-4">
                     <ul className="space-y-2">
                         {isAdmin && (
                             <li>
-                                <button onClick={() => handleNavigation('/admin')} className="w-full flex items-center p-3 text-left rounded-lg text-slate-700 font-semibold hover:bg-slate-100 transition-colors bg-orange-50 border border-orange-200">
-                                    <Shield className="w-5 h-5 mr-4 text-orange-600" />
-                                    <span className="text-orange-600">Admin Dashboard</span>
+                                <button onClick={() => handleNavigation('/admin')} className="w-full flex items-center p-3 text-left rounded-lg font-semibold hover:bg-muted transition-colors bg-primary/10 border border-primary/20">
+                                    <Shield className="w-5 h-5 mr-4 text-primary" />
+                                    <span className="text-primary">Admin Dashboard</span>
                                 </button>
                             </li>
                         )}
                         <li>
-                            <button onClick={() => handleNavigation('/bookings')} className="w-full flex items-center p-3 text-left rounded-lg text-slate-700 font-semibold hover:bg-slate-100 transition-colors">
-                                <Calendar className="w-5 h-5 mr-4 text-slate-500" />
+                            <button onClick={() => handleNavigation('/bookings')} className="w-full flex items-center p-3 text-left rounded-lg text-foreground font-semibold hover:bg-muted transition-colors">
+                                <Calendar className="w-5 h-5 mr-4 text-muted-foreground" />
                                 My Bookings
                             </button>
                         </li>
                         <li>
-                             <button onClick={() => handleNavigation('/profile')} className="w-full flex items-center p-3 text-left rounded-lg text-slate-700 font-semibold hover:bg-slate-100 transition-colors">
-                                <Settings className="w-5 h-5 mr-4 text-slate-500" />
+                             <button onClick={() => handleNavigation('/profile')} className="w-full flex items-center p-3 text-left rounded-lg text-foreground font-semibold hover:bg-muted transition-colors">
+                                <Settings className="w-5 h-5 mr-4 text-muted-foreground" />
                                 Settings
                             </button>
                         </li>
                          <li>
-                             <button onClick={() => alert('Help & Support coming soon!')} className="w-full flex items-center p-3 text-left rounded-lg text-slate-700 font-semibold hover:bg-slate-100 transition-colors">
-                                <HelpCircle className="w-5 h-5 mr-4 text-slate-500" />
+                             <button onClick={() => alert('Help & Support coming soon!')} className="w-full flex items-center p-3 text-left rounded-lg text-foreground font-semibold hover:bg-muted transition-colors">
+                                <HelpCircle className="w-5 h-5 mr-4 text-muted-foreground" />
                                 Help & Support
                             </button>
                         </li>

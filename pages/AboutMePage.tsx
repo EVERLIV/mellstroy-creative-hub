@@ -21,10 +21,10 @@ const StatCard: React.FC<{ icon: React.FC<any>, label: string, value: string | n
 const AboutMePage: React.FC<AboutMePageProps> = ({ user, onBack, onEdit }) => {
     return (
         <div className="bg-slate-50 h-full overflow-y-auto animate-fade-in relative">
-             <button onClick={onBack} className="absolute top-4 left-4 z-10 p-2 rounded-full bg-white/70 backdrop-blur-sm hover:bg-white transition-colors">
+             <button onClick={onBack} className="absolute top-4 left-4 z-10 p-2 rounded-full bg-white hover:bg-gray-100 shadow-md transition-colors">
                 <ArrowLeft className="w-6 h-6 text-slate-700" />
             </button>
-            <button onClick={onEdit} className="absolute top-4 right-4 z-10 flex items-center space-x-2 bg-white/70 backdrop-blur-sm shadow px-3 py-2 rounded-full text-sm font-semibold text-slate-700 hover:bg-white transition-colors">
+            <button onClick={onEdit} className="absolute top-4 right-4 z-10 flex items-center space-x-2 bg-white shadow-md px-3 py-2 rounded-full text-sm font-semibold text-slate-700 hover:bg-gray-100 transition-colors">
                 <Pencil className="w-4 h-4" />
                 <span>Edit</span>
             </button>

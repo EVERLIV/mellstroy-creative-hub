@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
-import { User } from 'lucide-react';
+import { User, X } from 'lucide-react';
 import { AuthProvider, useAuth } from './src/hooks/useAuth';
+import { ThemeProvider } from './src/hooks/useTheme';
+import { supabase } from './src/integrations/supabase/client';
 import { Toaster } from './src/components/ui/toaster';
 import { useToast } from './src/hooks/use-toast';
 import { useTrainers } from './src/hooks/useTrainers';
@@ -9,6 +11,10 @@ import { useFavorites } from './src/hooks/useFavorites';
 import { useEvents } from './src/hooks/useEvents';
 import { validateEnv } from './src/utils/env';
 import { saveMealPlan } from './src/utils/mealPlans';
+<<<<<<< HEAD
+=======
+import { updateLastSeen } from './src/utils/onlineStatus';
+>>>>>>> f5b1c0859b80a5f6a8702140f10ec53e9a8acd25
 import AuthPage from './src/pages/AuthPage';
 import WelcomePage from './pages/WelcomePage';
 import DashboardPage from './pages/DashboardPage';
@@ -18,6 +24,8 @@ import SearchPage from './pages/SearchPage';
 import FavoritesPage from './pages/FavoritesPage';
 import MyBookingsPage from './pages/MyBookingsPage';
 import ChatPage from './pages/ChatPage';
+import MessageListPage from './pages/MessageListPage';
+import ChatConversationPage from './pages/ChatConversationPage';
 import OnboardingPageContainer from './pages/OnboardingPageContainer';
 import ProfileContainer from './pages/ProfileContainer';
 import VerificationPage from './pages/VerificationPage';
@@ -28,15 +36,30 @@ import UploadCategoryIconsPage from './pages/UploadCategoryIconsPage';
 import MediaUploadPage from './pages/MediaUploadPage';
 import AdminDashboardPage from './pages/AdminDashboardPage';
 import ClassDetailPage from './pages/ClassDetailPage';
+<<<<<<< HEAD
 import VenuesPage from './pages/VenuesPage';
+=======
+import TrainerProfileViewPage from './pages/TrainerProfileViewPage';
+import VenuesPage from './pages/VenuesPage';
+import SubscriptionManagementPage from './pages/SubscriptionManagementPage';
+>>>>>>> f5b1c0859b80a5f6a8702140f10ec53e9a8acd25
 import BottomNav from './components/BottomNav';
 import BookingModal from './components/BookingModal';
 import ReviewModal from './components/ReviewModal';
 import ReviewsModal from './components/ReviewsModal';
+<<<<<<< HEAD
 import { Trainer, Class, Booking, UserRole, Event, Message, MealPlan, Venue } from './types';
 import { mockVenues } from './data/mockVenues';
 import { getAICoachResponse } from './utils/ai';
 import { ErrorBoundary } from './src/components/ErrorBoundary';
+=======
+import BookingVerificationDisplay from './components/BookingVerificationDisplay';
+import { Trainer, Class, Booking, UserRole, Event, Message, MealPlan, Venue } from './types';
+import { mockVenues } from './data/mockVenues';
+import { getAICoachResponse } from './utils/ai';
+// ErrorBoundary temporarily disabled due to React 19 TypeScript compatibility
+// import { ErrorBoundary } from './src/components/ErrorBoundary';
+>>>>>>> f5b1c0859b80a5f6a8702140f10ec53e9a8acd25
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { user, loading } = useAuth();
@@ -74,6 +97,7 @@ const AppRoutes = () => {
   const [reviewModalData, setReviewModalData] = useState<{ booking: Booking; trainer: Trainer } | null>(null);
   const [reviewsModalTrainer, setReviewsModalTrainer] = useState<Trainer | null>(null);
   const [chatTrainer, setChatTrainer] = useState<Trainer | null>(null);
+  const [verificationCode, setVerificationCode] = useState<{ code: string; bookingId: string } | null>(null);
   
   // AI Coach state
   const [aiCoachMessages, setAiCoachMessages] = useState<Message[]>([]);
@@ -86,6 +110,7 @@ const AppRoutes = () => {
 
   const currentUserId = user?.id || 'current-user-id';
 
+<<<<<<< HEAD
   // Validate environment variables on mount
   useEffect(() => {
     if (!validateEnv()) {
@@ -97,22 +122,66 @@ const AppRoutes = () => {
     }
   }, [toast]);
 
+=======
+  // Fetch user role from database
+  useEffect(() => {
+    const fetchUserRole = async () => {
+      if (!user?.id) return;
+      
+      const { data, error } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', user.id)
+        .maybeSingle();
+      
+      if (!error && data) {
+        setUserRole(data.role as UserRole);
+      }
+    };
+
+    fetchUserRole();
+  }, [user?.id]);
+
+  // Validate environment variables on mount
+  useEffect(() => {
+    if (!validateEnv()) {
+      toast({
+        title: 'Configuration Warning',
+        description: 'Some environment variables are missing. Please check your .env.local file.',
+        variant: 'destructive',
+      });
+    }
+  }, [toast]);
+
+>>>>>>> f5b1c0859b80a5f6a8702140f10ec53e9a8acd25
   // Update last_seen timestamp periodically for online status
   useEffect(() => {
     if (!user?.id) return;
 
     // Update immediately on mount
+<<<<<<< HEAD
     updateLastSeen(user.id).catch(err => console.error('Failed to update last_seen on mount:', err));
 
     // Update every 2 minutes while user is active
     const interval = setInterval(() => {
       updateLastSeen(user.id).catch(err => console.error('Failed to update last_seen:', err));
+=======
+    updateLastSeen(user.id).catch(() => {});
+
+    // Update every 2 minutes while user is active
+    const interval = setInterval(() => {
+      updateLastSeen(user.id).catch(() => {});
+>>>>>>> f5b1c0859b80a5f6a8702140f10ec53e9a8acd25
     }, 120000); // 2 minutes
 
     // Update on visibility change (when user comes back to tab)
     const handleVisibilityChange = () => {
       if (!document.hidden && user.id) {
+<<<<<<< HEAD
         updateLastSeen(user.id).catch(err => console.error('Failed to update last_seen on visibility change:', err));
+=======
+        updateLastSeen(user.id).catch(() => {});
+>>>>>>> f5b1c0859b80a5f6a8702140f10ec53e9a8acd25
       }
     };
     document.addEventListener('visibilitychange', handleVisibilityChange);
@@ -120,7 +189,11 @@ const AppRoutes = () => {
     // Update on user interactions (scroll, click, etc.)
     const handleUserActivity = () => {
       if (user.id) {
+<<<<<<< HEAD
         updateLastSeen(user.id).catch(err => console.error('Failed to update last_seen on activity:', err));
+=======
+        updateLastSeen(user.id).catch(() => {});
+>>>>>>> f5b1c0859b80a5f6a8702140f10ec53e9a8acd25
       }
     };
     
@@ -218,7 +291,23 @@ const AppRoutes = () => {
     <div className="min-h-screen bg-background">
       <Routes>
         <Route path="/auth" element={user ? <Navigate to="/" replace /> : <AuthPage />} />
-        <Route path="/welcome" element={<WelcomePage />} />
+        <Route 
+          path="/welcome" 
+          element={
+            <WelcomePage 
+              trainers={trainers}
+              onOpenMealPlanner={() => navigate('/meal-planner')}
+              onOpenAICoach={() => navigate('/ai-coach')}
+              events={events}
+              onNavigate={(page) => navigate(`/${page}`)}
+              onSelectEvent={(event) => navigate(`/events/${event.id}`)}
+              onSelectTopCategory={(category) => {
+                setSelectedCategory(category.id);
+                navigate('/explore');
+              }}
+            />
+          } 
+        />
         <Route path="/onboarding" element={<ProtectedRoute><OnboardingPageContainer /></ProtectedRoute>} />
         <Route
           path="/"
@@ -253,6 +342,21 @@ const AppRoutes = () => {
                 currentUserId={currentUserId}
                 onInitiateBooking={handleInitiateBooking}
                 onOpenChat={handleOpenChat}
+              />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/trainer/:trainerId"
+          element={
+            <ProtectedRoute>
+              <TrainerProfileViewPage
+                userRole={userRole}
+                currentUserId={currentUserId}
+                favoriteTrainerIds={favoriteTrainerIds}
+                onToggleFavorite={toggleFavorite}
+                onInitiateBooking={handleInitiateBooking}
+                onOpenReviewsModal={handleOpenReviewsModal}
               />
             </ProtectedRoute>
           }
@@ -308,6 +412,14 @@ const AppRoutes = () => {
                 isLoading={isAiCoachLoading}
                 onClose={() => navigate('/')}
               />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/subscription"
+          element={
+            <ProtectedRoute>
+              <SubscriptionManagementPage onBack={() => navigate(-1)} />
             </ProtectedRoute>
           }
         />
@@ -400,6 +512,22 @@ const AppRoutes = () => {
           }
         />
         <Route
+          path="/messages"
+          element={
+            <ProtectedRoute>
+              <MessageListPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/messages/:recipientId"
+          element={
+            <ProtectedRoute>
+              <ChatConversationPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
           path="/chat"
           element={
             <ProtectedRoute>
@@ -420,13 +548,73 @@ const AppRoutes = () => {
       {bookingModalData && (
         <BookingModal
           bookingTarget={bookingModalData}
-          onConfirmBooking={(trainerId, classId, startDate, period) => {
-            // Handle booking confirmation
-            toast({
-              title: "Booking Confirmed!",
-              description: `Your booking has been confirmed for ${period === 'once' ? '1 session' : '4 weeks'}`,
-            });
-            setBookingModalData(null);
+          onConfirmBooking={async (trainerId, classId, startDate, period) => {
+            try {
+              if (!user?.id) {
+                toast({
+                  title: "Error",
+                  description: "You must be logged in to book a class",
+                  variant: "destructive",
+                });
+                return;
+              }
+
+              // Format the date
+              const bookingDate = startDate.toISOString().split('T')[0];
+              const bookingTime = bookingModalData.cls.schedule?.time || '00:00';
+
+              // Check if user is a trainer
+              if (userRole === 'trainer') {
+                toast({
+                  title: "Booking Not Allowed",
+                  description: "Trainers cannot book classes. Only students can book classes.",
+                  variant: "destructive",
+                });
+                return;
+              }
+
+              // Insert booking into database
+              const { data, error } = await supabase
+                .from('bookings')
+                .insert({
+                  class_id: classId,
+                  client_id: user.id,
+                  booking_date: bookingDate,
+                  booking_time: bookingTime,
+                  status: 'booked'
+                })
+                .select()
+                .single();
+
+              if (error) {
+                toast({
+                  title: "Booking Failed",
+                  description: error.message || "Failed to create booking. Please try again.",
+                  variant: "destructive",
+                });
+                return;
+              }
+
+              // Show verification code modal
+              if (data && data.verification_code) {
+                setVerificationCode({
+                  code: data.verification_code,
+                  bookingId: data.id
+                });
+              }
+
+              toast({
+                title: "Booking Confirmed!",
+                description: `Your booking has been confirmed for ${period === 'once' ? '1 session' : '4 weeks'}`,
+              });
+              setBookingModalData(null);
+            } catch (error) {
+              toast({
+                title: "Error",
+                description: "An unexpected error occurred. Please try again.",
+                variant: "destructive",
+              });
+            }
           }}
           onClose={() => setBookingModalData(null)}
         />
@@ -445,6 +633,39 @@ const AppRoutes = () => {
           onClose={() => setReviewsModalTrainer(null)}
         />
       )}
+      {verificationCode && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-md animate-in fade-in slide-in-from-bottom-4 duration-300">
+            <div className="flex items-center justify-between p-4 border-b border-gray-200">
+              <h2 className="text-lg font-bold text-gray-900">Booking Confirmed!</h2>
+              <button
+                onClick={() => {
+                  setVerificationCode(null);
+                  navigate('/bookings');
+                }}
+                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
+              >
+                <X className="w-5 h-5 text-gray-600" />
+              </button>
+            </div>
+            <div className="p-6">
+              <BookingVerificationDisplay 
+                verificationCode={verificationCode.code}
+                bookingId={verificationCode.bookingId}
+              />
+              <button
+                onClick={() => {
+                  setVerificationCode(null);
+                  navigate('/bookings');
+                }}
+                className="w-full mt-4 bg-[#FF6B35] text-white py-3 px-4 rounded-xl font-semibold hover:bg-orange-600 transition-all active:scale-95"
+              >
+                Go to My Bookings
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       <Toaster />
     </div>
   );
@@ -452,13 +673,21 @@ const AppRoutes = () => {
 
 const App = () => {
   return (
+<<<<<<< HEAD
     <ErrorBoundary>
+=======
+    <ThemeProvider defaultTheme="light" storageKey="rhinofit-theme">
+>>>>>>> f5b1c0859b80a5f6a8702140f10ec53e9a8acd25
       <Router>
         <AuthProvider>
           <AppRoutes />
         </AuthProvider>
       </Router>
+<<<<<<< HEAD
     </ErrorBoundary>
+=======
+    </ThemeProvider>
+>>>>>>> f5b1c0859b80a5f6a8702140f10ec53e9a8acd25
   );
 };
 

@@ -76,6 +76,11 @@ const transformClassData = (c: any): Class => ({
         time: c.schedule_time
     } : undefined,
     bookings: [],
+<<<<<<< HEAD
+=======
+    kids_friendly: c.kids_friendly || false,
+    disability_friendly: c.disability_friendly || false,
+>>>>>>> f5b1c0859b80a5f6a8702140f10ec53e9a8acd25
 });
 
 // Class Card Component
@@ -144,10 +149,17 @@ const ClassCard: React.FC<ClassCardProps> = React.memo(({ cls, trainer, userRole
         e.stopPropagation();
         onInitiateBooking({ trainer, cls });
     };
+<<<<<<< HEAD
+=======
+
+    const availableSlots = cls.capacity - enrolledCount;
+    const enrollmentPercentage = (enrolledCount / cls.capacity) * 100;
+>>>>>>> f5b1c0859b80a5f6a8702140f10ec53e9a8acd25
 
     return (
         <div 
             onClick={handleCardClick}
+<<<<<<< HEAD
             className="bg-white rounded-lg p-3 mb-3 shadow-sm cursor-pointer transition-all duration-300 hover:shadow-md hover:-translate-y-0.5 border border-gray-200 hover:border-orange-300"
         >
             <div className="flex items-start justify-between mb-2">
@@ -168,17 +180,142 @@ const ClassCard: React.FC<ClassCardProps> = React.memo(({ cls, trainer, userRole
 
             <div className="flex items-start gap-2 mb-3">
                 <span className="text-xs font-bold text-[#FF6B35]">{formatVND(cls.price)}/session</span>
+=======
+            className="bg-white rounded-lg p-4 mb-3 shadow-sm cursor-pointer transition-all duration-300 hover:shadow-md hover:-translate-y-0.5 border border-gray-200 hover:border-orange-300"
+        >
+            {/* Class Header */}
+            <div className="flex items-start justify-between mb-3">
+                <div className="flex-1">
+                    <h3 className="text-base font-bold text-gray-900 mb-1">{cls.name}</h3>
+                    <div className="flex items-center gap-2">
+                        <span className="text-xs px-2 py-0.5 bg-orange-100 text-orange-700 rounded-full font-medium">
+                            {cls.classType}
+                        </span>
+                        <span className="text-xs text-gray-500">{cls.duration} min</span>
+                    </div>
+                </div>
+            </div>
+
+            {/* Language & Level Badges */}
+            {((cls as any).language && (cls as any).language.length > 0) || (cls as any).level ? (
+                <div className="flex items-center gap-2 flex-wrap mb-3">
+                    {(cls as any).level && (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-blue-100 text-blue-700 text-xs font-medium rounded-full">
+                            <Star className="w-3 h-3" />
+                            {(cls as any).level}
+                        </span>
+                    )}
+                    {(cls as any).language && (cls as any).language.length > 0 && (cls as any).language.map((lang: string, idx: number) => (
+                        <span key={idx} className="inline-flex items-center gap-1 px-2.5 py-1 bg-green-100 text-green-700 text-xs font-medium rounded-full">
+                            <MessageCircle className="w-3 h-3" />
+                            {lang}
+                        </span>
+                    ))}
+                </div>
+            ) : null}
+
+            {/* Accessibility Badges */}
+            {((cls as any).kids_friendly || (cls as any).disability_friendly) && (
+                <div className="flex items-center gap-2 flex-wrap mb-3">
+                    {(cls as any).kids_friendly && (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-pink-100 text-pink-700 text-xs font-medium rounded-full">
+                            <span className="text-sm">👶</span>
+                            Kids Friendly
+                        </span>
+                    )}
+                    {(cls as any).disability_friendly && (
+                        <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-purple-100 text-purple-700 text-xs font-medium rounded-full">
+                            <span className="text-sm">♿</span>
+                            Disability Friendly
+                        </span>
+                    )}
+                </div>
+            )}
+
+
+            {/* Description */}
+            {cls.description && (
+                <p className="text-xs text-gray-600 mb-3 line-clamp-2 leading-relaxed">
+                    {cls.description}
+                </p>
+            )}
+
+            {/* Schedule & Time */}
+            {cls.schedule && cls.schedule.days && cls.schedule.time ? (
+                <div className="bg-gray-50 rounded-lg p-2.5 mb-3">
+                    <div className="flex items-start gap-2 mb-1.5">
+                        <Calendar className="w-3.5 h-3.5 text-orange-500 mt-0.5 flex-shrink-0" />
+                        <div className="flex-1">
+                            <p className="text-xs font-semibold text-gray-700 mb-0.5">Available Days</p>
+                            <p className="text-xs text-gray-600">{cls.schedule.days.join(', ')}</p>
+                        </div>
+                    </div>
+                    <div className="flex items-start gap-2">
+                        <Clock className="w-3.5 h-3.5 text-orange-500 mt-0.5 flex-shrink-0" />
+                        <div className="flex-1">
+                            <p className="text-xs font-semibold text-gray-700 mb-0.5">Class Time</p>
+                            <p className="text-xs text-gray-600">{formatTime(cls.schedule.time)}</p>
+                        </div>
+                    </div>
+                </div>
+            ) : (
+                <div className="bg-amber-50 rounded-lg p-2.5 mb-3">
+                    <p className="text-xs text-amber-700 font-medium">Schedule: Flexible - Book to arrange time with trainer</p>
+                </div>
+            )}
+
+            {/* Capacity & Availability */}
+            <div className="mb-3">
+                <div className="flex items-center justify-between mb-1.5">
+                    <span className="text-xs font-semibold text-gray-700">Available Slots</span>
+                    <span className={`text-xs font-bold ${
+                        availableSlots === 0 ? 'text-red-600' : 
+                        availableSlots <= 3 ? 'text-orange-600' : 
+                        'text-green-600'
+                    }`}>
+                        {availableSlots} / {cls.capacity} spots
+                    </span>
+                </div>
+                {/* Progress Bar */}
+                <div className="w-full h-1.5 bg-gray-200 rounded-full overflow-hidden">
+                    <div 
+                        className={`h-full transition-all duration-300 ${
+                            enrollmentPercentage >= 100 ? 'bg-red-500' :
+                            enrollmentPercentage >= 75 ? 'bg-orange-500' :
+                            'bg-green-500'
+                        }`}
+                        style={{ width: `${Math.min(enrollmentPercentage, 100)}%` }}
+                    />
+                </div>
+            </div>
+
+            {/* Location & Price */}
+            <div className="flex items-center justify-between mb-3 pb-3 border-b border-gray-200">
+                <div className="flex items-center gap-1.5">
+                    <MapPin className="w-3.5 h-3.5 text-gray-500" />
+                    <span className="text-xs text-gray-700">{trainer.location || 'Location TBD'}</span>
+                </div>
+                <span className="text-sm font-bold text-[#FF6B35]">{formatVND(cls.price)}</span>
+>>>>>>> f5b1c0859b80a5f6a8702140f10ec53e9a8acd25
             </div>
             
             {/* Action Button */}
             <button 
                 onClick={handleBookClick}
                 disabled={isFull || isBookingDisabledForTrainer}
+<<<<<<< HEAD
                 className={`w-full px-3 py-2 bg-[#FF6B35] text-white text-xs font-medium rounded-lg hover:bg-orange-600 active:scale-95 shadow-sm transition-all duration-200 ${
                     isFull || isBookingDisabledForTrainer ? 'opacity-50 cursor-not-allowed' : ''
                 }`}
             >
                 {isFull ? 'Class Full' : isBookingDisabledForTrainer ? 'N/A' : 'Book Now'}
+=======
+                className={`w-full px-4 py-2.5 bg-[#FF6B35] text-white text-sm font-semibold rounded-lg hover:bg-orange-600 active:scale-95 shadow-sm transition-all duration-200 ${
+                    isFull || isBookingDisabledForTrainer ? 'opacity-50 cursor-not-allowed' : ''
+                }`}
+            >
+                {isFull ? 'Class Full - No Slots Available' : isBookingDisabledForTrainer ? 'N/A for Trainers' : 'Book This Class'}
+>>>>>>> f5b1c0859b80a5f6a8702140f10ec53e9a8acd25
             </button>
         </div>
     );
@@ -295,7 +432,11 @@ const TrainerDetailPage: React.FC<TrainerDetailPageProps> = ({
                     url: window.location.href,
                 });
             } catch (error) {
+<<<<<<< HEAD
                 console.log('Error sharing:', error);
+=======
+                // Sharing cancelled or failed
+>>>>>>> f5b1c0859b80a5f6a8702140f10ec53e9a8acd25
             }
         }
     };

@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+<<<<<<< HEAD
 import { Trainer, Class, UserRole } from '../types';
 import { Star, Users, BookOpen, Pencil, ShieldCheck, Plus, MoreVertical, Edit3, Trash2, Clock, LogOut, Shield, FileText, Crown, MapPin, Sparkles } from 'lucide-react';
 import RoleSwitcher from '../components/RoleSwitcher';
@@ -6,6 +7,14 @@ import { isTrainerProfileComplete } from '../utils/profile';
 import CompleteProfilePrompt from '../components/CompleteProfilePrompt';
 import { supabase } from '../src/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
+=======
+import { useNavigate } from 'react-router-dom';
+import { Trainer, Class, UserRole } from '../types';
+import { Star, Users, BookOpen, Pencil, ShieldCheck, Plus, MoreVertical, Edit3, Trash2, Clock, LogOut, Shield, FileText, Crown, MapPin, Sparkles } from 'lucide-react';
+import { isTrainerProfileComplete } from '../utils/profile';
+import CompleteProfilePrompt from '../components/CompleteProfilePrompt';
+import { supabase } from '../src/integrations/supabase/client';
+>>>>>>> f5b1c0859b80a5f6a8702140f10ec53e9a8acd25
 import MyDocumentsPage from './MyDocumentsPage';
 
 const formatVND = (amount: number) => {
@@ -22,19 +31,18 @@ interface ProfilePageProps {
     onManageClass: (cls: Class | null) => void;
     onDeleteClass: (classId: number) => void;
     userRole: UserRole;
-    onRoleChange: (role: UserRole) => void;
     onStartVerification: () => void;
     onLogout: () => void;
 }
 
-const ProfilePage: React.FC<ProfilePageProps> = ({ trainer, onEdit, onManageClass, onDeleteClass, userRole, onRoleChange, onStartVerification, onLogout }) => {
+const ProfilePage: React.FC<ProfilePageProps> = ({ trainer, onEdit, onManageClass, onDeleteClass, userRole, onStartVerification, onLogout }) => {
+    const navigate = useNavigate();
     const [menuOpenFor, setMenuOpenFor] = useState<number | null>(null);
     const [isAdmin, setIsAdmin] = useState(false);
     const [showDocuments, setShowDocuments] = useState(false);
     const [documents, setDocuments] = useState<any[]>([]);
     const menuRef = useRef<HTMLDivElement>(null);
     const profileIsIncomplete = !isTrainerProfileComplete(trainer);
-    const navigate = useNavigate();
 
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
@@ -226,6 +234,7 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ trainer, onEdit, onManageClas
                     <CompleteProfilePrompt role="trainer" onComplete={onEdit} />
                 )}
 
+<<<<<<< HEAD
                 {/* Role Switcher */}
                     <div className="bg-white p-3 rounded-lg shadow-sm mb-3">
                     <h3 className="text-sm font-bold text-gray-900 mb-2">Account Type</h3>
@@ -235,6 +244,41 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ trainer, onEdit, onManageClas
                 {/* Verification */}
                 <VerificationStatus />
 
+=======
+                {/* Verification */}
+                <VerificationStatus />
+
+                {/* Premium CTA */}
+                {!trainer.isPremium ? (
+                    <div className="bg-gradient-to-r from-amber-400 to-yellow-500 p-4 rounded-lg mb-3 shadow-sm">
+                        <div className="flex items-start gap-3">
+                            <Crown className="w-6 h-6 text-white flex-shrink-0 mt-0.5" />
+                            <div className="flex-1">
+                                <h3 className="text-sm font-bold text-white mb-1">Upgrade to Premium</h3>
+                                <p className="text-xs text-white/90 mb-3">Unlock 5 photos per class, priority listing, verified badge, and advanced analytics</p>
+                                <button 
+                                    onClick={() => navigate('/subscription')}
+                                    className="w-full bg-white text-amber-600 px-4 py-2 rounded-lg text-xs font-bold hover:bg-amber-50 transition-colors"
+                                >
+                                    Get Premium RhinoFit
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                ) : (
+                    <button
+                        onClick={() => navigate('/subscription')}
+                        className="w-full bg-white p-3 rounded-lg shadow-sm mb-3 flex items-center justify-between hover:bg-gray-50 transition-colors"
+                    >
+                        <div className="flex items-center gap-2">
+                            <Crown className="w-5 h-5 text-amber-500" />
+                            <span className="text-sm font-bold text-gray-900">Manage Subscription</span>
+                        </div>
+                        <span className="text-xs text-gray-500">View details →</span>
+                    </button>
+                )}
+
+>>>>>>> f5b1c0859b80a5f6a8702140f10ec53e9a8acd25
                 {/* My Documents */}
                     <div className="bg-white p-3 rounded-lg shadow-sm mb-3">
                     <div className="flex justify-between items-center mb-3">

@@ -29,6 +29,11 @@ export interface Class {
   classType: ClassType;
   language?: string[]; // Languages spoken in the class
   level?: string; // Class level (e.g., "Beginner", "Intermediate", "Advanced", "Beginner to Intermediate")
+<<<<<<< HEAD
+=======
+  kids_friendly?: boolean; // Indicates if the class is suitable for children
+  disability_friendly?: boolean; // Indicates if the class is accessible for people with disabilities
+>>>>>>> f5b1c0859b80a5f6a8702140f10ec53e9a8acd25
 }
 
 export interface Message {
@@ -111,7 +116,7 @@ export interface DietaryPreferences {
 }
 
 export interface MealPlan {
-  id: number;
+  id: string;
   name: string;
   createdAt: string;
   plan: DailyPlan[];

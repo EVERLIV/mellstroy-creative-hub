@@ -1,6 +1,11 @@
 import React, { useState } from 'react';
+<<<<<<< HEAD
 import { Trainer, UserRole } from '../types';
 import RoleSwitcher from '../components/RoleSwitcher';
+=======
+import { useNavigate } from 'react-router-dom';
+import { Trainer, UserRole } from '../types';
+>>>>>>> f5b1c0859b80a5f6a8702140f10ec53e9a8acd25
 import { ArrowLeft, Calendar, MessageCircle, User as UserIcon, UtensilsCrossed, Heart, LogOut, Pencil, ChevronRight, Crown, ShieldCheck, MapPin, Sparkles } from 'lucide-react';
 import AboutMePage from './AboutMePage';
 import EditAboutMePage from './EditAboutMePage';
@@ -14,7 +19,6 @@ const ANIMATION_DURATION = 300;
 interface StudentProfilePageProps {
     currentUser: Trainer | null;
     userRole: UserRole;
-    onRoleChange: (role: UserRole) => void;
     onNavigateToBookings: () => void;
     onNavigateToChats: () => void;
     onEditProfile: () => void;
@@ -25,10 +29,14 @@ interface StudentProfilePageProps {
 type SubPage = 'about' | 'edit-about' | 'favorites' | 'meal-plans';
 
 const StudentProfilePage: React.FC<StudentProfilePageProps> = (props) => {
-    const { currentUser, userRole, onRoleChange, onNavigateToBookings, onNavigateToChats, onEditProfile, onSaveProfile, onLogout } = props;
+    const navigate = useNavigate();
+    const { currentUser, userRole, onNavigateToBookings, onNavigateToChats, onEditProfile, onSaveProfile, onLogout } = props;
     const [activeSubPage, setActiveSubPage] = useState<SubPage | null>(null);
     const [isExiting, setIsExiting] = useState(false);
+<<<<<<< HEAD
     const [isRoleChanging, setIsRoleChanging] = useState(false);
+=======
+>>>>>>> f5b1c0859b80a5f6a8702140f10ec53e9a8acd25
     const profileIsIncomplete = currentUser ? !isStudentProfileComplete(currentUser) : false;
 
     const handleNavigateTo = (page: SubPage) => {
@@ -50,6 +58,7 @@ const StudentProfilePage: React.FC<StudentProfilePageProps> = (props) => {
         }, ANIMATION_DURATION);
     }
 
+<<<<<<< HEAD
     const handleRoleChange = async (newRole: UserRole) => {
         setIsRoleChanging(true);
         await onRoleChange(newRole);
@@ -58,6 +67,8 @@ const StudentProfilePage: React.FC<StudentProfilePageProps> = (props) => {
         }, 500);
     };
 
+=======
+>>>>>>> f5b1c0859b80a5f6a8702140f10ec53e9a8acd25
     const renderSubPage = () => {
         if (!activeSubPage || !currentUser) return null;
 
@@ -181,6 +192,7 @@ const StudentProfilePage: React.FC<StudentProfilePageProps> = (props) => {
                             <CompleteProfilePrompt role="student" onComplete={() => handleNavigateTo('edit-about')} />
                         </div>
                     )}
+<<<<<<< HEAD
 
                     {/* Role Switcher Card */}
                     <div className="bg-white rounded-lg p-3 mb-3 shadow-sm">
@@ -190,6 +202,38 @@ const StudentProfilePage: React.FC<StudentProfilePageProps> = (props) => {
                         </div>
                         <p className="text-xs text-gray-500 mt-2 text-center">Switch to trainer mode to manage your classes</p>
                     </div>
+=======
+                    
+                    {/* Premium CTA */}
+                    {!currentUser.isPremium ? (
+                        <div className="bg-gradient-to-r from-amber-400 to-yellow-500 p-4 rounded-lg mb-3 shadow-sm">
+                            <div className="flex items-start gap-3">
+                                <Crown className="w-6 h-6 text-white flex-shrink-0 mt-0.5" />
+                                <div className="flex-1">
+                                    <h3 className="text-sm font-bold text-white mb-1">Upgrade to Premium</h3>
+                                    <p className="text-xs text-white/90 mb-3">Access exclusive meal plans, AI fitness coach, priority bookings, and personalized workout programs</p>
+                                    <button 
+                                        onClick={() => navigate('/subscription')}
+                                        className="w-full bg-white text-amber-600 px-4 py-2 rounded-lg text-xs font-bold hover:bg-amber-50 transition-colors"
+                                    >
+                                        Get Premium RhinoFit
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    ) : (
+                        <button
+                            onClick={() => navigate('/subscription')}
+                            className="w-full bg-white p-3 rounded-lg shadow-sm mb-3 flex items-center justify-between hover:bg-gray-50 transition-colors"
+                        >
+                            <div className="flex items-center gap-2">
+                                <Crown className="w-5 h-5 text-amber-500" />
+                                <span className="text-sm font-bold text-gray-900">Manage Subscription</span>
+                            </div>
+                            <span className="text-xs text-gray-500">View details →</span>
+                        </button>
+                    )}
+>>>>>>> f5b1c0859b80a5f6a8702140f10ec53e9a8acd25
                     
                     {/* Menu Card */}
                     <div className="bg-white rounded-lg p-3 mb-3 shadow-sm">

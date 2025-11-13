@@ -32,7 +32,7 @@ const EventCard: React.FC<EventCardProps> = ({ event, onSelect }) => {
                   alt={event.title} 
                   className="h-44 w-full object-cover" 
                 />
-                <div className="absolute top-3 right-3 bg-white/90 backdrop-blur-sm rounded-xl p-2 text-center shadow">
+                <div className="absolute top-3 right-3 bg-white rounded-xl p-2 text-center shadow-md">
                     <p className="text-sm font-bold text-red-500">{month}</p>
                     <p className="text-2xl font-extrabold text-slate-800 -mt-1">{day}</p>
                 </div>
@@ -101,7 +101,7 @@ const EventsPage: React.FC<EventsPageProps> = ({ events, isTrainer, onBack, onSe
 
     return (
         <div className="bg-slate-50 h-full flex flex-col relative">
-            <button onClick={onBack} className="absolute top-4 left-4 z-10 bg-white/80 backdrop-blur-sm p-2 rounded-full text-gray-800 hover:bg-white transition-colors">
+            <button onClick={onBack} className="absolute top-4 left-4 z-10 bg-white shadow-md p-2 rounded-full text-gray-800 hover:bg-gray-100 transition-colors">
                 <ArrowLeft className="w-6 h-6" />
             </button>
             

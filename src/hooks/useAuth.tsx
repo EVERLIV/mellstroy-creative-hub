@@ -2,14 +2,18 @@ import { useState, useEffect, createContext, useContext, ReactNode } from 'react
 import { User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/src/integrations/supabase/client';
 import { useToast } from '@/src/hooks/use-toast';
+import { UserRole } from '@/types';
 
 interface AuthContextType {
   user: User | null;
   session: Session | null;
+  userRole: UserRole | null;
   loading: boolean;
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (email: string, password: string, username: string) => Promise<void>;
   signOut: () => Promise<void>;
+  signInWithGoogle: () => Promise<void>;
+  signInWithFacebook: () => Promise<void>;
   checkOnboardingStatus: (userId: string) => Promise<boolean>;
 }
 
@@ -18,27 +22,86 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
+  const [userRole, setUserRole] = useState<UserRole | null>(null);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
+  // Fetch user role from database
+  const fetchUserRole = async (userId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', userId)
+        .maybeSingle();
+
+      if (error) {
+        console.error('Error fetching user role:', error);
+        setUserRole(null);
+        return;
+      }
+      
+      if (data) {
+        // Map database role to UI role
+        const uiRole = data.role === 'client' ? 'student' : data.role as UserRole;
+        setUserRole(uiRole);
+      } else {
+        setUserRole(null);
+      }
+    } catch (error) {
+      console.error('Error fetching user role:', error);
+      setUserRole(null);
+    }
+  };
+
   useEffect(() => {
+    let mounted = true;
+
     // Set up auth state listener first
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
+        if (!mounted) return;
+        
         setSession(session);
         setUser(session?.user ?? null);
+        
+        // Fetch user role when user is authenticated
+        if (session?.user) {
+          setTimeout(() => {
+            if (mounted) {
+              fetchUserRole(session.user.id);
+            }
+          }, 0);
+        } else {
+          setUserRole(null);
+        }
+        
         setLoading(false);
       }
     );
 
     // Then check for existing session
     supabase.auth.getSession().then(({ data: { session } }) => {
+      if (!mounted) return;
+      
       setSession(session);
       setUser(session?.user ?? null);
+      
+      if (session?.user) {
+        setTimeout(() => {
+          if (mounted) {
+            fetchUserRole(session.user.id);
+          }
+        }, 0);
+      }
+      
       setLoading(false);
     });
 
-    return () => subscription.unsubscribe();
+    return () => {
+      mounted = false;
+      subscription.unsubscribe();
+    };
   }, []);
 
   const signIn = async (email: string, password: string) => {
@@ -109,6 +172,42 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     });
   };
 
+  const signInWithGoogle = async () => {
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: `${window.location.origin}/`,
+      },
+    });
+
+    if (error) {
+      toast({
+        title: 'Error signing in with Google',
+        description: error.message,
+        variant: 'destructive',
+      });
+      throw error;
+    }
+  };
+
+  const signInWithFacebook = async () => {
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider: 'facebook',
+      options: {
+        redirectTo: `${window.location.origin}/`,
+      },
+    });
+
+    if (error) {
+      toast({
+        title: 'Error signing in with Facebook',
+        description: error.message,
+        variant: 'destructive',
+      });
+      throw error;
+    }
+  };
+
   const checkOnboardingStatus = async (userId: string): Promise<boolean> => {
     const { data } = await supabase
       .from('profiles')
@@ -120,7 +219,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, session, loading, signIn, signUp, signOut, checkOnboardingStatus }}>
+    <AuthContext.Provider value={{ user, session, userRole, loading, signIn, signUp, signOut, signInWithGoogle, signInWithFacebook, checkOnboardingStatus }}>
       {children}
     </AuthContext.Provider>
   );

@@ -43,7 +43,7 @@ const CreateProfilePage: React.FC<CreateProfilePageProps> = ({ trainer, onSave, 
 
     return (
         <div className="bg-slate-100 h-full overflow-y-auto relative">
-            <button onClick={onCancel} className="absolute top-4 left-4 z-10 p-2 rounded-full bg-white/70 backdrop-blur-sm hover:bg-white transition-colors">
+            <button onClick={onCancel} className="absolute top-4 left-4 z-10 p-2 rounded-full bg-white shadow-md hover:bg-gray-100 transition-colors">
                 <ArrowLeft className="w-6 h-6 text-slate-700" />
             </button>
             <button 

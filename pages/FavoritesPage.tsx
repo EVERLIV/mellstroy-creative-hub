@@ -17,6 +17,7 @@ interface FavoritesPageProps {
     onOpenReviewsModal: (trainer: Trainer) => void;
 }
 
+<<<<<<< HEAD
 // Тестовые тренеры для демонстрации
 const mockTrainers: Trainer[] = [
     {
@@ -160,6 +161,9 @@ const mockTrainers: Trainer[] = [
         chatHistory: []
     }
 ];
+=======
+// Mock trainers removed - using real data from database only
+>>>>>>> f5b1c0859b80a5f6a8702140f10ec53e9a8acd25
 
 const FavoritesPage: React.FC<FavoritesPageProps> = ({
     trainers,
@@ -176,9 +180,14 @@ const FavoritesPage: React.FC<FavoritesPageProps> = ({
     const [isExitingDetail, setIsExitingDetail] = useState(false);
     const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
 
+<<<<<<< HEAD
     // Объединяем реальных тренеров с тестовыми для демонстрации
     const allTrainers = [...trainers, ...mockTrainers];
     const favoriteTrainers = allTrainers.filter(t => favoriteTrainerIds.includes(t.id) || mockTrainers.some(m => m.id === t.id));
+=======
+    // Use only real trainers from database
+    const favoriteTrainers = trainers.filter(t => favoriteTrainerIds.includes(t.id));
+>>>>>>> f5b1c0859b80a5f6a8702140f10ec53e9a8acd25
 
     const handleSelectTrainer = (trainer: Trainer) => {
         setIsExitingDetail(false);
@@ -207,7 +216,11 @@ const FavoritesPage: React.FC<FavoritesPageProps> = ({
                     onInitiateBooking={onInitiateBooking}
                     userRole={userRole}
                     currentUserId={currentUserId}
+<<<<<<< HEAD
                     isFavorite={favoriteTrainerIds.includes(selectedTrainer.id) || mockTrainers.some(m => m.id === selectedTrainer.id)}
+=======
+                    isFavorite={favoriteTrainerIds.includes(selectedTrainer.id)}
+>>>>>>> f5b1c0859b80a5f6a8702140f10ec53e9a8acd25
                     onToggleFavorite={onToggleFavorite}
                     onOpenReviewsModal={onOpenReviewsModal}
                 />
@@ -256,7 +269,11 @@ const FavoritesPage: React.FC<FavoritesPageProps> = ({
                             viewMode={viewMode}
                             onSelectTrainer={handleSelectTrainer}
                             isLoading={false}
+<<<<<<< HEAD
                             favoriteTrainerIds={favoriteTrainerIds.concat(mockTrainers.map(t => t.id))}
+=======
+                            favoriteTrainerIds={favoriteTrainerIds}
+>>>>>>> f5b1c0859b80a5f6a8702140f10ec53e9a8acd25
                             onToggleFavorite={onToggleFavorite}
                         />
                     ) : (

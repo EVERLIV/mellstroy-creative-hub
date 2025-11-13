@@ -25,6 +25,9 @@ export type Database = {
           id: string
           status: string
           updated_at: string | null
+          verification_code: string | null
+          verified_at: string | null
+          verified_by: string | null
         }
         Insert: {
           booking_date: string
@@ -36,6 +39,9 @@ export type Database = {
           id?: string
           status?: string
           updated_at?: string | null
+          verification_code?: string | null
+          verified_at?: string | null
+          verified_by?: string | null
         }
         Update: {
           booking_date?: string
@@ -47,6 +53,9 @@ export type Database = {
           id?: string
           status?: string
           updated_at?: string | null
+          verification_code?: string | null
+          verified_at?: string | null
+          verified_by?: string | null
         }
         Relationships: [
           {
@@ -157,10 +166,14 @@ export type Database = {
           class_type: string
           created_at: string | null
           description: string | null
+          disability_friendly: boolean | null
           duration_minutes: number
           id: string
           image_url: string | null
           image_urls: string[] | null
+          kids_friendly: boolean | null
+          language: string[] | null
+          level: string | null
           name: string
           price: number
           schedule_days: string[] | null
@@ -173,10 +186,14 @@ export type Database = {
           class_type: string
           created_at?: string | null
           description?: string | null
+          disability_friendly?: boolean | null
           duration_minutes: number
           id?: string
           image_url?: string | null
           image_urls?: string[] | null
+          kids_friendly?: boolean | null
+          language?: string[] | null
+          level?: string | null
           name: string
           price: number
           schedule_days?: string[] | null
@@ -189,10 +206,14 @@ export type Database = {
           class_type?: string
           created_at?: string | null
           description?: string | null
+          disability_friendly?: boolean | null
           duration_minutes?: number
           id?: string
           image_url?: string | null
           image_urls?: string[] | null
+          kids_friendly?: boolean | null
+          language?: string[] | null
+          level?: string | null
           name?: string
           price?: number
           schedule_days?: string[] | null
@@ -212,6 +233,7 @@ export type Database = {
       }
       conversations: {
         Row: {
+          booking_id: string | null
           created_at: string
           id: string
           last_message_at: string | null
@@ -219,6 +241,7 @@ export type Database = {
           participant_2_id: string
         }
         Insert: {
+          booking_id?: string | null
           created_at?: string
           id?: string
           last_message_at?: string | null
@@ -226,13 +249,22 @@ export type Database = {
           participant_2_id: string
         }
         Update: {
+          booking_id?: string | null
           created_at?: string
           id?: string
           last_message_at?: string | null
           participant_1_id?: string
           participant_2_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "conversations_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       event_interests: {
         Row: {
@@ -320,6 +352,36 @@ export type Database = {
           },
         ]
       }
+      meal_plans: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          plan_data: Json
+          preferences: Json | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          plan_data: Json
+          preferences?: Json | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          plan_data?: Json
+          preferences?: Json | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       messages: {
         Row: {
           content: string
@@ -383,24 +445,74 @@ export type Database = {
         }
         Relationships: []
       }
+      payment_history: {
+        Row: {
+          amount: number
+          created_at: string
+          currency: string
+          id: string
+          invoice_number: string | null
+          payment_date: string
+          status: string
+          stripe_payment_intent_id: string | null
+          subscription_id: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          currency?: string
+          id?: string
+          invoice_number?: string | null
+          payment_date?: string
+          status: string
+          stripe_payment_intent_id?: string | null
+          subscription_id: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          currency?: string
+          id?: string
+          invoice_number?: string | null
+          payment_date?: string
+          status?: string
+          stripe_payment_intent_id?: string | null
+          subscription_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payment_history_subscription_id_fkey"
+            columns: ["subscription_id"]
+            isOneToOne: false
+            referencedRelation: "subscriptions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           age: number | null
           avatar_url: string | null
           bio: string | null
           created_at: string | null
+          experience_years: number | null
           goals: string[] | null
           height: number | null
           id: string
           interests: string[] | null
           is_premium: boolean | null
           is_verified: boolean | null
+          last_seen: string | null
           location: string | null
           onboarding_completed: boolean | null
           phone: string | null
           price_per_hour: number | null
           rating: number | null
           reviews_count: number | null
+          short_description: string | null
           specialty: string[] | null
           updated_at: string | null
           username: string
@@ -411,18 +523,21 @@ export type Database = {
           avatar_url?: string | null
           bio?: string | null
           created_at?: string | null
+          experience_years?: number | null
           goals?: string[] | null
           height?: number | null
           id: string
           interests?: string[] | null
           is_premium?: boolean | null
           is_verified?: boolean | null
+          last_seen?: string | null
           location?: string | null
           onboarding_completed?: boolean | null
           phone?: string | null
           price_per_hour?: number | null
           rating?: number | null
           reviews_count?: number | null
+          short_description?: string | null
           specialty?: string[] | null
           updated_at?: string | null
           username: string
@@ -433,18 +548,21 @@ export type Database = {
           avatar_url?: string | null
           bio?: string | null
           created_at?: string | null
+          experience_years?: number | null
           goals?: string[] | null
           height?: number | null
           id?: string
           interests?: string[] | null
           is_premium?: boolean | null
           is_verified?: boolean | null
+          last_seen?: string | null
           location?: string | null
           onboarding_completed?: boolean | null
           phone?: string | null
           price_per_hour?: number | null
           rating?: number | null
           reviews_count?: number | null
+          short_description?: string | null
           specialty?: string[] | null
           updated_at?: string | null
           username?: string
@@ -588,6 +706,99 @@ export type Database = {
           },
         ]
       }
+      subscriptions: {
+        Row: {
+          cancel_at_period_end: boolean
+          canceled_at: string | null
+          created_at: string
+          currency: string
+          current_period_end: string
+          current_period_start: string
+          id: string
+          plan_type: string
+          price: number
+          start_date: string
+          status: string
+          stripe_customer_id: string | null
+          stripe_subscription_id: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          cancel_at_period_end?: boolean
+          canceled_at?: string | null
+          created_at?: string
+          currency?: string
+          current_period_end: string
+          current_period_start: string
+          id?: string
+          plan_type: string
+          price: number
+          start_date?: string
+          status?: string
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          cancel_at_period_end?: boolean
+          canceled_at?: string | null
+          created_at?: string
+          currency?: string
+          current_period_end?: string
+          current_period_start?: string
+          id?: string
+          plan_type?: string
+          price?: number
+          start_date?: string
+          status?: string
+          stripe_customer_id?: string | null
+          stripe_subscription_id?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      trainer_documents: {
+        Row: {
+          created_at: string
+          document_type: string
+          file_url: string
+          id: string
+          is_verified: boolean
+          priority: number
+          rejection_reason: string | null
+          title: string
+          trainer_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          document_type: string
+          file_url: string
+          id?: string
+          is_verified?: boolean
+          priority?: number
+          rejection_reason?: string | null
+          title: string
+          trainer_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          document_type?: string
+          file_url?: string
+          id?: string
+          is_verified?: boolean
+          priority?: number
+          rejection_reason?: string | null
+          title?: string
+          trainer_id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string | null
@@ -650,6 +861,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      generate_verification_code: { Args: never; Returns: string }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]

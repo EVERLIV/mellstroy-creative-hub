@@ -15,23 +15,34 @@ export const updateLastSeen = async (userId: string): Promise<boolean> => {
     const { supabase } = await import('../integrations/supabase/client');
     const timestamp = new Date().toISOString();
     
+<<<<<<< HEAD
     const { data, error } = await supabase
       .from('profiles')
       .update({ last_seen: timestamp })
       .eq('id', userId)
       .select('last_seen')
       .single();
+=======
+    const { error } = await supabase
+      .from('profiles')
+      .update({ last_seen: timestamp } as any)
+      .eq('id', userId);
+>>>>>>> f5b1c0859b80a5f6a8702140f10ec53e9a8acd25
     
     if (error) {
       console.error('Error updating last_seen:', error);
       return false;
     }
 
+<<<<<<< HEAD
     if (data) {
       return true;
     }
 
     return false;
+=======
+    return true;
+>>>>>>> f5b1c0859b80a5f6a8702140f10ec53e9a8acd25
   } catch (error) {
     console.error('Error updating last_seen:', error);
     return false;

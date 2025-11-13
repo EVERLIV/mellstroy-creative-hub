@@ -48,14 +48,32 @@ const ProfileContainer: React.FC = () => {
         return;
       }
 
+<<<<<<< HEAD
       // Load user role directly from Supabase database
+=======
+      // Load user role directly from Supabase database (ONE role per user)
+>>>>>>> f5b1c0859b80a5f6a8702140f10ec53e9a8acd25
       const { data: roleData } = await supabase
         .from('user_roles')
         .select('role')
         .eq('user_id', user.id)
-        .maybeSingle();
+        .single(); // Use single() since there's only one role per user now
 
+<<<<<<< HEAD
       const role: UserRole = roleData?.role === 'trainer' ? 'trainer' : 'student';
+=======
+      if (!roleData) {
+        toast({
+          variant: "destructive",
+          title: "Role not found",
+          description: "Please complete onboarding first.",
+        });
+        navigate('/onboarding');
+        return;
+      }
+
+      const role: UserRole = roleData.role === 'trainer' ? 'trainer' : 'student';
+>>>>>>> f5b1c0859b80a5f6a8702140f10ec53e9a8acd25
       setUserRole(role);
 
       // Load classes if trainer
@@ -141,6 +159,7 @@ const ProfileContainer: React.FC = () => {
     }
   };
 
+<<<<<<< HEAD
   const handleRoleChange = async (newRole: UserRole) => {
     if (!user) return;
 
@@ -218,6 +237,10 @@ const ProfileContainer: React.FC = () => {
       });
     }
   };
+=======
+  // Role switching is no longer allowed - one role per account
+  // Removed handleRoleChange function
+>>>>>>> f5b1c0859b80a5f6a8702140f10ec53e9a8acd25
 
   const handleSaveProfile = async (updatedUser: Trainer) => {
     if (!user) return;
@@ -294,6 +317,11 @@ const ProfileContainer: React.FC = () => {
         image_urls: cls.image_urls || [cls.imageUrl],
         schedule_days: cls.schedule?.days || null,
         schedule_time: cls.schedule?.time || null,
+<<<<<<< HEAD
+=======
+        kids_friendly: cls.kids_friendly || false,
+        disability_friendly: cls.disability_friendly || false,
+>>>>>>> f5b1c0859b80a5f6a8702140f10ec53e9a8acd25
       };
 
       // Always include language and level (they should always be present from form)
@@ -508,7 +536,6 @@ const ProfileContainer: React.FC = () => {
           onManageClass={(cls) => setEditingClass(cls)}
           onDeleteClass={handleDeleteClass}
           userRole={userRole}
-          onRoleChange={handleRoleChange}
           onStartVerification={handleStartVerification}
           onLogout={handleLogout}
         />
@@ -517,7 +544,10 @@ const ProfileContainer: React.FC = () => {
           <StudentProfilePage
             currentUser={currentUser}
             userRole={userRole}
+<<<<<<< HEAD
             onRoleChange={handleRoleChange}
+=======
+>>>>>>> f5b1c0859b80a5f6a8702140f10ec53e9a8acd25
             onLogout={handleLogout}
             onNavigateToBookings={() => navigate('/bookings')}
             onNavigateToChats={() => navigate('/chat')}
