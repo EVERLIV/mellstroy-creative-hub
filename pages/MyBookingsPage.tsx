@@ -118,6 +118,7 @@ const BookedClassCard: React.FC<BookedClassCardProps> = ({
     const isStudentView = userRole === 'student';
     const displayPerson = isStudentView ? trainer : student;
     const [showProfileModal, setShowProfileModal] = useState(false);
+    const navigate = useNavigate();
 
     const handleChatClick = () => {
         if (isStudentView && trainer) {
@@ -259,10 +260,21 @@ const BookedClassCard: React.FC<BookedClassCardProps> = ({
                             )}
                         </div>
                     </div>
-                    <div className="px-4 py-3 bg-muted/30 border-t border-border">
+                    <div className="px-4 py-3 bg-muted/30 border-t border-border space-y-2">
+                        <button 
+                            onClick={() => {
+                                setShowProfileModal(false);
+                                if (isStudentView && trainer) {
+                                    navigate(`/trainer/${trainer.id}`);
+                                }
+                            }}
+                            className="w-full bg-primary text-primary-foreground text-sm font-semibold py-2.5 rounded-lg hover:bg-primary/90 active:scale-95 transition-all duration-200"
+                        >
+                            View Full Profile
+                        </button>
                         <button 
                             onClick={handleChatClick}
-                            className="w-full bg-primary text-primary-foreground text-sm font-semibold py-2.5 rounded-lg hover:bg-primary/90 active:scale-95 transition-all duration-200 flex items-center justify-center gap-2"
+                            className="w-full bg-card border border-border text-foreground text-sm font-semibold py-2.5 rounded-lg hover:bg-muted/50 active:scale-95 transition-all duration-200 flex items-center justify-center gap-2"
                         >
                             <MessageCircle className="w-4 h-4" />
                             Send Message
@@ -569,7 +581,7 @@ const MyBookingsPage: React.FC = () => {
                     className={`flex-1 py-2 rounded-lg font-semibold text-xs transition-colors ${
                         activeTab === 'upcoming' 
                             ? 'bg-primary text-primary-foreground' 
-                            : 'bg-secondary text-secondary-foreground hover:bg-secondary/80'
+                            : 'bg-muted text-foreground hover:bg-muted/80'
                     }`}
                 >
                     Upcoming
@@ -579,7 +591,7 @@ const MyBookingsPage: React.FC = () => {
                     className={`flex-1 py-2 rounded-lg font-semibold text-xs transition-colors ${
                         activeTab === 'past' 
                             ? 'bg-primary text-primary-foreground' 
-                            : 'bg-secondary text-secondary-foreground hover:bg-secondary/80'
+                            : 'bg-muted text-foreground hover:bg-muted/80'
                     }`}
                 >
                     Past
