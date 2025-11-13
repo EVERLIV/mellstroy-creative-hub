@@ -174,7 +174,7 @@ const BookedClassCard: React.FC<BookedClassCardProps> = ({
                 <div className="mb-3 p-2 bg-muted rounded-lg space-y-1.5">
                     <div className="flex items-center justify-between text-xs">
                         <span className="text-muted-foreground">Booking ID:</span>
-                        <span className="text-foreground font-mono">{booking.id.slice(0, 8)}...</span>
+                        <span className="text-foreground font-mono font-semibold">{(booking.id.slice(0, 2) + booking.id.slice(9, 11) + booking.id.slice(14, 15)).toUpperCase()}</span>
                     </div>
                     {booking.createdAt && (
                         <div className="flex items-center justify-between text-xs">
