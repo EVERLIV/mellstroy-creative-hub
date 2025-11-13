@@ -70,10 +70,21 @@ const OnboardingPageContainer: React.FC = () => {
     try {
       // Save to user_roles table
       if (updatedUser.role) {
-        await supabase.from('user_roles').insert({
-          user_id: user.id,
-          role: updatedUser.role === 'student' ? 'client' : 'trainer',
-        });
+        const dbRole = updatedUser.role === 'student' ? 'client' : 'trainer';
+        
+        // Check if role already exists
+        const { data: existingRole } = await supabase
+          .from('user_roles')
+          .select('id')
+          .eq('user_id', user.id)
+          .maybeSingle();
+
+        if (!existingRole) {
+          await supabase.from('user_roles').insert({
+            user_id: user.id,
+            role: dbRole,
+          });
+        }
       }
 
       // Update profiles table

@@ -38,7 +38,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       if (error) throw error;
       
       if (data) {
-        setUserRole(data.role as UserRole);
+        // Map database role to UI role
+        const uiRole = data.role === 'client' ? 'student' : data.role as UserRole;
+        setUserRole(uiRole);
       } else {
         setUserRole(null);
       }
