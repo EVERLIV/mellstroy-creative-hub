@@ -66,30 +66,12 @@ const BookingModal: React.FC<BookingModalProps> = ({ bookingTarget, onConfirmBoo
 
     return (
         <div 
-<<<<<<< HEAD
-            className="fixed inset-0 bg-gray-600 flex items-center justify-center z-50 p-4 pb-20 animate-fade-in"
-=======
             className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 pb-20 animate-fade-in"
->>>>>>> f5b1c0859b80a5f6a8702140f10ec53e9a8acd25
             onClick={onClose}
             role="dialog"
             aria-modal="true"
         >
             <div 
-<<<<<<< HEAD
-                className="bg-gray-100 rounded-lg w-full max-w-sm transform animate-slide-up flex flex-col max-h-[85vh] shadow-2xl border border-gray-300"
-                onClick={e => e.stopPropagation()}
-            >
-                <div className="p-4 bg-white border-b border-gray-200 relative flex-shrink-0">
-                    <h2 className="text-base font-semibold text-gray-900 text-center">Schedule a Class</h2>
-                    <p className="text-sm text-gray-600 text-center">{cls.name}</p>
-                    <button onClick={onClose} className="absolute top-3 right-3 p-1.5 rounded-md hover:bg-gray-200 transition-colors">
-                        <X className="w-4 h-4 text-gray-600" />
-                    </button>
-                </div>
-                
-                <div className="p-4 bg-white overflow-y-auto flex-1">
-=======
                 className="bg-muted rounded-lg w-full max-w-sm transform animate-slide-up flex flex-col max-h-[85vh] shadow-2xl border border-border"
                 onClick={e => e.stopPropagation()}
             >
@@ -102,7 +84,6 @@ const BookingModal: React.FC<BookingModalProps> = ({ bookingTarget, onConfirmBoo
                 </div>
                 
                 <div className="p-4 bg-card overflow-y-auto flex-1">
->>>>>>> f5b1c0859b80a5f6a8702140f10ec53e9a8acd25
                     {/* Date Picker */}
                     <div>
                         <div className="flex items-center text-md font-semibold text-foreground mb-2">

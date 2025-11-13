@@ -32,13 +32,9 @@ const AddEditClassModal: React.FC<AddEditClassModalProps> = ({ cls, onSave, onCa
         schedule: { days: [], time: '09:00' },
         classType: 'Indoor',
         language: [],
-<<<<<<< HEAD
-        level: ''
-=======
         level: '',
         kids_friendly: false,
         disability_friendly: false
->>>>>>> f5b1c0859b80a5f6a8702140f10ec53e9a8acd25
     });
     
     useEffect(() => {
@@ -68,13 +64,9 @@ const AddEditClassModal: React.FC<AddEditClassModalProps> = ({ cls, onSave, onCa
                 schedule: cls.schedule || { days: [], time: '09:00' },
                 classType: cls.classType || 'Indoor',
                 language: cls.language || [],
-<<<<<<< HEAD
-                level: cls.level || ''
-=======
                 level: cls.level || '',
                 kids_friendly: (cls as any).kids_friendly || false,
                 disability_friendly: (cls as any).disability_friendly || false
->>>>>>> f5b1c0859b80a5f6a8702140f10ec53e9a8acd25
             });
             // Load existing images if available
             const dbCls = cls as any;
@@ -95,13 +87,9 @@ const AddEditClassModal: React.FC<AddEditClassModalProps> = ({ cls, onSave, onCa
                 schedule: { days: [], time: '09:00' },
                 classType: 'Indoor',
                 language: [],
-<<<<<<< HEAD
-                level: ''
-=======
                 level: '',
                 kids_friendly: false,
                 disability_friendly: false
->>>>>>> f5b1c0859b80a5f6a8702140f10ec53e9a8acd25
             });
             setUploadedImages([]);
         }
