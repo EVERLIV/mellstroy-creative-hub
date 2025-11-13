@@ -135,8 +135,8 @@ const AuthPage = () => {
 
         <div className="relative z-10 flex flex-col h-full p-6 text-white animate-fade-in">
           <header className="flex items-center gap-3 pt-4">
-            <div className="w-14 h-14 bg-white rounded-2xl flex items-center justify-center transform transition-transform hover:scale-110">
-              <span className="text-3xl">🦏</span>
+            <div className="w-14 h-14 bg-white rounded-2xl flex items-center justify-center transform transition-transform hover:scale-110 p-2">
+              <img src={rhinoLogo} alt="RhinoFit" className="w-full h-full object-contain" />
             </div>
             <span className="text-2xl font-bold tracking-tight">RhinoFit</span>
           </header>

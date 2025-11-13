@@ -6,6 +6,7 @@ import { MapPin, ChevronDown, Search } from 'lucide-react';
 import { NotificationBell } from './NotificationBell';
 import { ThemeToggle } from './ThemeToggle';
 import { useAuth } from '@/src/hooks/useAuth';
+import rhinoLogo from '@/src/assets/rhino-logo.png';
 
 interface UnifiedHeaderProps {
     selectedDistrict: string;
@@ -31,9 +32,12 @@ const UnifiedHeader: React.FC<UnifiedHeaderProps> = ({
     return (
         <header className="sticky top-0 z-40 bg-background shadow-sm pt-3 pb-4 border-b border-border">
             <div className="px-4">
-                {/* Top Bar: Menu, District, and Notifications */}
+                {/* Top Bar: Logo, Menu, District, and Notifications */}
                 <div className="flex items-center justify-between">
-                    <HamburgerMenu />
+                    <div className="flex items-center gap-3">
+                        <img src={rhinoLogo} alt="RhinoFit" className="w-8 h-8 object-contain" />
+                        <HamburgerMenu />
+                    </div>
                     <div className="flex items-center gap-2">
                         <button onClick={onOpenDistrictModal} className="flex items-center space-x-1 bg-card border border-border px-3 py-2 rounded-full text-sm font-medium text-foreground hover:bg-muted transition-colors shadow-sm">
                             <MapPin className="h-5 w-5 text-muted-foreground" />

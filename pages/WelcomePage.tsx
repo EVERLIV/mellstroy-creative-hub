@@ -2,6 +2,7 @@ import React from 'react';
 import { Trainer, Category, Event } from '../types';
 import { CATEGORIES } from '../constants';
 import { Star, Crown, Gift, Tag, ArrowRight, Sparkles, UtensilsCrossed, MapPin, Calendar } from 'lucide-react';
+import rhinoLogo from '../src/assets/rhino-logo.png';
 
 const categoryImages: { [key: string]: string } = {
   gym: 'https://picsum.photos/seed/gym/400/300',
@@ -85,9 +86,12 @@ const WelcomePage: React.FC<WelcomePageProps> = ({ trainers, onOpenMealPlanner, 
             <main className="pb-[calc(5rem+env(safe-area-inset-bottom))]">
                 {/* Header */}
                 <header className="px-6 pt-6 pb-4">
-                     <h1 className="text-xl font-bold bg-gradient-to-r from-[#FF6B35] to-[#4A90E2] text-transparent bg-clip-text text-center mb-2">
-                        RhinoFit
-                    </h1>
+                    <div className="flex items-center justify-center gap-3 mb-3">
+                        <img src={rhinoLogo} alt="RhinoFit" className="w-10 h-10 object-contain" />
+                        <h1 className="text-2xl font-bold text-primary">
+                            RhinoFit
+                        </h1>
+                    </div>
                     <h2 className="text-2xl font-bold text-slate-800">
                         Welcome!
                     </h2>
