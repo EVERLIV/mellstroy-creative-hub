@@ -7,6 +7,7 @@ interface NavItem {
   name: string;
   path: string;
   icon: React.FC<any>;
+  alternativePaths?: string[];
 }
 
 const BottomNav: React.FC = () => {
@@ -15,7 +16,7 @@ const BottomNav: React.FC = () => {
   
   const navItems: NavItem[] = [
     { name: 'Home', path: '/', icon: Home },
-    { name: 'Explore', path: '/explore', icon: Search },
+    { name: 'Explore', path: '/explore', icon: Search, alternativePaths: ['/requests/explore'] },
     { name: 'Messages', path: '/messages', icon: MessageCircle },
     { name: 'Bookings', path: '/bookings', icon: Calendar },
     { name: 'Profile', path: '/profile', icon: User },
@@ -39,10 +40,11 @@ const BottomNav: React.FC = () => {
   };
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 w-full bg-gray-100 border-t border-gray-200 z-50 shadow-[0_-1px_4px_rgba(0,0,0,0.05)] pb-[env(safe-area-inset-bottom)]">
-      <div className="flex justify-around items-center h-16 px-4 sm:px-6 md:px-8 lg:px-12 max-w-full">
+    <nav className="fixed bottom-0 left-0 right-0 w-full bg-card border-t border-border z-50 shadow-[0_-1px_4px_rgba(0,0,0,0.05)] dark:shadow-[0_-1px_4px_rgba(255,107,53,0.1)]">
+      <div className="flex justify-around items-center h-14 px-4 sm:px-6 md:px-8 lg:px-12 max-w-full pb-1">
         {navItems.map((item) => {
-          const isActive = location.pathname === item.path;
+          const isActive = location.pathname === item.path || 
+            (item.alternativePaths && item.alternativePaths.includes(location.pathname));
 
           return (
             <NavLink
@@ -54,8 +56,8 @@ const BottomNav: React.FC = () => {
                 active:scale-90 active:opacity-80
                 ${
                   isActive
-                    ? 'bg-orange-100 text-orange-600 px-4 gap-2 shadow-sm'
-                    : 'w-10 text-gray-500 hover:bg-gray-200 hover:scale-110'
+                    ? 'bg-primary/20 dark:bg-primary/30 text-primary px-4 gap-2 shadow-sm'
+                    : 'w-10 text-muted-foreground hover:bg-muted hover:scale-110'
                 }`
               }
               aria-label={item.name}
@@ -70,7 +72,7 @@ const BottomNav: React.FC = () => {
               </span>
               
               {/* Ripple effect on tap */}
-              <span className={`absolute inset-0 rounded-full bg-gray-400 opacity-0 group-active:opacity-20 group-active:animate-ping`} />
+              <span className={`absolute inset-0 rounded-full bg-muted-foreground opacity-0 group-active:opacity-20 group-active:animate-ping`} />
             </NavLink>
           );
         })}

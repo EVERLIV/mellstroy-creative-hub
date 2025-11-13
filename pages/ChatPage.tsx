@@ -176,7 +176,7 @@ const ChatPage: React.FC<ChatPageProps> = ({ personToChatWith, context, onBack, 
                 </div>
             </div>
 
-            <div className="px-3 pt-3 bg-white border-t border-slate-200 pb-[calc(1.25rem+env(safe-area-inset-bottom))]">
+            <div className="px-3 pt-3 bg-white border-t border-slate-200 pb-safe-nav">
                 <input type="file" ref={fileInputRef} onChange={handleFileChange} className="hidden" accept="image/*" />
                 <div className="flex items-end space-x-3 bg-slate-100 rounded-2xl p-2">
                     <button onClick={handleAddPhotoClick} className="flex-shrink-0 w-10 h-10 flex items-center justify-center rounded-full text-slate-500 hover:bg-slate-200 transition-colors" aria-label="Attach file">

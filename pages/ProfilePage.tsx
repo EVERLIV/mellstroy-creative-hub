@@ -99,7 +99,7 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ trainer, onEdit, onManageClas
                         </div>
                         <button
                             onClick={onStartVerification}
-                            className="px-4 py-2 bg-blue-600 text-white rounded-lg text-xs font-medium hover:bg-blue-700 active:scale-95 shadow-sm transition-all duration-200"
+                            className="px-4 py-2 bg-[#FF6B35] text-white rounded-lg text-xs font-medium hover:bg-orange-600 active:scale-95 shadow-sm transition-all duration-200"
                         >
                             Verify
                         </button>
@@ -109,7 +109,7 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ trainer, onEdit, onManageClas
                 return (
                     <div className="bg-white p-3 rounded-lg shadow-sm mb-3 flex items-center justify-between">
                         <div className="flex items-center gap-3">
-                            <Clock className="w-5 h-5 text-amber-500" />
+                            <Clock className="w-5 h-5 text-[#FF6B35]" />
                             <div>
                                 <h3 className="text-sm font-bold text-gray-900">Verification Pending</h3>
                                 <p className="text-xs text-gray-600 mt-1">Your verification request is being reviewed.</p>
@@ -137,13 +137,13 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ trainer, onEdit, onManageClas
     }
 
     return (
-        <div className="bg-gray-50 h-full overflow-y-auto relative">
+        <div className="bg-background h-full overflow-y-auto relative">
             {/* Modern Compact Header */}
-            <div className="bg-white border-b border-gray-100 shadow-sm sticky top-0 z-10">
+            <div className="bg-card border-b border-border shadow-sm sticky top-0 z-10">
                 <div className="px-4 py-3">
                     {/* Top Row: Title and Edit Button */}
                     <div className="flex items-center justify-between mb-3">
-                        <h1 className="text-base font-bold text-gray-900">Profile</h1>
+                        <h1 className="text-base font-bold text-foreground">Profile</h1>
                         <button 
                             onClick={onEdit}
                             className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors"
@@ -176,7 +176,7 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ trainer, onEdit, onManageClas
                                     {trainer.name}
                                 </h2>
                                 {trainer.isPremium && (
-                                    <div className="flex items-center gap-1 px-2 py-0.5 bg-gradient-to-r from-amber-400 to-yellow-500 rounded-full shadow-sm">
+                                    <div className="flex items-center gap-1 px-2 py-0.5 bg-[#FF6B35] rounded-full shadow-sm">
                                         <Crown className="w-3 h-3 text-white" />
                                         <span className="text-xs font-bold text-white">Premium</span>
                                     </div>
@@ -196,14 +196,14 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ trainer, onEdit, onManageClas
                                     </div>
                                 )}
                                 <div className="flex items-center gap-1 text-xs text-gray-500">
-                                    <Star className="w-3 h-3 text-yellow-500 fill-yellow-500" />
+                                    <Star className="w-3 h-3 text-[#FF6B35] fill-[#FF6B35]" />
                                     <span className="font-medium text-gray-900">{trainer.rating.toFixed(1)}</span>
                                     <span className="text-gray-400">({trainer.reviews})</span>
                                 </div>
                                 {trainer.specialty && trainer.specialty.length > 0 && (
                                     <div className="flex items-center gap-1">
                                         {trainer.specialty.slice(0, 2).map((spec, idx) => (
-                                            <span key={idx} className="text-xs font-medium bg-blue-50 text-blue-700 px-1.5 py-0.5 rounded">
+                                            <span key={idx} className="text-xs font-medium bg-orange-100 text-orange-700 px-1.5 py-0.5 rounded">
                                                 {spec}
                                             </span>
                                         ))}
@@ -218,7 +218,7 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ trainer, onEdit, onManageClas
                 </div>
             </div>
             
-            <div className="px-4 py-3 pb-[calc(5rem+env(safe-area-inset-bottom))]">
+            <div className="px-4 py-3 pb-20">
                 {/* Complete Profile Prompt */}
                 {profileIsIncomplete && (
                     <CompleteProfilePrompt role="trainer" onComplete={onEdit} />
@@ -229,7 +229,7 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ trainer, onEdit, onManageClas
 
                 {/* Premium CTA */}
                 {!trainer.isPremium ? (
-                    <div className="bg-gradient-to-r from-amber-400 to-yellow-500 p-4 rounded-lg mb-3 shadow-sm">
+                    <div className="bg-[#FF6B35] p-4 rounded-lg mb-3 shadow-sm">
                         <div className="flex items-start gap-3">
                             <Crown className="w-6 h-6 text-white flex-shrink-0 mt-0.5" />
                             <div className="flex-1">
@@ -237,7 +237,7 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ trainer, onEdit, onManageClas
                                 <p className="text-xs text-white/90 mb-3">Unlock 5 photos per class, priority listing, verified badge, and advanced analytics</p>
                                 <button 
                                     onClick={() => navigate('/subscription')}
-                                    className="w-full bg-white text-amber-600 px-4 py-2 rounded-lg text-xs font-bold hover:bg-amber-50 transition-colors"
+                                    className="w-full bg-white text-[#FF6B35] px-4 py-2 rounded-lg text-xs font-bold hover:bg-orange-50 transition-colors"
                                 >
                                     Get Premium RhinoFit
                                 </button>
@@ -250,7 +250,7 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ trainer, onEdit, onManageClas
                         className="w-full bg-white p-3 rounded-lg shadow-sm mb-3 flex items-center justify-between hover:bg-gray-50 transition-colors"
                     >
                         <div className="flex items-center gap-2">
-                            <Crown className="w-5 h-5 text-amber-500" />
+                            <Crown className="w-5 h-5 text-[#FF6B35]" />
                             <span className="text-sm font-bold text-gray-900">Manage Subscription</span>
                         </div>
                         <span className="text-xs text-gray-500">View details →</span>
@@ -263,7 +263,7 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ trainer, onEdit, onManageClas
                         <h3 className="text-sm font-bold text-gray-900">My Documents</h3>
                         <button 
                             onClick={() => setShowDocuments(true)} 
-                            className="flex items-center text-xs font-medium text-blue-600 hover:text-blue-700"
+                            className="flex items-center text-xs font-medium text-[#FF6B35] hover:text-orange-600"
                         >
                             <FileText className="w-4 h-4 mr-1" />
                             View All
@@ -280,7 +280,7 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ trainer, onEdit, onManageClas
                                     {doc.is_verified ? (
                                         <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-medium">Verified</span>
                                     ) : (
-                                        <span className="text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full font-medium">Not Verified</span>
+                                        <span className="text-xs bg-orange-100 text-orange-700 px-2 py-0.5 rounded-full font-medium">Not Verified</span>
                                     )}
                                 </div>
                             ))}
@@ -290,7 +290,7 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ trainer, onEdit, onManageClas
                             <p className="text-xs text-gray-600 mb-2">No documents uploaded</p>
                             <button 
                                 onClick={() => setShowDocuments(true)}
-                                className="text-xs font-medium text-blue-600 hover:text-blue-700"
+                                className="text-xs font-medium text-[#FF6B35] hover:text-orange-600"
                             >
                                 Upload Documents
                             </button>
@@ -304,7 +304,7 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ trainer, onEdit, onManageClas
                         <h3 className="text-sm font-bold text-gray-900">My Classes ({trainer.classes.length})</h3>
                         <button
                             onClick={() => onManageClass(null)}
-                            className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 text-white rounded-lg text-xs font-medium hover:bg-blue-700 active:scale-95 shadow-sm transition-all duration-200"
+                            className="flex items-center gap-1.5 px-3 py-1.5 bg-[#FF6B35] text-white rounded-lg text-xs font-medium hover:bg-orange-600 active:scale-95 shadow-sm transition-all duration-200"
                         >
                             <Plus className="w-4 h-4" />
                             Add Class
@@ -318,7 +318,7 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ trainer, onEdit, onManageClas
                             <p className="text-xs text-gray-600 mb-4">Create your first class to start teaching</p>
                             <button
                                 onClick={() => onManageClass(null)}
-                                className="px-4 py-2 bg-blue-600 text-white rounded-lg text-xs font-medium hover:bg-blue-700 active:scale-95 shadow-sm transition-all duration-200"
+                                className="px-4 py-2 bg-[#FF6B35] text-white rounded-lg text-xs font-medium hover:bg-orange-600 active:scale-95 shadow-sm transition-all duration-200"
                             >
                                 Create Class
                             </button>
@@ -326,7 +326,7 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ trainer, onEdit, onManageClas
                     ) : (
                         <div className="space-y-3">
                             {trainer.classes.map((cls) => (
-                                <div key={cls.id} className="bg-gray-50 rounded-lg p-3 border border-gray-200 hover:border-blue-300 transition-colors">
+                                <div key={cls.id} className="bg-gray-50 rounded-lg p-3 border border-gray-200 hover:border-orange-300 transition-colors">
                                     <div className="flex items-start justify-between gap-3">
                                         <div className="flex-1 min-w-0">
                                             <div className="flex items-start gap-2 mb-2">
@@ -339,7 +339,7 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ trainer, onEdit, onManageClas
                                                     <h4 className="text-xs font-bold text-gray-900 mb-1 truncate">{cls.name}</h4>
                                                     <p className="text-xs text-gray-600 line-clamp-2 mb-2">{cls.description}</p>
                                                     <div className="flex items-center gap-2 flex-wrap">
-                                                        <span className="text-xs font-medium text-blue-600">{formatVND(cls.price)}</span>
+                                                        <span className="text-xs font-medium text-[#FF6B35]">{formatVND(cls.price)}</span>
                                                         <span className="text-gray-300">•</span>
                                                         <span className="text-xs text-gray-500">{cls.duration} min</span>
                                                         <span className="text-gray-300">•</span>
@@ -388,7 +388,7 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ trainer, onEdit, onManageClas
                 {isAdmin && (
                     <button
                         onClick={() => navigate('/admin')}
-                        className="w-full bg-purple-600 text-white p-4 rounded-lg shadow-sm text-xs font-medium hover:bg-purple-700 active:scale-95 transition-all duration-200"
+                        className="w-full bg-purple-600 text-white p-4 rounded-lg shadow-sm text-xs font-medium hover:bg-purple-700 active:scale-95 transition-all duration-200 mb-3"
                     >
                         Admin Dashboard
                     </button>

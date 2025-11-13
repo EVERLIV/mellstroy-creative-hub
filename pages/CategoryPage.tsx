@@ -59,7 +59,7 @@ const CategoryPage: React.FC<CategoryPageProps> = ({
         
         {/* Content */}
         <div className="flex-1 overflow-y-auto">
-          <div className="p-4 pb-[calc(5rem+env(safe-area-inset-bottom))]">
+          <div className="p-4 pb-safe-nav">
               <div className="flex justify-between items-center mb-4">
                   <h2 className="text-base font-semibold text-gray-700">{trainers.length} trainers found</h2>
                   <ViewToggle viewMode={viewMode} setViewMode={setViewMode} />
@@ -79,8 +79,7 @@ const CategoryPage: React.FC<CategoryPageProps> = ({
       {/* Trainer Detail Overlay */}
       {selectedTrainer && (
         <div className={`absolute inset-0 z-20 bg-white ${isExitingDetail ? 'animate-slide-out-to-right' : 'animate-slide-in-from-right'}`}>
-          <div className="h-full overflow-y-auto">
-            <TrainerDetailPage 
+          <TrainerDetailPage 
               trainer={selectedTrainer} 
               onBack={handleBackFromDetail}
               onInitiateBooking={onInitiateBooking}
@@ -88,9 +87,8 @@ const CategoryPage: React.FC<CategoryPageProps> = ({
               currentUserId={currentUserId}
               isFavorite={favoriteTrainerIds.includes(selectedTrainer.id)}
               onToggleFavorite={onToggleFavorite}
-              onOpenReviewsModal={onOpenReviewsModal}
-            />
-          </div>
+            onOpenReviewsModal={onOpenReviewsModal}
+          />
         </div>
       )}
     </div>

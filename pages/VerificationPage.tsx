@@ -153,7 +153,7 @@ const VerificationPage: React.FC<VerificationPageProps> = ({ onBack, onComplete 
                 </div>
             </main>
 
-            <footer className="px-4 pt-4 bg-white border-t border-gray-200 flex-shrink-0 pb-[calc(1rem+env(safe-area-inset-bottom))]">
+            <footer className="px-4 pt-4 bg-white border-t border-gray-200 flex-shrink-0 pb-safe-nav">
                 <button
                     onClick={handleSubmit}
                     disabled={!idFile || isSubmitting}

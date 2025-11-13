@@ -367,7 +367,7 @@ const ClassDetailPage: React.FC<ClassDetailPageProps> = ({
       </div>
 
       {/* Scrollable Content */}
-      <div className="flex-1 overflow-y-auto pb-32">
+      <div className="flex-1 overflow-y-auto" style={{ paddingBottom: 'calc(8rem + env(safe-area-inset-bottom))' }}>
         {/* Premium Gallery / Hero Image */}
         <div className="relative h-64 w-full bg-gray-900">
           <img 
@@ -698,7 +698,7 @@ const ClassDetailPage: React.FC<ClassDetailPageProps> = ({
       </div>
 
       {/* Fixed Bottom Book Now Button */}
-      <div className="fixed bottom-16 left-0 right-0 px-4 py-3 bg-white border-t border-gray-200 shadow-lg z-50">
+      <div className="fixed left-0 right-0 px-4 py-3 bg-white border-t border-gray-200 shadow-lg z-50" style={{ bottom: 'calc(4rem + env(safe-area-inset-bottom))' }}>
         <button
           onClick={() => onInitiateBooking && trainer && onInitiateBooking({ trainer, cls: classData })}
           disabled={isBookingDisabled}

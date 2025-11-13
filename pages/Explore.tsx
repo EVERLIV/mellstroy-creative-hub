@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import { supabase } from '../src/integrations/supabase/client';
 import { Trainer, Class, UserRole, ClassType } from '../types';
 import { CATEGORIES } from '../constants';
@@ -19,6 +20,8 @@ interface ExploreProps {
 }
 
 const TRAINERS_PER_PAGE = 15;
+
+const allCategories = [{ id: 'all', name: 'All', icon: 'grid' }, ...CATEGORIES];
 
 // Helper function to transform class data
 const transformClassData = (c: any): Class => ({
@@ -86,13 +89,17 @@ const Explore: React.FC<ExploreProps> = ({
   onToggleFavorite,
   onOpenReviewsModal,
 }) => {
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const categoryFromUrl = searchParams.get('category');
+  
   const [trainers, setTrainers] = useState<Trainer[]>([]);
   const [filteredTrainers, setFilteredTrainers] = useState<Trainer[]>([]);
   const [displayedTrainers, setDisplayedTrainers] = useState<Trainer[]>([]);
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [selectedTrainer, setSelectedTrainer] = useState<Trainer | null>(null);
   const [isExitingDetail, setIsExitingDetail] = useState(false);
-  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(categoryFromUrl);
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -110,6 +117,15 @@ const Explore: React.FC<ExploreProps> = ({
     level: '',
   });
   const observerTarget = useRef<HTMLDivElement>(null);
+
+  // Update selectedCategory when URL parameter changes
+  useEffect(() => {
+    if (categoryFromUrl) {
+      setSelectedCategory(categoryFromUrl);
+    } else {
+      setSelectedCategory(null);
+    }
+  }, [categoryFromUrl]);
 
   useEffect(() => {
     loadTrainers();
@@ -190,7 +206,7 @@ const Explore: React.FC<ExploreProps> = ({
 
     let filtered = [...trainers];
 
-    if (selectedCategory) {
+    if (selectedCategory && selectedCategory !== 'all') {
       filtered = filtered.filter(trainer => 
         trainer?.specialty && Array.isArray(trainer.specialty) && trainer.specialty.includes(selectedCategory)
       );
@@ -355,9 +371,16 @@ const Explore: React.FC<ExploreProps> = ({
 
             {/* Category Filters */}
             <CategoryFilters
-              categories={CATEGORIES}
-              selectedCategory={selectedCategory || ''}
-              onSelectCategory={setSelectedCategory}
+              categories={allCategories}
+              selectedCategory={selectedCategory || 'all'}
+              onSelectCategory={(categoryId) => {
+                setSelectedCategory(categoryId);
+                if (categoryId === 'all' || !categoryId) {
+                  navigate('/explore');
+                } else {
+                  navigate(`/explore?category=${categoryId}`);
+                }
+              }}
             />
           </div>
         </div>

@@ -37,33 +37,33 @@
   }
   
   .dark {
-    /* Dark mode colors */
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
+    /* Dark mode colors - Black with Orange accents */
+    --background: 0 0% 0%;
+    --foreground: 0 0% 98%;
     
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
+    --card: 0 0% 8%;
+    --card-foreground: 0 0% 98%;
     
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
+    --popover: 0 0% 8%;
+    --popover-foreground: 0 0% 98%;
     
     --primary: 24 100% 50%;
     --primary-foreground: 0 0% 100%;
     
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
+    --secondary: 0 0% 15%;
+    --secondary-foreground: 0 0% 98%;
     
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
+    --muted: 0 0% 15%;
+    --muted-foreground: 0 0% 65%;
     
     --accent: 24 100% 50%;
     --accent-foreground: 0 0% 100%;
     
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
     
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
+    --border: 0 0% 20%;
+    --input: 0 0% 15%;
     --ring: 24 100% 50%;
   }
 }
@@ -74,5 +74,32 @@
   }
   body {
     @apply bg-background text-foreground;
+  }
+}
+
+@layer utilities {
+  /* Bottom Navigation Safe Area Padding
+   * 
+   * Use this class on scrollable content containers to prevent content
+   * from being hidden behind the bottom navigation menu.
+   * 
+   * Height breakdown:
+   * - Bottom nav height: h-14 (3.5rem = 56px)
+   * - Bottom nav padding: pb-1 (0.25rem = 4px)
+   * - Total: ~4rem (64px) for safe spacing
+   * 
+   * Usage: Add pb-safe-nav class to scrollable content containers
+   * 
+   * For pages with fixed bottom elements (like buttons or inputs),
+   * use inline style with calc(8rem + env(safe-area-inset-bottom))
+   * to account for both the nav menu and the fixed element.
+   */
+  .pb-safe-nav {
+    padding-bottom: calc(4rem + env(safe-area-inset-bottom));
+  }
+  
+  /* Alternative class name for consistency - Same as pb-safe-nav */
+  .content-with-bottom-nav {
+    padding-bottom: calc(4rem + env(safe-area-inset-bottom));
   }
 }

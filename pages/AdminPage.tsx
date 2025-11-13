@@ -63,7 +63,7 @@ const AdminPage: React.FC<AdminPageProps> = ({ trainers, onCreateTrainer, onCrea
 
     return (
         <div className="bg-slate-100 h-full overflow-y-auto">
-            <div className="p-4 pt-6 pb-[calc(5rem+env(safe-area-inset-bottom))]">
+            <div className="p-4 pt-6 pb-safe-nav">
                 <h1 className="text-2xl font-bold text-slate-800 text-center mb-4">Admin Dashboard</h1>
                 <div className="bg-slate-200 p-1 rounded-xl grid grid-cols-2 gap-1 mb-4">
                     <button onClick={() => setActiveTab('users')} className={`px-4 py-2 text-sm font-bold rounded-lg transition-colors flex items-center justify-center gap-2 ${activeTab === 'users' ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-500'}`}>

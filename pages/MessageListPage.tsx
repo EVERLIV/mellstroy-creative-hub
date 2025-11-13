@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { MessageCircle, Loader } from 'lucide-react';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { MessageCircle } from 'lucide-react';
 import { supabase } from '../src/integrations/supabase/client';
 import { useAuth } from '../src/hooks/useAuth';
 import { formatDistanceToNow } from 'date-fns';
+import ConversationCardSkeleton from '../components/ConversationCardSkeleton';
 
 interface Conversation {
   id: string;
@@ -33,9 +34,11 @@ interface Conversation {
 
 const MessageListPage: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { user } = useAuth();
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [loading, setLoading] = useState(true);
+  const [openingChat, setOpeningChat] = useState(false);
 
   // Load conversations
   useEffect(() => {
@@ -143,6 +146,81 @@ const MessageListPage: React.FC = () => {
     loadConversations();
   }, [user]);
 
+  // Handle automatic chat opening from navigation state
+  useEffect(() => {
+    const handleAutoOpenChat = async () => {
+      const state = location.state as { recipientId?: string; recipientName?: string; context?: any } | null;
+      
+      if (!state?.recipientId || !user || openingChat) return;
+
+      setOpeningChat(true);
+
+      try {
+        // Check if conversation already exists
+        const { data: existingConv } = await supabase
+          .from('conversations')
+          .select('id')
+          .or(`and(participant_1_id.eq.${user.id},participant_2_id.eq.${state.recipientId}),and(participant_1_id.eq.${state.recipientId},participant_2_id.eq.${user.id})`)
+          .maybeSingle();
+
+        let conversationId = existingConv?.id;
+
+        // Create conversation if it doesn't exist
+        if (!conversationId) {
+          // Get booking_id from context if available
+          let bookingId = state.context?.bookingId || null;
+          
+          // If bookingId not in context, try to find it by classId
+          if (!bookingId && state.context?.classId) {
+            const { data: bookingData } = await supabase
+              .from('bookings')
+              .select('id')
+              .eq('class_id', state.context.classId)
+              .eq('user_id', user.id)
+              .order('created_at', { ascending: false })
+              .limit(1)
+              .maybeSingle();
+            
+            bookingId = bookingData?.id || null;
+          }
+
+          const { data: newConv, error: convError } = await supabase
+            .from('conversations')
+            .insert({
+              participant_1_id: user.id,
+              participant_2_id: state.recipientId,
+              last_message_at: new Date().toISOString(),
+              booking_id: bookingId
+            })
+            .select('id')
+            .single();
+
+          if (convError) {
+            console.error('Error creating conversation:', convError);
+            setOpeningChat(false);
+            return;
+          }
+
+          conversationId = newConv.id;
+        }
+
+        // Navigate to chat
+        navigate(`/messages/${state.recipientId}`, {
+          state: {
+            bookingDetails: state.context?.bookingDetails || null
+          },
+          replace: true
+        });
+      } catch (error) {
+        console.error('Error opening chat:', error);
+      } finally {
+        setOpeningChat(false);
+      }
+    };
+
+    handleAutoOpenChat();
+  }, [location.state, user, navigate, openingChat]);
+
   // Subscribe to real-time updates
   useEffect(() => {
     if (!user) return;
@@ -247,104 +325,118 @@ const MessageListPage: React.FC = () => {
     }
   };
 
-  if (loading) {
-    return (
-      <div className="bg-background h-full flex items-center justify-center">
-        <Loader className="w-6 h-6 text-primary animate-spin" />
-      </div>
-    );
-  }
-
   return (
-    <div className="bg-background h-full flex flex-col overflow-hidden">
+    <div className="bg-background h-screen flex flex-col overflow-hidden">
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 bg-card shadow-sm z-20 flex-shrink-0 border-b border-border">
+      <div className="flex items-center justify-between px-4 py-3 bg-card border-b border-border shadow-sm z-20 flex-shrink-0">
         <div className="w-9"></div>
-        <h1 className="text-lg font-bold text-foreground">Messages</h1>
+        <h1 className="text-base font-bold text-foreground">Messages</h1>
         <div className="w-9"></div>
       </div>
 
       {/* Conversations List */}
       <div className="flex-1 overflow-y-auto">
-        <div className="px-4 py-3 bg-background pb-[calc(5rem+env(safe-area-inset-bottom))]">
-          {conversations.length === 0 ? (
+        <div className="px-4 py-3 bg-muted/30 pb-safe-nav">
+          {loading ? (
+            <div className="space-y-3">
+              {[...Array(5)].map((_, idx) => (
+                <ConversationCardSkeleton key={idx} />
+              ))}
+            </div>
+          ) : conversations.length === 0 ? (
             <div className="text-center mt-12">
-              <MessageCircle className="w-12 h-12 text-muted-foreground mx-auto" />
-              <p className="text-sm font-bold text-foreground mt-4">No Conversations Yet</p>
-              <p className="text-xs text-muted-foreground mt-2">
+              <MessageCircle className="w-12 h-12 text-gray-400 mx-auto" />
+              <p className="text-sm font-bold text-gray-900 mt-4">No Conversations Yet</p>
+              <p className="text-xs text-gray-600 mt-2">
                 Book a class with a trainer to start chatting.
               </p>
             </div>
           ) : (
-            <div className="space-y-2">
+            <div className="space-y-3">
               {conversations.map((conv) => {
                 const isMyMessage = conv.last_message?.sender_id === user?.id;
                 
                 return (
                   <button
                     key={conv.id}
-                    onClick={() => navigate(`/chat/${conv.other_participant.id}`, {
+                    onClick={() => navigate(`/messages/${conv.other_participant.id}`, {
                       state: { bookingDetails: conv.booking_details }
                     })}
-                    className={`w-full p-4 rounded-lg border transition-all text-left ${
-                      conv.unread_count > 0 
-                        ? 'bg-primary/5 border-primary/30 hover:bg-primary/10' 
-                        : 'bg-card border-border hover:bg-accent/5'
-                    }`}
+                    className="w-full bg-card rounded-lg p-3 mb-3 shadow-sm border border-border hover:bg-muted transition-colors text-left"
                   >
-                    <div className="flex items-center justify-between mb-2">
-                      <span className={`text-sm ${conv.unread_count > 0 ? 'font-bold' : 'font-semibold'} text-foreground`}>
-                        {conv.other_participant.username}
-                      </span>
-                      <div className="flex items-center gap-2">
-                        {conv.unread_count > 0 && (
-                          <div className="px-2 py-1 bg-primary rounded-full">
-                            <span className="text-primary-foreground text-xs font-bold">{conv.unread_count}</span>
-                          </div>
-                        )}
-                        {conv.last_message && (
-                          <span className={`text-xs ${conv.unread_count > 0 ? 'text-primary font-semibold' : 'text-muted-foreground'}`}>
-                            {formatDistanceToNow(new Date(conv.last_message.created_at), { addSuffix: true })}
-                          </span>
+                    {/* Header with avatar, name, time and unread badge */}
+                    <div className="flex items-start gap-3 mb-2">
+                      {/* Avatar */}
+                      <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center flex-shrink-0 overflow-hidden">
+                        {conv.other_participant.avatar_url ? (
+                          <img 
+                            src={conv.other_participant.avatar_url} 
+                            alt={conv.other_participant.username}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <MessageCircle className="w-5 h-5 text-gray-500" />
                         )}
                       </div>
-                    </div>
+                      
+                      {/* Name and message preview */}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between mb-1">
+                                  <span className={`text-sm ${conv.unread_count > 0 ? 'font-bold' : 'font-semibold'} text-foreground`}>
+                                    {conv.other_participant.username}
+                                  </span>
+                                  <div className="flex items-center gap-2 flex-shrink-0">
+                                    {conv.unread_count > 0 && (
+                                      <div className="px-2 py-0.5 bg-primary rounded-full">
+                                        <span className="text-primary-foreground text-xs font-bold">{conv.unread_count}</span>
+                                      </div>
+                                    )}
+                                    {conv.last_message && (
+                                      <span className={`text-xs ${conv.unread_count > 0 ? 'text-primary font-semibold' : 'text-muted-foreground'}`}>
+                                        {formatDistanceToNow(new Date(conv.last_message.created_at), { addSuffix: true })}
+                                      </span>
+                                    )}
+                                  </div>
+                                </div>
 
-                    {/* Booking details if available */}
-                    {conv.booking_details && (
-                      <div className="mb-2 p-2 bg-background/50 rounded-md border border-border/50">
-                        <p className={`text-sm mb-1.5 ${conv.unread_count > 0 ? 'font-bold' : 'font-semibold'} text-foreground`}>
-                          {conv.booking_details.class_name}
-                        </p>
-                        <div className="flex flex-wrap items-center gap-2 text-xs">
-                          <div className="flex items-center gap-1 px-2 py-1 bg-card rounded">
-                            <span className="font-semibold text-foreground">Date:</span>
-                            <span className="text-muted-foreground">
-                              {new Date(conv.booking_details.booking_date).toLocaleDateString('en-US', { 
-                                month: 'short', 
-                                day: 'numeric',
-                                year: 'numeric'
-                              })}
-                            </span>
-                          </div>
-                          <div className="flex items-center gap-1 px-2 py-1 bg-card rounded">
-                            <span className="font-semibold text-foreground">Time:</span>
-                            <span className="text-muted-foreground">{conv.booking_details.booking_time}</span>
-                          </div>
-                          <div className="flex items-center gap-1 px-2 py-1 bg-card rounded">
-                            <span className="font-semibold text-foreground">ID:</span>
-                            <span className="text-primary font-mono">{conv.booking_details.verification_code}</span>
-                          </div>
-                        </div>
-                      </div>
-                    )}
+                                {/* Last message preview */}
+                                {conv.last_message && (
+                                  <p className={`text-xs truncate ${conv.unread_count > 0 ? 'font-semibold text-foreground' : 'text-muted-foreground'}`}>
+                                    {isMyMessage && <span className="text-muted-foreground">You: </span>}
+                                    {conv.last_message.content}
+                                  </p>
+                                )}
+                              </div>
+                            </div>
 
-                    {conv.last_message && (
-                      <p className={`text-xs truncate ${conv.unread_count > 0 ? 'font-semibold text-foreground' : 'text-muted-foreground'}`}>
-                        {isMyMessage && <span className="text-muted-foreground">You: </span>}
-                        {conv.last_message.content}
-                      </p>
-                    )}
+                            {/* Booking details if available */}
+                            {conv.booking_details && (
+                              <div className="mt-2 p-2.5 bg-muted rounded-lg border border-border">
+                                <p className={`text-xs mb-1.5 ${conv.unread_count > 0 ? 'font-bold' : 'font-semibold'} text-foreground`}>
+                                  {conv.booking_details.class_name}
+                                </p>
+                                <div className="flex flex-wrap items-center gap-1.5 text-xs">
+                                  <div className="flex items-center gap-1 px-2 py-0.5 bg-card rounded">
+                                    <span className="font-semibold text-foreground">Date:</span>
+                                    <span className="text-muted-foreground">
+                                      {new Date(conv.booking_details.booking_date).toLocaleDateString('en-US', { 
+                                        month: 'short', 
+                                        day: 'numeric',
+                                        year: 'numeric'
+                                      })}
+                                    </span>
+                                  </div>
+                                  <div className="flex items-center gap-1 px-2 py-0.5 bg-card rounded">
+                                    <span className="font-semibold text-foreground">Time:</span>
+                                    <span className="text-muted-foreground">{conv.booking_details.booking_time}</span>
+                                  </div>
+                                  <div className="flex items-center gap-1 px-2 py-0.5 bg-card rounded">
+                                    <span className="font-semibold text-foreground">ID:</span>
+                                    <span className="text-primary font-mono">{conv.booking_details.verification_code}</span>
+                                  </div>
+                                </div>
+                              </div>
+                            )}
                   </button>
                 );
               })}

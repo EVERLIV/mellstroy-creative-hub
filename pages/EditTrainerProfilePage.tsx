@@ -301,7 +301,7 @@ const EditTrainerProfilePage: React.FC<EditTrainerProfilePageProps> = ({ user, o
                                 
                                 <div>
                                     <label htmlFor="location" className="block text-xs text-gray-500 mb-1">
-                                        Location <span className="text-red-500">*</span>
+                                        District <span className="text-red-500">*</span>
                                     </label>
                                     <select 
                                         id="location" 

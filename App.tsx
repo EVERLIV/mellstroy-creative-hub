@@ -17,6 +17,7 @@ import WelcomePage from './pages/WelcomePage';
 import DashboardPage from './pages/DashboardPage';
 import HomePage from './pages/HomePage';
 import Explore from './pages/Explore';
+import ExploreRequestsPage from './pages/ExploreRequestsPage';
 import SearchPage from './pages/SearchPage';
 import FavoritesPage from './pages/FavoritesPage';
 import MyBookingsPage from './pages/MyBookingsPage';
@@ -36,6 +37,11 @@ import ClassDetailPage from './pages/ClassDetailPage';
 import TrainerProfileViewPage from './pages/TrainerProfileViewPage';
 import VenuesPage from './pages/VenuesPage';
 import SubscriptionManagementPage from './pages/SubscriptionManagementPage';
+import RequestsPage from './pages/RequestsPage';
+import CreateRequestPage from './pages/CreateRequestPage';
+import EditRequestPage from './pages/EditRequestPage';
+import RespondToRequestPage from './pages/RespondToRequestPage';
+import RequestResponsesPage from './pages/RequestResponsesPage';
 import BottomNav from './components/BottomNav';
 import BookingModal from './components/BookingModal';
 import ReviewModal from './components/ReviewModal';
@@ -97,9 +103,14 @@ const AppRoutes = () => {
   const currentUserId = user?.id || 'current-user-id';
 
   // Fetch user role from database
+  const [roleLoading, setRoleLoading] = useState(true);
+  
   useEffect(() => {
     const fetchUserRole = async () => {
-      if (!user?.id) return;
+      if (!user?.id) {
+        setRoleLoading(false);
+        return;
+      }
       
       const { data, error } = await supabase
         .from('user_roles')
@@ -108,8 +119,11 @@ const AppRoutes = () => {
         .maybeSingle();
       
       if (!error && data) {
-        setUserRole(data.role as UserRole);
+        // Map 'client' to 'student' for compatibility
+        const role = data.role === 'client' ? 'student' : data.role;
+        setUserRole(role as UserRole);
       }
+      setRoleLoading(false);
     };
 
     fetchUserRole();
@@ -277,15 +291,31 @@ const AppRoutes = () => {
           path="/explore"
           element={
             <ProtectedRoute>
-              <Explore
-                onInitiateBooking={handleInitiateBooking}
-                onOpenChat={handleOpenChat}
-                userRole={userRole}
-                currentUserId={currentUserId}
-                favoriteTrainerIds={favoriteTrainerIds}
-                onToggleFavorite={toggleFavorite}
-                onOpenReviewsModal={handleOpenReviewsModal}
-              />
+              {!roleLoading && userRole === 'trainer' ? (
+                <Navigate to="/requests/explore" replace />
+              ) : (
+                <Explore
+                  onInitiateBooking={handleInitiateBooking}
+                  onOpenChat={handleOpenChat}
+                  userRole={userRole}
+                  currentUserId={currentUserId}
+                  favoriteTrainerIds={favoriteTrainerIds}
+                  onToggleFavorite={toggleFavorite}
+                  onOpenReviewsModal={handleOpenReviewsModal}
+                />
+              )}
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/requests/explore"
+          element={
+            <ProtectedRoute>
+              {!roleLoading && userRole === 'trainer' ? (
+                <ExploreRequestsPage />
+              ) : (
+                <Navigate to="/explore" replace />
+              )}
             </ProtectedRoute>
           }
         />
@@ -496,6 +526,46 @@ const AppRoutes = () => {
           element={
             <ProtectedRoute>
               <VenuesPageWrapper />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/requests"
+          element={
+            <ProtectedRoute>
+              <RequestsPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/requests/create"
+          element={
+            <ProtectedRoute>
+              <CreateRequestPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/requests/:requestId/edit"
+          element={
+            <ProtectedRoute>
+              <EditRequestPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/requests/:requestId/respond"
+          element={
+            <ProtectedRoute>
+              <RespondToRequestPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/requests/:requestId/responses"
+          element={
+            <ProtectedRoute>
+              <RequestResponsesPage />
             </ProtectedRoute>
           }
         />

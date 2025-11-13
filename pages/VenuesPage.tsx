@@ -230,7 +230,7 @@ const VenuesPage: React.FC<VenuesPageProps> = ({ venues, onBack }) => {
 
             {/* Scrollable Content */}
             <div className="flex-1 overflow-y-auto">
-                <div className="px-4 py-3 pb-[calc(5rem+env(safe-area-inset-bottom))]">
+                <div className="px-4 py-3 pb-safe-nav">
                     {/* Results Count */}
                     <div className="mb-3">
                         <p className="text-xs font-medium text-gray-600">

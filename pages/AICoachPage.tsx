@@ -59,7 +59,7 @@ const AICoachPage: React.FC<AICoachPageProps> = ({ messages, onSendMessage, isLo
             </div>
             
             {/* Messages Area */}
-            <div className="flex-1 overflow-y-auto px-4 py-6 space-y-4 pb-32 max-w-4xl mx-auto w-full">
+            <div className="flex-1 overflow-y-auto px-4 py-6 space-y-4 max-w-4xl mx-auto w-full" style={{ paddingBottom: 'calc(8rem + env(safe-area-inset-bottom))' }}>
                 {messages.length === 0 && !isLoading && (
                     <div className="flex flex-col items-center justify-center h-full text-center px-4 animate-fade-in">
                         <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-orange-100 to-pink-100 flex items-center justify-center mb-4">
@@ -150,7 +150,7 @@ const AICoachPage: React.FC<AICoachPageProps> = ({ messages, onSendMessage, isLo
             </div>
 
             {/* Input Area */}
-            <div className="fixed bottom-16 left-0 right-0 bg-white border-t border-slate-200 shadow-2xl pb-safe">
+            <div className="fixed left-0 right-0 bg-white border-t border-slate-200 shadow-2xl" style={{ bottom: 'calc(4rem + env(safe-area-inset-bottom))' }}>
                 <div className="max-w-4xl mx-auto px-4 py-4">
                     <div className="flex items-end gap-2 bg-slate-50 rounded-2xl p-2 border border-slate-200 focus-within:border-[#FF6B35] focus-within:ring-2 focus-within:ring-[#FF6B35]/20 transition-all">
                         <textarea

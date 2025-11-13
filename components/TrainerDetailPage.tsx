@@ -401,7 +401,7 @@ const TrainerDetailPage: React.FC<TrainerDetailPageProps> = ({
     };
 
     return (
-        <div className="bg-white h-screen flex flex-col overflow-hidden">
+        <div className="bg-white h-screen flex flex-col overflow-hidden max-h-screen">
             {/* Header */}
             <div className="flex items-center justify-between px-4 py-3 bg-white shadow-sm z-20 flex-shrink-0">
                 <button 
@@ -430,8 +430,8 @@ const TrainerDetailPage: React.FC<TrainerDetailPageProps> = ({
             </div>
 
             {/* Scrollable Content */}
-            <div ref={scrollContainerRef} className="flex-1 overflow-y-auto">
-                <div className="px-4 py-3 bg-gray-50">
+            <div ref={scrollContainerRef} className="flex-1 overflow-y-auto min-h-0 overscroll-contain">
+                <div className="px-4 py-3 pb-16 bg-gray-50">
                     {/* Trainer Profile Card */}
                     <div className="bg-white rounded-lg p-3 mb-3 shadow-sm">
                         <div className="flex items-start gap-3">

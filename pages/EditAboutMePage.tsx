@@ -191,13 +191,14 @@ const EditAboutMePage: React.FC<EditAboutMePageProps> = ({ user, onSave, onCance
                                 
                                 <div>
                                     <label htmlFor="location" className="block text-xs text-gray-500 mb-1">
-                                        Location
+                                        District <span className="text-red-500">*</span>
                                     </label>
                                     <select 
                                         id="location" 
                                         name="location" 
-                                        value={formData.location} 
+                                        value={formData.location || ''} 
                                         onChange={handleChange}
+                                        required
                                         className="w-full px-3 py-2 border border-gray-200 rounded-lg bg-white text-xs text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 appearance-none cursor-pointer"
                                     >
                                         <option value="">Select district</option>

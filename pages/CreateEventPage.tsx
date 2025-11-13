@@ -98,7 +98,7 @@ const CreateEventPage: React.FC<CreateEventPageProps> = ({ onBack, onSuccess }) 
                 </div>
             </form>
 
-            <footer className="px-4 pt-4 bg-white border-t border-gray-200 flex-shrink-0 pb-[calc(1rem+env(safe-area-inset-bottom))]">
+            <footer className="px-4 pt-4 bg-white border-t border-gray-200 flex-shrink-0 pb-safe-nav">
                 <button
                     type="submit"
                     onClick={handleSubmit}

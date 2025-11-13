@@ -85,7 +85,7 @@ const FavoritesPage: React.FC<FavoritesPageProps> = ({
 
             {/* Scrollable Content */}
             <div className="flex-1 overflow-y-auto">
-                <div className="px-4 py-3 bg-gray-50 pb-[calc(5rem+env(safe-area-inset-bottom))]">
+                <div className="px-4 py-3 bg-gray-50 pb-safe-nav">
                     {/* Info Card */}
                     <div className="bg-white rounded-lg p-3 mb-3 shadow-sm">
                         <div className="flex items-center gap-2 mb-2">

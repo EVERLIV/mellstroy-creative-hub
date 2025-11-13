@@ -105,7 +105,7 @@ const EventsPage: React.FC<EventsPageProps> = ({ events, isTrainer, onBack, onSe
                 <ArrowLeft className="w-6 h-6" />
             </button>
             
-            <main className="flex-1 overflow-y-auto p-4 space-y-4 pb-[calc(5rem+env(safe-area-inset-bottom))]">
+            <main className="flex-1 overflow-y-auto p-4 space-y-4 pb-safe-nav">
                 <div className="pt-12">
                     <h1 className="text-3xl font-bold text-slate-800 mb-4">Community Events</h1>
                     <CreateEventButton />

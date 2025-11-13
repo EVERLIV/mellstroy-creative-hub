@@ -162,6 +162,7 @@ const ProfileContainer: React.FC = () => {
         username: updatedUser.name,
         bio: updatedUser.bio,
         location: updatedUser.location,
+        district: updatedUser.location, // Save district same as location
         avatar_url: updatedUser.imageUrl,
       };
 

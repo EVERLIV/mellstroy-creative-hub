@@ -73,7 +73,7 @@ const EventDetailPage: React.FC<EventDetailPageProps> = ({ event, currentUserId,
                 </button>
             </header>
 
-            <main className="flex-1 overflow-y-auto pb-28"> {/* Padding for footer */}
+            <main className="flex-1 overflow-y-auto pb-safe-nav"> {/* Padding for footer */}
                 <div className="h-64 w-full">
                     <img className="h-full w-full object-cover" src={event.image_url || 'https://images.unsplash.com/photo-1517836357463-d25dfeac3438?w=800'} alt={event.title} />
                 </div>
@@ -113,7 +113,7 @@ const EventDetailPage: React.FC<EventDetailPageProps> = ({ event, currentUserId,
                 </div>
             </main>
 
-            <footer className="absolute bottom-0 left-0 right-0 px-4 pt-4 bg-white border-t border-slate-200 shadow-lg pb-[calc(1rem+env(safe-area-inset-bottom))]">
+            <footer className="absolute left-0 right-0 px-4 pt-4 bg-white border-t border-slate-200 shadow-lg" style={{ bottom: 'calc(4rem + env(safe-area-inset-bottom))' }}>
                  <button 
                     onClick={() => onToggleInterest(event.id)}
                     className={`w-full flex items-center justify-center font-bold py-3.5 px-4 rounded-xl transition-all duration-300 text-base shadow-lg hover:shadow-xl transform hover:-translate-y-0.5

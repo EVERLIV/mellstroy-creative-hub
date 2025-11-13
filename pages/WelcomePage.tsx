@@ -83,7 +83,7 @@ const WelcomePage: React.FC<WelcomePageProps> = ({ trainers, onOpenMealPlanner, 
 
     return (
         <div className="h-full overflow-y-auto bg-slate-50">
-            <main className="pb-[calc(5rem+env(safe-area-inset-bottom))]">
+            <main className="pb-safe-nav">
                 {/* Header */}
                 <header className="px-6 pt-6 pb-4">
                     <div className="flex items-center justify-center gap-3 mb-3">

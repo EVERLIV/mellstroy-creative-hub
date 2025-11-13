@@ -147,7 +147,7 @@ const SearchPage: React.FC<SearchPageProps> = ({ trainers, onInitiateBooking, on
                 </div>
             </div>
 
-            <div className="p-4 pb-[calc(5rem+env(safe-area-inset-bottom))]">
+            <div className="p-4 pb-safe-nav">
                 <div className="mb-4 flex justify-between items-center">
                     <button onClick={() => setIsFilterModalOpen(true)} className="relative flex items-center space-x-2 bg-white border border-slate-300 hover:bg-slate-100 transition-colors px-3 py-2 rounded-lg text-sm font-semibold text-slate-700 shadow-sm active:scale-95">
                         <SlidersHorizontal className="w-4 h-4" />

@@ -165,3 +165,41 @@ export interface Venue {
   email?: string;
   website?: string;
 }
+
+export type RequestLevel = 'Beginner' | 'Intermediate' | 'Advanced' | 'Beginner to Intermediate';
+export type RequestStatus = 'open' | 'closed' | 'accepted' | 'completed';
+export type ResponseStatus = 'pending' | 'accepted' | 'rejected' | 'withdrawn';
+
+export interface TrainingRequest {
+  id: string;
+  student_id: string;
+  student_name?: string;
+  student_avatar?: string;
+  category: string;
+  district: string;
+  description: string;
+  desired_price: number;
+  level: RequestLevel;
+  preferred_time?: string;
+  location_type?: 'home' | 'gym' | 'outdoor';
+  status: RequestStatus;
+  created_at: string;
+  updated_at: string;
+  responses_count?: number;
+  responses?: TrainerResponse[];
+}
+
+export interface TrainerResponse {
+  id: string;
+  request_id: string;
+  trainer_id: string;
+  trainer_name?: string;
+  trainer_avatar?: string;
+  trainer_rating?: number;
+  trainer_reviews?: number;
+  message: string;
+  proposed_price: number;
+  status: ResponseStatus;
+  created_at: string;
+  updated_at: string;
+}
