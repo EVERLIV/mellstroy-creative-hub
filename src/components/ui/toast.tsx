@@ -25,11 +25,7 @@ const Toast = React.forwardRef<
   return (
     <ToastPrimitives.Root
       ref={ref}
-      className={`group pointer-events-auto relative flex w-full items-center justify-between space-x-4 overflow-hidden rounded-xl border p-6 pr-8 shadow-lg transition-all ${
-        variant === 'destructive'
-          ? 'border-destructive bg-destructive text-destructive-foreground'
-          : 'border-gray-300 bg-gray-100 text-gray-900'
-      } ${className || ''}`}
+      className={`group pointer-events-auto relative flex w-full items-center justify-between space-x-4 overflow-hidden rounded-xl border p-6 pr-8 shadow-lg transition-all border-gray-300 bg-gray-100 text-gray-900 ${className || ''}`}
       {...props}
     />
   )
