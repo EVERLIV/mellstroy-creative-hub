@@ -17,149 +17,7 @@ interface FavoritesPageProps {
     onOpenReviewsModal: (trainer: Trainer) => void;
 }
 
-// Тестовые тренеры для демонстрации
-const mockTrainers: Trainer[] = [
-    {
-        id: 'mock-1',
-        name: 'Alex Johnson',
-        specialty: ['strength training', 'hiit'],
-        rating: 4.9,
-        reviews: 127,
-        location: 'District 1',
-        price: 500000,
-        imageUrl: 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400',
-        verificationStatus: 'verified',
-        isPremium: true,
-        bio: 'Professional strength trainer with 10+ years of experience. Specialized in HIIT and functional training.',
-        reviewsData: [
-            { reviewerName: 'Sarah M.', rating: 5, comment: 'Amazing trainer! Helped me achieve my fitness goals.' },
-            { reviewerName: 'Mike T.', rating: 5, comment: 'Very professional and motivating.' }
-        ],
-        classes: [
-            {
-                id: 1,
-                name: 'HIIT Bootcamp',
-                description: 'High-intensity interval training',
-                duration: 60,
-                price: 500000,
-                imageUrl: 'https://images.unsplash.com/photo-1517836357463-d25dfeac3438?w=400',
-                imageUrls: [],
-                capacity: 15,
-                classType: 'Indoor',
-                language: ['English', 'Vietnamese'],
-                level: 'Intermediate',
-                schedule: { days: ['Mon', 'Wed', 'Fri'], time: '18:00' },
-                bookings: []
-            }
-        ],
-        chatHistory: []
-    },
-    {
-        id: 'mock-2',
-        name: 'Maria Garcia',
-        specialty: ['yoga', 'pilates'],
-        rating: 4.8,
-        reviews: 89,
-        location: 'District 3',
-        price: 400000,
-        imageUrl: 'https://images.unsplash.com/photo-1506126613408-eca07ce68773?w=400',
-        verificationStatus: 'verified',
-        isPremium: false,
-        bio: 'Certified yoga instructor focusing on mindfulness and flexibility.',
-        reviewsData: [
-            { reviewerName: 'Emma L.', rating: 5, comment: 'Best yoga classes in the city!' },
-            { reviewerName: 'John D.', rating: 4, comment: 'Very relaxing and professional.' }
-        ],
-        classes: [
-            {
-                id: 2,
-                name: 'Morning Yoga Flow',
-                description: 'Gentle yoga flow for all levels',
-                duration: 75,
-                price: 400000,
-                imageUrl: 'https://images.unsplash.com/photo-1506126613408-eca07ce68773?w=400',
-                imageUrls: [],
-                capacity: 20,
-                classType: 'Indoor',
-                language: ['English'],
-                level: 'Beginner',
-                schedule: { days: ['Tue', 'Thu', 'Sat'], time: '07:00' },
-                bookings: []
-            }
-        ],
-        chatHistory: []
-    },
-    {
-        id: 'mock-3',
-        name: 'David Chen',
-        specialty: ['boxing', 'mma'],
-        rating: 4.7,
-        reviews: 156,
-        location: 'District 7',
-        price: 600000,
-        imageUrl: 'https://images.unsplash.com/photo-1549060279-7e168fcee0c2?w=400',
-        verificationStatus: 'verified',
-        isPremium: true,
-        bio: 'Former professional boxer now teaching self-defense and fitness boxing.',
-        reviewsData: [
-            { reviewerName: 'Tom R.', rating: 5, comment: 'Great technique and motivation!' },
-            { reviewerName: 'Lisa K.', rating: 4, comment: 'Challenging but fun workouts.' }
-        ],
-        classes: [
-            {
-                id: 3,
-                name: 'Boxing Fundamentals',
-                description: 'Learn boxing basics and get fit',
-                duration: 60,
-                price: 600000,
-                imageUrl: 'https://images.unsplash.com/photo-1549060279-7e168fcee0c2?w=400',
-                imageUrls: [],
-                capacity: 12,
-                classType: 'Indoor',
-                language: ['English', 'Vietnamese', 'Chinese'],
-                level: 'Beginner',
-                schedule: { days: ['Mon', 'Wed', 'Fri'], time: '19:00' },
-                bookings: []
-            }
-        ],
-        chatHistory: []
-    },
-    {
-        id: 'mock-4',
-        name: 'Sophie Anderson',
-        specialty: ['running', 'cardio'],
-        rating: 4.9,
-        reviews: 203,
-        location: 'District 2',
-        price: 350000,
-        imageUrl: 'https://images.unsplash.com/photo-1517838277536-f5f99be501cd?w=400',
-        verificationStatus: 'verified',
-        isPremium: true,
-        bio: 'Marathon runner and certified running coach. Helping people achieve their running goals.',
-        reviewsData: [
-            { reviewerName: 'Anna B.', rating: 5, comment: 'Helped me run my first marathon!' },
-            { reviewerName: 'Chris M.', rating: 5, comment: 'Excellent coaching and support.' }
-        ],
-        classes: [
-            {
-                id: 4,
-                name: '5K Training Program',
-                description: 'Build endurance and speed',
-                duration: 45,
-                price: 350000,
-                imageUrl: 'https://images.unsplash.com/photo-1517838277536-f5f99be501cd?w=400',
-                imageUrls: [],
-                capacity: 25,
-                classType: 'Outdoor',
-                language: ['English'],
-                level: 'All Levels',
-                schedule: { days: ['Tue', 'Thu', 'Sun'], time: '06:00' },
-                bookings: []
-            }
-        ],
-        chatHistory: []
-    }
-];
+// Mock trainers removed - using real data from database only
 
 const FavoritesPage: React.FC<FavoritesPageProps> = ({
     trainers,
@@ -176,9 +34,8 @@ const FavoritesPage: React.FC<FavoritesPageProps> = ({
     const [isExitingDetail, setIsExitingDetail] = useState(false);
     const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
 
-    // Объединяем реальных тренеров с тестовыми для демонстрации
-    const allTrainers = [...trainers, ...mockTrainers];
-    const favoriteTrainers = allTrainers.filter(t => favoriteTrainerIds.includes(t.id) || mockTrainers.some(m => m.id === t.id));
+    // Use only real trainers from database
+    const favoriteTrainers = trainers.filter(t => favoriteTrainerIds.includes(t.id));
 
     const handleSelectTrainer = (trainer: Trainer) => {
         setIsExitingDetail(false);
@@ -207,7 +64,7 @@ const FavoritesPage: React.FC<FavoritesPageProps> = ({
                     onInitiateBooking={onInitiateBooking}
                     userRole={userRole}
                     currentUserId={currentUserId}
-                    isFavorite={favoriteTrainerIds.includes(selectedTrainer.id) || mockTrainers.some(m => m.id === selectedTrainer.id)}
+                    isFavorite={favoriteTrainerIds.includes(selectedTrainer.id)}
                     onToggleFavorite={onToggleFavorite}
                     onOpenReviewsModal={onOpenReviewsModal}
                 />
@@ -256,7 +113,7 @@ const FavoritesPage: React.FC<FavoritesPageProps> = ({
                             viewMode={viewMode}
                             onSelectTrainer={handleSelectTrainer}
                             isLoading={false}
-                            favoriteTrainerIds={favoriteTrainerIds.concat(mockTrainers.map(t => t.id))}
+                            favoriteTrainerIds={favoriteTrainerIds}
                             onToggleFavorite={onToggleFavorite}
                         />
                     ) : (
