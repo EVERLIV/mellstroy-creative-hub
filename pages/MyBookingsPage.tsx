@@ -10,6 +10,7 @@ import VerifyAttendanceModal from '../components/VerifyAttendanceModal';
 import BookingCardSkeleton from '../components/BookingCardSkeleton';
 import { usePullToRefresh } from '../src/hooks/usePullToRefresh';
 import PullToRefreshIndicator from '../components/PullToRefreshIndicator';
+import EmptyBookingsState from '../components/EmptyBookingsState';
 
 // Extended interfaces for this page
 interface BookingData {
@@ -508,9 +509,7 @@ const MyBookingsPage: React.FC = () => {
                                     />
                                 ))
                             ) : (
-                                <div className="text-center py-12 text-muted-foreground">
-                                    No upcoming bookings
-                                </div>
+                                <EmptyBookingsState type="upcoming" />
                             )
                         ) : (
                             pastClasses.length > 0 ? (
@@ -525,9 +524,7 @@ const MyBookingsPage: React.FC = () => {
                                     />
                                 ))
                             ) : (
-                                <div className="text-center py-12 text-muted-foreground">
-                                    No past bookings
-                                </div>
+                                <EmptyBookingsState type="past" />
                             )
                         )}
                     </div>
