@@ -119,29 +119,18 @@ const AuthPage = () => {
 
   if (view === 'welcome') {
     return (
-      <div className="relative h-screen w-full overflow-hidden bg-gradient-to-br from-orange-500 via-orange-600 to-red-600">
+      <div className="relative h-screen w-full overflow-hidden">
         {/* Background Image */}
         <div 
-          className="absolute inset-0 bg-cover bg-center opacity-20"
+          className="absolute inset-0 bg-cover bg-center"
           style={{ backgroundImage: `url(${authBackground})` }}
         />
         
-        {/* Animated Background Elements */}
-        <div className="absolute inset-0 overflow-hidden">
-          <div className="absolute top-20 left-10 w-32 h-32 bg-white/10 rounded-full blur-3xl animate-pulse" />
-          <div className="absolute bottom-32 right-10 w-48 h-48 bg-white/10 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
-          <div className="absolute top-1/2 left-1/4 w-24 h-24 bg-white/5 rounded-full blur-2xl animate-pulse" style={{ animationDelay: '2s' }} />
-        </div>
-
-        {/* Floating Icons */}
-        <div className="absolute inset-0 pointer-events-none">
-          <Dumbbell className="absolute top-24 right-12 w-8 h-8 text-white/20 animate-[bounce_3s_ease-in-out_infinite]" />
-          <Activity className="absolute bottom-48 left-16 w-10 h-10 text-white/20 animate-[bounce_4s_ease-in-out_infinite]" />
-          <Heart className="absolute top-1/3 right-20 w-6 h-6 text-white/20 animate-[bounce_3.5s_ease-in-out_infinite]" />
-        </div>
+        {/* Gradient Overlay - transparent at top, orange at bottom */}
+        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-orange-500/90" />
 
         <div className="relative z-10 flex flex-col h-full p-6 text-white animate-fade-in">
-          <header className="flex items-center justify-center pt-4">
+          <header className="flex items-start pt-4">
             <img src={rhinoLogo} alt="RhinoFit" className="w-20 h-20 object-contain drop-shadow-lg" />
           </header>
 
@@ -177,42 +166,29 @@ const AuthPage = () => {
 
   const isLogin = view === 'login';
   return (
-    <div className="relative h-screen w-full overflow-hidden bg-gradient-to-br from-orange-500 via-orange-600 to-red-600">
+    <div className="relative h-screen w-full overflow-hidden">
       {/* Background Image */}
       <div 
-        className="absolute inset-0 bg-cover bg-center opacity-20"
+        className="absolute inset-0 bg-cover bg-center"
         style={{ backgroundImage: `url(${authBackground})` }}
       />
       
-      {/* Animated Background Elements */}
-      <div className="absolute inset-0 overflow-hidden">
-        <div className="absolute top-20 left-10 w-32 h-32 bg-white/10 rounded-full blur-3xl animate-pulse" />
-        <div className="absolute bottom-32 right-10 w-48 h-48 bg-white/10 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
-        <div className="absolute top-1/2 left-1/4 w-24 h-24 bg-white/5 rounded-full blur-2xl animate-pulse" style={{ animationDelay: '2s' }} />
-      </div>
-
-      {/* Floating Icons */}
-      <div className="absolute inset-0 pointer-events-none">
-        <Dumbbell className="absolute top-24 right-12 w-8 h-8 text-white/20 animate-[bounce_3s_ease-in-out_infinite]" />
-        <Activity className="absolute bottom-48 left-16 w-10 h-10 text-white/20 animate-[bounce_4s_ease-in-out_infinite]" />
-        <Heart className="absolute top-1/3 right-20 w-6 h-6 text-white/20 animate-[bounce_3.5s_ease-in-out_infinite]" />
-      </div>
+      {/* Gradient Overlay - transparent at top, orange at bottom */}
+      <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-orange-500/90" />
 
       <div className="relative z-10 h-full p-6 flex flex-col text-white animate-fade-in overflow-y-auto">
-        {/* Back Button & Logo */}
+        {/* Logo & Back Button */}
         <div className="flex items-center justify-between pt-4 pb-8">
+          <img src={rhinoLogo} alt="RhinoFit Logo" className="w-20 h-20 object-contain drop-shadow-lg" />
           <button 
             onClick={() => setView('welcome')}
             className="flex items-center gap-2 text-white/90 hover:text-white transition-colors"
           >
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-            </svg>
             <span className="font-medium">Back</span>
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+            </svg>
           </button>
-          <div className="flex items-center gap-2">
-            <img src={rhinoLogo} alt="RhinoFit Logo" className="w-20 h-20 object-contain drop-shadow-lg" />
-          </div>
         </div>
 
         {/* Header */}
