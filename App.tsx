@@ -646,21 +646,13 @@ const AppRoutes = () => {
 
 const App = () => {
   return (
-<<<<<<< HEAD
-    <ErrorBoundary>
-=======
     <ThemeProvider defaultTheme="light" storageKey="rhinofit-theme">
->>>>>>> f5b1c0859b80a5f6a8702140f10ec53e9a8acd25
       <Router>
         <AuthProvider>
           <AppRoutes />
         </AuthProvider>
       </Router>
-<<<<<<< HEAD
-    </ErrorBoundary>
-=======
     </ThemeProvider>
->>>>>>> f5b1c0859b80a5f6a8702140f10ec53e9a8acd25
   );
 };
 

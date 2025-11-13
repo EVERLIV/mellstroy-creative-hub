@@ -214,15 +214,6 @@ const AddEditClassModal: React.FC<AddEditClassModalProps> = ({ cls, onSave, onCa
             return;
         }
         
-<<<<<<< HEAD
-        const finalData: Class & { _dbId?: string; image_urls?: string[] } = {
-            id: cls?.id || 0,
-            bookings: cls?.bookings || [],
-            ...formData,
-            language: formData.language || [], // Ensure language is always an array
-            level: formData.level || '', // Ensure level is always a string
-            imageUrl: uploadedImages[0], // Keep backward compatibility
-=======
         const finalData: Class & { _dbId?: string; image_urls?: string[]; kids_friendly?: boolean; disability_friendly?: boolean } = {
             id: cls?.id || 0,
             bookings: cls?.bookings || [],
@@ -232,22 +223,12 @@ const AddEditClassModal: React.FC<AddEditClassModalProps> = ({ cls, onSave, onCa
             kids_friendly: formData.kids_friendly || false,
             disability_friendly: formData.disability_friendly || false,
             imageUrl: uploadedImages[0],
->>>>>>> f5b1c0859b80a5f6a8702140f10ec53e9a8acd25
             image_urls: uploadedImages,
             ...(cls as any)?._dbId && { 
                 _dbId: (cls as any)._dbId
             }
         };
         
-<<<<<<< HEAD
-        console.log('AddEditClassModal - Saving with formData:', {
-            language: formData.language,
-            level: formData.level,
-            finalData: finalData
-        });
-        
-=======
->>>>>>> f5b1c0859b80a5f6a8702140f10ec53e9a8acd25
         onSave(finalData);
     };
     
@@ -395,8 +376,6 @@ const AddEditClassModal: React.FC<AddEditClassModalProps> = ({ cls, onSave, onCa
                         
                         {/* Additional Options */}
                         <div>
-<<<<<<< HEAD
-=======
                             <label className="block text-sm font-medium text-slate-600 mb-2">Additional Options</label>
                             <div className="space-y-2">
                                 {/* Kids Friendly Toggle */}
@@ -438,7 +417,6 @@ const AddEditClassModal: React.FC<AddEditClassModalProps> = ({ cls, onSave, onCa
                         </div>
 
                         <div>
->>>>>>> f5b1c0859b80a5f6a8702140f10ec53e9a8acd25
                             <label className="block text-sm font-medium text-slate-600 mb-1.5">
                                 Class Photos ({uploadedImages.length}/{isPremium ? 6 : 1})
                                 <span className="ml-2 text-xs text-slate-400">Max 3MB</span>

@@ -185,19 +185,11 @@ const BookingModal: React.FC<BookingModalProps> = ({ bookingTarget, onConfirmBoo
                 </div>
                 
                 {/* Footer */}
-<<<<<<< HEAD
-                <div className="p-4 bg-gray-50 border-t border-gray-200 flex-shrink-0">
-                    <button
-                        onClick={handleConfirm}
-                        disabled={!selectedDate || !cls.schedule?.time}
-                        className="w-full bg-[#FF6B35] text-white font-medium py-2.5 rounded-md transition-all duration-200 shadow-sm hover:bg-orange-600 disabled:bg-gray-300 disabled:shadow-none disabled:cursor-not-allowed text-sm"
-=======
                 <div className="p-4 bg-muted border-t border-border flex-shrink-0">
                     <button
                         onClick={handleConfirm}
                         disabled={!selectedDate || !cls.schedule?.time || !acceptPrivacy || !acceptTerms}
                         className="w-full bg-primary text-primary-foreground font-medium py-2.5 rounded-md transition-all duration-200 shadow-sm hover:bg-primary/90 disabled:bg-muted disabled:text-muted-foreground disabled:shadow-none disabled:cursor-not-allowed text-sm"
->>>>>>> f5b1c0859b80a5f6a8702140f10ec53e9a8acd25
                     >
                         Confirm Booking for {formatVND(totalPrice)}
                     </button>
