@@ -134,7 +134,7 @@ const BookedClassCard: React.FC<BookedClassCardProps> = ({
                 <div className="p-3">
                     {/* Status Badge */}
                     {booking.status === 'attended' && (
-                        <div className="mb-3 inline-flex items-center bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 text-xs font-bold px-2.5 py-1 rounded-full">
+                        <div className="mb-3 inline-flex items-center bg-primary/10 text-primary text-xs font-bold px-2.5 py-1 rounded-full">
                             <CheckCircle className="w-3.5 h-3.5 mr-1" />
                             Verified
                         </div>
@@ -213,7 +213,7 @@ const BookedClassCard: React.FC<BookedClassCardProps> = ({
                         booking.status === 'booked' && onVerifyAttendance && (
                             <button 
                                 onClick={onVerifyAttendance}
-                                className="flex-1 bg-green-600 text-white text-xs font-semibold py-2.5 px-3 rounded-lg hover:bg-green-700 active:scale-95 transition-all duration-200"
+                                className="flex-1 bg-primary text-primary-foreground text-xs font-semibold py-2.5 px-3 rounded-lg hover:bg-primary/90 active:scale-95 transition-all duration-200"
                             >
                                 Verify
                             </button>
