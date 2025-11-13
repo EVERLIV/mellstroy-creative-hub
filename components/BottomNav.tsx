@@ -1,7 +1,7 @@
 import React from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { NavLink } from './NavLink';
-import { Home, Search, Heart, Calendar, User } from 'lucide-react';
+import { Home, Search, MessageCircle, Calendar, User } from 'lucide-react';
 
 interface NavItem {
   name: string;
@@ -16,7 +16,7 @@ const BottomNav: React.FC = () => {
   const navItems: NavItem[] = [
     { name: 'Home', path: '/', icon: Home },
     { name: 'Explore', path: '/explore', icon: Search },
-    { name: 'Favorites', path: '/favorites', icon: Heart },
+    { name: 'Messages', path: '/messages', icon: MessageCircle },
     { name: 'Bookings', path: '/bookings', icon: Calendar },
     { name: 'Profile', path: '/profile', icon: User },
   ];
