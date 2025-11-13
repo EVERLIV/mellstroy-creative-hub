@@ -1,11 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Trainer, Class, Booking, UserRole } from '../types';
-import { X, Calendar, MapPin, QrCode, CheckCircle } from 'lucide-react';
+import { X, Calendar, MapPin, QrCode, CheckCircle, Clock, MessageCircle } from 'lucide-react';
 import { supabase } from '../src/integrations/supabase/client';
 import { useAuth } from '../src/hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '../src/hooks/use-toast';
-import { Button } from '../src/components/ui/button';
 import BookingVerificationDisplay from '../components/BookingVerificationDisplay';
 import VerifyAttendanceModal from '../components/VerifyAttendanceModal';
 import BookingCardSkeleton from '../components/BookingCardSkeleton';
@@ -60,25 +59,35 @@ const CancelBookingModal: React.FC<CancelBookingModalProps> = ({ bookingInfo, on
     };
 
     return (
-        <div className="fixed inset-0 bg-background/80 backdrop-blur-sm flex items-center justify-center z-50 p-4 pb-20 animate-fade-in" onClick={onClose}>
-            <div className="bg-card rounded-2xl w-full max-w-sm overflow-hidden transform animate-slide-up shadow-lg border border-border" onClick={e => e.stopPropagation()}>
-                <div className="p-5 border-b border-border relative">
-                    <h2 className="text-lg font-bold text-foreground text-center">Cancel Booking</h2>
-                <p className="text-sm text-muted-foreground text-center">{cls.name}</p>
-                    <p className="text-xs text-muted-foreground text-center mt-1">{booking.date} at {booking.time}</p>
-                    <button onClick={onClose} className="absolute top-3 right-3 p-2 rounded-full hover:bg-muted transition-colors">
-                        <X className="w-5 h-5 text-muted-foreground" />
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 pb-20" onClick={onClose}>
+            <div className="bg-white rounded-lg w-full max-w-sm overflow-hidden shadow-lg" onClick={e => e.stopPropagation()}>
+                <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between">
+                    <div className="flex-1">
+                        <h2 className="text-base font-bold text-gray-900 text-center">Cancel Booking</h2>
+                        <p className="text-xs text-gray-600 text-center mt-1">{cls.name}</p>
+                        <p className="text-xs text-gray-500 text-center">{booking.date} at {booking.time}</p>
+                    </div>
+                    <button onClick={onClose} className="p-2 -mr-2 rounded-lg hover:bg-gray-100 transition-colors">
+                        <X className="w-5 h-5 text-gray-800" />
                     </button>
                 </div>
-                <div className="p-5">
-                    <p className="text-center text-foreground">Are you sure you want to cancel this class session? This action cannot be undone.</p>
+                <div className="p-4">
+                    <p className="text-sm text-gray-700 text-center">
+                        Are you sure you want to cancel this booking? This action cannot be undone.
+                    </p>
                 </div>
-                <div className="p-5 bg-muted border-t border-border grid grid-cols-2 gap-3">
-                     <button onClick={onClose} className="w-full bg-background border border-border text-foreground font-semibold py-2.5 rounded-xl transition-colors hover:bg-muted">
+                <div className="px-4 py-3 bg-gray-50 border-t border-gray-100 flex gap-2">
+                    <button 
+                        onClick={onClose} 
+                        className="flex-1 bg-white border border-gray-200 text-gray-700 text-xs font-semibold py-2.5 rounded-lg hover:bg-gray-50 active:scale-95 transition-all duration-200"
+                    >
                         Keep Booking
                     </button>
-                    <button onClick={handleConfirm} className="w-full bg-destructive text-destructive-foreground font-semibold py-2.5 rounded-xl transition-colors hover:bg-destructive/90">
-                        Confirm Cancellation
+                    <button 
+                        onClick={handleConfirm} 
+                        className="flex-1 bg-red-600 text-white text-xs font-semibold py-2.5 rounded-lg hover:bg-red-700 active:scale-95 transition-all duration-200 shadow-sm"
+                    >
+                        Cancel Booking
                     </button>
                 </div>
             </div>
@@ -107,63 +116,85 @@ const BookedClassCard: React.FC<BookedClassCardProps> = ({
 }) => {
     const { trainer, cls, booking, student } = bookingInfo;
     const isStudentView = userRole === 'student';
+    const displayPerson = isStudentView ? trainer : student;
 
     const handleChatClick = () => {
-        if (isStudentView) {
+        if (isStudentView && trainer) {
             onOpenChat(trainer, { classId: cls.id, className: cls.name, bookingDate: booking.date, studentId: booking.userId });
-        } else if (student) {
+        } else if (!isStudentView && student) {
             onOpenChat(student, { classId: cls.id, className: cls.name, bookingDate: booking.date, studentId: student.id });
         }
     };
     
     return (
-        <div className="bg-card rounded-2xl shadow-sm border border-border flex overflow-hidden">
-            <div className="flex-1 p-4">
-                <div className="flex items-start justify-between mb-2">
-                    <div>
-                        <h3 className="font-bold text-base text-foreground">{cls.name}</h3>
-                        <p className="text-sm text-muted-foreground mt-1">
-                            {isStudentView ? `Trainer: ${trainer.name}` : `Student: ${student?.name || 'N/A'}`}
-                        </p>
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden transition-all duration-300 hover:shadow-md hover:-translate-y-0.5">
+            {/* Person Image */}
+            <div className="relative">
+                <img 
+                    className="h-48 w-full object-cover" 
+                    src={displayPerson?.avatarUrl || 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400'} 
+                    alt={displayPerson?.name || 'Person'} 
+                />
+                {booking.status === 'attended' && (
+                    <div className="absolute top-3 left-3 bg-green-100 text-green-700 text-xs font-bold px-2.5 py-1 rounded-full flex items-center shadow-sm">
+                        <CheckCircle className="w-3.5 h-3.5 mr-1" />
+                        Verified
                     </div>
-                    {booking.status === 'attended' && (
-                        <span className="flex items-center gap-1 text-xs font-medium text-primary bg-primary/10 px-2 py-1 rounded-full">
-                            <CheckCircle className="w-3 h-3" />
-                            Verified
-                        </span>
+                )}
+            </div>
+
+            <div className="p-3">
+                {/* Class Name & Person */}
+                <div className="mb-2">
+                    <h3 className="text-sm font-bold text-gray-900">{cls.name}</h3>
+                    <p className="text-xs text-gray-600 mt-1">
+                        {isStudentView ? `Trainer: ${trainer?.name || 'N/A'}` : `Student: ${student?.name || 'N/A'}`}
+                    </p>
+                </div>
+
+                {/* Date & Time & Location */}
+                <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 mb-3">
+                    <div className="flex items-center">
+                        <Calendar className="w-3.5 h-3.5 text-gray-500" />
+                        <span className="ml-1 text-xs text-gray-600">{booking.date}</span>
+                    </div>
+                    <div className="flex items-center">
+                        <Clock className="w-3.5 h-3.5 text-gray-500" />
+                        <span className="ml-1 text-xs text-gray-600">{booking.time}</span>
+                    </div>
+                    {displayPerson?.location && (
+                        <div className="flex items-center">
+                            <MapPin className="w-3.5 h-3.5 text-gray-500" />
+                            <span className="ml-1 text-xs text-gray-600">{displayPerson.location}</span>
+                        </div>
                     )}
                 </div>
-                <div className="flex items-center gap-3 mt-3 text-sm text-muted-foreground">
-                    <div className="flex items-center gap-1.5">
-                        <Calendar className="w-4 h-4" />
-                        <span>{booking.date}</span>
-                    </div>
-                    <div className="flex items-center gap-1.5">
-                        <MapPin className="w-4 h-4" />
-                        <span>{booking.time}</span>
-                    </div>
-                </div>
-                <div className="flex gap-2 mt-4">
+
+                {/* Action Buttons */}
+                <div className="flex gap-2 pt-2 border-t border-gray-100">
                     <button 
                         onClick={handleChatClick}
-                        className="flex-1 bg-primary text-primary-foreground font-medium py-2 rounded-xl transition-colors hover:bg-primary/90 text-sm"
+                        className="flex-1 bg-blue-600 text-white text-xs font-semibold py-2.5 px-3 rounded-lg hover:bg-blue-700 active:scale-95 transition-all duration-200 shadow-sm flex items-center justify-center gap-1.5"
                     >
+                        <MessageCircle className="w-3.5 h-3.5" />
                         Chat
                     </button>
+                    
                     {isStudentView ? (
                         <>
                             {booking.status === 'booked' && (
                                 <>
                                     <button 
                                         onClick={() => onStartCancellation(bookingInfo)}
-                                        className="flex-1 bg-muted text-muted-foreground font-medium py-2 rounded-xl transition-colors hover:bg-muted/80 text-sm"
+                                        className="flex-1 bg-gray-100 text-gray-700 text-xs font-semibold py-2.5 px-3 rounded-lg hover:bg-gray-200 active:scale-95 transition-all duration-200 flex items-center justify-center gap-1.5"
                                     >
+                                        <X className="w-3.5 h-3.5" />
                                         Cancel
                                     </button>
                                     {booking.verificationCode && (
                                         <button 
                                             onClick={() => onShowVerificationCode?.(booking.verificationCode!, booking.id)}
-                                            className="px-4 bg-accent text-accent-foreground font-medium py-2 rounded-xl transition-colors hover:bg-accent/90"
+                                            className="bg-orange-100 text-orange-700 text-xs font-semibold py-2.5 px-3 rounded-lg hover:bg-orange-200 active:scale-95 transition-all duration-200 flex items-center justify-center"
                                         >
                                             <QrCode className="w-4 h-4" />
                                         </button>
@@ -173,17 +204,17 @@ const BookedClassCard: React.FC<BookedClassCardProps> = ({
                             {booking.status === 'attended' && !booking.hasReview && (
                                 <button 
                                     onClick={() => onOpenReviewModal(trainer, cls, booking)}
-                                    className="flex-1 bg-accent text-accent-foreground font-medium py-2 rounded-xl transition-colors hover:bg-accent/90 text-sm"
+                                    className="flex-1 bg-orange-500 text-white text-xs font-semibold py-2.5 px-3 rounded-lg hover:bg-orange-600 active:scale-95 transition-all duration-200 shadow-sm"
                                 >
-                                    Leave a Review
+                                    Leave Review
                                 </button>
                             )}
                         </>
                     ) : (
-                        booking.status === 'booked' && (
+                        booking.status === 'booked' && onVerifyAttendance && (
                             <button 
                                 onClick={onVerifyAttendance}
-                                className="flex-1 bg-primary text-primary-foreground font-medium py-2 rounded-xl transition-colors hover:bg-primary/90 text-sm"
+                                className="flex-1 bg-green-600 text-white text-xs font-semibold py-2.5 px-3 rounded-lg hover:bg-green-700 active:scale-95 transition-all duration-200 shadow-sm"
                             >
                                 Verify
                             </button>
@@ -399,7 +430,14 @@ const MyBookingsPage: React.FC = () => {
     });
 
     const handleOpenChat = (personToChatWith: TrainerData, context: any) => {
-        navigate(`/chat/${personToChatWith.id}`, { state: { context } });
+        // Navigate to messages page with the person to chat with
+        navigate('/messages', { 
+            state: { 
+                recipientId: personToChatWith.id,
+                recipientName: personToChatWith.name,
+                context 
+            } 
+        });
     };
 
     const handleStartCancellation = (bookingInfo: BookingInfo) => {
@@ -562,15 +600,15 @@ const MyBookingsPage: React.FC = () => {
             )}
 
             {verificationCode && (
-                <div className="fixed inset-0 bg-background/80 backdrop-blur-sm flex items-center justify-center z-50 p-4 pb-20" onClick={() => setVerificationCode(null)}>
-                    <div className="bg-card rounded-2xl w-full max-w-sm overflow-hidden shadow-lg border border-border" onClick={e => e.stopPropagation()}>
-                        <div className="p-5 border-b border-border relative">
-                            <h2 className="text-lg font-bold text-foreground text-center">Your Verification Code</h2>
-                            <button onClick={() => setVerificationCode(null)} className="absolute top-3 right-3 p-2 rounded-full hover:bg-muted transition-colors">
-                                <X className="w-5 h-5 text-muted-foreground" />
+                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 pb-20" onClick={() => setVerificationCode(null)}>
+                    <div className="bg-white rounded-lg w-full max-w-sm overflow-hidden shadow-lg" onClick={e => e.stopPropagation()}>
+                        <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between">
+                            <h2 className="text-base font-bold text-gray-900">Verification Code</h2>
+                            <button onClick={() => setVerificationCode(null)} className="p-2 -mr-2 rounded-lg hover:bg-gray-100 transition-colors">
+                                <X className="w-5 h-5 text-gray-800" />
                             </button>
                         </div>
-                        <div className="p-5">
+                        <div className="p-4">
                             <BookingVerificationDisplay 
                                 verificationCode={verificationCode} 
                                 bookingId={verificationBookingId!}
@@ -583,11 +621,16 @@ const MyBookingsPage: React.FC = () => {
 
             {showVerifyModal && (
                 <VerifyAttendanceModal
-                    booking={showVerifyModal.booking}
+                    isOpen={true}
+                    trainerId={user?.id || ''}
                     onClose={() => setShowVerifyModal(null)}
                     onVerified={() => {
                         setShowVerifyModal(null);
                         loadBookings();
+                        toast({
+                            title: "Success",
+                            description: "Attendance verified successfully"
+                        });
                     }}
                 />
             )}
