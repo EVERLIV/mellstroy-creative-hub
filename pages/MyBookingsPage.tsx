@@ -5,6 +5,7 @@ import { supabase } from '../src/integrations/supabase/client';
 import { useAuth } from '../src/hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '../src/hooks/use-toast';
+import { Button } from '../src/components/ui/button';
 import BookingVerificationDisplay from '../components/BookingVerificationDisplay';
 import VerifyAttendanceModal from '../components/VerifyAttendanceModal';
 import BookingCardSkeleton from '../components/BookingCardSkeleton';
@@ -211,7 +212,7 @@ function parseBookingDateTime(dateStr: string, timeStr: string): Date {
 }
 
 const MyBookingsPage: React.FC = () => {
-    const { user, userRole } = useAuth();
+    const { user, userRole, loading } = useAuth();
     const navigate = useNavigate();
     const { toast } = useToast();
     const [activeTab, setActiveTab] = useState<'upcoming' | 'past'>('upcoming');
@@ -443,10 +444,27 @@ const MyBookingsPage: React.FC = () => {
         setVerificationBookingId(bookingId);
     };
 
-    if (!user || !userRole) {
+    if (!user) {
+        return (
+            <div className="flex flex-col items-center justify-center h-screen bg-background">
+                <div className="text-center">
+                    <h2 className="text-xl font-bold text-foreground mb-2">Please Log In</h2>
+                    <p className="text-muted-foreground mb-4">Sign in to view your bookings</p>
+                    <Button 
+                        onClick={() => navigate('/auth')}
+                        className="bg-primary text-primary-foreground hover:bg-primary/90"
+                    >
+                        Go to Login
+                    </Button>
+                </div>
+            </div>
+        );
+    }
+
+    if (loading) {
         return (
             <div className="flex items-center justify-center h-screen bg-background">
-                <div className="text-muted-foreground">Please log in to view bookings</div>
+                <div className="text-muted-foreground">Loading...</div>
             </div>
         );
     }
