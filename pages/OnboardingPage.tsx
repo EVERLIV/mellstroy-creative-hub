@@ -218,7 +218,7 @@ const OnboardingPage: React.FC<OnboardingPageProps> = ({ currentUser, onComplete
 
     return (
         <div className="bg-slate-100 min-h-screen flex flex-col items-center justify-center p-4">
-            <img src={rhinoLogo} alt="RhinoFit Logo" className="w-16 h-16 mb-4 object-contain" />
+            <img src={rhinoLogo} alt="RhinoFit Logo" className="w-20 h-20 mb-4 object-contain" />
             {renderContent()}
         </div>
     );

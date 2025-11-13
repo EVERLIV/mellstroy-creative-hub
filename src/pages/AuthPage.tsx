@@ -135,10 +135,8 @@ const AuthPage = () => {
 
         <div className="relative z-10 flex flex-col h-full p-6 text-white animate-fade-in">
           <header className="flex items-center gap-3 pt-4">
-            <div className="w-14 h-14 bg-white rounded-2xl flex items-center justify-center transform transition-transform hover:scale-110 p-2">
-              <img src={rhinoLogo} alt="RhinoFit" className="w-full h-full object-contain" />
-            </div>
-            <span className="text-2xl font-bold tracking-tight">RhinoFit</span>
+            <img src={rhinoLogo} alt="RhinoFit" className="w-20 h-20 object-contain" />
+            <span className="text-3xl font-bold tracking-tight">RhinoFit</span>
           </header>
 
           <main className="flex-1 flex flex-col justify-end pb-16">
@@ -193,9 +191,7 @@ const AuthPage = () => {
             <span>Back</span>
           </button>
           <div className="flex items-center gap-2">
-            <div className="w-10 h-10 bg-white/20 backdrop-blur-sm rounded-xl flex items-center justify-center p-1.5">
-              <img src={rhinoLogo} alt="RhinoFit Logo" className="w-full h-full object-contain" />
-            </div>
+            <img src={rhinoLogo} alt="RhinoFit Logo" className="w-20 h-20 object-contain" />
           </div>
         </div>
 

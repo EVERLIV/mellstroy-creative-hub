@@ -80,8 +80,8 @@ const AuthPage: React.FC<AuthPageProps> = ({ onLogin, onSignUp, onGoogleSignIn }
                 <div className="absolute inset-0 bg-black/30"></div>
                 <div className="relative z-10 flex flex-col h-full p-6 text-white">
                     <header className="flex items-center gap-3">
-                        <img src={rhinoLogo} alt="RhinoFit Logo" className="w-12 h-12 object-contain" />
-                        <span className="text-xl font-bold">RhinoFit</span>
+                        <img src={rhinoLogo} alt="RhinoFit Logo" className="w-20 h-20 object-contain" />
+                        <span className="text-2xl font-bold">RhinoFit</span>
                     </header>
 
                     <main className="flex-1 flex flex-col justify-end pb-12">

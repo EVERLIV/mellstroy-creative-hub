@@ -35,7 +35,7 @@ const UnifiedHeader: React.FC<UnifiedHeaderProps> = ({
                 {/* Top Bar: Logo, Menu, District, and Notifications */}
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                        <img src={rhinoLogo} alt="RhinoFit" className="w-8 h-8 object-contain" />
+                        <img src={rhinoLogo} alt="RhinoFit" className="w-20 h-20 object-contain" />
                         <HamburgerMenu />
                     </div>
                     <div className="flex items-center gap-2">

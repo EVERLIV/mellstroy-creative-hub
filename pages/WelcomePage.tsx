@@ -87,8 +87,8 @@ const WelcomePage: React.FC<WelcomePageProps> = ({ trainers, onOpenMealPlanner, 
                 {/* Header */}
                 <header className="px-6 pt-6 pb-4">
                     <div className="flex items-center justify-center gap-3 mb-3">
-                        <img src={rhinoLogo} alt="RhinoFit" className="w-10 h-10 object-contain" />
-                        <h1 className="text-2xl font-bold text-primary">
+                        <img src={rhinoLogo} alt="RhinoFit" className="w-20 h-20 object-contain" />
+                        <h1 className="text-3xl font-bold text-primary">
                             RhinoFit
                         </h1>
                     </div>
