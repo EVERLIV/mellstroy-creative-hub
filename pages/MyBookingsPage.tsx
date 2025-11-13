@@ -8,6 +8,8 @@ import { useToast } from '../src/hooks/use-toast';
 import BookingVerificationDisplay from '../components/BookingVerificationDisplay';
 import VerifyAttendanceModal from '../components/VerifyAttendanceModal';
 import BookingCardSkeleton from '../components/BookingCardSkeleton';
+import { usePullToRefresh } from '../src/hooks/usePullToRefresh';
+import PullToRefreshIndicator from '../components/PullToRefreshIndicator';
 
 // Extended interfaces for this page
 interface BookingData {
@@ -218,6 +220,13 @@ const MyBookingsPage: React.FC = () => {
     const [showVerifyModal, setShowVerifyModal] = useState<BookingInfo | null>(null);
     const [bookingsData, setBookingsData] = useState<BookingInfo[]>([]);
     const [isLoading, setIsLoading] = useState(true);
+
+    // Pull-to-refresh functionality
+    const { containerRef, pullDistance, isRefreshing, pullProgress } = usePullToRefresh({
+        onRefresh: async () => {
+            await loadBookings();
+        }
+    });
 
     const loadBookings = async () => {
         if (!user || !userRole) return;
@@ -470,7 +479,12 @@ const MyBookingsPage: React.FC = () => {
                 </button>
             </div>
 
-            <div className="flex-1 overflow-y-auto pb-24">
+            <div ref={containerRef} className="flex-1 overflow-y-auto pb-24 relative">
+                <PullToRefreshIndicator 
+                    pullDistance={pullDistance}
+                    isRefreshing={isRefreshing}
+                    pullProgress={pullProgress}
+                />
                 {isLoading ? (
                     <div className="p-4 space-y-3">
                         {[...Array(3)].map((_, idx) => (
