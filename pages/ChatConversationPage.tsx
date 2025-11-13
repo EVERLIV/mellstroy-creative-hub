@@ -276,8 +276,8 @@ const ChatConversationPage: React.FC = () => {
 
       {/* Context Banner */}
       {context?.className && (
-        <div className="bg-blue-50 border-b border-blue-100 px-4 py-2">
-          <p className="text-xs text-blue-700">
+        <div className="bg-accent/10 border-b border-border px-4 py-2">
+          <p className="text-xs text-foreground">
             <span className="font-semibold">Class:</span> {context.className}
             {context.bookingDate && <span> • {context.bookingDate}</span>}
           </p>
@@ -285,10 +285,10 @@ const ChatConversationPage: React.FC = () => {
       )}
 
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto px-4 py-3 bg-gray-50 pb-[calc(1rem+env(safe-area-inset-bottom))]">
+      <div className="flex-1 overflow-y-auto px-4 py-3 bg-background pb-[calc(1rem+env(safe-area-inset-bottom))]">
         {messages.length === 0 ? (
           <div className="flex items-center justify-center h-full">
-            <p className="text-sm text-gray-500">No messages yet. Start the conversation!</p>
+            <p className="text-sm text-muted-foreground">No messages yet. Start the conversation!</p>
           </div>
         ) : (
           <div className="space-y-3">
@@ -298,15 +298,15 @@ const ChatConversationPage: React.FC = () => {
                 <div key={message.id} className={`flex ${isMyMessage ? 'justify-end' : 'justify-start'}`}>
                   <div className={`max-w-[75%] ${isMyMessage ? 'order-2' : 'order-1'}`}>
                     <div
-                      className={`px-3 py-2 rounded-2xl ${
+                      className={`px-3 py-2 rounded-lg ${
                         isMyMessage
-                          ? 'bg-blue-600 text-white rounded-br-sm'
-                          : 'bg-white text-gray-900 rounded-bl-sm border border-gray-200'
+                          ? 'bg-primary text-primary-foreground'
+                          : 'bg-card text-foreground border border-border'
                       }`}
                     >
                       <p className="text-sm whitespace-pre-wrap break-words">{message.content}</p>
                     </div>
-                    <p className={`text-xs text-gray-500 mt-1 ${isMyMessage ? 'text-right' : 'text-left'}`}>
+                    <p className={`text-xs text-muted-foreground mt-1 ${isMyMessage ? 'text-right' : 'text-left'}`}>
                       {formatDistanceToNow(new Date(message.created_at), { addSuffix: true })}
                     </p>
                   </div>
@@ -319,7 +319,7 @@ const ChatConversationPage: React.FC = () => {
       </div>
 
       {/* Input Area */}
-      <div className="px-4 py-3 bg-white border-t border-gray-100 pb-[calc(5rem+env(safe-area-inset-bottom))]">
+      <div className="px-4 py-3 bg-card border-t border-border pb-[calc(5rem+env(safe-area-inset-bottom))]">
         <div className="flex items-end gap-2">
           <textarea
             ref={inputRef}
@@ -328,13 +328,13 @@ const ChatConversationPage: React.FC = () => {
             onKeyPress={handleKeyPress}
             placeholder="Type a message..."
             rows={1}
-            className="flex-1 resize-none px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm max-h-[120px] overflow-y-auto"
+            className="flex-1 resize-none px-3 py-2 border border-input bg-background rounded-lg focus:outline-none focus:ring-2 focus:ring-ring focus:border-transparent text-sm max-h-[120px] overflow-y-auto text-foreground placeholder-muted-foreground"
             disabled={sending}
           />
           <button
             onClick={handleSend}
             disabled={!newMessage.trim() || sending}
-            className="flex-shrink-0 bg-blue-600 text-white p-2.5 rounded-lg hover:bg-blue-700 active:scale-95 transition-all duration-200 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+            className="flex-shrink-0 bg-primary text-primary-foreground p-2.5 rounded-lg hover:bg-primary/90 active:scale-95 transition-all duration-200 shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {sending ? (
               <Loader className="w-5 h-5 animate-spin" />

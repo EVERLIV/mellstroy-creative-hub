@@ -180,29 +180,29 @@ const MessageListPage: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="bg-white h-full flex items-center justify-center">
-        <Loader className="w-6 h-6 text-blue-600 animate-spin" />
+      <div className="bg-background h-full flex items-center justify-center">
+        <Loader className="w-6 h-6 text-primary animate-spin" />
       </div>
     );
   }
 
   return (
-    <div className="bg-white h-full flex flex-col overflow-hidden">
+    <div className="bg-background h-full flex flex-col overflow-hidden">
       {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 bg-white shadow-sm z-20 flex-shrink-0">
+      <div className="flex items-center justify-between px-4 py-3 bg-card shadow-sm z-20 flex-shrink-0 border-b border-border">
         <div className="w-9"></div>
-        <h1 className="text-base font-bold text-gray-900">Messages</h1>
+        <h1 className="text-lg font-bold text-foreground">Messages</h1>
         <div className="w-9"></div>
       </div>
 
       {/* Conversations List */}
       <div className="flex-1 overflow-y-auto">
-        <div className="px-4 py-3 bg-gray-50 pb-[calc(5rem+env(safe-area-inset-bottom))]">
+        <div className="px-4 py-3 bg-background pb-[calc(5rem+env(safe-area-inset-bottom))]">
           {conversations.length === 0 ? (
             <div className="text-center mt-12">
-              <MessageCircle className="w-12 h-12 text-gray-300 mx-auto" />
-              <p className="text-sm font-bold text-gray-900 mt-4">No Conversations Yet</p>
-              <p className="text-xs text-gray-600 mt-2">
+              <MessageCircle className="w-12 h-12 text-muted-foreground mx-auto" />
+              <p className="text-sm font-bold text-foreground mt-4">No Conversations Yet</p>
+              <p className="text-xs text-muted-foreground mt-2">
                 Book a class with a trainer to start chatting.
               </p>
             </div>
@@ -215,34 +215,34 @@ const MessageListPage: React.FC = () => {
                   <button
                     key={conv.id}
                     onClick={() => navigate(`/messages/${conv.other_participant.id}`)}
-                    className="w-full flex items-center gap-3 p-3 bg-white rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors text-left"
+                    className="w-full flex items-center gap-3 p-3 bg-card rounded-lg border border-border hover:shadow-sm hover:-translate-y-0.5 transition-all text-left"
                   >
                     <div className="relative flex-shrink-0">
                       <img
                         src={conv.other_participant.avatar_url || 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=100'}
                         alt={conv.other_participant.username}
-                        className="w-12 h-12 rounded-full object-cover"
+                        className="w-12 h-12 rounded-full object-cover border-2 border-border"
                       />
                       {conv.unread_count > 0 && (
-                        <span className="absolute -top-1 -right-1 bg-blue-600 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
-                          {conv.unread_count}
-                        </span>
+                        <div className="absolute -top-1 -right-1 w-5 h-5 bg-primary rounded-full flex items-center justify-center">
+                          <span className="text-primary-foreground text-xs font-bold">{conv.unread_count}</span>
+                        </div>
                       )}
                     </div>
 
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between mb-1">
-                        <h3 className={`text-sm truncate ${conv.unread_count > 0 ? 'font-bold text-gray-900' : 'font-semibold text-gray-900'}`}>
+                        <span className="text-sm font-bold text-foreground truncate">
                           {conv.other_participant.username}
-                        </h3>
+                        </span>
                         {conv.last_message && (
-                          <span className="text-xs text-gray-500 flex-shrink-0 ml-2">
+                          <span className="text-xs text-muted-foreground flex-shrink-0 ml-2">
                             {formatDistanceToNow(new Date(conv.last_message.created_at), { addSuffix: true })}
                           </span>
                         )}
                       </div>
                       {conv.last_message && (
-                        <p className={`text-xs truncate ${conv.unread_count > 0 ? 'text-gray-900 font-medium' : 'text-gray-600'}`}>
+                        <p className={`text-xs truncate ${conv.unread_count > 0 ? 'font-semibold text-foreground' : 'text-muted-foreground'}`}>
                           {isMyMessage && 'You: '}
                           {conv.last_message.content}
                         </p>
