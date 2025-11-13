@@ -444,109 +444,113 @@ const MyBookingsPage: React.FC = () => {
         setVerificationBookingId(bookingId);
     };
 
-    if (!user) {
+    if (loading) {
         return (
-            <div className="flex flex-col items-center justify-center h-screen bg-background">
-                <div className="text-center">
-                    <h2 className="text-xl font-bold text-foreground mb-2">Please Log In</h2>
-                    <p className="text-muted-foreground mb-4">Sign in to view your bookings</p>
-                    <Button 
-                        onClick={() => navigate('/auth')}
-                        className="bg-primary text-primary-foreground hover:bg-primary/90"
-                    >
-                        Go to Login
-                    </Button>
-                </div>
+            <div className="bg-white h-full flex items-center justify-center">
+                <p className="text-sm text-gray-600">Loading...</p>
             </div>
         );
     }
 
-    if (loading) {
+    if (!user) {
         return (
-            <div className="flex items-center justify-center h-screen bg-background">
-                <div className="text-muted-foreground">Loading...</div>
+            <div className="bg-white h-full flex flex-col items-center justify-center gap-4 px-4">
+                <p className="text-sm text-gray-600 text-center">Please log in to view your bookings</p>
+                <button
+                    onClick={() => navigate('/auth')}
+                    className="px-4 py-2 bg-blue-600 text-white text-xs font-semibold rounded-lg hover:bg-blue-700 active:scale-95 transition-all duration-200 shadow-sm"
+                >
+                    Go to Login
+                </button>
             </div>
         );
     }
 
     return (
-        <div className="flex flex-col h-screen bg-background">
-            <div className="flex items-center justify-between p-4 border-b border-border bg-card sticky top-0 z-10">
-                <h1 className="text-xl font-bold text-foreground">My Bookings</h1>
+        <div className="bg-white h-full flex flex-col overflow-hidden">
+            {/* Header */}
+            <div className="flex items-center justify-between px-4 py-3 bg-white shadow-sm z-20 flex-shrink-0">
+                <div className="w-9"></div>
+                <h1 className="text-base font-bold text-gray-900">My Bookings</h1>
+                <div className="w-9"></div>
             </div>
 
-            <div className="flex gap-2 p-4 border-b border-border bg-card">
+            {/* Tabs */}
+            <div className="flex gap-2 px-4 py-2 bg-white border-b border-gray-100">
                 <button 
                     onClick={() => setActiveTab('upcoming')} 
-                    className={`flex-1 py-2.5 rounded-xl font-semibold transition-colors ${
+                    className={`flex-1 py-2 rounded-lg font-semibold text-xs transition-colors ${
                         activeTab === 'upcoming' 
-                            ? 'bg-primary text-primary-foreground' 
-                            : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                            ? 'bg-blue-600 text-white shadow-sm' 
+                            : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                     }`}
                 >
                     Upcoming
                 </button>
                 <button 
                     onClick={() => setActiveTab('past')} 
-                    className={`flex-1 py-2.5 rounded-xl font-semibold transition-colors ${
+                    className={`flex-1 py-2 rounded-lg font-semibold text-xs transition-colors ${
                         activeTab === 'past' 
-                            ? 'bg-primary text-primary-foreground' 
-                            : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                            ? 'bg-blue-600 text-white shadow-sm' 
+                            : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                     }`}
                 >
                     Past
                 </button>
             </div>
 
-            <div ref={containerRef} className="flex-1 overflow-y-auto pb-24 relative">
-                <PullToRefreshIndicator 
-                    pullDistance={pullDistance}
-                    isRefreshing={isRefreshing}
-                    pullProgress={pullProgress}
-                />
-                {isLoading ? (
-                    <div className="p-4 space-y-3">
-                        {[...Array(3)].map((_, idx) => (
-                            <BookingCardSkeleton key={idx} />
-                        ))}
-                    </div>
-                ) : (
-                    <div className="p-4 space-y-3">
-                        {activeTab === 'upcoming' ? (
-                            upcomingClasses.length > 0 ? (
-                                upcomingClasses.map((bookingInfo, idx) => (
-                                    <BookedClassCard 
-                                        key={idx} 
-                                        bookingInfo={bookingInfo} 
-                                        onOpenChat={handleOpenChat} 
-                                        onStartCancellation={handleStartCancellation}
-                                        onOpenReviewModal={handleOpenReviewModal}
-                                        userRole={userRole!}
-                                        onShowVerificationCode={handleShowVerificationCode}
-                                        onVerifyAttendance={() => setShowVerifyModal(bookingInfo)}
-                                    />
-                                ))
+            {/* Scrollable Content */}
+            <div ref={containerRef} className="flex-1 overflow-y-auto">
+                <div className="px-4 py-3 bg-gray-50 pb-[calc(5rem+env(safe-area-inset-bottom))]">
+                    <PullToRefreshIndicator 
+                        pullDistance={pullDistance}
+                        isRefreshing={isRefreshing}
+                        pullProgress={pullProgress}
+                    />
+                    {isLoading ? (
+                        <div className="space-y-3">
+                            {[...Array(3)].map((_, idx) => (
+                                <BookingCardSkeleton key={idx} />
+                            ))}
+                        </div>
+                    ) : (
+                        <div className="space-y-3">
+                            {activeTab === 'upcoming' ? (
+                                upcomingClasses.length > 0 ? (
+                                    upcomingClasses.map((bookingInfo, idx) => (
+                                        <BookedClassCard 
+                                            key={idx} 
+                                            bookingInfo={bookingInfo} 
+                                            onOpenChat={handleOpenChat} 
+                                            onStartCancellation={handleStartCancellation}
+                                            onOpenReviewModal={handleOpenReviewModal}
+                                            userRole={userRole!}
+                                            onShowVerificationCode={handleShowVerificationCode}
+                                            onVerifyAttendance={() => setShowVerifyModal(bookingInfo)}
+                                        />
+                                    ))
+                                ) : (
+                                    <EmptyBookingsState type="upcoming" />
+                                )
                             ) : (
-                                <EmptyBookingsState type="upcoming" />
-                            )
-                        ) : (
-                            pastClasses.length > 0 ? (
-                                pastClasses.map((bookingInfo, idx) => (
-                                    <BookedClassCard 
-                                        key={idx} 
-                                        bookingInfo={bookingInfo} 
-                                        onOpenChat={handleOpenChat} 
-                                        onStartCancellation={handleStartCancellation}
-                                        onOpenReviewModal={handleOpenReviewModal}
-                                        userRole={userRole!}
-                                    />
-                                ))
-                            ) : (
-                                <EmptyBookingsState type="past" />
-                            )
-                        )}
-                    </div>
-                )}
+                                pastClasses.length > 0 ? (
+                                    pastClasses.map((bookingInfo, idx) => (
+                                        <BookedClassCard 
+                                            key={idx} 
+                                            bookingInfo={bookingInfo} 
+                                            onOpenChat={handleOpenChat} 
+                                            onStartCancellation={handleStartCancellation}
+                                            onOpenReviewModal={handleOpenReviewModal}
+                                            userRole={userRole!}
+                                        />
+                                    ))
+                                ) : (
+                                    <EmptyBookingsState type="past" />
+                                )
+                            )}
+                        </div>
+                    )}
+                </div>
             </div>
 
             {cancelBookingTarget && (
