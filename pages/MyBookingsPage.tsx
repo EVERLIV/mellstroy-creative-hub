@@ -7,6 +7,7 @@ import { useNavigate } from 'react-router-dom';
 import { useToast } from '../src/hooks/use-toast';
 import BookingVerificationDisplay from '../components/BookingVerificationDisplay';
 import VerifyAttendanceModal from '../components/VerifyAttendanceModal';
+import BookingCardSkeleton from '../components/BookingCardSkeleton';
 
 // Extended interfaces for this page
 interface BookingData {
@@ -471,8 +472,10 @@ const MyBookingsPage: React.FC = () => {
 
             <div className="flex-1 overflow-y-auto pb-24">
                 {isLoading ? (
-                    <div className="flex items-center justify-center h-64">
-                        <div className="text-muted-foreground">Loading bookings...</div>
+                    <div className="p-4 space-y-3">
+                        {[...Array(3)].map((_, idx) => (
+                            <BookingCardSkeleton key={idx} />
+                        ))}
                     </div>
                 ) : (
                     <div className="p-4 space-y-3">
