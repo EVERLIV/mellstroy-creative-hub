@@ -662,11 +662,11 @@ const MyBookingsPage: React.FC = () => {
 
             {verificationCode && (
                 <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 pb-20" onClick={() => setVerificationCode(null)}>
-                    <div className="bg-white rounded-lg w-full max-w-sm overflow-hidden shadow-lg" onClick={e => e.stopPropagation()}>
-                        <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between">
-                            <h2 className="text-base font-bold text-gray-900">Verification Code</h2>
-                            <button onClick={() => setVerificationCode(null)} className="p-2 -mr-2 rounded-lg hover:bg-gray-100 transition-colors">
-                                <X className="w-5 h-5 text-gray-800" />
+                    <div className="bg-card rounded-lg w-full max-w-sm overflow-hidden shadow-lg" onClick={e => e.stopPropagation()}>
+                        <div className="px-4 py-3 border-b border-border flex items-center justify-between">
+                            <h2 className="text-base font-bold text-foreground">Verification Code</h2>
+                            <button onClick={() => setVerificationCode(null)} className="p-2 -mr-2 rounded-lg hover:bg-muted transition-colors">
+                                <X className="w-5 h-5 text-foreground" />
                             </button>
                         </div>
                         <div className="p-4">
