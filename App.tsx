@@ -21,6 +21,8 @@ import SearchPage from './pages/SearchPage';
 import FavoritesPage from './pages/FavoritesPage';
 import MyBookingsPage from './pages/MyBookingsPage';
 import ChatPage from './pages/ChatPage';
+import MessageListPage from './pages/MessageListPage';
+import ChatConversationPage from './pages/ChatConversationPage';
 import OnboardingPageContainer from './pages/OnboardingPageContainer';
 import ProfileContainer from './pages/ProfileContainer';
 import VerificationPage from './pages/VerificationPage';
@@ -446,6 +448,22 @@ const AppRoutes = () => {
                 trainers={trainers}
                 currentUserId={currentUserId}
               />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/messages"
+          element={
+            <ProtectedRoute>
+              <MessageListPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/messages/:recipientId"
+          element={
+            <ProtectedRoute>
+              <ChatConversationPage />
             </ProtectedRoute>
           }
         />
