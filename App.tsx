@@ -247,7 +247,23 @@ const AppRoutes = () => {
     <div className="min-h-screen bg-background">
       <Routes>
         <Route path="/auth" element={user ? <Navigate to="/" replace /> : <AuthPage />} />
-        <Route path="/welcome" element={<WelcomePage />} />
+        <Route 
+          path="/welcome" 
+          element={
+            <WelcomePage 
+              trainers={trainers}
+              onOpenMealPlanner={() => navigate('/meal-planner')}
+              onOpenAICoach={() => navigate('/ai-coach')}
+              events={events}
+              onNavigate={(page) => navigate(`/${page}`)}
+              onSelectEvent={(event) => navigate(`/events/${event.id}`)}
+              onSelectTopCategory={(category) => {
+                setSelectedCategory(category.id);
+                navigate('/explore');
+              }}
+            />
+          } 
+        />
         <Route path="/onboarding" element={<ProtectedRoute><OnboardingPageContainer /></ProtectedRoute>} />
         <Route
           path="/"
