@@ -173,7 +173,7 @@ const BookedClassCard: React.FC<BookedClassCardProps> = ({
                 <div className="flex gap-2 pt-2 border-t border-border">
                     <button 
                         onClick={handleChatClick}
-                        className="flex-1 bg-primary text-primary-foreground text-xs font-semibold py-2.5 px-3 rounded-lg hover:bg-primary/90 active:scale-95 transition-all duration-200 flex items-center justify-center gap-1.5"
+                        className="flex-1 bg-secondary text-secondary-foreground text-xs font-semibold py-2.5 px-3 rounded-lg hover:bg-secondary/80 active:scale-95 transition-all duration-200 flex items-center justify-center gap-1.5"
                     >
                         <MessageCircle className="w-3.5 h-3.5" />
                         Chat
