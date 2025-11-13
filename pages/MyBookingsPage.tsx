@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Trainer, Class, Booking, UserRole } from '../types';
-import { X, Calendar, MapPin, QrCode, CheckCircle, Clock, MessageCircle } from 'lucide-react';
+import { X, Calendar, MapPin, QrCode, CheckCircle, Clock, MessageCircle, Star } from 'lucide-react';
 import { supabase } from '../src/integrations/supabase/client';
 import { useAuth } from '../src/hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
@@ -117,6 +117,7 @@ const BookedClassCard: React.FC<BookedClassCardProps> = ({
     const { trainer, cls, booking, student } = bookingInfo;
     const isStudentView = userRole === 'student';
     const displayPerson = isStudentView ? trainer : student;
+    const [showProfileModal, setShowProfileModal] = useState(false);
 
     const handleChatClick = () => {
         if (isStudentView && trainer) {
@@ -127,23 +128,27 @@ const BookedClassCard: React.FC<BookedClassCardProps> = ({
     };
     
     return (
-        <div className="bg-card rounded-lg shadow-sm border border-border overflow-hidden transition-all duration-300 hover:shadow-md hover:-translate-y-0.5">
-            <div className="p-3">
-                {/* Status Badge */}
-                {booking.status === 'attended' && (
-                    <div className="mb-3 inline-flex items-center bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 text-xs font-bold px-2.5 py-1 rounded-full">
-                        <CheckCircle className="w-3.5 h-3.5 mr-1" />
-                        Verified
-                    </div>
-                )}
+        <>
+            <div className="bg-card rounded-lg shadow-sm border border-border overflow-hidden transition-all duration-300 hover:shadow-md hover:-translate-y-0.5">
+                <div className="p-3">
+                    {/* Status Badge */}
+                    {booking.status === 'attended' && (
+                        <div className="mb-3 inline-flex items-center bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 text-xs font-bold px-2.5 py-1 rounded-full">
+                            <CheckCircle className="w-3.5 h-3.5 mr-1" />
+                            Verified
+                        </div>
+                    )}
 
-                {/* Class Name & Person */}
-                <div className="mb-3">
-                    <h3 className="text-sm font-bold text-foreground">{cls.name}</h3>
-                    <p className="text-xs text-muted-foreground mt-1">
-                        {isStudentView ? `Trainer: ${trainer?.name || 'N/A'}` : `Student: ${student?.name || 'N/A'}`}
-                    </p>
-                </div>
+                    {/* Class Name & Person */}
+                    <div className="mb-3">
+                        <h3 className="text-sm font-bold text-foreground">{cls.name}</h3>
+                        <button 
+                            onClick={() => setShowProfileModal(true)}
+                            className="text-xs text-primary hover:underline mt-1 text-left"
+                        >
+                            {isStudentView ? `Trainer: ${trainer?.name || 'N/A'}` : `Student: ${student?.name || 'N/A'}`}
+                        </button>
+                    </div>
 
                 {/* Date & Time & Location */}
                 <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 mb-3">
@@ -216,6 +221,57 @@ const BookedClassCard: React.FC<BookedClassCardProps> = ({
                 </div>
             </div>
         </div>
+
+        {/* Profile Modal */}
+        {showProfileModal && displayPerson && (
+            <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 pb-20" onClick={() => setShowProfileModal(false)}>
+                <div className="bg-card rounded-lg w-full max-w-md overflow-hidden shadow-lg" onClick={e => e.stopPropagation()}>
+                    <div className="px-4 py-3 border-b border-border flex items-center justify-between">
+                        <h2 className="text-base font-bold text-foreground">Profile</h2>
+                        <button onClick={() => setShowProfileModal(false)} className="p-2 -mr-2 rounded-lg hover:bg-muted transition-colors">
+                            <X className="w-5 h-5 text-foreground" />
+                        </button>
+                    </div>
+                    <div className="p-4">
+                        {/* Profile Image */}
+                        <div className="flex flex-col items-center mb-4">
+                            <img 
+                                src={displayPerson.avatarUrl || 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=200'} 
+                                alt={displayPerson.name}
+                                className="w-24 h-24 rounded-full object-cover border-4 border-border mb-3"
+                            />
+                            <h3 className="text-lg font-bold text-foreground">{displayPerson.name}</h3>
+                        </div>
+
+                        {/* Profile Info */}
+                        <div className="space-y-3">
+                            {displayPerson.location && (
+                                <div className="flex items-center gap-2">
+                                    <MapPin className="w-4 h-4 text-muted-foreground" />
+                                    <span className="text-sm text-foreground">{displayPerson.location}</span>
+                                </div>
+                            )}
+                            {displayPerson.rating && (
+                                <div className="flex items-center gap-2">
+                                    <Star className="w-4 h-4 text-yellow-400 fill-yellow-400" />
+                                    <span className="text-sm text-foreground">Rating: {displayPerson.rating.toFixed(1)}</span>
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                    <div className="px-4 py-3 bg-muted/30 border-t border-border">
+                        <button 
+                            onClick={handleChatClick}
+                            className="w-full bg-primary text-primary-foreground text-sm font-semibold py-2.5 rounded-lg hover:bg-primary/90 active:scale-95 transition-all duration-200 flex items-center justify-center gap-2"
+                        >
+                            <MessageCircle className="w-4 h-4" />
+                            Send Message
+                        </button>
+                    </div>
+                </div>
+            </div>
+        )}
+        </>
     );
 };
 
@@ -477,19 +533,19 @@ const MyBookingsPage: React.FC = () => {
 
     if (loading) {
         return (
-            <div className="bg-white h-full flex items-center justify-center">
-                <p className="text-sm text-gray-600">Loading...</p>
+            <div className="bg-background h-full flex items-center justify-center">
+                <p className="text-sm text-muted-foreground">Loading...</p>
             </div>
         );
     }
 
     if (!user) {
         return (
-            <div className="bg-white h-full flex flex-col items-center justify-center gap-4 px-4">
-                <p className="text-sm text-gray-600 text-center">Please log in to view your bookings</p>
+            <div className="bg-background h-full flex flex-col items-center justify-center gap-4 px-4">
+                <p className="text-sm text-muted-foreground text-center">Please log in to view your bookings</p>
                 <button
                     onClick={() => navigate('/auth')}
-                    className="px-4 py-2 bg-blue-600 text-white text-xs font-semibold rounded-lg hover:bg-blue-700 active:scale-95 transition-all duration-200 shadow-sm"
+                    className="px-4 py-2 bg-primary text-primary-foreground text-xs font-semibold rounded-lg hover:bg-primary/90 active:scale-95 transition-all duration-200"
                 >
                     Go to Login
                 </button>
@@ -498,22 +554,22 @@ const MyBookingsPage: React.FC = () => {
     }
 
     return (
-        <div className="bg-white h-full flex flex-col overflow-hidden">
+        <div className="bg-background h-full flex flex-col overflow-hidden">
             {/* Header */}
-            <div className="flex items-center justify-between px-4 py-3 bg-white shadow-sm z-20 flex-shrink-0">
+            <div className="flex items-center justify-between px-4 py-3 bg-card shadow-sm z-20 flex-shrink-0 border-b border-border">
                 <div className="w-9"></div>
-                <h1 className="text-base font-bold text-gray-900">My Bookings</h1>
+                <h1 className="text-lg font-bold text-foreground">My Bookings</h1>
                 <div className="w-9"></div>
             </div>
 
             {/* Tabs */}
-            <div className="flex gap-2 px-4 py-2 bg-white border-b border-gray-100">
+            <div className="flex gap-2 px-4 py-2 bg-card border-b border-border">
                 <button 
                     onClick={() => setActiveTab('upcoming')} 
                     className={`flex-1 py-2 rounded-lg font-semibold text-xs transition-colors ${
                         activeTab === 'upcoming' 
-                            ? 'bg-blue-600 text-white shadow-sm' 
-                            : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                            ? 'bg-primary text-primary-foreground' 
+                            : 'bg-secondary text-secondary-foreground hover:bg-secondary/80'
                     }`}
                 >
                     Upcoming
@@ -522,8 +578,8 @@ const MyBookingsPage: React.FC = () => {
                     onClick={() => setActiveTab('past')} 
                     className={`flex-1 py-2 rounded-lg font-semibold text-xs transition-colors ${
                         activeTab === 'past' 
-                            ? 'bg-blue-600 text-white shadow-sm' 
-                            : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                            ? 'bg-primary text-primary-foreground' 
+                            : 'bg-secondary text-secondary-foreground hover:bg-secondary/80'
                     }`}
                 >
                     Past
@@ -532,7 +588,7 @@ const MyBookingsPage: React.FC = () => {
 
             {/* Scrollable Content */}
             <div ref={containerRef} className="flex-1 overflow-y-auto">
-                <div className="px-4 py-3 bg-gray-50 pb-[calc(5rem+env(safe-area-inset-bottom))]">
+                <div className="px-4 py-3 bg-background pb-[calc(5rem+env(safe-area-inset-bottom))]">
                     <PullToRefreshIndicator 
                         pullDistance={pullDistance}
                         isRefreshing={isRefreshing}
