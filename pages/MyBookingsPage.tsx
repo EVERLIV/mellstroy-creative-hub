@@ -1,12 +1,44 @@
 import React, { useState, useEffect } from 'react';
 import { Trainer, Class, Booking, UserRole } from '../types';
-import { X, Calendar, MapPin, Edit, QrCode, CheckCircle } from 'lucide-react';
+import { X, Calendar, MapPin, QrCode, CheckCircle } from 'lucide-react';
 import { supabase } from '../src/integrations/supabase/client';
 import { useAuth } from '../src/hooks/useAuth';
+import { useNavigate } from 'react-router-dom';
+import { useToast } from '../src/hooks/use-toast';
 import BookingVerificationDisplay from '../components/BookingVerificationDisplay';
 import VerifyAttendanceModal from '../components/VerifyAttendanceModal';
 
-type BookingInfo = { trainer: Trainer; cls: Class; booking: Booking; student?: Trainer };
+// Extended interfaces for this page
+interface BookingData {
+    id: string;
+    date: string;
+    time: string;
+    userId: string;
+    trainerId: string;
+    classId: string;
+    status: 'booked' | 'attended' | 'cancelled';
+    hasReview: boolean;
+    verificationCode?: string;
+}
+
+interface ClassData {
+    id: string;
+    name: string;
+    description: string;
+    duration: number;
+    price: number;
+    schedule?: { days: string[]; time: string };
+}
+
+interface TrainerData {
+    id: string;
+    name: string;
+    avatarUrl: string;
+    location: string;
+    rating: number;
+}
+
+type BookingInfo = { trainer: TrainerData; cls: ClassData; booking: BookingData; student?: TrainerData };
 
 interface CancelBookingModalProps {
     bookingInfo: BookingInfo;
