@@ -66,28 +66,28 @@ const BookingModal: React.FC<BookingModalProps> = ({ bookingTarget, onConfirmBoo
 
     return (
         <div 
-            className="fixed inset-0 bg-gray-600 flex items-center justify-center z-50 p-4 pb-20 animate-fade-in"
+            className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 pb-20 animate-fade-in"
             onClick={onClose}
             role="dialog"
             aria-modal="true"
         >
             <div 
-                className="bg-gray-100 rounded-lg w-full max-w-sm transform animate-slide-up flex flex-col max-h-[85vh] shadow-2xl border border-gray-300"
+                className="bg-muted rounded-lg w-full max-w-sm transform animate-slide-up flex flex-col max-h-[85vh] shadow-2xl border border-border"
                 onClick={e => e.stopPropagation()}
             >
-                <div className="p-4 bg-white border-b border-gray-200 relative flex-shrink-0">
-                    <h2 className="text-base font-semibold text-gray-900 text-center">Schedule a Class</h2>
-                    <p className="text-sm text-gray-600 text-center">{cls.name}</p>
-                    <button onClick={onClose} className="absolute top-3 right-3 p-1.5 rounded-md hover:bg-gray-200 transition-colors">
-                        <X className="w-4 h-4 text-gray-600" />
+                <div className="p-4 bg-card border-b border-border relative flex-shrink-0">
+                    <h2 className="text-base font-semibold text-foreground text-center">Schedule a Class</h2>
+                    <p className="text-sm text-muted-foreground text-center">{cls.name}</p>
+                    <button onClick={onClose} className="absolute top-3 right-3 p-1.5 rounded-md hover:bg-muted transition-colors">
+                        <X className="w-4 h-4 text-muted-foreground" />
                     </button>
                 </div>
                 
-                <div className="p-4 bg-white overflow-y-auto flex-1">
+                <div className="p-4 bg-card overflow-y-auto flex-1">
                     {/* Date Picker */}
                     <div>
-                        <div className="flex items-center text-md font-semibold text-gray-700 mb-2">
-                            <Calendar className="w-5 h-5 mr-2 text-gray-400" />
+                        <div className="flex items-center text-md font-semibold text-foreground mb-2">
+                            <Calendar className="w-5 h-5 mr-2 text-muted-foreground" />
                             Select a Start Date
                         </div>
                         <div className="grid grid-cols-4 gap-2">
@@ -103,10 +103,10 @@ const BookingModal: React.FC<BookingModalProps> = ({ bookingTarget, onConfirmBoo
                                         disabled={!isAvailable}
                                         className={`flex-shrink-0 flex flex-col items-center justify-center h-20 rounded-xl transition-all duration-200
                                             ${isSelected 
-                                                ? 'bg-[#FF6B35] text-white shadow-lg' 
+                                                ? 'bg-primary text-primary-foreground shadow-lg' 
                                                 : isAvailable 
-                                                ? 'bg-white text-gray-700 border border-gray-200 hover:bg-orange-50' 
-                                                : 'bg-gray-100 text-gray-400 cursor-not-allowed opacity-70'
+                                                ? 'bg-card text-foreground border border-border hover:bg-primary/10' 
+                                                : 'bg-muted text-muted-foreground cursor-not-allowed opacity-70'
                                             }`}
                                     >
                                         <span className="text-sm font-medium">{date.toLocaleDateString('en-US', { weekday: 'short' })}</span>
@@ -121,30 +121,30 @@ const BookingModal: React.FC<BookingModalProps> = ({ bookingTarget, onConfirmBoo
                         <div className="animate-fade-in">
                             {/* Time Display */}
                             <div className="mt-5">
-                                <div className="flex items-center text-md font-semibold text-gray-700 mb-2">
-                                    <Clock className="w-5 h-5 mr-2 text-gray-400" />
+                                <div className="flex items-center text-md font-semibold text-foreground mb-2">
+                                    <Clock className="w-5 h-5 mr-2 text-muted-foreground" />
                                     Class Time
                                 </div>
-                                <div className="bg-slate-100 text-slate-800 text-center text-lg font-bold p-3 rounded-lg">
+                                <div className="bg-muted text-foreground text-center text-lg font-bold p-3 rounded-lg">
                                     {cls.schedule?.time}
                                 </div>
                             </div>
                             
                             {/* Booking Period */}
                              <div className="mt-5">
-                                <h3 className="text-md font-semibold text-gray-700 mb-2">Booking Period</h3>
+                                <h3 className="text-md font-semibold text-foreground mb-2">Booking Period</h3>
                                 <div className="space-y-2">
-                                    <label className="flex items-center p-3 rounded-lg border-2 has-[:checked]:border-orange-400 has-[:checked]:bg-orange-50 transition-colors">
-                                        <input type="radio" name="booking-period" value="once" checked={bookingPeriod === 'once'} onChange={() => setBookingPeriod('once')} className="h-4 w-4 text-orange-600 focus:ring-orange-500 border-gray-300" />
-                                        <span className="ml-3 text-sm font-medium text-gray-700">Book single class</span>
+                                    <label className="flex items-center p-3 rounded-lg border-2 has-[:checked]:border-primary has-[:checked]:bg-primary/10 transition-colors">
+                                        <input type="radio" name="booking-period" value="once" checked={bookingPeriod === 'once'} onChange={() => setBookingPeriod('once')} className="h-4 w-4 text-primary focus:ring-primary border-input" />
+                                        <span className="ml-3 text-sm font-medium text-foreground">Book single class</span>
                                     </label>
-                                     <label className="flex items-center p-3 rounded-lg border-2 has-[:checked]:border-orange-400 has-[:checked]:bg-orange-50 transition-colors">
-                                        <input type="radio" name="booking-period" value="4weeks" checked={bookingPeriod === '4weeks'} onChange={() => setBookingPeriod('4weeks')} className="h-4 w-4 text-orange-600 focus:ring-orange-500 border-gray-300" />
-                                        <span className="ml-3 text-sm font-medium text-gray-700">Enroll for 4 weeks</span>
+                                     <label className="flex items-center p-3 rounded-lg border-2 has-[:checked]:border-primary has-[:checked]:bg-primary/10 transition-colors">
+                                        <input type="radio" name="booking-period" value="4weeks" checked={bookingPeriod === '4weeks'} onChange={() => setBookingPeriod('4weeks')} className="h-4 w-4 text-primary focus:ring-primary border-input" />
+                                        <span className="ml-3 text-sm font-medium text-foreground">Enroll for 4 weeks</span>
                                     </label>
                                 </div>
                                 {bookingPeriod === '4weeks' && (
-                                    <div className="flex items-start gap-2 p-2 mt-2 bg-blue-50 text-blue-700 rounded-lg text-xs">
+                                    <div className="flex items-start gap-2 p-2 mt-2 bg-primary/10 text-primary rounded-lg text-xs">
                                         <Info className="w-4 h-4 mt-0.5 flex-shrink-0"/>
                                         <span>This will book all recurring classes for 4 weeks starting from your selected date.</span>
                                     </div>
@@ -153,30 +153,30 @@ const BookingModal: React.FC<BookingModalProps> = ({ bookingTarget, onConfirmBoo
 
                             {/* Privacy Policy & Terms */}
                             <div className="mt-5 space-y-3">
-                                <div className="flex items-center gap-2 text-gray-700">
-                                    <Shield className="w-5 h-5 text-gray-400 flex-shrink-0" />
+                                <div className="flex items-center gap-2 text-foreground">
+                                    <Shield className="w-5 h-5 text-muted-foreground flex-shrink-0" />
                                     <h3 className="text-md font-semibold">Agreements</h3>
                                 </div>
-                                <label className="flex items-start gap-3 p-3 rounded-lg border-2 border-gray-200 has-[:checked]:border-orange-400 has-[:checked]:bg-orange-50 transition-colors cursor-pointer">
+                                <label className="flex items-start gap-3 p-3 rounded-lg border-2 border-border has-[:checked]:border-primary has-[:checked]:bg-primary/10 transition-colors cursor-pointer">
                                     <input 
                                         type="checkbox" 
                                         checked={acceptPrivacy} 
                                         onChange={(e) => setAcceptPrivacy(e.target.checked)}
-                                        className="mt-0.5 h-4 w-4 text-orange-600 focus:ring-orange-500 border-gray-300 rounded"
+                                        className="mt-0.5 h-4 w-4 text-primary focus:ring-primary border-input rounded"
                                     />
-                                    <span className="text-xs text-gray-600 leading-relaxed">
-                                        I have read and accept the <span className="font-semibold text-orange-600">Privacy Policy</span>
+                                    <span className="text-xs text-muted-foreground leading-relaxed">
+                                        I have read and accept the <span className="font-semibold text-primary">Privacy Policy</span>
                                     </span>
                                 </label>
-                                <label className="flex items-start gap-3 p-3 rounded-lg border-2 border-gray-200 has-[:checked]:border-orange-400 has-[:checked]:bg-orange-50 transition-colors cursor-pointer">
+                                <label className="flex items-start gap-3 p-3 rounded-lg border-2 border-border has-[:checked]:border-primary has-[:checked]:bg-primary/10 transition-colors cursor-pointer">
                                     <input 
                                         type="checkbox" 
                                         checked={acceptTerms} 
                                         onChange={(e) => setAcceptTerms(e.target.checked)}
-                                        className="mt-0.5 h-4 w-4 text-orange-600 focus:ring-orange-500 border-gray-300 rounded"
+                                        className="mt-0.5 h-4 w-4 text-primary focus:ring-primary border-input rounded"
                                     />
-                                    <span className="text-xs text-gray-600 leading-relaxed">
-                                        I acknowledge the <span className="font-semibold text-orange-600">booking terms</span> and cancellation policy
+                                    <span className="text-xs text-muted-foreground leading-relaxed">
+                                        I acknowledge the <span className="font-semibold text-primary">booking terms</span> and cancellation policy
                                     </span>
                                 </label>
                             </div>
@@ -185,11 +185,11 @@ const BookingModal: React.FC<BookingModalProps> = ({ bookingTarget, onConfirmBoo
                 </div>
                 
                 {/* Footer */}
-                <div className="p-4 bg-gray-50 border-t border-gray-200 flex-shrink-0">
+                <div className="p-4 bg-muted border-t border-border flex-shrink-0">
                     <button
                         onClick={handleConfirm}
                         disabled={!selectedDate || !cls.schedule?.time || !acceptPrivacy || !acceptTerms}
-                        className="w-full bg-[#FF6B35] text-white font-medium py-2.5 rounded-md transition-all duration-200 shadow-sm hover:bg-orange-600 disabled:bg-gray-300 disabled:shadow-none disabled:cursor-not-allowed text-sm"
+                        className="w-full bg-primary text-primary-foreground font-medium py-2.5 rounded-md transition-all duration-200 shadow-sm hover:bg-primary/90 disabled:bg-muted disabled:text-muted-foreground disabled:shadow-none disabled:cursor-not-allowed text-sm"
                     >
                         Confirm Booking for {formatVND(totalPrice)}
                     </button>
