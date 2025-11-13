@@ -286,20 +286,24 @@ const MessageListPage: React.FC = () => {
                     onClick={() => navigate(`/chat/${conv.other_participant.id}`, {
                       state: { bookingDetails: conv.booking_details }
                     })}
-                    className="w-full p-4 bg-card rounded-lg border border-border hover:shadow-sm hover:-translate-y-0.5 transition-all text-left"
+                    className={`w-full p-4 rounded-lg border transition-all text-left ${
+                      conv.unread_count > 0 
+                        ? 'bg-primary/5 border-primary/30 hover:bg-primary/10' 
+                        : 'bg-card border-border hover:bg-accent/5'
+                    }`}
                   >
                     <div className="flex items-center justify-between mb-2">
-                      <span className="text-sm font-bold text-foreground">
+                      <span className={`text-sm ${conv.unread_count > 0 ? 'font-bold' : 'font-semibold'} text-foreground`}>
                         {conv.other_participant.username}
                       </span>
                       <div className="flex items-center gap-2">
                         {conv.unread_count > 0 && (
-                          <div className="px-2 py-0.5 bg-primary rounded-full">
+                          <div className="px-2 py-1 bg-primary rounded-full">
                             <span className="text-primary-foreground text-xs font-bold">{conv.unread_count}</span>
                           </div>
                         )}
                         {conv.last_message && (
-                          <span className="text-xs text-muted-foreground">
+                          <span className={`text-xs ${conv.unread_count > 0 ? 'text-primary font-semibold' : 'text-muted-foreground'}`}>
                             {formatDistanceToNow(new Date(conv.last_message.created_at), { addSuffix: true })}
                           </span>
                         )}
@@ -308,29 +312,36 @@ const MessageListPage: React.FC = () => {
 
                     {/* Booking details if available */}
                     {conv.booking_details && (
-                      <div className="mb-2 space-y-1">
-                        <p className="text-sm font-semibold text-foreground">
+                      <div className="mb-2 p-2 bg-background/50 rounded-md border border-border/50">
+                        <p className={`text-sm mb-1.5 ${conv.unread_count > 0 ? 'font-bold' : 'font-semibold'} text-foreground`}>
                           {conv.booking_details.class_name}
                         </p>
-                        <div className="flex items-center gap-3 text-xs text-muted-foreground">
-                          <span>
-                            {new Date(conv.booking_details.booking_date).toLocaleDateString()}
-                          </span>
-                          <span>•</span>
-                          <span>
-                            {conv.booking_details.booking_time}
-                          </span>
-                          <span>•</span>
-                          <span>
-                            ID: {conv.booking_details.verification_code}
-                          </span>
+                        <div className="flex flex-wrap items-center gap-2 text-xs">
+                          <div className="flex items-center gap-1 px-2 py-1 bg-card rounded">
+                            <span className="font-semibold text-foreground">Date:</span>
+                            <span className="text-muted-foreground">
+                              {new Date(conv.booking_details.booking_date).toLocaleDateString('en-US', { 
+                                month: 'short', 
+                                day: 'numeric',
+                                year: 'numeric'
+                              })}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-1 px-2 py-1 bg-card rounded">
+                            <span className="font-semibold text-foreground">Time:</span>
+                            <span className="text-muted-foreground">{conv.booking_details.booking_time}</span>
+                          </div>
+                          <div className="flex items-center gap-1 px-2 py-1 bg-card rounded">
+                            <span className="font-semibold text-foreground">ID:</span>
+                            <span className="text-primary font-mono">{conv.booking_details.verification_code}</span>
+                          </div>
                         </div>
                       </div>
                     )}
 
                     {conv.last_message && (
                       <p className={`text-xs truncate ${conv.unread_count > 0 ? 'font-semibold text-foreground' : 'text-muted-foreground'}`}>
-                        {isMyMessage && 'You: '}
+                        {isMyMessage && <span className="text-muted-foreground">You: </span>}
                         {conv.last_message.content}
                       </p>
                     )}
