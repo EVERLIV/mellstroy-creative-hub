@@ -10,6 +10,7 @@ interface Conversation {
   participant_1_id: string;
   participant_2_id: string;
   last_message_at: string;
+  booking_id?: string | null;
   last_message?: {
     content: string;
     sender_id: string;
@@ -20,6 +21,13 @@ interface Conversation {
     username: string;
     avatar_url: string | null;
   };
+  booking_details?: {
+    id: string;
+    booking_date: string;
+    booking_time: string;
+    class_name: string;
+    verification_code: string;
+  } | null;
   unread_count: number;
 }
 
@@ -83,10 +91,39 @@ const MessageListPage: React.FC = () => {
               .eq('recipient_id', user.id)
               .eq('is_read', false);
 
+            // Get booking details if booking_id exists
+            let bookingDetails = null;
+            if (conv.booking_id) {
+              const { data: bookingData } = await supabase
+                .from('bookings')
+                .select(`
+                  id,
+                  booking_date,
+                  booking_time,
+                  verification_code,
+                  classes:class_id (
+                    name
+                  )
+                `)
+                .eq('id', conv.booking_id)
+                .single();
+
+              if (bookingData) {
+                bookingDetails = {
+                  id: bookingData.id,
+                  booking_date: bookingData.booking_date,
+                  booking_time: bookingData.booking_time,
+                  class_name: (bookingData.classes as any)?.name || 'Unknown Class',
+                  verification_code: bookingData.verification_code
+                };
+              }
+            }
+
             return {
               ...conv,
               other_participant: profileData || { id: otherParticipantId, username: 'Unknown', avatar_url: null },
               last_message: lastMessageData || undefined,
+              booking_details: bookingDetails,
               unread_count: unreadCount || 0
             };
           })
@@ -165,10 +202,39 @@ const MessageListPage: React.FC = () => {
             .eq('recipient_id', user.id)
             .eq('is_read', false);
 
+          // Get booking details if booking_id exists
+          let bookingDetails = null;
+          if (conv.booking_id) {
+            const { data: bookingData } = await supabase
+              .from('bookings')
+              .select(`
+                id,
+                booking_date,
+                booking_time,
+                verification_code,
+                classes:class_id (
+                  name
+                )
+              `)
+              .eq('id', conv.booking_id)
+              .single();
+
+            if (bookingData) {
+              bookingDetails = {
+                id: bookingData.id,
+                booking_date: bookingData.booking_date,
+                booking_time: bookingData.booking_time,
+                class_name: (bookingData.classes as any)?.name || 'Unknown Class',
+                verification_code: bookingData.verification_code
+              };
+            }
+          }
+
           return {
             ...conv,
             other_participant: profileData || { id: otherParticipantId, username: 'Unknown', avatar_url: null },
             last_message: lastMessageData || undefined,
+            booking_details: bookingDetails,
             unread_count: unreadCount || 0
           };
         })

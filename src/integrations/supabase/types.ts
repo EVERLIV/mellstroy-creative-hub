@@ -233,6 +233,7 @@ export type Database = {
       }
       conversations: {
         Row: {
+          booking_id: string | null
           created_at: string
           id: string
           last_message_at: string | null
@@ -240,6 +241,7 @@ export type Database = {
           participant_2_id: string
         }
         Insert: {
+          booking_id?: string | null
           created_at?: string
           id?: string
           last_message_at?: string | null
@@ -247,13 +249,22 @@ export type Database = {
           participant_2_id: string
         }
         Update: {
+          booking_id?: string | null
           created_at?: string
           id?: string
           last_message_at?: string | null
           participant_1_id?: string
           participant_2_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "conversations_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "bookings"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       event_interests: {
         Row: {

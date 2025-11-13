@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
-import { ArrowLeft, Send, Loader } from 'lucide-react';
+import { ArrowLeft, Send, Loader, MoreVertical, Flag } from 'lucide-react';
 import { supabase } from '../src/integrations/supabase/client';
 import { useAuth } from '../src/hooks/useAuth';
 import { useToast } from '../src/hooks/use-toast';
 import { formatDistanceToNow } from 'date-fns';
+import ReportModal from '../components/ReportModal';
 
 interface Message {
   id: string;
@@ -35,12 +36,14 @@ const ChatConversationPage: React.FC = () => {
   const [recipient, setRecipient] = useState<Participant | null>(null);
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
+  const [showMenu, setShowMenu] = useState(false);
+  const [showReportModal, setShowReportModal] = useState(false);
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
-  // Get context from location state
-  const context = location.state?.context;
+  // Get booking details from location state
+  const bookingDetails = location.state?.bookingDetails;
 
   // Scroll to bottom
   const scrollToBottom = () => {
@@ -225,6 +228,15 @@ const ChatConversationPage: React.FC = () => {
     }
   };
 
+  const handleReport = (reason: string, details: string) => {
+    toast({
+      title: 'Report Submitted',
+      description: 'Thank you for helping keep our community safe.'
+    });
+    setShowReportModal(false);
+    setShowMenu(false);
+  };
+
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
@@ -264,23 +276,22 @@ const ChatConversationPage: React.FC = () => {
             />
             <div className="flex-1 min-w-0">
               <h2 className="text-sm font-bold text-gray-900 truncate">{recipient.username}</h2>
-              {context?.className && (
-                <p className="text-xs text-gray-600 truncate">
-                  Re: {context.className}
-                </p>
-              )}
             </div>
           </>
         )}
       </div>
 
-      {/* Context Banner */}
-      {context?.className && (
-        <div className="bg-accent/10 border-b border-border px-4 py-2">
-          <p className="text-xs text-foreground">
-            <span className="font-semibold">Class:</span> {context.className}
-            {context.bookingDate && <span> • {context.bookingDate}</span>}
-          </p>
+      {/* Booking details banner if provided */}
+      {bookingDetails && (
+        <div className="bg-primary/5 border-b border-border p-4">
+          <div className="max-w-2xl mx-auto">
+            <p className="text-sm font-semibold text-foreground mb-1">{bookingDetails.class_name}</p>
+            <div className="flex items-center gap-4 text-xs text-muted-foreground">
+              <span>📅 {new Date(bookingDetails.booking_date).toLocaleDateString()}</span>
+              <span>🕐 {bookingDetails.booking_time}</span>
+              <span>ID: {bookingDetails.verification_code}</span>
+            </div>
+          </div>
         </div>
       )}
 
@@ -344,6 +355,14 @@ const ChatConversationPage: React.FC = () => {
           </button>
         </div>
       </div>
+
+      {/* Report Modal */}
+      <ReportModal
+        isOpen={showReportModal}
+        onClose={() => setShowReportModal(false)}
+        onSubmit={handleReport}
+        trainerName={recipient?.username || 'User'}
+      />
     </div>
   );
 };
