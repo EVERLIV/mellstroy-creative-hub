@@ -94,28 +94,31 @@ const MessageListPage: React.FC = () => {
             // Get booking details if booking_id exists
             let bookingDetails = null;
             if (conv.booking_id) {
-              const { data: bookingData } = await supabase
-                .from('bookings')
-                .select(`
-                  id,
-                  booking_date,
-                  booking_time,
-                  verification_code,
-                  classes:class_id (
-                    name
-                  )
-                `)
-                .eq('id', conv.booking_id)
-                .single();
+              try {
+                const { data: bookingData, error: bookingError } = await supabase
+                  .from('bookings')
+                  .select('id, booking_date, booking_time, verification_code, class_id')
+                  .eq('id', conv.booking_id)
+                  .single();
 
-              if (bookingData) {
-                bookingDetails = {
-                  id: bookingData.id,
-                  booking_date: bookingData.booking_date,
-                  booking_time: bookingData.booking_time,
-                  class_name: (bookingData.classes as any)?.name || 'Unknown Class',
-                  verification_code: bookingData.verification_code
-                };
+                if (bookingData && !bookingError) {
+                  // Get class name separately
+                  const { data: classData } = await supabase
+                    .from('classes')
+                    .select('name')
+                    .eq('id', bookingData.class_id)
+                    .single();
+
+                  bookingDetails = {
+                    id: bookingData.id,
+                    booking_date: bookingData.booking_date,
+                    booking_time: bookingData.booking_time,
+                    class_name: classData?.name || 'Unknown Class',
+                    verification_code: bookingData.verification_code || ''
+                  };
+                }
+              } catch (err) {
+                // Silently fail for booking details - conversation should still show
               }
             }
 
