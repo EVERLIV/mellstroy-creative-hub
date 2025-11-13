@@ -283,7 +283,9 @@ const MessageListPage: React.FC = () => {
                 return (
                   <button
                     key={conv.id}
-                    onClick={() => navigate(`/messages/${conv.other_participant.id}`)}
+                    onClick={() => navigate(`/chat/${conv.other_participant.id}`, {
+                      state: { bookingDetails: conv.booking_details }
+                    })}
                     className="w-full flex items-center gap-3 p-3 bg-card rounded-lg border border-border hover:shadow-sm hover:-translate-y-0.5 transition-all text-left"
                   >
                     <div className="relative flex-shrink-0">
@@ -310,6 +312,27 @@ const MessageListPage: React.FC = () => {
                           </span>
                         )}
                       </div>
+
+                      {/* Booking details if available */}
+                      {conv.booking_details && (
+                        <div className="mb-1 p-2 bg-primary/5 rounded-md">
+                          <p className="text-xs font-semibold text-primary truncate">
+                            {conv.booking_details.class_name}
+                          </p>
+                          <div className="flex items-center gap-2 mt-0.5">
+                            <span className="text-xs text-muted-foreground">
+                              📅 {new Date(conv.booking_details.booking_date).toLocaleDateString()}
+                            </span>
+                            <span className="text-xs text-muted-foreground">
+                              🕐 {conv.booking_details.booking_time}
+                            </span>
+                          </div>
+                          <p className="text-xs text-muted-foreground mt-0.5">
+                            ID: {conv.booking_details.verification_code}
+                          </p>
+                        </div>
+                      )}
+
                       {conv.last_message && (
                         <p className={`text-xs truncate ${conv.unread_count > 0 ? 'font-semibold text-foreground' : 'text-muted-foreground'}`}>
                           {isMyMessage && 'You: '}
