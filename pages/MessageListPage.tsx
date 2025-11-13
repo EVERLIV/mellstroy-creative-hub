@@ -286,60 +286,54 @@ const MessageListPage: React.FC = () => {
                     onClick={() => navigate(`/chat/${conv.other_participant.id}`, {
                       state: { bookingDetails: conv.booking_details }
                     })}
-                    className="w-full flex items-center gap-3 p-3 bg-card rounded-lg border border-border hover:shadow-sm hover:-translate-y-0.5 transition-all text-left"
+                    className="w-full p-4 bg-card rounded-lg border border-border hover:shadow-sm hover:-translate-y-0.5 transition-all text-left"
                   >
-                    <div className="relative flex-shrink-0">
-                      <img
-                        src={conv.other_participant.avatar_url || 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=100'}
-                        alt={conv.other_participant.username}
-                        className="w-12 h-12 rounded-full object-cover border-2 border-border"
-                      />
-                      {conv.unread_count > 0 && (
-                        <div className="absolute -top-1 -right-1 w-5 h-5 bg-primary rounded-full flex items-center justify-center">
-                          <span className="text-primary-foreground text-xs font-bold">{conv.unread_count}</span>
-                        </div>
-                      )}
-                    </div>
-
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between mb-1">
-                        <span className="text-sm font-bold text-foreground truncate">
-                          {conv.other_participant.username}
-                        </span>
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-sm font-bold text-foreground">
+                        {conv.other_participant.username}
+                      </span>
+                      <div className="flex items-center gap-2">
+                        {conv.unread_count > 0 && (
+                          <div className="px-2 py-0.5 bg-primary rounded-full">
+                            <span className="text-primary-foreground text-xs font-bold">{conv.unread_count}</span>
+                          </div>
+                        )}
                         {conv.last_message && (
-                          <span className="text-xs text-muted-foreground flex-shrink-0 ml-2">
+                          <span className="text-xs text-muted-foreground">
                             {formatDistanceToNow(new Date(conv.last_message.created_at), { addSuffix: true })}
                           </span>
                         )}
                       </div>
-
-                      {/* Booking details if available */}
-                      {conv.booking_details && (
-                        <div className="mb-1 p-2 bg-primary/5 rounded-md">
-                          <p className="text-xs font-semibold text-primary truncate">
-                            {conv.booking_details.class_name}
-                          </p>
-                          <div className="flex items-center gap-2 mt-0.5">
-                            <span className="text-xs text-muted-foreground">
-                              📅 {new Date(conv.booking_details.booking_date).toLocaleDateString()}
-                            </span>
-                            <span className="text-xs text-muted-foreground">
-                              🕐 {conv.booking_details.booking_time}
-                            </span>
-                          </div>
-                          <p className="text-xs text-muted-foreground mt-0.5">
-                            ID: {conv.booking_details.verification_code}
-                          </p>
-                        </div>
-                      )}
-
-                      {conv.last_message && (
-                        <p className={`text-xs truncate ${conv.unread_count > 0 ? 'font-semibold text-foreground' : 'text-muted-foreground'}`}>
-                          {isMyMessage && 'You: '}
-                          {conv.last_message.content}
-                        </p>
-                      )}
                     </div>
+
+                    {/* Booking details if available */}
+                    {conv.booking_details && (
+                      <div className="mb-2 space-y-1">
+                        <p className="text-sm font-semibold text-foreground">
+                          {conv.booking_details.class_name}
+                        </p>
+                        <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                          <span>
+                            {new Date(conv.booking_details.booking_date).toLocaleDateString()}
+                          </span>
+                          <span>•</span>
+                          <span>
+                            {conv.booking_details.booking_time}
+                          </span>
+                          <span>•</span>
+                          <span>
+                            ID: {conv.booking_details.verification_code}
+                          </span>
+                        </div>
+                      </div>
+                    )}
+
+                    {conv.last_message && (
+                      <p className={`text-xs truncate ${conv.unread_count > 0 ? 'font-semibold text-foreground' : 'text-muted-foreground'}`}>
+                        {isMyMessage && 'You: '}
+                        {conv.last_message.content}
+                      </p>
+                    )}
                   </button>
                 );
               })}
