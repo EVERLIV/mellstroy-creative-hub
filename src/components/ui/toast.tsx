@@ -28,7 +28,7 @@ const Toast = React.forwardRef<
       className={`group pointer-events-auto relative flex w-full items-center justify-between space-x-4 overflow-hidden rounded-xl border p-6 pr-8 shadow-lg transition-all ${
         variant === 'destructive'
           ? 'border-destructive bg-destructive text-destructive-foreground'
-          : 'border border-border bg-muted/95 backdrop-blur-sm text-foreground'
+          : 'border-border bg-card text-card-foreground'
       } ${className || ''}`}
       {...props}
     />
