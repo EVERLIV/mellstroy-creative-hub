@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import { User, X } from 'lucide-react';
 import { AuthProvider, useAuth } from './src/hooks/useAuth';
+import { ThemeProvider } from './src/hooks/useTheme';
 import { supabase } from './src/integrations/supabase/client';
 import { Toaster } from './src/components/ui/toaster';
 import { useToast } from './src/hooks/use-toast';
@@ -594,11 +595,13 @@ const AppRoutes = () => {
 
 const App = () => {
   return (
-    <Router>
-      <AuthProvider>
-        <AppRoutes />
-      </AuthProvider>
-    </Router>
+    <ThemeProvider defaultTheme="light" storageKey="rhinofit-theme">
+      <Router>
+        <AuthProvider>
+          <AppRoutes />
+        </AuthProvider>
+      </Router>
+    </ThemeProvider>
   );
 };
 
