@@ -11,10 +11,7 @@ import { useFavorites } from './src/hooks/useFavorites';
 import { useEvents } from './src/hooks/useEvents';
 import { validateEnv } from './src/utils/env';
 import { saveMealPlan } from './src/utils/mealPlans';
-<<<<<<< HEAD
-=======
 import { updateLastSeen } from './src/utils/onlineStatus';
->>>>>>> f5b1c0859b80a5f6a8702140f10ec53e9a8acd25
 import AuthPage from './src/pages/AuthPage';
 import WelcomePage from './pages/WelcomePage';
 import DashboardPage from './pages/DashboardPage';
@@ -36,30 +33,19 @@ import UploadCategoryIconsPage from './pages/UploadCategoryIconsPage';
 import MediaUploadPage from './pages/MediaUploadPage';
 import AdminDashboardPage from './pages/AdminDashboardPage';
 import ClassDetailPage from './pages/ClassDetailPage';
-<<<<<<< HEAD
-import VenuesPage from './pages/VenuesPage';
-=======
 import TrainerProfileViewPage from './pages/TrainerProfileViewPage';
 import VenuesPage from './pages/VenuesPage';
 import SubscriptionManagementPage from './pages/SubscriptionManagementPage';
->>>>>>> f5b1c0859b80a5f6a8702140f10ec53e9a8acd25
 import BottomNav from './components/BottomNav';
 import BookingModal from './components/BookingModal';
 import ReviewModal from './components/ReviewModal';
 import ReviewsModal from './components/ReviewsModal';
-<<<<<<< HEAD
-import { Trainer, Class, Booking, UserRole, Event, Message, MealPlan, Venue } from './types';
-import { mockVenues } from './data/mockVenues';
-import { getAICoachResponse } from './utils/ai';
-import { ErrorBoundary } from './src/components/ErrorBoundary';
-=======
 import BookingVerificationDisplay from './components/BookingVerificationDisplay';
 import { Trainer, Class, Booking, UserRole, Event, Message, MealPlan, Venue } from './types';
 import { mockVenues } from './data/mockVenues';
 import { getAICoachResponse } from './utils/ai';
 // ErrorBoundary temporarily disabled due to React 19 TypeScript compatibility
 // import { ErrorBoundary } from './src/components/ErrorBoundary';
->>>>>>> f5b1c0859b80a5f6a8702140f10ec53e9a8acd25
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { user, loading } = useAuth();
@@ -110,19 +96,6 @@ const AppRoutes = () => {
 
   const currentUserId = user?.id || 'current-user-id';
 
-<<<<<<< HEAD
-  // Validate environment variables on mount
-  useEffect(() => {
-    if (!validateEnv()) {
-      toast({
-        title: 'Configuration Warning',
-        description: 'Some environment variables are missing. Please check your .env.local file.',
-        variant: 'destructive',
-      });
-    }
-  }, [toast]);
-
-=======
   // Fetch user role from database
   useEffect(() => {
     const fetchUserRole = async () => {

@@ -76,11 +76,7 @@ const FilterModal: React.FC<FilterModalProps> = ({ isOpen, onClose, activeFilter
 
     return (
         <div 
-<<<<<<< HEAD
-            className="fixed inset-0 bg-gray-50 z-[100] animate-fade-in"
-=======
             className="fixed inset-0 bg-background z-[100] animate-fade-in"
->>>>>>> f5b1c0859b80a5f6a8702140f10ec53e9a8acd25
             role="dialog"
             aria-modal="true"
         >
