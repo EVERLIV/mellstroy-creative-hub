@@ -60,32 +60,32 @@ const CancelBookingModal: React.FC<CancelBookingModalProps> = ({ bookingInfo, on
 
     return (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 pb-20" onClick={onClose}>
-            <div className="bg-white rounded-lg w-full max-w-sm overflow-hidden shadow-lg" onClick={e => e.stopPropagation()}>
-                <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between">
+            <div className="bg-card rounded-lg w-full max-w-sm overflow-hidden shadow-lg" onClick={e => e.stopPropagation()}>
+                <div className="px-4 py-3 border-b border-border flex items-center justify-between">
                     <div className="flex-1">
-                        <h2 className="text-base font-bold text-gray-900 text-center">Cancel Booking</h2>
-                        <p className="text-xs text-gray-600 text-center mt-1">{cls.name}</p>
-                        <p className="text-xs text-gray-500 text-center">{booking.date} at {booking.time}</p>
+                        <h2 className="text-base font-bold text-foreground text-center">Cancel Booking</h2>
+                        <p className="text-xs text-muted-foreground text-center mt-1">{cls.name}</p>
+                        <p className="text-xs text-muted-foreground text-center">{booking.date} at {booking.time}</p>
                     </div>
-                    <button onClick={onClose} className="p-2 -mr-2 rounded-lg hover:bg-gray-100 transition-colors">
-                        <X className="w-5 h-5 text-gray-800" />
+                    <button onClick={onClose} className="p-2 -mr-2 rounded-lg hover:bg-muted transition-colors">
+                        <X className="w-5 h-5 text-foreground" />
                     </button>
                 </div>
                 <div className="p-4">
-                    <p className="text-sm text-gray-700 text-center">
+                    <p className="text-sm text-foreground text-center">
                         Are you sure you want to cancel this booking? This action cannot be undone.
                     </p>
                 </div>
-                <div className="px-4 py-3 bg-gray-50 border-t border-gray-100 flex gap-2">
+                <div className="px-4 py-3 bg-muted/30 border-t border-border flex gap-2">
                     <button 
                         onClick={onClose} 
-                        className="flex-1 bg-white border border-gray-200 text-gray-700 text-xs font-semibold py-2.5 rounded-lg hover:bg-gray-50 active:scale-95 transition-all duration-200"
+                        className="flex-1 bg-card border border-border text-foreground text-xs font-semibold py-2.5 rounded-lg hover:bg-muted/50 active:scale-95 transition-all duration-200"
                     >
                         Keep Booking
                     </button>
                     <button 
                         onClick={handleConfirm} 
-                        className="flex-1 bg-red-600 text-white text-xs font-semibold py-2.5 rounded-lg hover:bg-red-700 active:scale-95 transition-all duration-200 shadow-sm"
+                        className="flex-1 bg-destructive text-destructive-foreground text-xs font-semibold py-2.5 rounded-lg hover:bg-destructive/90 active:scale-95 transition-all duration-200"
                     >
                         Cancel Booking
                     </button>
@@ -127,27 +127,20 @@ const BookedClassCard: React.FC<BookedClassCardProps> = ({
     };
     
     return (
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden transition-all duration-300 hover:shadow-md hover:-translate-y-0.5">
-            {/* Person Image */}
-            <div className="relative">
-                <img 
-                    className="h-48 w-full object-cover" 
-                    src={displayPerson?.avatarUrl || 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400'} 
-                    alt={displayPerson?.name || 'Person'} 
-                />
+        <div className="bg-card rounded-lg shadow-sm border border-border overflow-hidden transition-all duration-300 hover:shadow-md hover:-translate-y-0.5">
+            <div className="p-3">
+                {/* Status Badge */}
                 {booking.status === 'attended' && (
-                    <div className="absolute top-3 left-3 bg-green-100 text-green-700 text-xs font-bold px-2.5 py-1 rounded-full flex items-center shadow-sm">
+                    <div className="mb-3 inline-flex items-center bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 text-xs font-bold px-2.5 py-1 rounded-full">
                         <CheckCircle className="w-3.5 h-3.5 mr-1" />
                         Verified
                     </div>
                 )}
-            </div>
 
-            <div className="p-3">
                 {/* Class Name & Person */}
-                <div className="mb-2">
-                    <h3 className="text-sm font-bold text-gray-900">{cls.name}</h3>
-                    <p className="text-xs text-gray-600 mt-1">
+                <div className="mb-3">
+                    <h3 className="text-sm font-bold text-foreground">{cls.name}</h3>
+                    <p className="text-xs text-muted-foreground mt-1">
                         {isStudentView ? `Trainer: ${trainer?.name || 'N/A'}` : `Student: ${student?.name || 'N/A'}`}
                     </p>
                 </div>
@@ -155,26 +148,26 @@ const BookedClassCard: React.FC<BookedClassCardProps> = ({
                 {/* Date & Time & Location */}
                 <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 mb-3">
                     <div className="flex items-center">
-                        <Calendar className="w-3.5 h-3.5 text-gray-500" />
-                        <span className="ml-1 text-xs text-gray-600">{booking.date}</span>
+                        <Calendar className="w-3.5 h-3.5 text-muted-foreground" />
+                        <span className="ml-1 text-xs text-foreground">{booking.date}</span>
                     </div>
                     <div className="flex items-center">
-                        <Clock className="w-3.5 h-3.5 text-gray-500" />
-                        <span className="ml-1 text-xs text-gray-600">{booking.time}</span>
+                        <Clock className="w-3.5 h-3.5 text-muted-foreground" />
+                        <span className="ml-1 text-xs text-foreground">{booking.time}</span>
                     </div>
                     {displayPerson?.location && (
                         <div className="flex items-center">
-                            <MapPin className="w-3.5 h-3.5 text-gray-500" />
-                            <span className="ml-1 text-xs text-gray-600">{displayPerson.location}</span>
+                            <MapPin className="w-3.5 h-3.5 text-muted-foreground" />
+                            <span className="ml-1 text-xs text-foreground">{displayPerson.location}</span>
                         </div>
                     )}
                 </div>
 
                 {/* Action Buttons */}
-                <div className="flex gap-2 pt-2 border-t border-gray-100">
+                <div className="flex gap-2 pt-2 border-t border-border">
                     <button 
                         onClick={handleChatClick}
-                        className="flex-1 bg-blue-600 text-white text-xs font-semibold py-2.5 px-3 rounded-lg hover:bg-blue-700 active:scale-95 transition-all duration-200 shadow-sm flex items-center justify-center gap-1.5"
+                        className="flex-1 bg-primary text-primary-foreground text-xs font-semibold py-2.5 px-3 rounded-lg hover:bg-primary/90 active:scale-95 transition-all duration-200 flex items-center justify-center gap-1.5"
                     >
                         <MessageCircle className="w-3.5 h-3.5" />
                         Chat
@@ -186,7 +179,7 @@ const BookedClassCard: React.FC<BookedClassCardProps> = ({
                                 <>
                                     <button 
                                         onClick={() => onStartCancellation(bookingInfo)}
-                                        className="flex-1 bg-gray-100 text-gray-700 text-xs font-semibold py-2.5 px-3 rounded-lg hover:bg-gray-200 active:scale-95 transition-all duration-200 flex items-center justify-center gap-1.5"
+                                        className="flex-1 bg-secondary text-secondary-foreground text-xs font-semibold py-2.5 px-3 rounded-lg hover:bg-secondary/80 active:scale-95 transition-all duration-200 flex items-center justify-center gap-1.5"
                                     >
                                         <X className="w-3.5 h-3.5" />
                                         Cancel
@@ -194,7 +187,7 @@ const BookedClassCard: React.FC<BookedClassCardProps> = ({
                                     {booking.verificationCode && (
                                         <button 
                                             onClick={() => onShowVerificationCode?.(booking.verificationCode!, booking.id)}
-                                            className="bg-orange-100 text-orange-700 text-xs font-semibold py-2.5 px-3 rounded-lg hover:bg-orange-200 active:scale-95 transition-all duration-200 flex items-center justify-center"
+                                            className="bg-accent/10 text-accent-foreground text-xs font-semibold py-2.5 px-3 rounded-lg hover:bg-accent/20 active:scale-95 transition-all duration-200 flex items-center justify-center"
                                         >
                                             <QrCode className="w-4 h-4" />
                                         </button>
@@ -204,7 +197,7 @@ const BookedClassCard: React.FC<BookedClassCardProps> = ({
                             {booking.status === 'attended' && !booking.hasReview && (
                                 <button 
                                     onClick={() => onOpenReviewModal(trainer, cls, booking)}
-                                    className="flex-1 bg-orange-500 text-white text-xs font-semibold py-2.5 px-3 rounded-lg hover:bg-orange-600 active:scale-95 transition-all duration-200 shadow-sm"
+                                    className="flex-1 bg-primary text-primary-foreground text-xs font-semibold py-2.5 px-3 rounded-lg hover:bg-primary/90 active:scale-95 transition-all duration-200"
                                 >
                                     Leave Review
                                 </button>
@@ -214,7 +207,7 @@ const BookedClassCard: React.FC<BookedClassCardProps> = ({
                         booking.status === 'booked' && onVerifyAttendance && (
                             <button 
                                 onClick={onVerifyAttendance}
-                                className="flex-1 bg-green-600 text-white text-xs font-semibold py-2.5 px-3 rounded-lg hover:bg-green-700 active:scale-95 transition-all duration-200 shadow-sm"
+                                className="flex-1 bg-green-600 text-white text-xs font-semibold py-2.5 px-3 rounded-lg hover:bg-green-700 active:scale-95 transition-all duration-200"
                             >
                                 Verify
                             </button>
