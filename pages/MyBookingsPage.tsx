@@ -23,6 +23,7 @@ interface BookingData {
     status: 'booked' | 'attended' | 'cancelled';
     hasReview: boolean;
     verificationCode?: string;
+    createdAt?: string;
 }
 
 interface ClassData {
@@ -167,6 +168,28 @@ const BookedClassCard: React.FC<BookedClassCardProps> = ({
                             <span className="ml-1 text-xs text-foreground">{displayPerson.location}</span>
                         </div>
                     )}
+                </div>
+
+                {/* Booking Details */}
+                <div className="mb-3 p-2 bg-muted rounded-lg space-y-1.5">
+                    <div className="flex items-center justify-between text-xs">
+                        <span className="text-muted-foreground">Booking ID:</span>
+                        <span className="text-foreground font-mono">{booking.id.slice(0, 8)}...</span>
+                    </div>
+                    {booking.createdAt && (
+                        <div className="flex items-center justify-between text-xs">
+                            <span className="text-muted-foreground">Booked on:</span>
+                            <span className="text-foreground">{booking.createdAt}</span>
+                        </div>
+                    )}
+                    <div className="flex items-center justify-between text-xs">
+                        <span className="text-muted-foreground">Duration:</span>
+                        <span className="text-foreground">{cls.duration} minutes</span>
+                    </div>
+                    <div className="flex items-center justify-between text-xs font-semibold">
+                        <span className="text-muted-foreground">Price:</span>
+                        <span className="text-primary">{new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND', minimumFractionDigits: 0 }).format(cls.price).replace(/\s/g, '')}</span>
+                    </div>
                 </div>
 
                 {/* Action Buttons */}
@@ -339,6 +362,7 @@ const MyBookingsPage: React.FC = () => {
                         status,
                         has_left_review,
                         verification_code,
+                        created_at,
                         class_id,
                         classes!inner(
                             id,
@@ -371,6 +395,7 @@ const MyBookingsPage: React.FC = () => {
                         status,
                         has_left_review,
                         verification_code,
+                        created_at,
                         client_id,
                         class_id,
                         classes!inner(
@@ -414,7 +439,14 @@ const MyBookingsPage: React.FC = () => {
                         time: item.booking_time,
                         status: item.status || 'booked',
                         hasReview: item.has_left_review || false,
-                        verificationCode: item.verification_code
+                        verificationCode: item.verification_code,
+                        createdAt: item.created_at ? new Date(item.created_at).toLocaleString('en-US', {
+                            month: 'short',
+                            day: 'numeric',
+                            year: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                        }) : undefined
                     };
 
                     const cls: ClassData = {
