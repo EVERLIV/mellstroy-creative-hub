@@ -68,7 +68,7 @@ const EventDetailPage: React.FC<EventDetailPageProps> = ({ event, currentUserId,
     return (
         <div className="h-full w-full bg-slate-50 flex flex-col relative">
             <header className="absolute top-0 left-0 right-0 z-20 p-4">
-                <button onClick={onBack} className="bg-white/80 backdrop-blur-sm p-2 rounded-full text-gray-800 hover:bg-white transition-colors">
+                <button onClick={onBack} className="bg-white shadow-md p-2 rounded-full text-gray-800 hover:bg-gray-100 transition-colors">
                     <ArrowLeft className="w-6 h-6" />
                 </button>
             </header>
@@ -113,7 +113,7 @@ const EventDetailPage: React.FC<EventDetailPageProps> = ({ event, currentUserId,
                 </div>
             </main>
 
-            <footer className="absolute bottom-0 left-0 right-0 px-4 pt-4 bg-white/90 backdrop-blur-sm border-t border-slate-200/80 pb-[calc(1rem+env(safe-area-inset-bottom))]">
+            <footer className="absolute bottom-0 left-0 right-0 px-4 pt-4 bg-white border-t border-slate-200 shadow-lg pb-[calc(1rem+env(safe-area-inset-bottom))]">
                  <button 
                     onClick={() => onToggleInterest(event.id)}
                     className={`w-full flex items-center justify-center font-bold py-3.5 px-4 rounded-xl transition-all duration-300 text-base shadow-lg hover:shadow-xl transform hover:-translate-y-0.5

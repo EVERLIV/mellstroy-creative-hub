@@ -71,7 +71,7 @@ const VerificationPage: React.FC<VerificationPageProps> = ({ onBack, onComplete 
 
     return (
         <div className="bg-slate-50 h-full flex flex-col relative">
-            <button onClick={onBack} className="absolute top-4 left-4 z-10 p-2 rounded-full bg-white/70 backdrop-blur-sm hover:bg-white transition-colors">
+            <button onClick={onBack} className="absolute top-4 left-4 z-10 p-2 rounded-full bg-white shadow-md hover:bg-gray-100 transition-colors">
                 <ArrowLeft className="w-6 h-6 text-slate-700" />
             </button>
             

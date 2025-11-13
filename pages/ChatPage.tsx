@@ -104,11 +104,11 @@ const ChatPage: React.FC<ChatPageProps> = ({ personToChatWith, context, onBack, 
 
     return (
         <div className="flex flex-col h-screen bg-slate-100 relative">
-            <button onClick={onBack} className="absolute top-4 left-4 z-20 bg-white/80 backdrop-blur-sm p-2 rounded-full text-gray-800 hover:bg-white transition-colors">
+            <button onClick={onBack} className="absolute top-4 left-4 z-20 bg-white shadow-md p-2 rounded-full text-gray-800 hover:bg-gray-100 transition-colors">
                 <ArrowLeft className="w-6 h-6" />
             </button>
              <div className="absolute top-4 right-4 z-20" ref={menuRef}>
-                <button onClick={() => setIsMenuOpen(prev => !prev)} className="p-2 rounded-full bg-white/80 backdrop-blur-sm text-gray-700 hover:bg-white transition-colors">
+                <button onClick={() => setIsMenuOpen(prev => !prev)} className="p-2 rounded-full bg-white shadow-md text-gray-700 hover:bg-gray-100 transition-colors">
                     <MoreVertical className="w-6 h-6" />
                 </button>
                 {isMenuOpen && (

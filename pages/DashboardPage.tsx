@@ -328,7 +328,7 @@ const DashboardPage: React.FC<DashboardPageProps> = () => {
                       alt={event.title}
                       className="w-full h-full object-cover"
                     />
-                    <div className="absolute top-1 right-1 bg-white/95 backdrop-blur-sm px-1.5 py-0.5 rounded-md flex items-center gap-0.5">
+                    <div className="absolute top-1 right-1 bg-white shadow-sm px-1.5 py-0.5 rounded-md flex items-center gap-0.5">
                       <Calendar className="w-2.5 h-2.5 text-[#FF6B35]" />
                       <span className="text-[10px] font-semibold text-slate-700">
                         {new Date(event.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
