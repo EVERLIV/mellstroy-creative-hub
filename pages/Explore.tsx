@@ -7,6 +7,8 @@ import ViewToggle from '../components/ViewToggle';
 import TrainerDetailPage from '../components/TrainerDetailPage';
 import CategoryFilters from '../components/CategoryFilters';
 import FilterModal from '../components/FilterModal';
+import PullToRefreshIndicator from '../components/PullToRefreshIndicator';
+import { usePullToRefresh } from '../src/hooks/usePullToRefresh';
 import { Search, SlidersHorizontal, Loader } from 'lucide-react';
 
 interface ExploreProps {
@@ -110,6 +112,13 @@ const Explore: React.FC<ExploreProps> = ({
     level: '',
   });
   const observerTarget = useRef<HTMLDivElement>(null);
+
+  // Pull to refresh functionality
+  const { containerRef, pullDistance, isRefreshing, pullProgress } = usePullToRefresh({
+    onRefresh: async () => {
+      await loadTrainers();
+    },
+  });
 
   useEffect(() => {
     loadTrainers();
@@ -362,7 +371,12 @@ const Explore: React.FC<ExploreProps> = ({
         </div>
         
         {/* Content */}
-        <div className="flex-1 overflow-y-auto min-h-0">
+        <div ref={containerRef} className="flex-1 overflow-y-auto min-h-0 relative">
+          <PullToRefreshIndicator 
+            pullDistance={pullDistance}
+            isRefreshing={isRefreshing}
+            pullProgress={pullProgress}
+          />
           <div className="px-4 py-3">
             <div className="flex justify-between items-center mb-3">
               <h2 className="text-xs font-medium text-gray-600">
