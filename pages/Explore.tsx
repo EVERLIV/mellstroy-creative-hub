@@ -325,77 +325,79 @@ const Explore: React.FC<ExploreProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 flex flex-col bg-background">
-      {/* Header - Fixed */}
-      <div className="fixed top-0 left-0 right-0 bg-background z-10 shadow-sm border-b border-border">
-        <div className="px-3 py-2">
-          <div className="flex items-center justify-between mb-2">
-            <h1 className="text-lg font-bold text-foreground">Explore</h1>
-            <button
-              onClick={() => setIsFilterModalOpen(true)}
-              className="p-1.5 rounded-lg bg-muted hover:bg-accent transition-colors active:scale-95"
-              aria-label="Open filters"
-            >
-              <SlidersHorizontal className="w-5 h-5 text-foreground" />
-            </button>
-          </div>
-          
-          {/* Search Bar */}
-          <div className="relative mb-2">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
-            <input
-              type="text"
-              placeholder="Search trainers..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-9 pr-3 py-2 bg-muted border border-border rounded-lg text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring placeholder:text-muted-foreground transition-all duration-200"
+    <div className="bg-gray-50 h-full relative">
+      <div className="flex flex-col h-full">
+        {/* Header */}
+        <div className="sticky top-0 bg-white z-10 shadow-sm flex-shrink-0">
+          <div className="px-4 py-3">
+            <div className="flex items-center justify-between mb-2">
+              <h1 className="text-base font-bold text-gray-900">Explore</h1>
+              <button
+                onClick={() => setIsFilterModalOpen(true)}
+                className="p-2 rounded-lg bg-gray-100 hover:bg-gray-200 transition-colors active:scale-95"
+                aria-label="Open filters"
+              >
+                <SlidersHorizontal className="w-5 h-5 text-gray-800" />
+              </button>
+            </div>
+            
+            {/* Search Bar */}
+            <div className="relative mb-2">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+              <input
+                type="text"
+                placeholder="Search trainers..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-9 pr-3 py-2 bg-white border border-gray-200 rounded-lg text-xs text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 placeholder:text-gray-400 transition-all duration-200"
+              />
+            </div>
+
+            {/* Category Filters */}
+            <CategoryFilters
+              categories={CATEGORIES}
+              selectedCategory={selectedCategory || ''}
+              onSelectCategory={setSelectedCategory}
             />
           </div>
-
-          {/* Category Filters */}
-          <CategoryFilters
-            categories={CATEGORIES}
-            selectedCategory={selectedCategory || ''}
-            onSelectCategory={setSelectedCategory}
-          />
         </div>
-      </div>
-      
-      {/* Content - Scrollable with padding for fixed header and bottom nav */}
-      <div className="flex-1 overflow-y-auto pt-[160px] pb-20">
-        <div className="px-3 py-3">
-          <div className="flex justify-between items-center mb-3">
-            <h2 className="text-sm font-medium text-muted-foreground">
-              {filteredTrainers.length} {filteredTrainers.length === 1 ? 'trainer' : 'trainers'} found
-            </h2>
-            <ViewToggle viewMode={viewMode} setViewMode={setViewMode} />
+        
+        {/* Content */}
+        <div className="flex-1 overflow-y-auto">
+          <div className="px-4 py-3">
+            <div className="flex justify-between items-center mb-3">
+              <h2 className="text-xs font-medium text-gray-600">
+                {filteredTrainers.length} {filteredTrainers.length === 1 ? 'trainer' : 'trainers'} found
+              </h2>
+              <ViewToggle viewMode={viewMode} setViewMode={setViewMode} />
+            </div>
+            <TrainerGrid
+              trainers={displayedTrainers}
+              viewMode={viewMode}
+              onSelectTrainer={handleSelectTrainer}
+              isLoading={loading}
+              favoriteTrainerIds={favoriteTrainerIds}
+              onToggleFavorite={onToggleFavorite}
+            />
+            
+            {/* Lazy Loading Trigger */}
+            {hasMore && (
+              <div ref={observerTarget} className="flex justify-center items-center py-6">
+                {loadingMore && (
+                  <div className="flex items-center gap-2 text-gray-600">
+                    <Loader className="w-5 h-5 animate-spin" />
+                    <span className="text-xs">Loading more trainers...</span>
+                  </div>
+                )}
+              </div>
+            )}
+            
+            {!hasMore && displayedTrainers.length > 0 && (
+              <div className="text-center py-6">
+                <p className="text-xs text-gray-500">No more trainers to load</p>
+              </div>
+            )}
           </div>
-          <TrainerGrid
-            trainers={displayedTrainers}
-            viewMode={viewMode}
-            onSelectTrainer={handleSelectTrainer}
-            isLoading={loading}
-            favoriteTrainerIds={favoriteTrainerIds}
-            onToggleFavorite={onToggleFavorite}
-          />
-          
-          {/* Lazy Loading Trigger */}
-          {hasMore && (
-            <div ref={observerTarget} className="flex justify-center items-center py-6">
-              {loadingMore && (
-                <div className="flex items-center gap-2 text-muted-foreground">
-                  <Loader className="w-5 h-5 animate-spin" />
-                  <span className="text-sm">Loading more trainers...</span>
-                </div>
-              )}
-            </div>
-          )}
-          
-          {!hasMore && displayedTrainers.length > 0 && (
-            <div className="text-center py-6">
-              <p className="text-sm text-muted-foreground">No more trainers to load</p>
-            </div>
-          )}
         </div>
       </div>
 
