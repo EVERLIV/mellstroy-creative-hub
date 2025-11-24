@@ -2,6 +2,8 @@ import React, { useState, useEffect, useMemo } from 'react';
 import TrainerGrid from '../components/TrainerGrid';
 import ViewToggle from '../components/ViewToggle';
 import TrainerDetailPage from '../components/TrainerDetailPage';
+import PullToRefreshIndicator from '../components/PullToRefreshIndicator';
+import { usePullToRefresh } from '../src/hooks/usePullToRefresh';
 import { Trainer, Class, UserRole } from '../types';
 import { CATEGORIES } from '../constants';
 import DistrictFilterModal from '../components/DistrictFilterModal';
@@ -18,11 +20,12 @@ interface HomePageProps {
     favoriteTrainerIds: string[];
     onToggleFavorite: (trainerId: string) => void;
     onOpenReviewsModal: (trainer: Trainer) => void;
+    onRefreshTrainers?: () => Promise<void>;
 }
 
 const allCategories = [{ id: 'all', name: 'All', icon: 'grid' }, ...CATEGORIES];
 
-const HomePage: React.FC<HomePageProps> = ({ trainers, onInitiateBooking, onOpenChat, selectedCategory, onSelectCategory, userRole, currentUserId, favoriteTrainerIds, onToggleFavorite, onOpenReviewsModal }) => {
+const HomePage: React.FC<HomePageProps> = ({ trainers, onInitiateBooking, onOpenChat, selectedCategory, onSelectCategory, userRole, currentUserId, favoriteTrainerIds, onToggleFavorite, onOpenReviewsModal, onRefreshTrainers }) => {
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [selectedTrainer, setSelectedTrainer] = useState<Trainer | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -30,6 +33,15 @@ const HomePage: React.FC<HomePageProps> = ({ trainers, onInitiateBooking, onOpen
   const [selectedDistrict, setSelectedDistrict] = useState<string>('All Districts');
   const [isDistrictModalOpen, setIsDistrictModalOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+
+  // Pull to refresh functionality
+  const { containerRef, pullDistance, isRefreshing, pullProgress } = usePullToRefresh({
+    onRefresh: async () => {
+      setIsLoading(true);
+      await onRefreshTrainers?.();
+      setIsLoading(false);
+    },
+  });
 
   // Simulate loading when component mounts or filters change
   useEffect(() => {
@@ -92,7 +104,12 @@ const HomePage: React.FC<HomePageProps> = ({ trainers, onInitiateBooking, onOpen
 
   return (
     <div className="bg-slate-50 h-screen flex flex-col overflow-hidden">
-      <div className="relative flex-1 overflow-y-auto min-h-0">
+      <div ref={containerRef} className="relative flex-1 overflow-y-auto min-h-0">
+        <PullToRefreshIndicator 
+          pullDistance={pullDistance}
+          isRefreshing={isRefreshing}
+          pullProgress={pullProgress}
+        />
         {selectedTrainer && (
           <div key={selectedTrainer.id} className={`absolute w-full top-0 z-30 ${isExitingDetail ? 'animate-slide-out-to-right' : 'animate-slide-in-from-right'}`}>
             <TrainerDetailPage 

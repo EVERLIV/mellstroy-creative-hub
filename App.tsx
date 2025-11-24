@@ -90,7 +90,7 @@ const AppRoutes = () => {
   const [isAiCoachLoading, setIsAiCoachLoading] = useState(false);
 
   // Use custom hooks for data fetching
-  const { trainers, loading: trainersLoading } = useTrainers();
+  const { trainers, loading: trainersLoading, refetch: refetchTrainers } = useTrainers();
   const { favoriteTrainerIds, toggleFavorite } = useFavorites();
   const { events } = useEvents();
 
@@ -332,6 +332,7 @@ const AppRoutes = () => {
                 favoriteTrainerIds={favoriteTrainerIds}
                 onToggleFavorite={toggleFavorite}
                 onOpenReviewsModal={handleOpenReviewsModal}
+                onRefreshTrainers={refetchTrainers}
               />
             </ProtectedRoute>
           }
@@ -392,6 +393,7 @@ const AppRoutes = () => {
                 favoriteTrainerIds={favoriteTrainerIds}
                 onToggleFavorite={toggleFavorite}
                 onOpenReviewsModal={handleOpenReviewsModal}
+                onRefreshTrainers={refetchTrainers}
               />
             </ProtectedRoute>
           }

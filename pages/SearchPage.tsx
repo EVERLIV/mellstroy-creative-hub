@@ -5,11 +5,19 @@ import ViewToggle from '../components/ViewToggle';
 import TrainerGrid from '../components/TrainerGrid';
 import TrainerDetailPage from '../components/TrainerDetailPage';
 import FilterModal from '../components/FilterModal';
+import PullToRefreshIndicator from '../components/PullToRefreshIndicator';
+import { usePullToRefresh } from '../src/hooks/usePullToRefresh';
 
 interface SearchPageProps {
     trainers: Trainer[];
     onInitiateBooking: (target: { trainer: Trainer; cls: Class }) => void;
     onOpenChat: (trainer: Trainer) => void;
+    userRole?: UserRole;
+    currentUserId?: string;
+    favoriteTrainerIds?: string[];
+    onToggleFavorite?: (trainerId: string) => void;
+    onOpenReviewsModal?: (trainer: Trainer) => void;
+    onRefreshTrainers?: () => Promise<void>;
 }
 
 const initialFilters = {
@@ -21,12 +29,29 @@ const initialFilters = {
     classType: [] as ClassType[],
 };
 
-const SearchPage: React.FC<SearchPageProps> = ({ trainers, onInitiateBooking, onOpenChat }) => {
+const SearchPage: React.FC<SearchPageProps> = ({ 
+    trainers, 
+    onInitiateBooking, 
+    onOpenChat, 
+    userRole = 'student',
+    currentUserId = '',
+    favoriteTrainerIds = [],
+    onToggleFavorite,
+    onOpenReviewsModal,
+    onRefreshTrainers 
+}) => {
     const [selectedTrainer, setSelectedTrainer] = useState<Trainer | null>(null);
     const [searchQuery, setSearchQuery] = useState('');
     const [activeFilters, setActiveFilters] = useState(initialFilters);
     const [viewMode, setViewMode] = useState<'list' | 'grid'>('list');
     const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
+
+    // Pull to refresh functionality
+    const { containerRef, pullDistance, isRefreshing, pullProgress } = usePullToRefresh({
+        onRefresh: async () => {
+            await onRefreshTrainers?.();
+        },
+    });
 
     const filteredTrainers = useMemo(() => {
         const checkTime = (classTime: string, filterTime: string): boolean => {
@@ -121,12 +146,11 @@ const SearchPage: React.FC<SearchPageProps> = ({ trainers, onInitiateBooking, on
                 trainer={selectedTrainer} 
                 onBack={handleBackToList}
                 onInitiateBooking={onInitiateBooking}
-                // Dummy props - SearchPage doesn't manage these states
-                userRole="student" 
-                currentUserId=""
-                isFavorite={false}
-                onToggleFavorite={() => {}}
-                onOpenReviewsModal={() => {}}
+                userRole={userRole}
+                currentUserId={currentUserId}
+                isFavorite={favoriteTrainerIds.includes(selectedTrainer.id)}
+                onToggleFavorite={onToggleFavorite}
+                onOpenReviewsModal={onOpenReviewsModal}
             />
         );
     }
@@ -147,7 +171,12 @@ const SearchPage: React.FC<SearchPageProps> = ({ trainers, onInitiateBooking, on
                 </div>
             </div>
 
-            <div className="flex-1 overflow-y-auto min-h-0">
+            <div ref={containerRef} className="flex-1 overflow-y-auto min-h-0 relative">
+                <PullToRefreshIndicator 
+                    pullDistance={pullDistance}
+                    isRefreshing={isRefreshing}
+                    pullProgress={pullProgress}
+                />
                 <div className="p-4 pb-[calc(5rem+env(safe-area-inset-bottom))]">
                 <div className="mb-4 flex justify-between items-center">
                     <button onClick={() => setIsFilterModalOpen(true)} className="relative flex items-center space-x-2 bg-white border border-slate-300 hover:bg-slate-100 transition-colors px-3 py-2 rounded-lg text-sm font-semibold text-slate-700 shadow-sm active:scale-95">
@@ -168,10 +197,9 @@ const SearchPage: React.FC<SearchPageProps> = ({ trainers, onInitiateBooking, on
                         trainers={filteredTrainers} 
                         viewMode={viewMode} 
                         onSelectTrainer={handleSelectTrainer} 
-                        // Dummy props
                         isLoading={false}
-                        favoriteTrainerIds={[]}
-                        onToggleFavorite={() => {}}
+                        favoriteTrainerIds={favoriteTrainerIds}
+                        onToggleFavorite={onToggleFavorite}
                     />
                 ) : (
                      <div className="text-center mt-16">
