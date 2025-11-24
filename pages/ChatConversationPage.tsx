@@ -38,9 +38,11 @@ const ChatConversationPage: React.FC = () => {
   const [sending, setSending] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
   const [showReportModal, setShowReportModal] = useState(false);
+  const [isTyping, setIsTyping] = useState(false);
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+  const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Get booking details from location state
   const bookingDetails = location.state?.bookingDetails;
@@ -161,9 +163,9 @@ const ChatConversationPage: React.FC = () => {
     loadMessages();
   }, [conversationId, user]);
 
-  // Subscribe to real-time messages
+  // Subscribe to real-time messages and typing presence
   useEffect(() => {
-    if (!conversationId) return;
+    if (!conversationId || !user) return;
 
     const channel = supabase
       .channel(`conversation-${conversationId}`)
@@ -188,7 +190,18 @@ const ChatConversationPage: React.FC = () => {
           }
         }
       )
-      .subscribe();
+      .on('presence', { event: 'sync' }, () => {
+        const state = channel.presenceState();
+        const otherUserPresence = Object.values(state).find(
+          (presences: any) => presences[0]?.user_id !== user.id
+        ) as any;
+        setIsTyping(otherUserPresence?.[0]?.typing || false);
+      })
+      .subscribe(async (status) => {
+        if (status === 'SUBSCRIBED') {
+          await channel.track({ user_id: user.id, typing: false });
+        }
+      });
 
     return () => {
       supabase.removeChannel(channel);
@@ -244,11 +257,27 @@ const ChatConversationPage: React.FC = () => {
     }
   };
 
-  const handleInput = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+  const handleInput = async (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setNewMessage(e.target.value);
     const textarea = e.target;
     textarea.style.height = 'auto';
     textarea.style.height = `${Math.min(textarea.scrollHeight, 120)}px`;
+
+    // Send typing indicator
+    if (conversationId && user) {
+      const channel = supabase.channel(`conversation-${conversationId}`);
+      await channel.track({ user_id: user.id, typing: true });
+
+      // Clear existing timeout
+      if (typingTimeoutRef.current) {
+        clearTimeout(typingTimeoutRef.current);
+      }
+
+      // Stop typing indicator after 2 seconds of no input
+      typingTimeoutRef.current = setTimeout(async () => {
+        await channel.track({ user_id: user.id, typing: false });
+      }, 2000);
+    }
   };
 
   if (loading) {
@@ -366,6 +395,27 @@ const ChatConversationPage: React.FC = () => {
                 </div>
               );
             })}
+            
+            {/* Typing indicator */}
+            {isTyping && (
+              <div className="flex items-end gap-2 justify-start">
+                <div className="w-6 h-6 flex-shrink-0">
+                  <img
+                    src={recipient?.avatar_url || 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=100'}
+                    alt={recipient?.username}
+                    className="w-6 h-6 rounded-full object-cover"
+                  />
+                </div>
+                <div className="bg-card text-foreground border border-border rounded-2xl rounded-bl-sm px-4 py-3">
+                  <div className="flex gap-1">
+                    <div className="w-2 h-2 rounded-full bg-muted-foreground animate-bounce" style={{ animationDelay: '0ms' }} />
+                    <div className="w-2 h-2 rounded-full bg-muted-foreground animate-bounce" style={{ animationDelay: '150ms' }} />
+                    <div className="w-2 h-2 rounded-full bg-muted-foreground animate-bounce" style={{ animationDelay: '300ms' }} />
+                  </div>
+                </div>
+              </div>
+            )}
+            
             <div ref={messagesEndRef} />
           </div>
         )}
