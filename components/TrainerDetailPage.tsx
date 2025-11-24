@@ -431,7 +431,7 @@ const TrainerDetailPage: React.FC<TrainerDetailPageProps> = ({
 
             {/* Scrollable Content */}
             <div ref={scrollContainerRef} className="flex-1 overflow-y-auto">
-                <div className="px-4 py-3 bg-gray-50">
+                <div className="px-4 py-3 bg-gray-50 pb-[calc(5rem+env(safe-area-inset-bottom))]">
                     {/* Trainer Profile Card */}
                     <div className="bg-white rounded-lg p-3 mb-3 shadow-sm">
                         <div className="flex items-start gap-3">
