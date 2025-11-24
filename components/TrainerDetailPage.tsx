@@ -107,111 +107,143 @@ const ClassCard: React.FC<ClassCardProps> = React.memo(({ cls, trainer, userRole
         onInitiateBooking({ trainer, cls });
     };
 
+    const classImage = cls.imageUrls && cls.imageUrls.length > 0 ? cls.imageUrls[0] : cls.imageUrl;
+
     return (
         <div 
             onClick={handleCardClick}
-            className="bg-white rounded-lg p-4 mb-3 shadow-sm cursor-pointer transition-all duration-300 hover:shadow-md hover:-translate-y-0.5 border border-gray-200 hover:border-orange-300"
+            className="bg-card rounded-xl overflow-hidden shadow-sm cursor-pointer transition-all duration-300 hover:shadow-lg hover:-translate-y-1 border border-border hover:border-primary/50 mb-3"
         >
-            {/* Class Header */}
-            <div className="flex items-start justify-between mb-3">
-                <div className="flex-1">
-                    <h3 className="text-base font-bold text-gray-900 mb-1">{cls.name}</h3>
-                    <div className="flex items-center gap-2">
-                        <span className="text-xs px-2 py-0.5 bg-orange-100 text-orange-700 rounded-full font-medium">
-                            {cls.classType}
-                        </span>
-                        <span className="text-xs text-gray-500">{cls.duration} min</span>
-                    </div>
-                </div>
-            </div>
-
-            {/* Language & Level Badges */}
-            {((cls as any).language && (cls as any).language.length > 0) || (cls as any).level ? (
-                <div className="flex items-center gap-2 flex-wrap mb-3">
+            {/* Image Header with Overlay Info */}
+            <div className="relative h-36 overflow-hidden bg-muted">
+                <img 
+                    src={classImage || '/api/placeholder/400/200'} 
+                    alt={cls.name}
+                    className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/20 to-transparent" />
+                
+                {/* Class Type Badge */}
+                <div className="absolute top-2 left-2 flex gap-1.5">
+                    <span className="inline-flex items-center gap-1 px-2 py-1 bg-background/95 backdrop-blur-sm text-foreground text-xs font-semibold rounded-md shadow-sm">
+                        {cls.classType === 'Indoor' && <Building className="w-3 h-3" />}
+                        {cls.classType === 'Outdoor' && <Sun className="w-3 h-3" />}
+                        {cls.classType === 'Home' && <Home className="w-3 h-3" />}
+                        {cls.classType}
+                    </span>
                     {(cls as any).level && (
-                        <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-blue-100 text-blue-700 text-xs font-medium rounded-full">
-                            <Star className="w-3 h-3" />
+                        <span className="inline-flex items-center gap-1 px-2 py-1 bg-blue-500/90 backdrop-blur-sm text-white text-xs font-medium rounded-md">
+                            <Star className="w-3 h-3 fill-current" />
                             {(cls as any).level}
                         </span>
                     )}
-                    {(cls as any).language && (cls as any).language.length > 0 && (cls as any).language.map((lang: string, idx: number) => (
-                        <span key={idx} className="inline-flex items-center gap-1 px-2.5 py-1 bg-green-100 text-green-700 text-xs font-medium rounded-full">
-                            <MessageCircle className="w-3 h-3" />
-                            {lang}
-                        </span>
-                    ))}
                 </div>
-            ) : null}
 
-            {/* Accessibility Badges */}
-            {((cls as any).kids_friendly || (cls as any).disability_friendly) && (
-                <div className="flex items-center gap-2 flex-wrap mb-3">
+                {/* Duration Badge */}
+                <div className="absolute top-2 right-2">
+                    <span className="inline-flex items-center gap-1 px-2 py-1 bg-background/95 backdrop-blur-sm text-foreground text-xs font-semibold rounded-md shadow-sm">
+                        <Clock className="w-3 h-3" />
+                        {cls.duration} min
+                    </span>
+                </div>
+
+                {/* Price - Bottom Right */}
+                <div className="absolute bottom-2 right-2">
+                    <span className="px-2.5 py-1 bg-primary text-primary-foreground text-sm font-bold rounded-md shadow-lg">
+                        {formatVND(cls.price)}
+                    </span>
+                </div>
+            </div>
+
+            {/* Card Content */}
+            <div className="p-3">
+                {/* Class Name */}
+                <h3 className="text-sm font-bold text-foreground mb-2 line-clamp-1">{cls.name}</h3>
+
+                {/* Key Info Grid */}
+                <div className="grid grid-cols-2 gap-2 mb-2">
+                    {/* Schedule */}
+                    {cls.schedule && cls.schedule.days && cls.schedule.time ? (
+                        <div className="flex items-start gap-1.5">
+                            <Calendar className="w-3.5 h-3.5 text-primary mt-0.5 flex-shrink-0" />
+                            <div className="min-w-0">
+                                <p className="text-[10px] text-muted-foreground uppercase font-medium">Schedule</p>
+                                <p className="text-xs text-foreground font-medium truncate">{cls.schedule.days[0]}</p>
+                                <p className="text-[10px] text-muted-foreground">{formatTime(cls.schedule.time)}</p>
+                            </div>
+                        </div>
+                    ) : (
+                        <div className="flex items-start gap-1.5">
+                            <Calendar className="w-3.5 h-3.5 text-amber-500 mt-0.5 flex-shrink-0" />
+                            <div className="min-w-0">
+                                <p className="text-[10px] text-muted-foreground uppercase font-medium">Schedule</p>
+                                <p className="text-xs text-amber-600 font-medium">Flexible</p>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Location */}
+                    <div className="flex items-start gap-1.5">
+                        <MapPin className="w-3.5 h-3.5 text-primary mt-0.5 flex-shrink-0" />
+                        <div className="min-w-0">
+                            <p className="text-[10px] text-muted-foreground uppercase font-medium">Location</p>
+                            <p className="text-xs text-foreground font-medium truncate">{trainer.location || 'TBD'}</p>
+                        </div>
+                    </div>
+
+                    {/* Capacity */}
+                    <div className="flex items-start gap-1.5">
+                        <Users className="w-3.5 h-3.5 text-primary mt-0.5 flex-shrink-0" />
+                        <div className="min-w-0">
+                            <p className="text-[10px] text-muted-foreground uppercase font-medium">Capacity</p>
+                            <p className="text-xs text-foreground font-medium">Max {cls.capacity}</p>
+                        </div>
+                    </div>
+
+                    {/* Language */}
+                    {(cls as any).language && (cls as any).language.length > 0 && (
+                        <div className="flex items-start gap-1.5">
+                            <MessageCircle className="w-3.5 h-3.5 text-primary mt-0.5 flex-shrink-0" />
+                            <div className="min-w-0">
+                                <p className="text-[10px] text-muted-foreground uppercase font-medium">Language</p>
+                                <p className="text-xs text-foreground font-medium truncate">{(cls as any).language[0]}</p>
+                            </div>
+                        </div>
+                    )}
+                </div>
+
+                {/* Tags Row */}
+                <div className="flex items-center gap-1.5 flex-wrap mb-3">
                     {(cls as any).kids_friendly && (
-                        <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-pink-100 text-pink-700 text-xs font-medium rounded-full">
-                            <span className="text-sm">👶</span>
-                            Kids Friendly
+                        <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 bg-pink-100 text-pink-700 text-[10px] font-medium rounded">
+                            👶 Kids
                         </span>
                     )}
                     {(cls as any).disability_friendly && (
-                        <span className="inline-flex items-center gap-1 px-2.5 py-1 bg-purple-100 text-purple-700 text-xs font-medium rounded-full">
-                            <span className="text-sm">♿</span>
-                            Disability Friendly
+                        <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 bg-purple-100 text-purple-700 text-[10px] font-medium rounded">
+                            ♿ Accessible
+                        </span>
+                    )}
+                    {(cls as any).language && (cls as any).language.length > 1 && (
+                        <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 bg-green-100 text-green-700 text-[10px] font-medium rounded">
+                            +{(cls as any).language.length - 1} more
                         </span>
                     )}
                 </div>
-            )}
 
-
-            {/* Description */}
-            {cls.description && (
-                <p className="text-xs text-gray-600 mb-3 line-clamp-2 leading-relaxed">
-                    {cls.description}
-                </p>
-            )}
-
-            {/* Schedule & Time */}
-            {cls.schedule && cls.schedule.days && cls.schedule.time ? (
-                <div className="bg-gray-50 rounded-lg p-2.5 mb-3">
-                    <div className="flex items-start gap-2 mb-1.5">
-                        <Calendar className="w-3.5 h-3.5 text-orange-500 mt-0.5 flex-shrink-0" />
-                        <div className="flex-1">
-                            <p className="text-xs font-semibold text-gray-700 mb-0.5">Available Days</p>
-                            <p className="text-xs text-gray-600">{cls.schedule.days.join(', ')}</p>
-                        </div>
-                    </div>
-                    <div className="flex items-start gap-2">
-                        <Clock className="w-3.5 h-3.5 text-orange-500 mt-0.5 flex-shrink-0" />
-                        <div className="flex-1">
-                            <p className="text-xs font-semibold text-gray-700 mb-0.5">Class Time</p>
-                            <p className="text-xs text-gray-600">{formatTime(cls.schedule.time)}</p>
-                        </div>
-                    </div>
-                </div>
-            ) : (
-                <div className="bg-amber-50 rounded-lg p-2.5 mb-3">
-                    <p className="text-xs text-amber-700 font-medium">Schedule: Flexible - Book to arrange time with trainer</p>
-                </div>
-            )}
-
-            {/* Location & Price */}
-            <div className="flex items-center justify-between mb-3 pb-3 border-b border-gray-200">
-                <div className="flex items-center gap-1.5">
-                    <MapPin className="w-3.5 h-3.5 text-gray-500" />
-                    <span className="text-xs text-gray-700">{trainer.location || 'Location TBD'}</span>
-                </div>
-                <span className="text-sm font-bold text-[#FF6B35]">{formatVND(cls.price)}</span>
+                {/* Action Button */}
+                <button 
+                    onClick={handleBookClick}
+                    disabled={isBookingDisabledForTrainer}
+                    className={`w-full px-3 py-2 text-xs font-bold rounded-lg transition-all duration-200 shadow-sm ${
+                        isBookingDisabledForTrainer 
+                            ? 'bg-muted text-muted-foreground cursor-not-allowed' 
+                            : 'bg-primary text-primary-foreground hover:bg-primary/90 active:scale-95 hover:shadow-md'
+                    }`}
+                >
+                    {isBookingDisabledForTrainer ? 'N/A for Trainers' : 'Book Now →'}
+                </button>
             </div>
-            
-            {/* Action Button */}
-            <button 
-                onClick={handleBookClick}
-                disabled={isBookingDisabledForTrainer}
-                className={`w-full px-4 py-2.5 bg-primary text-primary-foreground text-sm font-semibold rounded-lg hover:bg-primary/90 active:scale-95 shadow-sm transition-all duration-200 ${
-                    isBookingDisabledForTrainer ? 'opacity-50 cursor-not-allowed' : ''
-                }`}
-            >
-                {isBookingDisabledForTrainer ? 'N/A for Trainers' : 'Book This Class'}
-            </button>
         </div>
     );
 });
