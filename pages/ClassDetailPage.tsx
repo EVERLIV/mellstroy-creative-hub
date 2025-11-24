@@ -44,7 +44,6 @@ const ClassDetailPage: React.FC<ClassDetailPageProps> = ({
   const [trainer, setTrainer] = useState<Trainer | null>(null);
   const [loading, setLoading] = useState(true);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
-  const [enrolledCount, setEnrolledCount] = useState(0);
   const [classReviews, setClassReviews] = useState<Review[]>([]);
   const [trainerCertificates, setTrainerCertificates] = useState<any[]>([]);
   const [showAllReviews, setShowAllReviews] = useState(false);
@@ -53,44 +52,6 @@ const ClassDetailPage: React.FC<ClassDetailPageProps> = ({
   useEffect(() => {
     if (!classId) return;
     loadClassData();
-  }, [classId]);
-
-  // Subscribe to realtime bookings updates
-  useEffect(() => {
-    if (!classId) return;
-
-    const loadBookings = async () => {
-      const { data, error } = await supabase
-        .from('bookings')
-        .select('*')
-        .eq('class_id', classId);
-      
-      if (!error && data) {
-        setEnrolledCount(data.length);
-      }
-    };
-
-    loadBookings();
-
-    const channel = supabase
-      .channel(`class-detail-bookings-${classId}`)
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'bookings',
-          filter: `class_id=eq.${classId}`
-        },
-        () => {
-          loadBookings();
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
   }, [classId]);
 
 
@@ -118,13 +79,6 @@ const ClassDetailPage: React.FC<ClassDetailPageProps> = ({
       if (trainerError) throw trainerError;
       if (!trainerProfile) return;
 
-      const { data: bookings } = await supabase
-        .from('bookings')
-        .select('*')
-        .eq('class_id', classId);
-
-      setEnrolledCount(bookings?.length || 0);
-
       // Load trainer certificates
       const { data: certificates } = await supabase
         .from('trainer_documents')
@@ -138,6 +92,11 @@ const ClassDetailPage: React.FC<ClassDetailPageProps> = ({
 
       // Load reviews for this class through bookings
       let reviewsData: Review[] = [];
+      const { data: bookings } = await supabase
+        .from('bookings')
+        .select('*')
+        .eq('class_id', classId);
+        
       if (bookings && bookings.length > 0) {
         const bookingIds = bookings.map(b => b.id);
         const { data: reviews, error: reviewsError } = await supabase
@@ -320,9 +279,8 @@ const ClassDetailPage: React.FC<ClassDetailPageProps> = ({
     );
   }
 
-  const isFull = enrolledCount >= classData.capacity;
   const isTrainer = userRole === 'trainer';
-  const isBookingDisabled = isTrainer || isFull;
+  const isBookingDisabled = isTrainer;
 
   const images = classData.imageUrls && classData.imageUrls.length > 0 
     ? classData.imageUrls 
@@ -518,10 +476,7 @@ const ClassDetailPage: React.FC<ClassDetailPageProps> = ({
                 <Users className="w-4 h-4 mt-0.5 text-gray-500 flex-shrink-0" />
                 <div>
                   <p className="font-medium text-gray-900">Capacity</p>
-                  <p className="text-xs text-gray-600">{enrolledCount} / {classData.capacity} enrolled</p>
-                  {enrolledCount >= classData.capacity && (
-                    <span className="inline-block mt-1 px-2 py-0.5 bg-red-100 text-red-700 text-xs font-semibold rounded">Class Full</span>
-                  )}
+                  <p className="text-xs text-gray-600">Max {classData.capacity} participants</p>
                 </div>
               </div>
               <div className="flex items-start gap-2 text-sm">
@@ -705,10 +660,10 @@ const ClassDetailPage: React.FC<ClassDetailPageProps> = ({
           className={`w-full flex items-center justify-center text-xs font-semibold py-2.5 px-3 rounded-lg shadow-sm transition-all duration-200 ${
             isBookingDisabled
               ? 'bg-gray-200 text-gray-500 cursor-not-allowed'
-              : 'bg-[#FF6B35] text-white hover:bg-orange-600 active:scale-95'
+              : 'bg-primary text-primary-foreground hover:bg-primary/90 active:scale-95'
           }`}
         >
-          {isFull ? '🔒 Class Full' : userRole === 'trainer' ? 'Trainers Cannot Book' : '📅 Book Now'}
+          {userRole === 'trainer' ? 'Trainers Cannot Book' : '📅 Book Now'}
         </button>
       </div>
 
