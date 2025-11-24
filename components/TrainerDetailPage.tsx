@@ -92,47 +92,7 @@ interface ClassCardProps {
 
 const ClassCard: React.FC<ClassCardProps> = React.memo(({ cls, trainer, userRole, currentUserId, onInitiateBooking, onBack }) => {
     const navigate = useNavigate();
-    const [enrolledCount, setEnrolledCount] = useState(0);
-    
-    const isFull = enrolledCount >= cls.capacity;
     const isBookingDisabledForTrainer = userRole === 'trainer';
-
-    useEffect(() => {
-        const classId = (cls as any)._dbId || cls.id;
-        
-        const loadBookings = async () => {
-            const { data, error } = await supabase
-                .from('bookings')
-                .select('*')
-                .eq('class_id', classId);
-            
-            if (!error && data) {
-                setEnrolledCount(data.length);
-            }
-        };
-
-        loadBookings();
-
-        const channel = supabase
-            .channel(`class-bookings-${classId}`)
-            .on(
-                'postgres_changes',
-                {
-                    event: '*',
-                    schema: 'public',
-                    table: 'bookings',
-                    filter: `class_id=eq.${classId}`
-                },
-                () => {
-                    loadBookings();
-                }
-            )
-            .subscribe();
-
-        return () => {
-            supabase.removeChannel(channel);
-        };
-    }, [cls, currentUserId]);
 
     const handleCardClick = () => {
         const classId = (cls as any)._dbId || cls.id;
@@ -146,9 +106,6 @@ const ClassCard: React.FC<ClassCardProps> = React.memo(({ cls, trainer, userRole
         e.stopPropagation();
         onInitiateBooking({ trainer, cls });
     };
-
-    const availableSlots = cls.capacity - enrolledCount;
-    const enrollmentPercentage = (enrolledCount / cls.capacity) * 100;
 
     return (
         <div 
@@ -236,31 +193,6 @@ const ClassCard: React.FC<ClassCardProps> = React.memo(({ cls, trainer, userRole
                 </div>
             )}
 
-            {/* Capacity & Availability */}
-            <div className="mb-3">
-                <div className="flex items-center justify-between mb-1.5">
-                    <span className="text-xs font-semibold text-gray-700">Available Slots</span>
-                    <span className={`text-xs font-bold ${
-                        availableSlots === 0 ? 'text-red-600' : 
-                        availableSlots <= 3 ? 'text-orange-600' : 
-                        'text-green-600'
-                    }`}>
-                        {availableSlots} / {cls.capacity} spots
-                    </span>
-                </div>
-                {/* Progress Bar */}
-                <div className="w-full h-1.5 bg-gray-200 rounded-full overflow-hidden">
-                    <div 
-                        className={`h-full transition-all duration-300 ${
-                            enrollmentPercentage >= 100 ? 'bg-red-500' :
-                            enrollmentPercentage >= 75 ? 'bg-orange-500' :
-                            'bg-green-500'
-                        }`}
-                        style={{ width: `${Math.min(enrollmentPercentage, 100)}%` }}
-                    />
-                </div>
-            </div>
-
             {/* Location & Price */}
             <div className="flex items-center justify-between mb-3 pb-3 border-b border-gray-200">
                 <div className="flex items-center gap-1.5">
@@ -273,12 +205,12 @@ const ClassCard: React.FC<ClassCardProps> = React.memo(({ cls, trainer, userRole
             {/* Action Button */}
             <button 
                 onClick={handleBookClick}
-                disabled={isFull || isBookingDisabledForTrainer}
-                className={`w-full px-4 py-2.5 bg-[#FF6B35] text-white text-sm font-semibold rounded-lg hover:bg-orange-600 active:scale-95 shadow-sm transition-all duration-200 ${
-                    isFull || isBookingDisabledForTrainer ? 'opacity-50 cursor-not-allowed' : ''
+                disabled={isBookingDisabledForTrainer}
+                className={`w-full px-4 py-2.5 bg-primary text-primary-foreground text-sm font-semibold rounded-lg hover:bg-primary/90 active:scale-95 shadow-sm transition-all duration-200 ${
+                    isBookingDisabledForTrainer ? 'opacity-50 cursor-not-allowed' : ''
                 }`}
             >
-                {isFull ? 'Class Full - No Slots Available' : isBookingDisabledForTrainer ? 'N/A for Trainers' : 'Book This Class'}
+                {isBookingDisabledForTrainer ? 'N/A for Trainers' : 'Book This Class'}
             </button>
         </div>
     );
