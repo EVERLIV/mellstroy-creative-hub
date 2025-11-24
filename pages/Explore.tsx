@@ -325,8 +325,7 @@ const Explore: React.FC<ExploreProps> = ({
   };
 
   return (
-    <div className="bg-gray-50 h-full relative">
-      <div className="flex flex-col h-full">
+    <div className="bg-gray-50 h-screen flex flex-col relative overflow-hidden">
         {/* Header */}
         <div className="sticky top-0 bg-white z-10 shadow-sm flex-shrink-0">
           <div className="px-4 py-3">
@@ -363,7 +362,7 @@ const Explore: React.FC<ExploreProps> = ({
         </div>
         
         {/* Content */}
-        <div className="flex-1 overflow-y-auto">
+        <div className="flex-1 overflow-y-auto min-h-0">
           <div className="px-4 py-3">
             <div className="flex justify-between items-center mb-3">
               <h2 className="text-xs font-medium text-gray-600">
@@ -399,7 +398,6 @@ const Explore: React.FC<ExploreProps> = ({
             )}
           </div>
         </div>
-      </div>
 
       {/* Trainer Detail Overlay */}
       {selectedTrainer && (
