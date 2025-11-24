@@ -91,8 +91,8 @@ const HomePage: React.FC<HomePageProps> = ({ trainers, onInitiateBooking, onOpen
   };
 
   return (
-    <div className="bg-slate-50 h-full overflow-y-auto">
-      <div className="relative">
+    <div className="bg-slate-50 h-screen flex flex-col overflow-hidden">
+      <div className="relative flex-1 overflow-y-auto min-h-0">
         {selectedTrainer && (
           <div key={selectedTrainer.id} className={`absolute w-full top-0 z-30 ${isExitingDetail ? 'animate-slide-out-to-right' : 'animate-slide-in-from-right'}`}>
             <TrainerDetailPage 
