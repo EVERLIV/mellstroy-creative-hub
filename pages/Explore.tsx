@@ -377,7 +377,7 @@ const Explore: React.FC<ExploreProps> = ({
             isRefreshing={isRefreshing}
             pullProgress={pullProgress}
           />
-          <div className="px-4 py-3">
+          <div className="px-4 py-3 pb-[calc(5rem+env(safe-area-inset-bottom))]">
             <div className="flex justify-between items-center mb-3">
               <h2 className="text-xs font-medium text-gray-600">
                 {filteredTrainers.length} {filteredTrainers.length === 1 ? 'trainer' : 'trainers'} found
