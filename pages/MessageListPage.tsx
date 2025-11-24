@@ -256,22 +256,27 @@ const MessageListPage: React.FC = () => {
   }
 
   return (
-    <div className="bg-background h-full flex flex-col overflow-hidden">
-      {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 bg-card shadow-sm z-20 flex-shrink-0 border-b border-border">
-        <div className="w-9"></div>
-        <h1 className="text-lg font-bold text-foreground">Messages</h1>
-        <div className="w-9"></div>
+    <div className="bg-background h-screen flex flex-col overflow-hidden">
+      {/* Modern Header */}
+      <div className="flex-shrink-0 bg-gradient-to-r from-primary/10 via-primary/5 to-background border-b border-border backdrop-blur-sm">
+        <div className="px-4 py-4">
+          <h1 className="text-xl font-bold text-foreground">Messages</h1>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            {conversations.length} {conversations.length === 1 ? 'conversation' : 'conversations'}
+          </p>
+        </div>
       </div>
 
       {/* Conversations List */}
       <div className="flex-1 overflow-y-auto">
-        <div className="px-4 py-3 bg-background pb-[calc(5rem+env(safe-area-inset-bottom))]">
+        <div className="p-3 pb-[calc(5rem+env(safe-area-inset-bottom))]">
           {conversations.length === 0 ? (
-            <div className="text-center mt-12">
-              <MessageCircle className="w-12 h-12 text-muted-foreground mx-auto" />
-              <p className="text-sm font-bold text-foreground mt-4">No Conversations Yet</p>
-              <p className="text-xs text-muted-foreground mt-2">
+            <div className="flex flex-col items-center justify-center h-full py-16">
+              <div className="bg-primary/10 p-6 rounded-full mb-4">
+                <MessageCircle className="w-12 h-12 text-primary" />
+              </div>
+              <p className="text-lg font-bold text-foreground">No Conversations Yet</p>
+              <p className="text-sm text-muted-foreground mt-2 text-center max-w-xs">
                 Book a class with a trainer to start chatting.
               </p>
             </div>
@@ -279,6 +284,7 @@ const MessageListPage: React.FC = () => {
             <div className="space-y-2">
               {conversations.map((conv) => {
                 const isMyMessage = conv.last_message?.sender_id === user?.id;
+                const hasUnread = conv.unread_count > 0;
                 
                 return (
                   <button
@@ -286,65 +292,59 @@ const MessageListPage: React.FC = () => {
                     onClick={() => navigate(`/chat/${conv.other_participant.id}`, {
                       state: { bookingDetails: conv.booking_details }
                     })}
-                    className={`w-full p-4 rounded-lg border transition-all text-left ${
-                      conv.unread_count > 0 
-                        ? 'bg-primary/5 border-primary/30 hover:bg-primary/10' 
-                        : 'bg-card border-border hover:bg-accent/5'
-                    }`}
+                    className="w-full p-3 rounded-2xl border transition-all text-left group hover:scale-[1.02] active:scale-[0.98] bg-card border-border hover:border-primary/30 hover:shadow-md"
                   >
-                    <div className="flex items-center justify-between mb-2">
-                      <span className={`text-sm ${conv.unread_count > 0 ? 'font-bold' : 'font-semibold'} text-foreground`}>
-                        {conv.other_participant.username}
-                      </span>
-                      <div className="flex items-center gap-2">
-                        {conv.unread_count > 0 && (
-                          <div className="px-2 py-1 bg-primary rounded-full">
-                            <span className="text-primary-foreground text-xs font-bold">{conv.unread_count}</span>
-                          </div>
-                        )}
-                        {conv.last_message && (
-                          <span className={`text-xs ${conv.unread_count > 0 ? 'text-primary font-semibold' : 'text-muted-foreground'}`}>
-                            {formatDistanceToNow(new Date(conv.last_message.created_at), { addSuffix: true })}
-                          </span>
+                    <div className="flex items-start gap-3">
+                      {/* Avatar with online indicator */}
+                      <div className="relative flex-shrink-0">
+                        <img
+                          src={conv.other_participant.avatar_url || 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=100'}
+                          alt={conv.other_participant.username}
+                          className="w-12 h-12 rounded-full object-cover ring-2 ring-background group-hover:ring-primary/20"
+                        />
+                        {hasUnread && (
+                          <div className="absolute -top-0.5 -right-0.5 w-3 h-3 bg-primary rounded-full border-2 border-background" />
                         )}
                       </div>
-                    </div>
 
-                    {/* Booking details if available */}
-                    {conv.booking_details && (
-                      <div className="mb-2 p-2 bg-background/50 rounded-md border border-border/50">
-                        <p className={`text-sm mb-1.5 ${conv.unread_count > 0 ? 'font-bold' : 'font-semibold'} text-foreground`}>
-                          {conv.booking_details.class_name}
-                        </p>
-                        <div className="flex flex-wrap items-center gap-2 text-xs">
-                          <div className="flex items-center gap-1 px-2 py-1 bg-card rounded">
-                            <span className="font-semibold text-foreground">Date:</span>
-                            <span className="text-muted-foreground">
-                              {new Date(conv.booking_details.booking_date).toLocaleDateString('en-US', { 
-                                month: 'short', 
-                                day: 'numeric',
-                                year: 'numeric'
-                              })}
-                            </span>
-                          </div>
-                          <div className="flex items-center gap-1 px-2 py-1 bg-card rounded">
-                            <span className="font-semibold text-foreground">Time:</span>
-                            <span className="text-muted-foreground">{conv.booking_details.booking_time}</span>
-                          </div>
-                          <div className="flex items-center gap-1 px-2 py-1 bg-card rounded">
-                            <span className="font-semibold text-foreground">ID:</span>
-                            <span className="text-primary font-mono">{conv.booking_details.verification_code}</span>
+                      <div className="flex-1 min-w-0">
+                        {/* Header Row */}
+                        <div className="flex items-center justify-between mb-1">
+                          <span className={`text-sm truncate ${hasUnread ? 'font-bold' : 'font-semibold'} text-foreground`}>
+                            {conv.other_participant.username}
+                          </span>
+                          <div className="flex items-center gap-1.5 flex-shrink-0 ml-2">
+                            {conv.last_message && (
+                              <span className={`text-[10px] ${hasUnread ? 'text-primary font-semibold' : 'text-muted-foreground'}`}>
+                                {formatDistanceToNow(new Date(conv.last_message.created_at), { addSuffix: false })}
+                              </span>
+                            )}
                           </div>
                         </div>
-                      </div>
-                    )}
 
-                    {conv.last_message && (
-                      <p className={`text-xs truncate ${conv.unread_count > 0 ? 'font-semibold text-foreground' : 'text-muted-foreground'}`}>
-                        {isMyMessage && <span className="text-muted-foreground">You: </span>}
-                        {conv.last_message.content}
-                      </p>
-                    )}
+                        {/* Booking Badge */}
+                        {conv.booking_details && (
+                          <div className="mb-1.5 inline-flex items-center gap-1.5 px-2 py-1 bg-primary/10 rounded-md">
+                            <span className="text-[10px] font-semibold text-primary">📅 {conv.booking_details.class_name}</span>
+                          </div>
+                        )}
+
+                        {/* Last Message Preview */}
+                        <div className="flex items-center justify-between">
+                          {conv.last_message && (
+                            <p className={`text-xs truncate flex-1 ${hasUnread ? 'font-semibold text-foreground' : 'text-muted-foreground'}`}>
+                              {isMyMessage && <span className="text-primary mr-1">You:</span>}
+                              {conv.last_message.content}
+                            </p>
+                          )}
+                          {hasUnread && (
+                            <div className="flex-shrink-0 ml-2 min-w-[18px] h-[18px] bg-primary rounded-full flex items-center justify-center">
+                              <span className="text-primary-foreground text-[10px] font-bold">{conv.unread_count}</span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
                   </button>
                 );
               })}
