@@ -35,6 +35,49 @@ const StarRating: React.FC<{ rating: number; starSize?: string }> = React.memo((
 
 StarRating.displayName = 'StarRating';
 
+// Class Card Component
+interface ClassCardProps {
+  cls: Class;
+  onViewDetails: () => void;
+}
+
+const ClassCard: React.FC<ClassCardProps> = ({ cls, onViewDetails }) => {
+  return (
+    <div className="bg-card rounded-xl overflow-hidden shadow-sm border border-border hover:shadow-md transition-shadow">
+      {/* Class Image */}
+      <div className="relative h-32 bg-muted">
+        {cls.imageUrl ? (
+          <img 
+            src={cls.imageUrl} 
+            alt={cls.name} 
+            className="w-full h-full object-cover"
+          />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-purple-100 to-blue-100 dark:from-purple-900/20 dark:to-blue-900/20">
+            <span className="text-3xl">🏋️</span>
+          </div>
+        )}
+      </div>
+      
+      {/* Class Info */}
+      <div className="p-3">
+        <h4 className="font-bold text-foreground text-sm mb-1 line-clamp-1">{cls.name}</h4>
+        <p className="text-xs text-muted-foreground mb-2 line-clamp-2">{cls.description || 'No description available'}</p>
+        
+        <div className="flex items-center justify-between">
+          <span className="text-sm font-bold text-primary">{formatVND(cls.price)}</span>
+          <button
+            onClick={onViewDetails}
+            className="px-3 py-1.5 bg-primary text-primary-foreground text-xs font-semibold rounded-lg hover:bg-primary/90 active:scale-95 transition-all"
+          >
+            Details
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 // Main Component
 interface TrainerDetailPageProps {
     trainer: Trainer;
@@ -59,6 +102,7 @@ const TrainerDetailPage: React.FC<TrainerDetailPageProps> = ({
 }) => {
     const [classes, setClasses] = useState<Class[]>(trainer?.classes || []);
     const scrollContainerRef = useRef<HTMLDivElement>(null);
+    const navigate = useNavigate();
 
     // Scroll to top when component mounts
     useEffect(() => {
@@ -103,6 +147,11 @@ const TrainerDetailPage: React.FC<TrainerDetailPageProps> = ({
         }
     };
 
+    const handleViewClassDetails = (cls: Class) => {
+        const classId = (cls as any)._dbId || cls.id;
+        navigate(`/class/${classId}`);
+    };
+
     return (
         <div className="bg-background h-screen flex flex-col overflow-hidden">
             {/* Gradient Header with Profile */}
@@ -143,8 +192,8 @@ const TrainerDetailPage: React.FC<TrainerDetailPageProps> = ({
             </div>
 
             {/* Scrollable Content */}
-            <div ref={scrollContainerRef} className="flex-1 overflow-y-auto pt-20 bg-background">
-                <div className="px-4 pb-24">
+            <div ref={scrollContainerRef} className="flex-1 overflow-y-auto pt-20 pb-24 bg-background">
+                <div className="px-4">
                     {/* Trainer Name and Info */}
                     <div className="text-center mb-6">
                         <div className="flex items-center justify-center gap-2 mb-2">
@@ -217,17 +266,20 @@ const TrainerDetailPage: React.FC<TrainerDetailPageProps> = ({
                     {/* Available Sessions Section */}
                     <div className="mb-6">
                         <h3 className="text-xl font-bold text-foreground mb-4">Available Sessions</h3>
-                        <ul className="space-y-3">
-                            {displayClasses.map((cls, idx) => (
-                                <li key={idx} className="flex items-start text-foreground">
-                                    <span className="w-2 h-2 bg-primary rounded-full mr-3 mt-2 flex-shrink-0"></span>
-                                    <span className="flex-1 text-base">{cls.name} - {formatVND(cls.price)}/session</span>
-                                </li>
-                            ))}
-                            {displayClasses.length === 0 && (
-                                <li className="text-muted-foreground text-base">No sessions available</li>
-                            )}
-                        </ul>
+                        
+                        {displayClasses.length > 0 ? (
+                            <div className="grid grid-cols-2 gap-3">
+                                {displayClasses.map((cls) => (
+                                    <ClassCard
+                                        key={(cls as any)._dbId || cls.id}
+                                        cls={cls}
+                                        onViewDetails={() => handleViewClassDetails(cls)}
+                                    />
+                                ))}
+                            </div>
+                        ) : (
+                            <p className="text-muted-foreground text-base">No sessions available</p>
+                        )}
                     </div>
                 </div>
 
