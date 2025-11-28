@@ -4,7 +4,7 @@ import TrainerGrid from '../components/TrainerGrid';
 import ViewToggle from '../components/ViewToggle';
 import TrainerDetailPage from '../components/TrainerDetailPage';
 import CategoryFilters from '../components/CategoryFilters';
-import { ArrowLeft, Search, SlidersHorizontal } from 'lucide-react';
+import { ArrowLeft, Search } from 'lucide-react';
 import { CATEGORIES } from '../constants';
 
 interface CategoryPageProps {
@@ -70,19 +70,16 @@ const CategoryPage: React.FC<CategoryPageProps> = ({
     <div className="bg-background h-full relative">
       <div className="flex flex-col h-full">
         {/* Header */}
-        <div className="sticky top-0 bg-background z-10 shadow-sm flex-shrink-0 border-b border-border">
-          <div className="p-4">
-            {/* Top Bar with Back Button and Filter */}
-            <div className="flex items-center justify-between mb-3">
+        <div className="sticky top-0 bg-background z-10 shadow-sm flex-shrink-0 border-b border-border pt-3 pb-4">
+          <div className="px-4">
+            {/* Back Button */}
+            <div className="flex items-center mb-4">
               <button 
                 onClick={onBack} 
                 className="flex items-center gap-2 text-foreground hover:text-primary transition-colors"
               >
                 <ArrowLeft className="w-5 h-5" />
-                <span className="font-semibold">{category.name} Trainers</span>
-              </button>
-              <button className="p-2 rounded-lg bg-card border border-border hover:bg-muted transition-colors">
-                <SlidersHorizontal className="w-5 h-5 text-muted-foreground" />
+                <span className="text-lg font-semibold">{category.name} Trainers</span>
               </button>
             </div>
             
