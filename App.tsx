@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate, useParams } from 'react-router-dom';
 import { User, X } from 'lucide-react';
 import { AuthProvider, useAuth } from './src/hooks/useAuth';
 import { ThemeProvider } from './src/hooks/useTheme';
@@ -41,7 +41,9 @@ import BookingModal from './components/BookingModal';
 import ReviewModal from './components/ReviewModal';
 import ReviewsModal from './components/ReviewsModal';
 import BookingVerificationDisplay from './components/BookingVerificationDisplay';
-import { Trainer, Class, Booking, UserRole, Event, Message, MealPlan, Venue } from './types';
+import CategoryPage from './pages/CategoryPage';
+import { CATEGORIES } from './constants';
+import { Trainer, Class, Booking, UserRole, Event, Message, MealPlan, Venue, Category } from './types';
 import { mockVenues } from './data/mockVenues';
 import { getAICoachResponse } from './utils/ai';
 // ErrorBoundary temporarily disabled due to React 19 TypeScript compatibility
@@ -71,6 +73,65 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
 const VenuesPageWrapper = () => {
   const navigate = useNavigate();
   return <VenuesPage venues={mockVenues} onBack={() => navigate('/')} />;
+};
+
+const CategoryRoute: React.FC<{
+  trainers: Trainer[];
+  onInitiateBooking: (target: { trainer: Trainer; cls: Class }) => void;
+  onOpenChat: (trainer: Trainer, context?: { className: string; bookingDate?: string }) => void;
+  userRole: UserRole;
+  currentUserId: string;
+  favoriteTrainerIds: string[];
+  onToggleFavorite: (trainerId: string) => void;
+  onOpenReviewsModal: (trainer: Trainer) => void;
+}> = ({
+  trainers,
+  onInitiateBooking,
+  onOpenChat,
+  userRole,
+  currentUserId,
+  favoriteTrainerIds,
+  onToggleFavorite,
+  onOpenReviewsModal,
+}) => {
+  const { categoryId } = useParams<{ categoryId: string }>();
+  const navigate = useNavigate();
+
+  const category = (CATEGORIES.find(c => c.id === categoryId) || CATEGORIES[0]) as Category;
+
+  const categorySpecialtyMap: { [key: string]: string[] } = {
+    gym: ['strength training', 'hiit', 'personal training', 'gym coach'],
+    yoga: ['yoga', 'pilates'],
+    tennis: ['tennis'],
+    boxing: ['boxing', 'kickboxing', 'mma'],
+    swimming: ['swimming'],
+    pickleball: ['pickleball'],
+    dance: ['dance fitness'],
+    running: ['running'],
+  };
+
+  const relevantSpecialties = categorySpecialtyMap[category.id] || [category.name.toLowerCase()];
+
+  const categoryTrainers = trainers.filter(trainer =>
+    trainer.specialty.some(spec =>
+      relevantSpecialties.some(rs => rs && spec.toLowerCase().includes(rs)),
+    ),
+  );
+
+  return (
+    <CategoryPage
+      category={category}
+      trainers={categoryTrainers}
+      onBack={() => navigate(-1)}
+      onInitiateBooking={onInitiateBooking}
+      onOpenChat={onOpenChat}
+      userRole={userRole}
+      currentUserId={currentUserId}
+      favoriteTrainerIds={favoriteTrainerIds}
+      onToggleFavorite={onToggleFavorite}
+      onOpenReviewsModal={onOpenReviewsModal}
+    />
+  );
 };
 
 const AppRoutes = () => {
@@ -321,18 +382,15 @@ const AppRoutes = () => {
           path="/category/:categoryId"
           element={
             <ProtectedRoute>
-              <HomePage
+              <CategoryRoute
                 trainers={trainers}
                 onInitiateBooking={handleInitiateBooking}
                 onOpenChat={handleOpenChat}
-                selectedCategory={selectedCategory}
-                onSelectCategory={setSelectedCategory}
                 userRole={userRole}
                 currentUserId={currentUserId}
                 favoriteTrainerIds={favoriteTrainerIds}
                 onToggleFavorite={toggleFavorite}
                 onOpenReviewsModal={handleOpenReviewsModal}
-                onRefreshTrainers={refetchTrainers}
               />
             </ProtectedRoute>
           }
