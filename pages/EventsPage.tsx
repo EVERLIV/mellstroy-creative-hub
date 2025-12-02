@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Plus, Users, Calendar, MapPin, User, DollarSign, Crown, List, LayoutGrid, Dumbbell, Building2, Search, SlidersHorizontal, X, Clock } from 'lucide-react';
+import { Plus, Users, Calendar, MapPin, User, DollarSign, Crown, List, LayoutGrid, Dumbbell, Building2, Search, SlidersHorizontal, X, ArrowUpDown, ChevronRight } from 'lucide-react';
 import { FITNESS_ACTIVITIES, HCMC_DISTRICTS } from '../constants';
 
 interface EventCardProps {
@@ -11,7 +11,7 @@ interface EventCardProps {
     time: string;
     location: string;
     image_url: string | null;
-    organizer: { username: string; is_premium?: boolean }[];
+    organizer: { username: string; is_premium?: boolean } | null;
     status: string;
     participant_count?: number;
     event_type?: string;
@@ -35,12 +35,21 @@ const getEventTypeLabel = (type: string) => {
     return types[type] || 'General Event';
 };
 
+const formatPrice = (price: number) => {
+    if (price >= 1000000) {
+        return (price / 1000000).toFixed(1).replace('.0', '') + 'M';
+    } else if (price >= 1000) {
+        return (price / 1000).toFixed(0) + 'K';
+    }
+    return price.toString();
+};
+
 const EventCard: React.FC<EventCardProps> = ({ event, onSelect }) => {
     const eventDate = new Date(event.date);
     const month = eventDate.toLocaleDateString('en-US', { month: 'short' }).toUpperCase();
     const day = eventDate.getDate();
-    const organizerName = event.organizer?.[0]?.username || 'Unknown';
-    const isOrganizerPremium = event.organizer?.[0]?.is_premium || false;
+    const organizerName = event.organizer?.username || 'Unknown';
+    const isOrganizerPremium = event.organizer?.is_premium || false;
     const participantCount = event.participant_count || 0;
     const isFree = !event.price || event.price === 0;
 
@@ -99,7 +108,7 @@ const EventCard: React.FC<EventCardProps> = ({ event, onSelect }) => {
                         <div className="flex items-center">
                             <DollarSign className="w-4 h-4 mr-2 flex-shrink-0" />
                             <span className="font-semibold text-primary">
-                                {new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND', minimumFractionDigits: 0 }).format(event.price!).replace(/\s/g, '')}
+                                {formatPrice(event.price!)}₫
                             </span>
                         </div>
                     )}
@@ -129,16 +138,19 @@ interface EventsPageProps {
     onOpenCreate: () => void;
 }
 
+type SortOption = 'date' | 'popularity' | 'price';
+
 const EventsPage: React.FC<EventsPageProps> = ({ events, isPremium, onBack, onSelectEvent, onOpenCreate }) => {
     const [viewMode, setViewMode] = useState<'cards' | 'compact'>('cards');
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedCategory, setSelectedCategory] = useState('');
     const [selectedDistrict, setSelectedDistrict] = useState('');
     const [showFilters, setShowFilters] = useState(false);
+    const [sortBy, setSortBy] = useState<SortOption>('date');
 
-    // Filter events based on search and filters
+    // Filter and sort events
     const filteredEvents = useMemo(() => {
-        return events.filter(event => {
+        let result = events.filter(event => {
             const matchesSearch = !searchQuery || 
                 event.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
                 event.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -149,7 +161,23 @@ const EventsPage: React.FC<EventsPageProps> = ({ events, isPremium, onBack, onSe
             
             return matchesSearch && matchesCategory && matchesDistrict;
         });
-    }, [events, searchQuery, selectedCategory, selectedDistrict]);
+
+        // Sort events
+        result.sort((a, b) => {
+            switch (sortBy) {
+                case 'date':
+                    return new Date(a.date).getTime() - new Date(b.date).getTime();
+                case 'popularity':
+                    return (b.participant_count || 0) - (a.participant_count || 0);
+                case 'price':
+                    return (a.price || 0) - (b.price || 0);
+                default:
+                    return 0;
+            }
+        });
+
+        return result;
+    }, [events, searchQuery, selectedCategory, selectedDistrict, sortBy]);
 
     const activeFiltersCount = (selectedCategory ? 1 : 0) + (selectedDistrict ? 1 : 0);
 
@@ -158,6 +186,12 @@ const EventsPage: React.FC<EventsPageProps> = ({ events, isPremium, onBack, onSe
         setSelectedDistrict('');
         setSearchQuery('');
     };
+
+    const sortOptions: { value: SortOption; label: string }[] = [
+        { value: 'date', label: 'Date' },
+        { value: 'popularity', label: 'Popular' },
+        { value: 'price', label: 'Price' },
+    ];
 
     return (
         <div className="bg-background h-full flex flex-col">
@@ -271,38 +305,58 @@ const EventsPage: React.FC<EventsPageProps> = ({ events, isPremium, onBack, onSe
                 </div>
             )}
 
-            {/* View Toggle */}
-            <div className="flex items-center justify-center gap-2 py-3 px-4 bg-background flex-shrink-0">
-                <button
-                    onClick={() => setViewMode('cards')}
-                    className={`flex items-center gap-2 px-5 h-9 rounded-xl font-semibold text-sm transition-colors ${
-                        viewMode === 'cards'
-                            ? 'bg-primary text-primary-foreground'
-                            : 'bg-muted text-muted-foreground hover:bg-muted/80'
-                    }`}
-                >
-                    <List className="w-4 h-4" />
-                    Cards
-                </button>
-                <button
-                    onClick={() => setViewMode('compact')}
-                    className={`flex items-center gap-2 px-5 h-9 rounded-xl font-semibold text-sm transition-colors ${
-                        viewMode === 'compact'
-                            ? 'bg-primary text-primary-foreground'
-                            : 'bg-muted text-muted-foreground hover:bg-muted/80'
-                    }`}
-                >
-                    <LayoutGrid className="w-4 h-4" />
-                    Compact
-                </button>
+            {/* View Toggle & Sort */}
+            <div className="flex items-center justify-between py-3 px-4 bg-background flex-shrink-0 border-b border-border">
+                <div className="flex items-center gap-2">
+                    <button
+                        onClick={() => setViewMode('cards')}
+                        className={`flex items-center gap-1.5 px-3 h-8 rounded-lg font-medium text-xs transition-colors ${
+                            viewMode === 'cards'
+                                ? 'bg-primary text-primary-foreground'
+                                : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                        }`}
+                    >
+                        <List className="w-3.5 h-3.5" />
+                        Cards
+                    </button>
+                    <button
+                        onClick={() => setViewMode('compact')}
+                        className={`flex items-center gap-1.5 px-3 h-8 rounded-lg font-medium text-xs transition-colors ${
+                            viewMode === 'compact'
+                                ? 'bg-primary text-primary-foreground'
+                                : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                        }`}
+                    >
+                        <LayoutGrid className="w-3.5 h-3.5" />
+                        Compact
+                    </button>
+                </div>
+
+                {/* Sort Buttons */}
+                <div className="flex items-center gap-1">
+                    <ArrowUpDown className="w-3.5 h-3.5 text-muted-foreground mr-1" />
+                    {sortOptions.map(option => (
+                        <button
+                            key={option.value}
+                            onClick={() => setSortBy(option.value)}
+                            className={`px-2.5 h-7 rounded-md text-xs font-medium transition-colors ${
+                                sortBy === option.value
+                                    ? 'bg-primary/10 text-primary'
+                                    : 'text-muted-foreground hover:text-foreground'
+                            }`}
+                        >
+                            {option.label}
+                        </button>
+                    ))}
+                </div>
             </div>
             
             {/* Content */}
             <main className="flex-1 overflow-y-auto px-4 pb-[calc(5rem+env(safe-area-inset-bottom))]">
                 {viewMode === 'cards' ? (
                     <>
-                        <div className="flex items-center justify-between mb-3">
-                            <h2 className="text-base font-semibold text-foreground">
+                        <div className="flex items-center justify-between my-3">
+                            <h2 className="text-sm font-semibold text-foreground">
                                 {filteredEvents.length === events.length 
                                     ? 'Upcoming Events' 
                                     : `${filteredEvents.length} event${filteredEvents.length !== 1 ? 's' : ''} found`}
@@ -331,66 +385,68 @@ const EventsPage: React.FC<EventsPageProps> = ({ events, isPremium, onBack, onSe
                     </>
                 ) : (
                     <>
-                        <div className="flex items-center justify-between mb-3">
-                            <h2 className="text-base font-semibold text-foreground">
+                        <div className="flex items-center justify-between my-3">
+                            <h2 className="text-sm font-semibold text-foreground">
                                 {filteredEvents.length === events.length 
                                     ? 'Upcoming Events' 
                                     : `${filteredEvents.length} event${filteredEvents.length !== 1 ? 's' : ''} found`}
                             </h2>
                         </div>
-                        <div className="grid grid-cols-2 gap-2">
+                        <div className="space-y-2">
                             {filteredEvents.map(event => {
                                 const eventDate = new Date(event.date);
-                                const month = eventDate.toLocaleDateString('en-US', { month: 'short' });
-                                const day = eventDate.getDate();
+                                const dateStr = eventDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
                                 const isFree = !event.price || event.price === 0;
                                 const participantCount = event.participant_count || 0;
+                                const organizerName = event.organizer?.username || 'Unknown';
+                                const isOrganizerPremium = event.organizer?.is_premium || false;
                                 
                                 return (
                                     <button 
                                         key={event.id} 
                                         onClick={() => onSelectEvent(event)}
-                                        className="bg-card rounded-xl border border-border p-3 text-left hover:shadow-md transition-all duration-200 hover:border-primary/30"
+                                        className="w-full bg-card rounded-xl border border-border p-3 flex items-center gap-3 text-left hover:shadow-md transition-all duration-200 hover:border-primary/30"
                                     >
-                                        {/* Date Badge */}
-                                        <div className="flex items-center justify-between mb-2">
-                                            <div className="flex items-center gap-1.5 text-primary">
-                                                <Calendar className="w-3.5 h-3.5" />
-                                                <span className="text-xs font-bold">{month} {day}</span>
-                                            </div>
-                                            {event.organizer?.[0]?.is_premium && (
-                                                <Crown className="w-3.5 h-3.5 text-primary" />
-                                            )}
+                                        {/* Date */}
+                                        <div className="flex-shrink-0 w-12 text-center">
+                                            <p className="text-[10px] font-bold text-primary uppercase">{eventDate.toLocaleDateString('en-US', { month: 'short' })}</p>
+                                            <p className="text-lg font-bold text-foreground -mt-0.5">{eventDate.getDate()}</p>
                                         </div>
                                         
-                                        {/* Title */}
-                                        <h3 className="font-semibold text-foreground text-sm leading-tight line-clamp-2 mb-2">
-                                            {event.title}
-                                        </h3>
-                                        
-                                        {/* Category Badge */}
-                                        {event.sport_category && (
-                                            <span className="inline-flex items-center gap-1 bg-blue-500/10 text-blue-600 dark:text-blue-400 text-[10px] font-medium px-1.5 py-0.5 rounded mb-2">
-                                                <Dumbbell className="w-2.5 h-2.5" />
-                                                {event.sport_category}
-                                            </span>
-                                        )}
-                                        
-                                        {/* Location */}
-                                        <div className="flex items-center gap-1 text-muted-foreground mb-1.5">
-                                            <MapPin className="w-3 h-3 flex-shrink-0" />
-                                            <span className="text-[10px] line-clamp-1">{event.location}</span>
+                                        {/* Content */}
+                                        <div className="flex-1 min-w-0">
+                                            <div className="flex items-center gap-2">
+                                                <h3 className="font-semibold text-foreground text-sm truncate">
+                                                    {event.title}
+                                                </h3>
+                                                {isOrganizerPremium && (
+                                                    <Crown className="w-3.5 h-3.5 text-primary flex-shrink-0" />
+                                                )}
+                                            </div>
+                                            <div className="flex items-center gap-3 mt-1 text-[11px] text-muted-foreground">
+                                                <span className="flex items-center gap-1">
+                                                    <User className="w-3 h-3" />
+                                                    {organizerName}
+                                                </span>
+                                                <span className="flex items-center gap-1">
+                                                    <Users className="w-3 h-3" />
+                                                    {participantCount}
+                                                </span>
+                                                {event.sport_category && (
+                                                    <span className="flex items-center gap-1 text-blue-600 dark:text-blue-400">
+                                                        <Dumbbell className="w-3 h-3" />
+                                                        {event.sport_category}
+                                                    </span>
+                                                )}
+                                            </div>
                                         </div>
                                         
-                                        {/* Footer */}
-                                        <div className="flex items-center justify-between pt-2 border-t border-border">
-                                            <div className="flex items-center gap-1 text-muted-foreground">
-                                                <Users className="w-3 h-3" />
-                                                <span className="text-[10px] font-medium">{participantCount}</span>
-                                            </div>
-                                            <span className={`text-[10px] font-bold ${isFree ? 'text-green-600 dark:text-green-400' : 'text-primary'}`}>
-                                                {isFree ? 'FREE' : new Intl.NumberFormat('vi-VN', { notation: 'compact' }).format(event.price) + '₫'}
+                                        {/* Price & Arrow */}
+                                        <div className="flex-shrink-0 flex items-center gap-2">
+                                            <span className={`text-xs font-bold ${isFree ? 'text-green-600 dark:text-green-400' : 'text-primary'}`}>
+                                                {isFree ? 'FREE' : formatPrice(event.price) + '₫'}
                                             </span>
+                                            <ChevronRight className="w-4 h-4 text-muted-foreground" />
                                         </div>
                                     </button>
                                 );
