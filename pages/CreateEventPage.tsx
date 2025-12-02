@@ -18,9 +18,12 @@ const CreateEventPage: React.FC<CreateEventPageProps> = ({ onBack, onSuccess }) 
         time: '',
         location: '',
         image_url: '',
+        event_type: 'general',
+        price: '0',
+        max_participants: '',
     });
 
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
         const { name, value } = e.target;
         setFormData(prev => ({ ...prev, [name]: value }));
     };
@@ -34,16 +37,24 @@ const CreateEventPage: React.FC<CreateEventPageProps> = ({ onBack, onSuccess }) 
             if (!user) throw new Error('Not authenticated');
 
             const { error } = await supabase.from('events').insert({
-                ...formData,
+                title: formData.title,
+                description: formData.description,
+                date: formData.date,
+                time: formData.time,
+                location: formData.location,
+                image_url: formData.image_url || null,
+                event_type: formData.event_type,
+                price: parseFloat(formData.price) || 0,
+                max_participants: formData.max_participants ? parseInt(formData.max_participants) : null,
                 organizer_id: user.id,
-                status: 'pending',
+                status: 'approved',
             });
 
             if (error) throw error;
 
             toast({
-                title: 'Event submitted',
-                description: 'Your event is pending admin approval',
+                title: 'Event created!',
+                description: 'Your event has been published successfully.',
             });
             onSuccess();
         } catch (error: any) {
@@ -74,6 +85,17 @@ const CreateEventPage: React.FC<CreateEventPageProps> = ({ onBack, onSuccess }) 
                         <input type="text" id="title" name="title" value={formData.title} onChange={handleChange} required className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" />
                     </div>
                     <div>
+                        <label htmlFor="event_type" className="block text-sm font-medium text-slate-600 mb-1">Event Type</label>
+                        <select id="event_type" name="event_type" value={formData.event_type} onChange={handleChange} className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <option value="general">General</option>
+                            <option value="partner_search">Looking for Partner</option>
+                            <option value="sparring">Sparring Session</option>
+                            <option value="group_class">Group Class</option>
+                            <option value="ride">Ride/Run</option>
+                            <option value="competition">Local Competition</option>
+                        </select>
+                    </div>
+                    <div>
                         <label htmlFor="description" className="block text-sm font-medium text-slate-600 mb-1">Description</label>
                         <textarea id="description" name="description" value={formData.description} onChange={handleChange} rows={5} required className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" />
                     </div>
@@ -90,6 +112,16 @@ const CreateEventPage: React.FC<CreateEventPageProps> = ({ onBack, onSuccess }) 
                      <div>
                         <label htmlFor="location" className="block text-sm font-medium text-slate-600 mb-1">Location</label>
                         <input type="text" id="location" name="location" value={formData.location} onChange={handleChange} required placeholder="e.g., Le Van Tam Park, District 1" className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                    </div>
+                    <div className="grid grid-cols-2 gap-4">
+                        <div>
+                            <label htmlFor="price" className="block text-sm font-medium text-slate-600 mb-1">Price (VND)</label>
+                            <input type="number" id="price" name="price" value={formData.price} onChange={handleChange} min="0" step="1000" placeholder="0 for free" className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                        </div>
+                        <div>
+                            <label htmlFor="max_participants" className="block text-sm font-medium text-slate-600 mb-1">Max Participants</label>
+                            <input type="number" id="max_participants" name="max_participants" value={formData.max_participants} onChange={handleChange} min="1" placeholder="No limit" className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                        </div>
                     </div>
                     <div>
                         <label htmlFor="image_url" className="block text-sm font-medium text-slate-600 mb-1">Image URL (optional)</label>

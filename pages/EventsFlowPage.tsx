@@ -16,7 +16,7 @@ const EventsFlowPage: React.FC<EventsFlowPageProps> = ({ onBack, initialEvent })
     const [selectedEvent, setSelectedEvent] = useState<any | null>(initialEvent || null);
     const [isExiting, setIsExiting] = useState(false);
     const [events, setEvents] = useState<any[]>([]);
-    const [isTrainer, setIsTrainer] = useState(false);
+    const [isPremium, setIsPremium] = useState(false);
     const [currentUserId, setCurrentUserId] = useState<string | null>(null);
     const [loading, setLoading] = useState(true);
 
@@ -38,25 +38,23 @@ const EventsFlowPage: React.FC<EventsFlowPageProps> = ({ onBack, initialEvent })
 
                 setCurrentUserId(user.id);
 
-                // Check if user is trainer
-                const { data: roleData } = await supabase
-                    .from('user_roles')
-                    .select('role')
-                    .eq('user_id', user.id)
-                    .eq('role', 'trainer')
-                    .maybeSingle();
+                // Check if user is premium
+                const { data: profileData } = await supabase
+                    .from('profiles')
+                    .select('is_premium')
+                    .eq('id', user.id)
+                    .single();
 
-                setIsTrainer(!!roleData);
+                setIsPremium(profileData?.is_premium || false);
 
-                // Fetch events (approved + own pending)
+                // Fetch events with participant counts
                 const { data: eventsData, error } = await supabase
                     .from('events')
                     .select(`
                         *,
-                        organizer:organizer_id (username),
-                        interests:event_interests (count)
+                        organizer:organizer_id (username)
                     `)
-                    .or(`status.eq.approved,organizer_id.eq.${user.id}`)
+                    .eq('status', 'approved')
                     .order('date', { ascending: true });
 
                 if (error) throw error;
@@ -102,41 +100,21 @@ const EventsFlowPage: React.FC<EventsFlowPageProps> = ({ onBack, initialEvent })
         setView('create');
     };
 
-    const handleToggleInterest = async (eventId: string) => {
-        if (!currentUserId) return;
-
+    const handleJoinEvent = async (eventId: string) => {
+        // Refresh event data after joining
         try {
-            // Check if already interested
-            const { data: existing } = await supabase
-                .from('event_interests')
-                .select()
-                .eq('event_id', eventId)
-                .eq('user_id', currentUserId)
-                .maybeSingle();
-
-            if (existing) {
-                await supabase.from('event_interests').delete().eq('id', existing.id);
-            } else {
-                await supabase.from('event_interests').insert({
-                    event_id: eventId,
-                    user_id: currentUserId,
-                });
-            }
-
-            // Refresh selected event
             const { data: updated } = await supabase
                 .from('events')
                 .select(`
                     *,
-                    organizer:organizer_id (username),
-                    interests:event_interests (count)
+                    organizer:organizer_id (username)
                 `)
                 .eq('id', eventId)
                 .single();
 
             if (updated) setSelectedEvent(updated);
         } catch (error) {
-            console.error('Error toggling interest:', error);
+            console.error('Error refreshing event:', error);
         }
     };
 
@@ -150,7 +128,7 @@ const EventsFlowPage: React.FC<EventsFlowPageProps> = ({ onBack, initialEvent })
                             event={selectedEvent}
                             currentUserId={currentUserId}
                             onBack={handleBackToList}
-                            onToggleInterest={handleToggleInterest}
+                            onJoinEvent={handleJoinEvent}
                         />
                     </div>
                 );
@@ -170,7 +148,7 @@ const EventsFlowPage: React.FC<EventsFlowPageProps> = ({ onBack, initialEvent })
                         {!loading && (
                             <EventsPage 
                                 events={events}
-                                isTrainer={isTrainer}
+                                isPremium={isPremium}
                                 onBack={onBack}
                                 onSelectEvent={handleSelectEvent}
                                 onOpenCreate={handleOpenCreate}

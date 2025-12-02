@@ -380,15 +380,55 @@ export type Database = {
           },
         ]
       }
+      event_participants: {
+        Row: {
+          event_id: string
+          id: string
+          joined_at: string | null
+          user_id: string
+        }
+        Insert: {
+          event_id: string
+          id?: string
+          joined_at?: string | null
+          user_id: string
+        }
+        Update: {
+          event_id?: string
+          id?: string
+          joined_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_participants_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_participants_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       events: {
         Row: {
           created_at: string | null
           date: string
           description: string
+          event_type: string | null
           id: string
           image_url: string | null
           location: string
+          max_participants: number | null
           organizer_id: string
+          participant_count: number | null
+          price: number | null
           status: string
           time: string
           title: string
@@ -398,10 +438,14 @@ export type Database = {
           created_at?: string | null
           date: string
           description: string
+          event_type?: string | null
           id?: string
           image_url?: string | null
           location: string
+          max_participants?: number | null
           organizer_id: string
+          participant_count?: number | null
+          price?: number | null
           status?: string
           time: string
           title: string
@@ -411,10 +455,14 @@ export type Database = {
           created_at?: string | null
           date?: string
           description?: string
+          event_type?: string | null
           id?: string
           image_url?: string | null
           location?: string
+          max_participants?: number | null
           organizer_id?: string
+          participant_count?: number | null
+          price?: number | null
           status?: string
           time?: string
           title?: string
@@ -992,6 +1040,10 @@ export type Database = {
           _role: Database["public"]["Enums"]["app_role"]
           _user_id: string
         }
+        Returns: boolean
+      }
+      is_event_registration_open: {
+        Args: { event_id: string }
         Returns: boolean
       }
     }
