@@ -1,5 +1,5 @@
 import React from 'react';
-import { ArrowLeft, Plus, Users, Calendar, MapPin, User, Lock, Clock, DollarSign, Crown } from 'lucide-react';
+import { ArrowLeft, Plus, Users, Calendar, MapPin, User, Clock, DollarSign, Crown } from 'lucide-react';
 
 interface EventCardProps {
   event: {
@@ -110,21 +110,13 @@ interface EventsPageProps {
 const EventsPage: React.FC<EventsPageProps> = ({ events, isPremium, onBack, onSelectEvent, onOpenCreate }) => {
 
     const CreateEventButton = () => (
-        <div className="relative group">
-            <button 
-                onClick={isPremium ? onOpenCreate : undefined}
-                disabled={!isPremium}
-                className="w-full flex items-center justify-center bg-primary text-primary-foreground font-bold py-3 rounded-xl hover:bg-primary/90 transition-colors duration-200 shadow-md disabled:bg-muted disabled:text-muted-foreground disabled:cursor-not-allowed"
-            >
-                {isPremium ? <Plus className="w-5 h-5 mr-2" /> : <Lock className="w-5 h-5 mr-2" />}
-                Create New Event
-            </button>
-            {!isPremium && (
-                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-max px-3 py-1.5 bg-card border border-border text-foreground text-xs font-semibold rounded-md opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
-                    Premium feature - Upgrade to create events
-                </div>
-            )}
-        </div>
+        <button 
+            onClick={onOpenCreate}
+            className="w-full flex items-center justify-center bg-primary text-primary-foreground font-bold py-3 rounded-xl hover:bg-primary/90 transition-colors duration-200 shadow-md"
+        >
+            <Plus className="w-5 h-5 mr-2" />
+            Create New Event
+        </button>
     );
 
     return (
