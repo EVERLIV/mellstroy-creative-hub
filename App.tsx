@@ -570,7 +570,12 @@ const AppRoutes = () => {
           }
         />
       </Routes>
-      {user && location.pathname !== '/ai-coach' && location.pathname !== '/meal-planner' && <BottomNav />}
+      {user && 
+        location.pathname !== '/ai-coach' && 
+        location.pathname !== '/meal-planner' && 
+        !location.pathname.startsWith('/messages/') && 
+        <BottomNav />
+      }
       {bookingModalData && (
         <BookingModal
           bookingTarget={bookingModalData}
