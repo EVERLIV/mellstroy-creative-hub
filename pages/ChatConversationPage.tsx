@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
-import { ArrowLeft, Send, Loader, Calendar, MessageCircle } from 'lucide-react';
+import { ArrowLeft, Send, Loader, Calendar, MessageCircle, MoreVertical } from 'lucide-react';
 import { supabase } from '../src/integrations/supabase/client';
 import { useAuth } from '../src/hooks/useAuth';
 import { useToast } from '../src/hooks/use-toast';
@@ -467,10 +467,10 @@ const ChatConversationPage: React.FC = () => {
         </button>
         
         <button 
-          onClick={() => setShowReportModal(true)} 
-          className="absolute top-3 right-4 px-3 py-1.5 rounded-lg hover:bg-muted transition-colors text-xs font-medium text-muted-foreground"
+          onClick={() => navigate(`/messages/${recipientId}/info`)} 
+          className="absolute top-3 right-4 p-2 rounded-lg hover:bg-muted transition-colors"
         >
-          Report
+          <MoreVertical className="w-5 h-5 text-foreground" />
         </button>
         
         {recipient && (

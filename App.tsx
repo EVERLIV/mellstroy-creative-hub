@@ -23,6 +23,7 @@ import MyBookingsPage from './pages/MyBookingsPage';
 import ChatPage from './pages/ChatPage';
 import MessageListPage from './pages/MessageListPage';
 import ChatConversationPage from './pages/ChatConversationPage';
+import ChatInfoPage from './pages/ChatInfoPage';
 import OnboardingPageContainer from './pages/OnboardingPageContainer';
 import ProfileContainer from './pages/ProfileContainer';
 import VerificationPage from './pages/VerificationPage';
@@ -550,6 +551,14 @@ const AppRoutes = () => {
           element={
             <ProtectedRoute>
               <ChatConversationPage />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/messages/:recipientId/info"
+          element={
+            <ProtectedRoute>
+              <ChatInfoPage />
             </ProtectedRoute>
           }
         />
