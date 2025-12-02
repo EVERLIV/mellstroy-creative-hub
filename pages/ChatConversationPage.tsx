@@ -29,6 +29,10 @@ interface Participant {
   id: string;
   username: string;
   avatar_url: string | null;
+  location: string | null;
+  specialty: string[] | null;
+  rating: number | null;
+  last_seen: string | null;
 }
 
 const ChatConversationPage: React.FC = () => {
@@ -72,7 +76,7 @@ const ChatConversationPage: React.FC = () => {
       try {
         const { data, error } = await supabase
           .from('profiles')
-          .select('id, username, avatar_url')
+          .select('id, username, avatar_url, location, specialty, rating, last_seen')
           .eq('id', recipientId)
           .single();
 
@@ -432,43 +436,81 @@ const ChatConversationPage: React.FC = () => {
     );
   }
 
+  const getOnlineStatus = () => {
+    if (!recipient?.last_seen) return { text: 'Offline', color: 'text-muted-foreground', dot: '⚪' };
+    
+    const lastSeen = new Date(recipient.last_seen);
+    const now = new Date();
+    const diffMinutes = Math.floor((now.getTime() - lastSeen.getTime()) / 60000);
+    
+    if (diffMinutes < 5) return { text: 'Online', color: 'text-green-600', dot: '🟢' };
+    if (diffMinutes < 60) return { text: `Seen ${diffMinutes} min ago`, color: 'text-yellow-600', dot: '🟡' };
+    if (diffMinutes < 1440) {
+      const hours = Math.floor(diffMinutes / 60);
+      return { text: `Seen ${hours}h ago`, color: 'text-orange-600', dot: '🟠' };
+    }
+    const days = Math.floor(diffMinutes / 1440);
+    return { text: `Seen ${days}d ago`, color: 'text-muted-foreground', dot: '⚪' };
+  };
+
+  const onlineStatus = getOnlineStatus();
+
   return (
     <div className="bg-background h-screen flex flex-col overflow-hidden">
-      {/* Header - matching AI Coach style */}
-      <div className="bg-gradient-to-br from-primary to-accent px-4 py-4 relative flex-shrink-0">
+      {/* Header - Minimalist with detailed trainer info */}
+      <div className="bg-card border-b border-border px-4 py-3 relative flex-shrink-0">
         <button 
           onClick={() => navigate('/messages')} 
-          className="absolute top-4 left-4 p-2 rounded-full bg-card/20 hover:bg-card/30 transition-colors"
+          className="absolute top-3 left-4 p-2 rounded-lg hover:bg-muted transition-colors"
         >
-          <ArrowLeft className="w-5 h-5 text-primary-foreground" />
+          <ArrowLeft className="w-5 h-5 text-foreground" />
         </button>
         
         <button 
           onClick={() => setShowReportModal(true)} 
-          className="absolute top-4 right-4 px-3 py-1.5 rounded-full bg-card/20 hover:bg-card/30 transition-colors text-xs font-medium text-primary-foreground"
+          className="absolute top-3 right-4 px-3 py-1.5 rounded-lg hover:bg-muted transition-colors text-xs font-medium text-muted-foreground"
         >
           Report
         </button>
         
         {recipient && (
-          <div className="flex flex-col items-center text-center pt-8">
-            <img
-              src={recipient.avatar_url || 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=100'}
-              alt={recipient.username}
-              className="w-16 h-16 rounded-full object-cover ring-4 ring-card/30 mb-2"
-            />
-            <h2 className="text-base font-bold text-primary-foreground">{recipient.username}</h2>
+          <div className="flex items-center gap-3 pt-1">
+            <div className="relative">
+              <img
+                src={recipient.avatar_url || 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=100'}
+                alt={recipient.username}
+                className="w-14 h-14 rounded-full object-cover border-2 border-border"
+              />
+              <span className="absolute bottom-0 right-0 text-sm">{onlineStatus.dot}</span>
+            </div>
+            <div className="flex-1 min-w-0">
+              <h2 className="text-sm font-bold text-foreground truncate">{recipient.username}</h2>
+              <p className={`text-xs ${onlineStatus.color} font-medium`}>{onlineStatus.text}</p>
+              {recipient.location && (
+                <p className="text-xs text-muted-foreground truncate">📍 {recipient.location}</p>
+              )}
+              {recipient.specialty && recipient.specialty.length > 0 && (
+                <p className="text-xs text-muted-foreground truncate">
+                  {recipient.specialty.slice(0, 2).join(', ')}
+                </p>
+              )}
+              {recipient.rating && (
+                <p className="text-xs text-muted-foreground">
+                  ⭐ {recipient.rating.toFixed(1)}
+                </p>
+              )}
+            </div>
           </div>
         )}
       </div>
 
       {/* Booking details banner with payment warning */}
       {bookingDetails && (
-        <div className="bg-primary/10 border-b border-primary/20 flex-shrink-0">
+        <div className="bg-muted/50 border-b border-border flex-shrink-0">
           <div className="p-3">
             <div className="flex items-center gap-2">
-              <div className="w-8 h-8 bg-primary/20 rounded-lg flex items-center justify-center flex-shrink-0">
-                <Calendar className="w-4 h-4 text-primary" />
+              <div className="w-8 h-8 bg-muted rounded-lg flex items-center justify-center flex-shrink-0">
+                <Calendar className="w-4 h-4 text-foreground" />
               </div>
               <div className="flex-1 min-w-0">
                 <p className="text-xs font-bold text-foreground truncate">{bookingDetails.class_name}</p>
@@ -476,16 +518,16 @@ const ChatConversationPage: React.FC = () => {
                   {new Date(bookingDetails.booking_date).toLocaleDateString()} • {bookingDetails.booking_time}
                 </p>
               </div>
-              <span className="px-2 py-1 bg-primary/20 rounded-md text-[10px] font-mono font-bold text-primary flex-shrink-0">
+              <span className="px-2 py-1 bg-card border border-border rounded-md text-[10px] font-mono font-bold text-foreground flex-shrink-0">
                 #{bookingDetails.verification_code}
               </span>
             </div>
           </div>
           <div className="px-3 pb-3">
-            <div className="bg-amber-500/10 border border-amber-500/20 rounded-lg px-3 py-2 flex items-start gap-2">
+            <div className="bg-amber-500/10 border border-amber-500/30 rounded-lg px-3 py-2 flex items-start gap-2">
               <span className="text-amber-600 text-lg flex-shrink-0">⚠️</span>
               <p className="text-[10px] text-amber-800 dark:text-amber-200 leading-relaxed">
-                <strong className="font-semibold">Payment at Meeting Only:</strong> Pay your trainer in person at the class. Never send money through the chat or other methods.
+                <strong className="font-semibold">Payment at Meeting Only:</strong> Pay your trainer in person at the class. Never send money through chat.
               </p>
             </div>
           </div>
