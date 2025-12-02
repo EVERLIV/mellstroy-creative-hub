@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, Users, Calendar, Clock, MapPin, DollarSign, AlertCircle, User, Camera, Upload, X, Loader2 } from 'lucide-react';
+import { ArrowLeft, Users, Calendar, Clock, MapPin, DollarSign, AlertCircle, User, Camera, Upload, X, Loader2, Crown } from 'lucide-react';
 import { supabase } from '../src/integrations/supabase/client';
 import { useToast } from '../src/hooks/use-toast';
 
@@ -48,6 +48,7 @@ const EventDetailPage: React.FC<EventDetailPageProps> = ({ event, currentUserId,
     const [photoPreview, setPhotoPreview] = useState<string | null>(null);
     const [photoCaption, setPhotoCaption] = useState('');
     const [isEventEnded, setIsEventEnded] = useState(false);
+    const [isOrganizerPremium, setIsOrganizerPremium] = useState(false);
 
     useEffect(() => {
         const checkParticipation = async () => {
@@ -72,7 +73,8 @@ const EventDetailPage: React.FC<EventDetailPageProps> = ({ event, currentUserId,
                         joined_at,
                         profiles!event_participants_user_id_fkey(
                             username,
-                            avatar_url
+                            avatar_url,
+                            is_premium
                         )
                     `)
                     .eq('event_id', event.id)
@@ -111,13 +113,24 @@ const EventDetailPage: React.FC<EventDetailPageProps> = ({ event, currentUserId,
 
                 if (photosError) throw photosError;
                 setPhotos(photosData || []);
+
+                // Fetch organizer premium status
+                if (event.organizer_id) {
+                    const { data: organizerProfile } = await supabase
+                        .from('profiles')
+                        .select('is_premium')
+                        .eq('id', event.organizer_id)
+                        .single();
+                    
+                    setIsOrganizerPremium(organizerProfile?.is_premium || false);
+                }
             } catch (error) {
                 console.error('Error checking participation:', error);
             }
         };
 
         checkParticipation();
-    }, [event.id, event.date, event.time, currentUserId]);
+    }, [event.id, event.date, event.time, currentUserId, event.organizer_id]);
 
     const handleJoinLeave = async () => {
         if (!currentUserId) {
@@ -332,7 +345,12 @@ const EventDetailPage: React.FC<EventDetailPageProps> = ({ event, currentUserId,
                             )}
                         </div>
                         <h1 className="text-2xl font-bold text-foreground">{event.title}</h1>
-                        <p className="text-sm font-semibold text-primary mt-1">Organized by {organizerName}</p>
+                        <p className="text-sm font-semibold text-primary mt-1 flex items-center gap-1.5">
+                            Organized by {organizerName}
+                            {isOrganizerPremium && (
+                                <Crown className="w-4 h-4 text-primary" />
+                            )}
+                        </p>
                     </div>
 
                     {!isRegistrationOpen && (
@@ -388,7 +406,12 @@ const EventDetailPage: React.FC<EventDetailPageProps> = ({ event, currentUserId,
                                                 <User className="w-5 h-5 text-primary" />
                                             )}
                                         </div>
-                                        <span className="text-sm font-medium text-foreground">{participant.profiles?.username || 'Unknown'}</span>
+                                        <span className="text-sm font-medium text-foreground flex items-center gap-1.5">
+                                            {participant.profiles?.username || 'Unknown'}
+                                            {participant.profiles?.is_premium && (
+                                                <Crown className="w-3.5 h-3.5 text-primary" />
+                                            )}
+                                        </span>
                                     </div>
                                 ))}
                                 {participants.length > 5 && (
