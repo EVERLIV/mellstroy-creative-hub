@@ -143,19 +143,15 @@ const EventsFlowPage: React.FC<EventsFlowPageProps> = ({ onBack, initialEvent })
                 );
             case 'list':
             default:
-                 return (
-                    <div className={`transition-opacity duration-300 ${view !== 'list' ? 'opacity-0' : 'opacity-100'}`}>
-                        {!loading && (
-                            <EventsPage 
-                                events={events}
-                                isPremium={isPremium}
-                                onBack={onBack}
-                                onSelectEvent={handleSelectEvent}
-                                onOpenCreate={handleOpenCreate}
-                            />
-                        )}
-                    </div>
-                 );
+                 return !loading ? (
+                    <EventsPage 
+                        events={events}
+                        isPremium={isPremium}
+                        onBack={onBack}
+                        onSelectEvent={handleSelectEvent}
+                        onOpenCreate={handleOpenCreate}
+                    />
+                 ) : null;
         }
     };
 
