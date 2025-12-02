@@ -104,7 +104,6 @@ const AICoachPage: React.FC<AICoachPageProps> = ({ messages, onSendMessage, isLo
     const [message, setMessage] = useState('');
     const [copiedId, setCopiedId] = useState<number | null>(null);
     const messagesEndRef = useRef<HTMLDivElement>(null);
-    const textareaRef = useRef<HTMLTextAreaElement>(null);
     const navigate = useNavigate();
     const { toast } = useToast();
 
@@ -114,26 +113,15 @@ const AICoachPage: React.FC<AICoachPageProps> = ({ messages, onSendMessage, isLo
 
     useEffect(scrollToBottom, [messages, isLoading]);
 
-    const handleInput = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-        setMessage(e.target.value);
-        const textarea = textareaRef.current;
-        if (textarea) {
-            textarea.style.height = 'auto';
-            textarea.style.height = `${Math.min(textarea.scrollHeight, 120)}px`;
-        }
-    };
-
     const handleSend = () => {
         if (message.trim() && !isLoading) {
             onSendMessage(message.trim());
             setMessage('');
-            const textarea = textareaRef.current;
-            if (textarea) textarea.style.height = 'auto';
         }
     };
 
-    const handleKeyPress = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-        if (e.key === 'Enter' && !e.shiftKey) {
+    const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
+        if (e.key === 'Enter') {
             e.preventDefault();
             handleSend();
         }
@@ -305,27 +293,26 @@ const AICoachPage: React.FC<AICoachPageProps> = ({ messages, onSendMessage, isLo
             </div>
 
             {/* Input Area */}
-            <div className="flex-shrink-0 border-t border-border bg-background p-4 sm:p-6">
+            <div className="flex-shrink-0 border-t border-border bg-background p-3">
                 <div className="max-w-4xl mx-auto">
-                    <div className="flex items-center gap-3">
-                        <div className="flex-1 relative bg-muted rounded-xl px-4 py-3 flex items-center gap-2">
-                            <textarea
-                                ref={textareaRef}
+                    <div className="flex items-center gap-2">
+                        <div className="flex-1 relative bg-muted rounded-lg px-3 py-2 flex items-center">
+                            <input
+                                type="text"
                                 value={message}
-                                onChange={handleInput}
+                                onChange={(e) => setMessage(e.target.value)}
                                 onKeyPress={handleKeyPress}
                                 placeholder="Ask about fitness, nutrition, workouts..."
-                                className="flex-1 bg-transparent border-none text-foreground placeholder:text-muted-foreground focus:outline-none resize-none min-h-[24px] max-h-[120px] text-sm"
-                                rows={1}
+                                className="flex-1 bg-transparent border-none text-foreground placeholder:text-muted-foreground focus:outline-none text-sm"
                             />
                         </div>
                         <button
                             onClick={handleSend}
                             disabled={!message.trim() || isLoading}
-                            className="h-12 w-12 flex items-center justify-center rounded-xl bg-primary text-primary-foreground hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 active:scale-95 shadow-sm flex-shrink-0"
+                            className="h-8 w-8 flex items-center justify-center rounded-lg bg-primary text-primary-foreground hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 active:scale-95 flex-shrink-0"
                             aria-label="Send message"
                         >
-                            <Send className="w-5 h-5" />
+                            <Send className="w-4 h-4" />
                         </button>
                     </div>
                 </div>
