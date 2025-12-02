@@ -14,6 +14,48 @@ export type Database = {
   }
   public: {
     Tables: {
+      ai_coach_profiles: {
+        Row: {
+          created_at: string
+          dietary_restrictions: string[] | null
+          equipment_access: string | null
+          fitness_level: string | null
+          goals: string[] | null
+          health_limitations: string | null
+          id: string
+          preferred_training_time: string | null
+          training_days_per_week: number | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          dietary_restrictions?: string[] | null
+          equipment_access?: string | null
+          fitness_level?: string | null
+          goals?: string[] | null
+          health_limitations?: string | null
+          id?: string
+          preferred_training_time?: string | null
+          training_days_per_week?: number | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          dietary_restrictions?: string[] | null
+          equipment_access?: string | null
+          fitness_level?: string | null
+          goals?: string[] | null
+          health_limitations?: string | null
+          id?: string
+          preferred_training_time?: string | null
+          training_days_per_week?: number | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       bookings: {
         Row: {
           booking_date: string

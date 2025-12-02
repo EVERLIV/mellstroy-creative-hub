@@ -29,6 +29,7 @@ import VerificationPage from './pages/VerificationPage';
 import EventsFlowPage from './pages/EventsFlowPage';
 import MealPlannerPage from './pages/MealPlannerPage';
 import AICoachPage from './pages/AICoachPage';
+import AICoachProfilePage from './pages/AICoachProfilePage';
 import UploadCategoryIconsPage from './pages/UploadCategoryIconsPage';
 import MediaUploadPage from './pages/MediaUploadPage';
 import AdminDashboardPage from './pages/AdminDashboardPage';
@@ -428,6 +429,14 @@ const AppRoutes = () => {
                 isLoading={isAiCoachLoading}
                 onClose={() => navigate('/')}
               />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/ai-coach/profile"
+          element={
+            <ProtectedRoute>
+              <AICoachProfilePage />
             </ProtectedRoute>
           }
         />
