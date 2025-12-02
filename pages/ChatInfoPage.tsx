@@ -5,6 +5,7 @@ import { supabase } from '../src/integrations/supabase/client';
 import { useAuth } from '../src/hooks/useAuth';
 import { useToast } from '../src/hooks/use-toast';
 import { formatDistanceToNow } from 'date-fns';
+import ReportModal from '../components/ReportModal';
 
 interface TrainerProfile {
   id: string;
@@ -55,6 +56,7 @@ const ChatInfoPage: React.FC = () => {
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [messageCount, setMessageCount] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [isReportModalOpen, setIsReportModalOpen] = useState(false);
 
   useEffect(() => {
     loadChatInfo();
@@ -404,7 +406,7 @@ const ChatInfoPage: React.FC = () => {
             </button>
 
             <button
-              onClick={() => navigate(`/messages/${recipientId}`)}
+              onClick={() => setIsReportModalOpen(true)}
               className="w-full text-left px-4 py-3 bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 rounded-lg transition-colors"
             >
               <div className="flex items-center gap-2">
@@ -416,6 +418,23 @@ const ChatInfoPage: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Report Modal */}
+      {trainer && (
+        <ReportModal
+          isOpen={isReportModalOpen}
+          onClose={() => setIsReportModalOpen(false)}
+          onSubmit={(reason, details) => {
+            console.log('Report submitted:', { reason, details, conversationId: recipientId });
+            toast({
+              title: 'Report Submitted',
+              description: 'Thank you for helping keep our community safe.',
+            });
+            setIsReportModalOpen(false);
+          }}
+          trainerName={trainer.username}
+        />
+      )}
     </div>
   );
 };
