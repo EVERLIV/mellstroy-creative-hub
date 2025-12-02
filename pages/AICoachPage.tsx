@@ -48,8 +48,10 @@ const AICoachPage: React.FC<AICoachPageProps> = ({ messages, onSendMessage, isLo
     return (
         <div className="flex flex-col h-screen bg-background">
             {/* Header */}
-            <div className="bg-card border-b border-border px-4 py-3 flex-shrink-0">
-                <h1 className="text-base font-semibold text-foreground text-center">AI Fitness Coach</h1>
+            <div className="flex items-center justify-between px-4 py-3 bg-card shadow-sm z-20 flex-shrink-0 border-b border-border">
+                <div className="w-9"></div>
+                <h1 className="text-lg font-bold text-foreground">AI Fitness Coach</h1>
+                <div className="w-9"></div>
             </div>
             
             {/* Messages Area */}
