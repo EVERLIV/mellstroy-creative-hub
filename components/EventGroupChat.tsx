@@ -148,7 +148,11 @@ const EventGroupChat: React.FC<EventGroupChatProps> = ({ eventId, currentUserId,
   return (
     <div className="fixed inset-0 bg-black/50 z-50 flex items-end justify-center" onClick={onClose}>
       <div 
-        className="bg-card w-full max-w-lg h-[70vh] rounded-t-2xl flex flex-col overflow-hidden animate-in slide-in-from-bottom duration-300"
+        className="bg-card w-full max-w-lg rounded-t-2xl flex flex-col overflow-hidden animate-in slide-in-from-bottom duration-300"
+        style={{ 
+          height: 'calc(70vh)',
+          marginBottom: 'calc(5rem + env(safe-area-inset-bottom))'
+        }}
         onClick={e => e.stopPropagation()}
       >
         {/* Header */}
@@ -167,7 +171,7 @@ const EventGroupChat: React.FC<EventGroupChatProps> = ({ eventId, currentUserId,
         </div>
 
         {/* Messages */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-3">
+        <div className="flex-1 overflow-y-auto p-4 space-y-3 min-h-0">
           {loading ? (
             <div className="flex items-center justify-center h-full">
               <Loader2 className="w-6 h-6 text-primary animate-spin" />
