@@ -127,9 +127,9 @@ const AuthPage = () => {
         />
         
         {/* Gradient Overlay - transparent at top, orange at bottom */}
-        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-orange-500/90" />
+        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-primary/90" />
 
-        <div className="relative z-10 flex flex-col h-full p-6 text-white animate-fade-in">
+        <div className="relative z-10 flex flex-col h-full p-6 text-primary-foreground animate-fade-in">
           <header className="flex items-start pt-4">
             <img src={rhinoLogo} alt="RhinoFit" className="w-20 h-20 object-contain drop-shadow-lg" />
           </header>
@@ -148,13 +148,13 @@ const AuthPage = () => {
           <footer className="flex flex-col gap-4 pb-8">
             <button
               onClick={() => switchView('login')}
-              className="w-full bg-white text-orange-500 font-bold py-4 rounded-2xl transition-all transform hover:scale-[1.02] active:scale-95 shadow-lg hover:shadow-xl"
+              className="w-full bg-card text-primary font-bold py-4 rounded-2xl transition-all transform hover:scale-[1.02] active:scale-95 shadow-lg hover:shadow-xl"
             >
               Login
             </button>
             <button
               onClick={() => switchView('signup')}
-              className="w-full bg-white/10 backdrop-blur-sm border-2 border-white text-white font-bold py-4 rounded-2xl transition-all transform hover:scale-[1.02] active:scale-95 hover:bg-white/20"
+              className="w-full bg-card/10 backdrop-blur-sm border-2 border-card text-primary-foreground font-bold py-4 rounded-2xl transition-all transform hover:scale-[1.02] active:scale-95 hover:bg-card/20"
             >
               Sign Up
             </button>
@@ -174,15 +174,15 @@ const AuthPage = () => {
       />
       
       {/* Gradient Overlay - transparent at top, orange at bottom */}
-      <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-orange-500/90" />
+      <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-primary/90" />
 
-      <div className="relative z-10 h-full p-6 flex flex-col text-white animate-fade-in overflow-y-auto">
+      <div className="relative z-10 h-full p-6 flex flex-col text-primary-foreground animate-fade-in overflow-y-auto">
         {/* Logo & Back Button */}
         <div className="flex items-center justify-between pt-4 pb-8">
           <img src={rhinoLogo} alt="RhinoFit Logo" className="w-20 h-20 object-contain drop-shadow-lg" />
           <button 
             onClick={() => setView('welcome')}
-            className="flex items-center gap-2 text-white/90 hover:text-white transition-colors"
+            className="flex items-center gap-2 text-primary-foreground/90 hover:text-primary-foreground transition-colors"
           >
             <span className="font-medium">Back</span>
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -196,7 +196,7 @@ const AuthPage = () => {
           <h1 className="text-4xl font-extrabold tracking-tight drop-shadow-lg">
             {isLogin ? "Welcome Back" : "Create Account"}
           </h1>
-          <p className="text-lg text-white/90 drop-shadow">
+          <p className="text-lg text-primary-foreground/90 drop-shadow">
             {isLogin ? "Let's continue your fitness journey" : "Start your fitness journey today"}
           </p>
         </header>
@@ -206,34 +206,34 @@ const AuthPage = () => {
           <form onSubmit={isLogin ? handleLoginSubmit : handleSignUpSubmit} className="space-y-5 animate-slide-up" style={{ animationDelay: '0.1s' }}>
             {!isLogin && (
               <div className="space-y-2">
-                <label className="text-sm font-medium text-white/90">Full Name</label>
+                <label className="text-sm font-medium text-primary-foreground/90">Full Name</label>
                 <input
                   type="text"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   required
                   autoComplete="name"
-                  className="w-full px-5 py-4 bg-white/10 backdrop-blur-md border-2 border-white/20 rounded-xl focus:outline-none focus:border-white focus:bg-white/20 placeholder:text-white/50 transition-all text-white text-lg"
+                  className="w-full px-5 py-4 bg-card/10 backdrop-blur-md border-2 border-card/20 rounded-xl focus:outline-none focus:border-card focus:bg-card/20 placeholder:text-primary-foreground/50 transition-all text-primary-foreground text-lg"
                   placeholder="Enter your name"
                 />
               </div>
             )}
             
             <div className="space-y-2">
-              <label className="text-sm font-medium text-white/90">Email Address</label>
+              <label className="text-sm font-medium text-primary-foreground/90">Email Address</label>
               <input
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
                 autoComplete="email"
-                className="w-full px-5 py-4 bg-white/10 backdrop-blur-md border-2 border-white/20 rounded-xl focus:outline-none focus:border-white focus:bg-white/20 placeholder:text-white/50 transition-all text-white text-lg"
+                className="w-full px-5 py-4 bg-card/10 backdrop-blur-md border-2 border-card/20 rounded-xl focus:outline-none focus:border-card focus:bg-card/20 placeholder:text-primary-foreground/50 transition-all text-primary-foreground text-lg"
                 placeholder="Enter your email"
               />
             </div>
             
             <div className="space-y-2">
-              <label className="text-sm font-medium text-white/90">Password</label>
+              <label className="text-sm font-medium text-primary-foreground/90">Password</label>
               <div className="relative">
                 <input
                   type={isPasswordVisible ? 'text' : 'password'}
@@ -242,13 +242,13 @@ const AuthPage = () => {
                   required
                   minLength={6}
                   autoComplete={isLogin ? "current-password" : "new-password"}
-                  className="w-full px-5 py-4 pr-14 bg-white/10 backdrop-blur-md border-2 border-white/20 rounded-xl focus:outline-none focus:border-white focus:bg-white/20 placeholder:text-white/50 transition-all text-white text-lg"
+                  className="w-full px-5 py-4 pr-14 bg-card/10 backdrop-blur-md border-2 border-card/20 rounded-xl focus:outline-none focus:border-card focus:bg-card/20 placeholder:text-primary-foreground/50 transition-all text-primary-foreground text-lg"
                   placeholder="Enter your password"
                 />
                 <button
                   type="button"
                   onClick={() => setIsPasswordVisible(!isPasswordVisible)}
-                  className="absolute inset-y-0 right-0 flex items-center px-5 text-white/70 hover:text-white transition-colors"
+                  className="absolute inset-y-0 right-0 flex items-center px-5 text-primary-foreground/70 hover:text-primary-foreground transition-colors"
                   aria-label={isPasswordVisible ? "Hide password" : "Show password"}
                 >
                   {isPasswordVisible ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
@@ -258,7 +258,7 @@ const AuthPage = () => {
             
             {!isLogin && (
               <div className="space-y-2">
-                <label className="text-sm font-medium text-white/90">Confirm Password</label>
+                <label className="text-sm font-medium text-primary-foreground/90">Confirm Password</label>
                 <div className="relative">
                   <input
                     type={isConfirmPasswordVisible ? 'text' : 'password'}
@@ -267,13 +267,13 @@ const AuthPage = () => {
                     required
                     minLength={6}
                     autoComplete="new-password"
-                    className="w-full px-5 py-4 pr-14 bg-white/10 backdrop-blur-md border-2 border-white/20 rounded-xl focus:outline-none focus:border-white focus:bg-white/20 placeholder:text-white/50 transition-all text-white text-lg"
+                    className="w-full px-5 py-4 pr-14 bg-card/10 backdrop-blur-md border-2 border-card/20 rounded-xl focus:outline-none focus:border-card focus:bg-card/20 placeholder:text-primary-foreground/50 transition-all text-primary-foreground text-lg"
                     placeholder="Confirm your password"
                   />
                   <button
                     type="button"
                     onClick={() => setIsConfirmPasswordVisible(!isConfirmPasswordVisible)}
-                    className="absolute inset-y-0 right-0 flex items-center px-5 text-white/70 hover:text-white transition-colors"
+                    className="absolute inset-y-0 right-0 flex items-center px-5 text-primary-foreground/70 hover:text-primary-foreground transition-colors"
                     aria-label={isConfirmPasswordVisible ? "Hide password" : "Show password"}
                   >
                     {isConfirmPasswordVisible ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
@@ -285,10 +285,10 @@ const AuthPage = () => {
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full bg-white text-orange-500 font-bold py-5 rounded-2xl transition-all transform hover:scale-[1.02] active:scale-95 hover:bg-white/90 flex items-center justify-center disabled:opacity-70 mt-8 text-lg shadow-xl"
+              className="w-full bg-card text-primary font-bold py-5 rounded-2xl transition-all transform hover:scale-[1.02] active:scale-95 hover:bg-card/90 flex items-center justify-center disabled:opacity-70 mt-8 text-lg shadow-xl"
             >
               {isLoading ? (
-                <Loader className="w-6 h-6 animate-spin text-orange-500" />
+                <Loader className="w-6 h-6 animate-spin text-primary" />
               ) : (
                 <span>{isLogin ? 'Login to RhinoFit' : 'Create Account'}</span>
               )}
@@ -297,10 +297,10 @@ const AuthPage = () => {
             {/* Divider */}
             <div className="relative my-6">
               <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-white/30"></div>
+                <div className="w-full border-t border-card/30"></div>
               </div>
               <div className="relative flex justify-center text-sm">
-                <span className="px-4 bg-transparent text-white/80">Or continue with</span>
+                <span className="px-4 bg-transparent text-primary-foreground/80">Or continue with</span>
               </div>
             </div>
 
@@ -309,7 +309,7 @@ const AuthPage = () => {
               <button
                 type="button"
                 onClick={handleGoogleSignIn}
-                className="w-full bg-white/10 backdrop-blur-md border-2 border-white/20 text-white font-semibold py-4 rounded-xl transition-all transform hover:scale-[1.02] active:scale-95 flex items-center justify-center gap-3 hover:bg-white/20"
+                className="w-full bg-card/10 backdrop-blur-md border-2 border-card/20 text-primary-foreground font-semibold py-4 rounded-xl transition-all transform hover:scale-[1.02] active:scale-95 flex items-center justify-center gap-3 hover:bg-card/20"
               >
                 <svg className="w-5 h-5" viewBox="0 0 24 24">
                   <path fill="currentColor" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
@@ -323,7 +323,7 @@ const AuthPage = () => {
               <button
                 type="button"
                 onClick={handleFacebookSignIn}
-                className="w-full bg-white/10 backdrop-blur-md border-2 border-white/20 text-white font-semibold py-4 rounded-xl transition-all transform hover:scale-[1.02] active:scale-95 flex items-center justify-center gap-3 hover:bg-white/20"
+                className="w-full bg-card/10 backdrop-blur-md border-2 border-card/20 text-primary-foreground font-semibold py-4 rounded-xl transition-all transform hover:scale-[1.02] active:scale-95 flex items-center justify-center gap-3 hover:bg-card/20"
               >
                 <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
                   <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/>
@@ -336,11 +336,11 @@ const AuthPage = () => {
 
         {/* Footer */}
         <footer className="pb-6 pt-8">
-          <p className="text-center text-base text-white/90">
+          <p className="text-center text-base text-primary-foreground/90">
             {isLogin ? "Don't have an account?" : "Already have an account?"}{' '}
             <button 
               onClick={() => switchView(isLogin ? 'signup' : 'login')} 
-              className="font-bold text-white underline underline-offset-2 hover:text-white/80 transition-colors"
+              className="font-bold text-primary-foreground underline underline-offset-2 hover:text-primary-foreground/80 transition-colors"
             >
               {isLogin ? 'Sign Up' : 'Login'}
             </button>
