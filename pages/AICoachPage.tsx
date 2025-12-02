@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Message } from '../types';
-import { Send, Sparkles, Loader, Bot, User } from 'lucide-react';
+import { Send, Sparkles, Loader, Bot, User, ArrowLeft } from 'lucide-react';
 
 interface AICoachPageProps {
     messages: Message[];
@@ -49,7 +49,13 @@ const AICoachPage: React.FC<AICoachPageProps> = ({ messages, onSendMessage, isLo
         <div className="flex flex-col h-screen bg-background">
             {/* Header */}
             <div className="flex items-center justify-between px-4 py-3 bg-card shadow-sm z-20 flex-shrink-0 border-b border-border">
-                <div className="w-9"></div>
+                <button 
+                    onClick={onClose}
+                    className="w-9 h-9 flex items-center justify-center rounded-lg hover:bg-muted transition-colors"
+                    aria-label="Go back"
+                >
+                    <ArrowLeft className="w-5 h-5 text-foreground" />
+                </button>
                 <h1 className="text-lg font-bold text-foreground">AI Fitness Coach</h1>
                 <div className="w-9"></div>
             </div>
