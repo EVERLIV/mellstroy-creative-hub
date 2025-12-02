@@ -4,7 +4,7 @@ import TrainerGrid from '../components/TrainerGrid';
 import ViewToggle from '../components/ViewToggle';
 import TrainerDetailPage from '../components/TrainerDetailPage';
 import CategoryFilters from '../components/CategoryFilters';
-import { ArrowLeft, Search } from 'lucide-react';
+import { ArrowLeft, Search, SlidersHorizontal } from 'lucide-react';
 import { CATEGORIES } from '../constants';
 
 interface CategoryPageProps {
@@ -37,6 +37,7 @@ const CategoryPage: React.FC<CategoryPageProps> = ({
   const [isExitingDetail, setIsExitingDetail] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategoryId, setSelectedCategoryId] = useState<string>(category.id);
+  const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
 
   const handleSelectTrainer = (trainer: Trainer) => {
     setSelectedTrainer(trainer);
@@ -70,16 +71,22 @@ const CategoryPage: React.FC<CategoryPageProps> = ({
     <div className="bg-background h-full relative">
       <div className="flex flex-col h-full">
         {/* Header */}
-        <div className="sticky top-0 bg-background z-10 shadow-sm flex-shrink-0 border-b border-border pt-3 pb-4">
-          <div className="px-4">
-            {/* Back Button */}
-            <div className="flex items-center mb-4">
+        <div className="sticky top-0 bg-card z-10 shadow-sm flex-shrink-0">
+          <div className="px-4 py-3">
+            <div className="flex items-center justify-between mb-2">
               <button 
                 onClick={onBack} 
                 className="flex items-center gap-2 text-foreground hover:text-primary transition-colors"
               >
                 <ArrowLeft className="w-5 h-5" />
-                <span className="text-lg font-semibold">{category.name} Trainers</span>
+                <h1 className="text-base font-bold">{category.name}</h1>
+              </button>
+              <button
+                onClick={() => setIsFilterModalOpen(true)}
+                className="p-2 rounded-lg bg-muted hover:bg-muted/80 transition-colors active:scale-95"
+                aria-label="Open filters"
+              >
+                <SlidersHorizontal className="w-5 h-5 text-foreground" />
               </button>
             </div>
             
@@ -106,7 +113,7 @@ const CategoryPage: React.FC<CategoryPageProps> = ({
         
         {/* Content */}
         <div className="flex-1 overflow-y-auto">
-          <div className="p-4 pb-[calc(5rem+env(safe-area-inset-bottom))]">
+          <div className="px-4 py-3 pb-[calc(5rem+env(safe-area-inset-bottom))]">
               <div className="flex justify-between items-center mb-3">
                   <h2 className="text-xs font-medium text-muted-foreground">
                     {filteredTrainers.length} {filteredTrainers.length === 1 ? 'trainer' : 'trainers'} found
