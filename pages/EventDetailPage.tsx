@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, Users, Calendar, Clock, MapPin, DollarSign, AlertCircle, User } from 'lucide-react';
+import { ArrowLeft, Users, Calendar, Clock, MapPin, DollarSign, AlertCircle, User, Camera, Upload, X, Loader2 } from 'lucide-react';
 import { supabase } from '../src/integrations/supabase/client';
 import { useToast } from '../src/hooks/use-toast';
 
@@ -41,6 +41,13 @@ const EventDetailPage: React.FC<EventDetailPageProps> = ({ event, currentUserId,
     const [participants, setParticipants] = useState<any[]>([]);
     const [isRegistrationOpen, setIsRegistrationOpen] = useState(true);
     const [loading, setLoading] = useState(false);
+    const [photos, setPhotos] = useState<any[]>([]);
+    const [showPhotoUpload, setShowPhotoUpload] = useState(false);
+    const [uploadingPhoto, setUploadingPhoto] = useState(false);
+    const [selectedFile, setSelectedFile] = useState<File | null>(null);
+    const [photoPreview, setPhotoPreview] = useState<string | null>(null);
+    const [photoCaption, setPhotoCaption] = useState('');
+    const [isEventEnded, setIsEventEnded] = useState(false);
 
     useEffect(() => {
         const checkParticipation = async () => {
@@ -81,6 +88,29 @@ const EventDetailPage: React.FC<EventDetailPageProps> = ({ event, currentUserId,
                 const registrationDeadline = new Date(eventDateTime.getTime() - 6 * 60 * 60 * 1000);
                 const now = new Date();
                 setIsRegistrationOpen(now < registrationDeadline);
+                
+                // Check if event has ended
+                setIsEventEnded(now > eventDateTime);
+
+                // Fetch event photos
+                const { data: photosData, error: photosError } = await supabase
+                    .from('event_photos')
+                    .select(`
+                        id,
+                        photo_url,
+                        caption,
+                        created_at,
+                        user_id,
+                        profiles!event_photos_user_id_fkey(
+                            username,
+                            avatar_url
+                        )
+                    `)
+                    .eq('event_id', event.id)
+                    .order('created_at', { ascending: false });
+
+                if (photosError) throw photosError;
+                setPhotos(photosData || []);
             } catch (error) {
                 console.error('Error checking participation:', error);
             }
@@ -164,6 +194,105 @@ const EventDetailPage: React.FC<EventDetailPageProps> = ({ event, currentUserId,
             });
         } finally {
             setLoading(false);
+        }
+    };
+
+    const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        if (file.size > 5 * 1024 * 1024) {
+            toast({
+                title: "File too large",
+                description: "Maximum file size is 5MB.",
+                variant: "destructive"
+            });
+            return;
+        }
+
+        if (!['image/jpeg', 'image/jpg', 'image/png', 'image/webp'].includes(file.type)) {
+            toast({
+                title: "Invalid file type",
+                description: "Only JPG, PNG, and WEBP images are allowed.",
+                variant: "destructive"
+            });
+            return;
+        }
+
+        setSelectedFile(file);
+        const reader = new FileReader();
+        reader.onload = (e) => setPhotoPreview(e.target?.result as string);
+        reader.readAsDataURL(file);
+    };
+
+    const handleUploadPhoto = async () => {
+        if (!selectedFile || !currentUserId) return;
+
+        setUploadingPhoto(true);
+
+        try {
+            // Upload to storage
+            const fileExt = selectedFile.name.split('.').pop();
+            const fileName = `${currentUserId}/${event.id}/${Date.now()}.${fileExt}`;
+            
+            const { error: uploadError, data } = await supabase.storage
+                .from('event-photos')
+                .upload(fileName, selectedFile);
+
+            if (uploadError) throw uploadError;
+
+            // Get public URL
+            const { data: { publicUrl } } = supabase.storage
+                .from('event-photos')
+                .getPublicUrl(fileName);
+
+            // Save to database
+            const { error: dbError } = await supabase
+                .from('event_photos')
+                .insert({
+                    event_id: event.id,
+                    user_id: currentUserId,
+                    photo_url: publicUrl,
+                    caption: photoCaption || null
+                });
+
+            if (dbError) throw dbError;
+
+            toast({
+                title: "Photo uploaded!",
+                description: "Your photo has been added to the event gallery."
+            });
+
+            // Refresh photos
+            const { data: photosData } = await supabase
+                .from('event_photos')
+                .select(`
+                    id,
+                    photo_url,
+                    caption,
+                    created_at,
+                    user_id,
+                    profiles!event_photos_user_id_fkey(
+                        username,
+                        avatar_url
+                    )
+                `)
+                .eq('event_id', event.id)
+                .order('created_at', { ascending: false });
+
+            setPhotos(photosData || []);
+            setShowPhotoUpload(false);
+            setSelectedFile(null);
+            setPhotoPreview(null);
+            setPhotoCaption('');
+        } catch (error: any) {
+            toast({
+                title: "Upload failed",
+                description: error.message || "Failed to upload photo.",
+                variant: "destructive"
+            });
+        } finally {
+            setUploadingPhoto(false);
         }
     };
 
@@ -272,8 +401,125 @@ const EventDetailPage: React.FC<EventDetailPageProps> = ({ event, currentUserId,
                             <p className="text-sm text-muted-foreground">Be the first to join this event!</p>
                         )}
                     </div>
+
+                    {/* Event Photos Gallery */}
+                    {isEventEnded && (
+                        <div>
+                            <div className="flex items-center justify-between mb-3">
+                                <div className="flex items-center text-lg font-bold text-foreground">
+                                    <Camera className="w-5 h-5 mr-2" />
+                                    <h2>Event Photos</h2>
+                                </div>
+                                {hasJoined && (
+                                    <button
+                                        onClick={() => setShowPhotoUpload(true)}
+                                        className="text-sm text-primary font-semibold hover:underline flex items-center gap-1"
+                                    >
+                                        <Upload className="w-4 h-4" />
+                                        Upload
+                                    </button>
+                                )}
+                            </div>
+                            {photos.length > 0 ? (
+                                <div className="grid grid-cols-2 gap-2">
+                                    {photos.map((photo) => (
+                                        <div key={photo.id} className="relative group">
+                                            <img 
+                                                src={photo.photo_url} 
+                                                alt={photo.caption || 'Event photo'}
+                                                className="w-full h-48 object-cover rounded-lg"
+                                            />
+                                            <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg p-2 flex flex-col justify-end">
+                                                <p className="text-white text-xs font-medium">{photo.profiles?.username || 'Unknown'}</p>
+                                                {photo.caption && (
+                                                    <p className="text-white text-xs mt-1">{photo.caption}</p>
+                                                )}
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            ) : (
+                                <div className="text-center py-8 bg-muted rounded-lg">
+                                    <Camera className="w-12 h-12 text-muted-foreground mx-auto mb-2" />
+                                    <p className="text-sm text-muted-foreground">No photos yet. Be the first to share!</p>
+                                </div>
+                            )}
+                        </div>
+                    )}
                 </div>
             </main>
+
+            {/* Photo Upload Modal */}
+            {showPhotoUpload && (
+                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => setShowPhotoUpload(false)}>
+                    <div className="bg-card rounded-lg w-full max-w-md overflow-hidden shadow-lg" onClick={e => e.stopPropagation()}>
+                        <div className="px-4 py-3 border-b border-border flex items-center justify-between">
+                            <h2 className="text-base font-bold text-foreground">Upload Photo</h2>
+                            <button onClick={() => setShowPhotoUpload(false)} className="p-2 -mr-2 rounded-lg hover:bg-muted transition-colors">
+                                <X className="w-5 h-5 text-foreground" />
+                            </button>
+                        </div>
+                        <div className="p-4 space-y-4">
+                            {!photoPreview ? (
+                                <label className="flex flex-col items-center justify-center w-full h-48 border-2 border-dashed border-border rounded-lg cursor-pointer hover:bg-muted/50 transition-colors">
+                                    <Upload className="w-12 h-12 text-muted-foreground mb-2" />
+                                    <p className="text-sm text-muted-foreground mb-1">Click to upload photo</p>
+                                    <p className="text-xs text-muted-foreground">JPG, PNG, WEBP (max 5MB)</p>
+                                    <input 
+                                        type="file" 
+                                        accept="image/jpeg,image/jpg,image/png,image/webp" 
+                                        onChange={handleFileSelect}
+                                        className="hidden"
+                                    />
+                                </label>
+                            ) : (
+                                <div className="relative">
+                                    <img src={photoPreview} alt="Preview" className="w-full h-48 object-cover rounded-lg" />
+                                    <button
+                                        onClick={() => {
+                                            setSelectedFile(null);
+                                            setPhotoPreview(null);
+                                        }}
+                                        className="absolute top-2 right-2 p-1 bg-black/50 rounded-full text-white hover:bg-black/70 transition-colors"
+                                    >
+                                        <X className="w-4 h-4" />
+                                    </button>
+                                </div>
+                            )}
+                            <div>
+                                <label className="block text-sm font-medium text-foreground mb-1">Caption (optional)</label>
+                                <input
+                                    type="text"
+                                    value={photoCaption}
+                                    onChange={(e) => setPhotoCaption(e.target.value)}
+                                    placeholder="Add a caption..."
+                                    className="w-full px-3 py-2 bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-foreground"
+                                    maxLength={200}
+                                />
+                            </div>
+                        </div>
+                        <div className="px-4 py-3 bg-muted/30 border-t border-border">
+                            <button
+                                onClick={handleUploadPhoto}
+                                disabled={!selectedFile || uploadingPhoto}
+                                className="w-full bg-primary text-primary-foreground text-sm font-semibold py-2.5 rounded-lg hover:bg-primary/90 active:scale-95 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                            >
+                                {uploadingPhoto ? (
+                                    <>
+                                        <Loader2 className="w-4 h-4 animate-spin" />
+                                        Uploading...
+                                    </>
+                                ) : (
+                                    <>
+                                        <Upload className="w-4 h-4" />
+                                        Upload Photo
+                                    </>
+                                )}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             <footer className="absolute bottom-0 left-0 right-0 px-4 pt-4 bg-card border-t border-border shadow-lg pb-[calc(1rem+env(safe-area-inset-bottom))]">
                  <button 
