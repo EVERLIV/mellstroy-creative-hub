@@ -100,6 +100,26 @@ const EventsFlowPage: React.FC<EventsFlowPageProps> = ({ onBack, initialEvent })
         setView('create');
     };
 
+    const handleCreateSuccess = async () => {
+        // Refresh events list after creation
+        try {
+            const { data: eventsData } = await supabase
+                .from('events')
+                .select(`
+                    *,
+                    organizer:organizer_id (username, is_premium)
+                `)
+                .eq('status', 'approved')
+                .order('date', { ascending: true });
+
+            setEvents(eventsData || []);
+        } catch (error) {
+            console.error('Error refreshing events:', error);
+        }
+        
+        handleBackToList();
+    };
+
     const handleJoinEvent = async (eventId: string) => {
         // Refresh event data after joining
         try {
@@ -123,7 +143,7 @@ const EventsFlowPage: React.FC<EventsFlowPageProps> = ({ onBack, initialEvent })
             case 'detail':
                 if (!selectedEvent) return null;
                 return (
-                    <div className={`absolute inset-0 w-full h-full ${isExiting ? 'animate-slide-out-to-right' : 'animate-slide-in-from-right'}`}>
+                    <div className={`absolute inset-0 w-full h-full z-10 ${isExiting ? 'animate-slide-out-to-right' : 'animate-slide-in-from-right'}`}>
                         <EventDetailPage 
                             event={selectedEvent}
                             currentUserId={currentUserId}
@@ -134,23 +154,25 @@ const EventsFlowPage: React.FC<EventsFlowPageProps> = ({ onBack, initialEvent })
                 );
             case 'create':
                 return (
-                     <div className={`absolute inset-0 w-full h-full ${isExiting ? 'animate-slide-out-to-right' : 'animate-slide-in-from-right'}`}>
+                     <div className={`absolute inset-0 w-full h-full z-10 ${isExiting ? 'animate-slide-out-to-right' : 'animate-slide-in-from-right'}`}>
                         <CreateEventPage 
                             onBack={handleBackToList}
-                            onSuccess={handleBackToList}
+                            onSuccess={handleCreateSuccess}
                         />
                     </div>
                 );
             case 'list':
             default:
                  return !loading ? (
-                    <EventsPage 
-                        events={events}
-                        isPremium={isPremium}
-                        onBack={onBack}
-                        onSelectEvent={handleSelectEvent}
-                        onOpenCreate={handleOpenCreate}
-                    />
+                    <div className="relative w-full h-full">
+                        <EventsPage 
+                            events={events}
+                            isPremium={isPremium}
+                            onBack={onBack}
+                            onSelectEvent={handleSelectEvent}
+                            onOpenCreate={handleOpenCreate}
+                        />
+                    </div>
                  ) : null;
         }
     };
