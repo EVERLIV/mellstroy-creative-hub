@@ -42,6 +42,7 @@ const ChatConversationPage: React.FC = () => {
   const [newMessage, setNewMessage] = useState('');
   const [conversationId, setConversationId] = useState<string | null>(null);
   const [recipient, setRecipient] = useState<Participant | null>(null);
+  const [bookingDetails, setBookingDetails] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
@@ -53,9 +54,6 @@ const ChatConversationPage: React.FC = () => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-
-  // Get booking details from location state
-  const bookingDetails = location.state?.bookingDetails;
 
   // Scroll to bottom
   const scrollToBottom = () => {
@@ -112,6 +110,27 @@ const ChatConversationPage: React.FC = () => {
 
         if (existingConversation) {
           setConversationId(existingConversation.id);
+          
+          // Load booking details if conversation has booking_id
+          if (existingConversation.booking_id) {
+            const { data: booking } = await supabase
+              .from('bookings')
+              .select(`
+                *,
+                class:classes(name, schedule_time)
+              `)
+              .eq('id', existingConversation.booking_id)
+              .single();
+            
+            if (booking) {
+              setBookingDetails({
+                class_name: booking.class?.name,
+                booking_date: booking.booking_date,
+                booking_time: booking.booking_time,
+                verification_code: booking.verification_code
+              });
+            }
+          }
         } else {
           // Create new conversation
           const { data: newConversation, error: createError } = await supabase
