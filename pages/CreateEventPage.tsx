@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { ArrowLeft, Save, Loader2 } from 'lucide-react';
 import { supabase } from '../src/integrations/supabase/client';
 import { useToast } from '../src/hooks/use-toast';
+import { FITNESS_ACTIVITIES, HCMC_DISTRICTS } from '../constants';
 
 interface CreateEventPageProps {
     onBack: () => void;
@@ -19,6 +20,8 @@ const CreateEventPage: React.FC<CreateEventPageProps> = ({ onBack, onSuccess }) 
         location: '',
         image_url: '',
         event_type: 'general',
+        sport_category: '',
+        district: '',
         price: '0',
         max_participants: '',
     });
@@ -44,6 +47,8 @@ const CreateEventPage: React.FC<CreateEventPageProps> = ({ onBack, onSuccess }) 
                 location: formData.location,
                 image_url: formData.image_url || null,
                 event_type: formData.event_type,
+                sport_category: formData.sport_category || null,
+                district: formData.district || null,
                 price: parseFloat(formData.price) || 0,
                 max_participants: formData.max_participants ? parseInt(formData.max_participants) : null,
                 organizer_id: user.id,
@@ -58,7 +63,6 @@ const CreateEventPage: React.FC<CreateEventPageProps> = ({ onBack, onSuccess }) 
             });
             onSuccess();
         } catch (error: any) {
-            console.error('Error creating event:', error);
             toast({
                 title: 'Error',
                 description: error.message || 'Failed to create event',
@@ -81,12 +85,34 @@ const CreateEventPage: React.FC<CreateEventPageProps> = ({ onBack, onSuccess }) 
                 <h1 className="text-xl font-semibold text-primary-foreground text-center w-full">Create New Event</h1>
             </div>
             
-            <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-4 space-y-4">
+            <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-4 space-y-4 pb-24">
                 <div className="bg-card p-4 rounded-2xl shadow-lg space-y-4">
                     <div>
                         <label htmlFor="title" className="block text-xs font-medium text-foreground mb-1">Event Title</label>
                         <input type="text" id="title" name="title" value={formData.title} onChange={handleChange} required className="w-full px-3 py-2 bg-muted border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-foreground text-sm" />
                     </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                        <div>
+                            <label htmlFor="sport_category" className="block text-xs font-medium text-foreground mb-1">Sport Category</label>
+                            <select id="sport_category" name="sport_category" value={formData.sport_category} onChange={handleChange} className="w-full px-3 py-2 bg-muted border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-foreground text-sm">
+                                <option value="">Select sport</option>
+                                {FITNESS_ACTIVITIES.map(activity => (
+                                    <option key={activity} value={activity}>{activity}</option>
+                                ))}
+                            </select>
+                        </div>
+                        <div>
+                            <label htmlFor="district" className="block text-xs font-medium text-foreground mb-1">District</label>
+                            <select id="district" name="district" value={formData.district} onChange={handleChange} className="w-full px-3 py-2 bg-muted border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-foreground text-sm">
+                                <option value="">Select district</option>
+                                {HCMC_DISTRICTS.map(district => (
+                                    <option key={district} value={district}>{district}</option>
+                                ))}
+                            </select>
+                        </div>
+                    </div>
+
                     <div>
                         <label htmlFor="event_type" className="block text-xs font-medium text-foreground mb-1">Event Type</label>
                         <select id="event_type" name="event_type" value={formData.event_type} onChange={handleChange} className="w-full px-3 py-2 bg-muted border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-foreground text-sm">
@@ -100,7 +126,7 @@ const CreateEventPage: React.FC<CreateEventPageProps> = ({ onBack, onSuccess }) 
                     </div>
                     <div>
                         <label htmlFor="description" className="block text-xs font-medium text-foreground mb-1">Description</label>
-                        <textarea id="description" name="description" value={formData.description} onChange={handleChange} rows={5} required className="w-full px-3 py-2 bg-muted border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-foreground text-sm" />
+                        <textarea id="description" name="description" value={formData.description} onChange={handleChange} rows={4} required className="w-full px-3 py-2 bg-muted border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-foreground text-sm" />
                     </div>
                      <div className="grid grid-cols-2 gap-4">
                         <div>
@@ -113,7 +139,7 @@ const CreateEventPage: React.FC<CreateEventPageProps> = ({ onBack, onSuccess }) 
                         </div>
                     </div>
                      <div>
-                        <label htmlFor="location" className="block text-xs font-medium text-foreground mb-1">Location</label>
+                        <label htmlFor="location" className="block text-xs font-medium text-foreground mb-1">Location / Address</label>
                         <input type="text" id="location" name="location" value={formData.location} onChange={handleChange} required placeholder="e.g., Le Van Tam Park, District 1" className="w-full px-3 py-2 bg-muted border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-foreground text-sm placeholder:text-muted-foreground" />
                     </div>
                     <div className="grid grid-cols-2 gap-4">
