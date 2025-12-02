@@ -411,7 +411,7 @@ const EventDetailPage: React.FC<EventDetailPageProps> = ({ event, currentUserId,
                 </button>
             </header>
 
-            <main className="flex-1 overflow-y-auto pb-[calc(6rem+env(safe-area-inset-bottom))]">
+            <main className="flex-1 overflow-y-auto pb-[calc(10rem+env(safe-area-inset-bottom))]">
                 <div className="h-64 w-full">
                     <img className="h-full w-full object-cover" src={event.image_url || 'https://images.unsplash.com/photo-1517836357463-d25dfeac3438?w=800'} alt={event.title} />
                 </div>
@@ -672,8 +672,9 @@ const EventDetailPage: React.FC<EventDetailPageProps> = ({ event, currentUserId,
                 </div>
             )}
 
-            <footer className="absolute bottom-0 left-0 right-0 px-4 pt-4 bg-card border-t border-border shadow-lg pb-[calc(1rem+env(safe-area-inset-bottom))]">
-                 <button 
+            {/* Sticky Join Button */}
+            <footer className="fixed left-0 right-0 px-4 py-3 bg-card/95 backdrop-blur-sm border-t border-border shadow-lg z-30" style={{ bottom: 'calc(5rem + env(safe-area-inset-bottom))' }}>
+                <button 
                     onClick={handleJoinLeave}
                     disabled={loading || !isRegistrationOpen}
                     className={`w-full flex items-center justify-center font-bold py-3.5 px-4 rounded-xl transition-all duration-300 text-base shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none
@@ -705,7 +706,7 @@ const EventDetailPage: React.FC<EventDetailPageProps> = ({ event, currentUserId,
                     ) : (
                         <>
                             <Users className="w-5 h-5 mr-2" />
-                            Register for Event
+                            Join Event
                         </>
                     )}
                 </button>
