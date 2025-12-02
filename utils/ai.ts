@@ -127,13 +127,24 @@ export async function generateMealPlan(user: Trainer, preferences: DietaryPrefer
     
     const durationText = preferences.duration === 'day' ? '1-day' : '1-week';
 
+    // Determine calorie target
+    const calorieTarget = preferences.targetCalories || 2000; // Default if not provided
+    const age = preferences.age || user.age || 25;
+    const height = preferences.height || user.height || 170;
+    const weight = preferences.weight || user.weight || 70;
+
     const prompt = `
         You are a professional nutritionist designing a meal plan for a client in Vietnam.
         The client's details are:
-        - Age: ${user.age || 'not provided'}
-        - Height: ${user.height || 'not provided'} cm
-        - Weight: ${user.weight || 'not provided'} kg
+        - Age: ${age}
+        - Height: ${height} cm
+        - Weight: ${weight} kg
+        - Gender: ${preferences.gender || 'not specified'}
+        - Activity Level: ${preferences.activityLevel || 'moderate'}
         - Primary fitness goals: ${user.goals?.join(', ') || 'general health'}
+
+        CALORIE TARGET: ${calorieTarget} calories per day
+        This is CRITICAL - the meal plan MUST be designed to match this calorie target as closely as possible.
 
         Their dietary preferences are:
         - Eating Style: ${preferences.eatingStyle}. If "Eating Out", suggest specific types of restaurants or dishes to order. If "Cooking", provide simple meal ideas.
@@ -141,8 +152,10 @@ export async function generateMealPlan(user: Trainer, preferences: DietaryPrefer
         - Allergies: ${preferences.allergies || 'None'}. CRITICAL: Do not include any of these ingredients.
         - Dislikes: ${preferences.dislikes || 'None'}. Avoid these ingredients.
 
-        Create a balanced ${durationText} meal plan for them. Use common Vietnamese ingredients and dishes where possible to make it practical.
+        Create a balanced ${durationText} meal plan for them that meets the ${calorieTarget} calorie target. 
+        Use common Vietnamese ingredients and dishes where possible to make it practical.
         Provide healthy options for breakfast, lunch, dinner, and one snack per day.
+        The daily_summary calories should reflect the actual total and should be close to ${calorieTarget}.
         The output must be ONLY a JSON object matching the provided schema.
     `;
 
