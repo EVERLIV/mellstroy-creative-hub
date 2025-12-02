@@ -244,33 +244,37 @@ const AICoachPage: React.FC<AICoachPageProps> = ({ messages, onSendMessage, isLo
                             </div>
 
                             {/* Message Bubble */}
-                            <div className="flex flex-col max-w-[85%] sm:max-w-[80%] flex-1">
-                                <div className="relative group">
-                                    <div className={`px-4 sm:px-5 py-3 sm:py-4 rounded-2xl shadow-lg transition-all duration-200 ${
-                                        msg.sender === 'user' 
-                                            ? 'bg-gradient-to-br from-primary via-primary to-accent text-primary-foreground rounded-tr-sm hover:shadow-xl' 
-                                            : 'bg-card/80 backdrop-blur-sm text-foreground rounded-tl-sm border border-border/50 hover:border-primary/30 hover:shadow-xl'
-                                    }`}>
-                                        {msg.sender === 'user' ? (
-                                            <p className="text-sm sm:text-base leading-relaxed whitespace-pre-wrap break-words">
-                                                {msg.text}
-                                            </p>
-                                        ) : (
-                                            <TypingMessage text={msg.text} isLatest={isLatestAI} />
-                                        )}
-                                    </div>
+                            <div className="flex flex-col flex-1 max-w-[85%] sm:max-w-[80%]">
+                                <div className={`px-4 sm:px-5 py-3 sm:py-4 rounded-2xl shadow-lg transition-all duration-200 ${
+                                    msg.sender === 'user' 
+                                        ? 'bg-gradient-to-br from-primary via-primary to-accent text-primary-foreground rounded-tr-sm hover:shadow-xl' 
+                                        : 'bg-card/80 backdrop-blur-sm text-foreground rounded-tl-sm border border-border/50 hover:border-primary/30 hover:shadow-xl'
+                                }`}>
+                                    {msg.sender === 'user' ? (
+                                        <p className="text-sm sm:text-base leading-relaxed whitespace-pre-wrap break-words">
+                                            {msg.text}
+                                        </p>
+                                    ) : (
+                                        <TypingMessage text={msg.text} isLatest={isLatestAI} />
+                                    )}
                                     
-                                    {/* Copy Button for AI messages */}
+                                    {/* Copy Button for AI messages - inside at bottom */}
                                     {msg.sender === 'trainer' && (
                                         <button
                                             onClick={() => handleCopyMessage(msg.text, msg.id)}
-                                            className="absolute -right-10 sm:-right-12 top-3 p-2 sm:p-2.5 rounded-xl bg-card/90 backdrop-blur-sm border border-border/50 hover:bg-muted hover:border-primary/30 transition-all opacity-0 group-hover:opacity-100 shadow-lg hover:scale-110 active:scale-95"
+                                            className="mt-3 pt-3 border-t border-border/30 w-full flex items-center justify-center gap-2 text-xs text-muted-foreground hover:text-foreground transition-colors group"
                                             aria-label="Copy message"
                                         >
                                             {isCopied ? (
-                                                <Check className="w-4 h-4 text-green-500" />
+                                                <>
+                                                    <Check className="w-3.5 h-3.5 text-green-500" />
+                                                    <span className="text-green-500 font-medium">Copied!</span>
+                                                </>
                                             ) : (
-                                                <Copy className="w-4 h-4 text-muted-foreground" />
+                                                <>
+                                                    <Copy className="w-3.5 h-3.5 group-hover:scale-110 transition-transform" />
+                                                    <span>Copy</span>
+                                                </>
                                             )}
                                         </button>
                                     )}
@@ -301,27 +305,29 @@ const AICoachPage: React.FC<AICoachPageProps> = ({ messages, onSendMessage, isLo
             </div>
 
             {/* Input Area */}
-            <div className="flex-shrink-0 border-t border-border/50 bg-card/80 backdrop-blur-xl p-4 sm:p-5 shadow-2xl">
-                <div className="max-w-4xl mx-auto flex items-end gap-3">
-                    <div className="flex-1 relative">
-                        <textarea
-                            ref={textareaRef}
-                            value={message}
-                            onChange={handleInput}
-                            onKeyPress={handleKeyPress}
-                            placeholder="Ask about fitness, nutrition, workouts..."
-                            className="w-full px-4 sm:px-5 py-3 sm:py-4 rounded-2xl border border-border/50 bg-background/50 backdrop-blur-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary/50 focus:bg-background transition-all duration-200 resize-none min-h-[52px] max-h-[120px] text-sm sm:text-base"
-                            rows={1}
-                        />
+            <div className="flex-shrink-0 border-t border-border bg-card/80 backdrop-blur-xl p-4 sm:p-6 shadow-2xl">
+                <div className="max-w-4xl mx-auto">
+                    <div className="flex items-end gap-3">
+                        <div className="flex-1 relative">
+                            <textarea
+                                ref={textareaRef}
+                                value={message}
+                                onChange={handleInput}
+                                onKeyPress={handleKeyPress}
+                                placeholder="Ask about fitness, nutrition, workouts..."
+                                className="w-full px-4 py-3 rounded-lg bg-input border border-input text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring transition-all duration-200 resize-none min-h-[44px] max-h-[120px] text-base"
+                                rows={1}
+                            />
+                        </div>
+                        <button
+                            onClick={handleSend}
+                            disabled={!message.trim() || isLoading}
+                            className="h-11 px-5 flex items-center justify-center rounded-lg bg-gradient-to-r from-primary to-accent text-primary-foreground hover:shadow-lg hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 transition-all duration-200 active:scale-95 font-medium"
+                            aria-label="Send message"
+                        >
+                            <Send className="w-5 h-5" />
+                        </button>
                     </div>
-                    <button
-                        onClick={handleSend}
-                        disabled={!message.trim() || isLoading}
-                        className="w-12 h-12 sm:w-14 sm:h-14 flex items-center justify-center rounded-2xl bg-gradient-to-br from-primary via-primary to-accent text-primary-foreground hover:shadow-xl hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 transition-all duration-200 active:scale-95"
-                        aria-label="Send message"
-                    >
-                        <Send className="w-5 h-5 sm:w-6 sm:h-6" />
-                    </button>
                 </div>
             </div>
         </div>
