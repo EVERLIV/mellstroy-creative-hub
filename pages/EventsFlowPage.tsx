@@ -2,12 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import { supabase } from '../src/integrations/supabase/client';
 import { useToast } from '../src/hooks/use-toast';
-import { Crown, Lock, X } from 'lucide-react';
+import { Crown, Lock, X, Key } from 'lucide-react';
 import EventsPage from './EventsPage';
 import EventDetailPage from './EventDetailPage';
 import CreateEventPage from './CreateEventPage';
-
-const EVENT_CREATE_PASSWORD = 'rhino2024';
 
 interface EventsFlowPageProps {
     onBack: () => void;
@@ -25,8 +23,12 @@ const EventsFlowPage: React.FC<EventsFlowPageProps> = ({ onBack, initialEvent })
     const [currentUserId, setCurrentUserId] = useState<string | null>(null);
     const [loading, setLoading] = useState(true);
     const [showPasswordModal, setShowPasswordModal] = useState(false);
+    const [showSetPasswordModal, setShowSetPasswordModal] = useState(false);
     const [password, setPassword] = useState('');
+    const [newPassword, setNewPassword] = useState('');
+    const [confirmPassword, setConfirmPassword] = useState('');
     const [passwordError, setPasswordError] = useState('');
+    const [userEventPassword, setUserEventPassword] = useState<string | null>(null);
 
     useEffect(() => {
         if (location.state?.selectedEvent) {
@@ -47,11 +49,12 @@ const EventsFlowPage: React.FC<EventsFlowPageProps> = ({ onBack, initialEvent })
 
                 const { data: profileData } = await supabase
                     .from('profiles')
-                    .select('is_premium')
+                    .select('is_premium, event_password')
                     .eq('id', user.id)
                     .single();
 
                 setIsPremium(profileData?.is_premium || false);
+                setUserEventPassword((profileData as any)?.event_password || null);
 
                 const { data: eventsData, error } = await supabase
                     .from('events')
@@ -109,18 +112,59 @@ const EventsFlowPage: React.FC<EventsFlowPageProps> = ({ onBack, initialEvent })
             });
             return;
         }
-        setShowPasswordModal(true);
-        setPassword('');
-        setPasswordError('');
+        
+        if (!userEventPassword) {
+            // User needs to set a password first
+            setShowSetPasswordModal(true);
+            setNewPassword('');
+            setConfirmPassword('');
+            setPasswordError('');
+        } else {
+            // User has a password, verify it
+            setShowPasswordModal(true);
+            setPassword('');
+            setPasswordError('');
+        }
     };
 
     const handlePasswordSubmit = () => {
-        if (password === EVENT_CREATE_PASSWORD) {
+        if (password === userEventPassword) {
             setShowPasswordModal(false);
             setPassword('');
             setView('create');
         } else {
             setPasswordError('Incorrect password');
+        }
+    };
+
+    const handleSetPassword = async () => {
+        if (newPassword.length < 4) {
+            setPasswordError('Password must be at least 4 characters');
+            return;
+        }
+        if (newPassword !== confirmPassword) {
+            setPasswordError('Passwords do not match');
+            return;
+        }
+        
+        try {
+            const { error } = await supabase
+                .from('profiles')
+                .update({ event_password: newPassword } as any)
+                .eq('id', currentUserId);
+                
+            if (error) throw error;
+            
+            setUserEventPassword(newPassword);
+            setShowSetPasswordModal(false);
+            setView('create');
+            toast({
+                title: "Password Set",
+                description: "Your event creation password has been saved."
+            });
+        } catch (error) {
+            console.error('Error setting password:', error);
+            setPasswordError('Failed to save password');
         }
     };
 
@@ -229,7 +273,7 @@ const EventsFlowPage: React.FC<EventsFlowPageProps> = ({ onBack, initialEvent })
                             </div>
                             
                             <p className="text-sm text-muted-foreground mb-4">
-                                Enter the event creation password to continue.
+                                Enter your event creation password to continue.
                             </p>
                             
                             <input
@@ -240,7 +284,7 @@ const EventsFlowPage: React.FC<EventsFlowPageProps> = ({ onBack, initialEvent })
                                     setPasswordError('');
                                 }}
                                 onKeyPress={(e) => e.key === 'Enter' && handlePasswordSubmit()}
-                                placeholder="Enter password"
+                                placeholder="Enter your password"
                                 className={`w-full px-4 py-3 bg-muted rounded-xl text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary ${
                                     passwordError ? 'ring-2 ring-destructive' : ''
                                 }`}
@@ -264,6 +308,85 @@ const EventsFlowPage: React.FC<EventsFlowPageProps> = ({ onBack, initialEvent })
                                 className="flex-1 py-2.5 rounded-xl bg-primary text-primary-foreground font-semibold text-sm hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                             >
                                 Continue
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
+            {/* Set Password Modal */}
+            {showSetPasswordModal && (
+                <div className="fixed inset-0 bg-black/50 z-[100] flex items-center justify-center p-4" onClick={() => setShowSetPasswordModal(false)}>
+                    <div className="bg-card rounded-2xl w-full max-w-sm overflow-hidden shadow-xl" onClick={e => e.stopPropagation()}>
+                        <div className="p-5">
+                            <div className="flex items-center justify-between mb-4">
+                                <div className="flex items-center gap-2">
+                                    <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                                        <Key className="w-5 h-5 text-primary" />
+                                    </div>
+                                    <div>
+                                        <h2 className="text-lg font-bold text-foreground">Set Password</h2>
+                                        <p className="text-xs text-muted-foreground">
+                                            Create your event password
+                                        </p>
+                                    </div>
+                                </div>
+                                <button 
+                                    onClick={() => setShowSetPasswordModal(false)}
+                                    className="w-8 h-8 rounded-full hover:bg-muted flex items-center justify-center"
+                                >
+                                    <X className="w-5 h-5 text-muted-foreground" />
+                                </button>
+                            </div>
+                            
+                            <p className="text-sm text-muted-foreground mb-4">
+                                Set a password to secure your event creation. You'll need this password each time you create an event.
+                            </p>
+                            
+                            <div className="space-y-3">
+                                <input
+                                    type="password"
+                                    value={newPassword}
+                                    onChange={(e) => {
+                                        setNewPassword(e.target.value);
+                                        setPasswordError('');
+                                    }}
+                                    placeholder="New password"
+                                    className="w-full px-4 py-3 bg-muted rounded-xl text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
+                                    autoFocus
+                                />
+                                <input
+                                    type="password"
+                                    value={confirmPassword}
+                                    onChange={(e) => {
+                                        setConfirmPassword(e.target.value);
+                                        setPasswordError('');
+                                    }}
+                                    onKeyPress={(e) => e.key === 'Enter' && handleSetPassword()}
+                                    placeholder="Confirm password"
+                                    className={`w-full px-4 py-3 bg-muted rounded-xl text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary ${
+                                        passwordError ? 'ring-2 ring-destructive' : ''
+                                    }`}
+                                />
+                            </div>
+                            {passwordError && (
+                                <p className="text-xs text-destructive mt-2">{passwordError}</p>
+                            )}
+                        </div>
+                        
+                        <div className="px-5 py-4 bg-muted/30 border-t border-border flex gap-2">
+                            <button
+                                onClick={() => setShowSetPasswordModal(false)}
+                                className="flex-1 py-2.5 rounded-xl font-semibold text-sm text-muted-foreground hover:bg-muted transition-colors"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={handleSetPassword}
+                                disabled={!newPassword || !confirmPassword}
+                                className="flex-1 py-2.5 rounded-xl bg-primary text-primary-foreground font-semibold text-sm hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                            >
+                                Set Password
                             </button>
                         </div>
                     </div>
