@@ -22,9 +22,65 @@ serve(async (req) => {
       throw new Error("LOVABLE_API_KEY is not configured");
     }
 
-    const systemInstruction = `You are a friendly and knowledgeable AI Fitness Coach for 'RhinoFit', a platform in Vietnam. Your goal is to provide supportive, safe, and personalized fitness, nutrition, and wellness advice.
+    // Get authorization header
+    const authHeader = req.headers.get('authorization');
+    const supabaseUrl = Deno.env.get('SUPABASE_URL') || '';
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '';
+    
+    // Create Supabase client
+    const { createClient } = await import('https://esm.sh/@supabase/supabase-js@2.81.0');
+    const supabase = createClient(supabaseUrl, supabaseServiceKey, {
+      global: { headers: { Authorization: authHeader || '' } }
+    });
 
-CRITICAL: ALWAYS ASK CLARIFYING QUESTIONS FOR GENERAL INQUIRIES
+    // Get user from auth header
+    const { data: { user } } = await supabase.auth.getUser();
+    
+    // Load user's AI coach profile if exists
+    let userProfile = null;
+    if (user) {
+      const { data } = await supabase
+        .from('ai_coach_profiles')
+        .select('*')
+        .eq('user_id', user.id)
+        .single();
+      
+      userProfile = data;
+      console.log('Loaded user AI coach profile:', userProfile);
+    }
+
+    // Build system instruction with user profile context
+    let systemInstruction = `You are a friendly and knowledgeable AI Fitness Coach for 'RhinoFit', a platform in Vietnam. Your goal is to provide supportive, safe, and personalized fitness, nutrition, and wellness advice.
+`;
+
+    // Add user profile context if available
+    if (userProfile) {
+      systemInstruction += `\n**USER PROFILE CONTEXT:**\n`;
+      if (userProfile.fitness_level) {
+        systemInstruction += `- Fitness Level: ${userProfile.fitness_level}\n`;
+      }
+      if (userProfile.goals && userProfile.goals.length > 0) {
+        systemInstruction += `- Goals: ${userProfile.goals.join(', ')}\n`;
+      }
+      if (userProfile.equipment_access) {
+        systemInstruction += `- Equipment Access: ${userProfile.equipment_access}\n`;
+      }
+      if (userProfile.training_days_per_week) {
+        systemInstruction += `- Training Days Per Week: ${userProfile.training_days_per_week}\n`;
+      }
+      if (userProfile.dietary_restrictions && userProfile.dietary_restrictions.length > 0) {
+        systemInstruction += `- Dietary Restrictions: ${userProfile.dietary_restrictions.join(', ')}\n`;
+      }
+      if (userProfile.health_limitations) {
+        systemInstruction += `- Health Limitations: ${userProfile.health_limitations}\n`;
+      }
+      if (userProfile.preferred_training_time) {
+        systemInstruction += `- Preferred Training Time: ${userProfile.preferred_training_time}\n`;
+      }
+      systemInstruction += `\nUse this profile information to provide personalized advice. DO NOT ask for information that is already in the profile. If the user's question relates to something in their profile, reference it directly.\n\n`;
+    }
+
+    systemInstruction += `CRITICAL: ALWAYS ASK CLARIFYING QUESTIONS FOR GENERAL INQUIRIES
 When a user asks a general or broad question, DO NOT provide a generic answer. Instead:
 1. Acknowledge their question warmly
 2. Ask 2-4 specific clarifying questions to understand their:
