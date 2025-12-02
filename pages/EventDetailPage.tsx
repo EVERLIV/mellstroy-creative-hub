@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, Users, Calendar, Clock, MapPin, DollarSign, AlertCircle, User, Camera, Upload, X, Loader2, Crown, Dumbbell, Building2 } from 'lucide-react';
+import { ArrowLeft, Users, Calendar, Clock, MapPin, DollarSign, AlertCircle, User, Camera, Upload, X, Loader2, Crown, Dumbbell, Building2, MessageCircle } from 'lucide-react';
 import { supabase } from '../src/integrations/supabase/client';
 import { useToast } from '../src/hooks/use-toast';
+import EventGroupChat from '../components/EventGroupChat';
 
 const InfoItem: React.FC<{ icon: React.FC<any>, label: string, value: string }> = ({ icon: Icon, label, value }) => (
     <div className="flex items-center">
@@ -52,6 +53,7 @@ const EventDetailPage: React.FC<EventDetailPageProps> = ({ event, currentUserId,
     const [photoCaption, setPhotoCaption] = useState('');
     const [isEventEnded, setIsEventEnded] = useState(false);
     const [isOrganizerPremium, setIsOrganizerPremium] = useState(false);
+    const [showGroupChat, setShowGroupChat] = useState(false);
 
     useEffect(() => {
         const checkParticipation = async () => {
@@ -547,6 +549,17 @@ const EventDetailPage: React.FC<EventDetailPageProps> = ({ event, currentUserId,
                         )}
                     </div>
 
+                    {/* Group Chat Button - Only for participants */}
+                    {(hasJoined || event.organizer_id === currentUserId) && (
+                        <button
+                            onClick={() => setShowGroupChat(true)}
+                            className="w-full flex items-center justify-center gap-2 p-4 bg-muted hover:bg-muted/80 rounded-xl border border-border transition-colors"
+                        >
+                            <MessageCircle className="w-5 h-5 text-primary" />
+                            <span className="font-semibold text-foreground">Open Group Chat</span>
+                        </button>
+                    )}
+
                     {/* Event Photos Gallery */}
                     {isEventEnded && (
                         <div>
@@ -596,6 +609,16 @@ const EventDetailPage: React.FC<EventDetailPageProps> = ({ event, currentUserId,
                     )}
                 </div>
             </main>
+
+            {/* Group Chat Modal */}
+            {currentUserId && (
+                <EventGroupChat
+                    eventId={event.id}
+                    currentUserId={currentUserId}
+                    isOpen={showGroupChat}
+                    onClose={() => setShowGroupChat(false)}
+                />
+            )}
 
             {/* Photo Upload Modal */}
             {showPhotoUpload && (
