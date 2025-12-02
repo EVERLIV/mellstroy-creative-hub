@@ -44,6 +44,11 @@ const ChatInfoPage: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { toast } = useToast();
+
+  // Format price with thousands separator and VND
+  const formatPrice = (price: number) => {
+    return price.toLocaleString('vi-VN') + ' VND';
+  };
   
   const [trainer, setTrainer] = useState<TrainerProfile | null>(null);
   const [trainerClasses, setTrainerClasses] = useState<TrainerClass[]>([]);
@@ -239,7 +244,7 @@ const ChatInfoPage: React.FC = () => {
               {/* Price per hour */}
               {trainer.price_per_hour && (
                 <div className="bg-primary/10 text-primary px-3 py-1.5 rounded-lg inline-flex items-center gap-1 text-sm font-semibold">
-                  ${trainer.price_per_hour}/hour
+                  {formatPrice(trainer.price_per_hour)}/hour
                 </div>
               )}
             </div>
@@ -292,7 +297,7 @@ const ChatInfoPage: React.FC = () => {
                     <p className="text-xs text-muted-foreground">{cls.class_type}</p>
                   </div>
                   <div className="text-sm font-semibold text-primary ml-3">
-                    ${cls.price}
+                    {formatPrice(cls.price)}
                   </div>
                 </div>
               ))}
