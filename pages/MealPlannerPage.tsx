@@ -128,10 +128,10 @@ const MealPlannerPage: React.FC<MealPlannerPageProps> = ({ user, onClose, onSave
             <main className="flex-1 px-4 space-y-4 mt-4 overflow-y-auto">
                 {/* Calorie Calculator Section */}
                 <div className="bg-card p-4 rounded-2xl shadow-lg">
-                    <div className="flex items-center gap-2 mb-3">
-                        <Calculator className="w-5 h-5 text-primary" />
-                        <h3 className="font-bold text-foreground">Calorie Calculator</h3>
-                    </div>
+                <div className="flex items-center gap-2 mb-3">
+                    <Calculator className="w-5 h-5 text-primary" />
+                    <h3 className="text-sm font-semibold text-foreground">Calorie Calculator</h3>
+                </div>
                     
                     {/* Personal Details */}
                     <div className="grid grid-cols-2 gap-3 mb-3">
@@ -202,7 +202,7 @@ const MealPlannerPage: React.FC<MealPlannerPageProps> = ({ user, onClose, onSave
                             <div className="flex items-center justify-between">
                                 <div>
                                     <p className="text-xs text-muted-foreground">Recommended Daily Calories</p>
-                                    <p className="text-2xl font-bold text-primary">{calculatedCalories} <span className="text-sm">kcal</span></p>
+                                    <p className="text-xl font-bold text-primary">{calculatedCalories} <span className="text-sm">kcal</span></p>
                                 </div>
                                 <Sparkles className="w-8 h-8 text-primary" />
                             </div>
@@ -240,7 +240,7 @@ const MealPlannerPage: React.FC<MealPlannerPageProps> = ({ user, onClose, onSave
 
                 {/* Duration Selection */}
                 <div className="bg-card p-4 rounded-2xl shadow-lg">
-                    <h3 className="font-bold text-foreground mb-3">Plan Duration</h3>
+                    <h3 className="text-sm font-semibold text-foreground mb-3">Plan Duration</h3>
                     <div className="bg-muted p-1 rounded-xl grid grid-cols-3 gap-1">
                         {(['day', 'week', 'month'] as Duration[]).map(d => (
                             <button
@@ -261,33 +261,33 @@ const MealPlannerPage: React.FC<MealPlannerPageProps> = ({ user, onClose, onSave
 
                 {/* Dietary Preferences */}
                 <div className="bg-card p-4 rounded-2xl shadow-lg space-y-4">
-                    <h3 className="font-bold text-foreground">Dietary Preferences</h3>
+                    <h3 className="text-sm font-semibold text-foreground">Dietary Preferences</h3>
                     <div>
-                        <label className="block text-sm font-medium text-foreground mb-2">Eating Style</label>
+                        <label className="block text-xs font-medium text-foreground mb-2">Eating Style</label>
                         <div className="flex flex-col sm:flex-row gap-2">
                             {EATING_STYLES.map(style => (
-                                <button 
-                                    key={style.id} 
-                                    onClick={() => handlePrefChange('eatingStyle', style.id)} 
-                                    className={`flex-1 text-center px-3 py-2 text-sm font-semibold rounded-lg border-2 transition-colors ${preferences.eatingStyle === style.id ? 'bg-primary/10 border-primary text-primary' : 'bg-card border-border hover:bg-muted text-foreground'}`}
-                                >
+                            <button 
+                                key={style.id} 
+                                onClick={() => handlePrefChange('eatingStyle', style.id)} 
+                                className={`flex-1 text-center px-3 py-2 text-xs font-medium rounded-lg border-2 transition-colors ${preferences.eatingStyle === style.id ? 'bg-primary/10 border-primary text-primary' : 'bg-card border-border hover:bg-muted text-foreground'}`}
+                            >
                                     {style.label}
                                 </button>
                             ))}
                         </div>
                     </div>
                     <div>
-                        <label className="block text-sm font-medium text-foreground mb-2">Dietary Needs</label>
+                        <label className="block text-xs font-medium text-foreground mb-2">Dietary Needs</label>
                         <select 
                             value={preferences.dietType} 
                             onChange={(e) => handlePrefChange('dietType', e.target.value)} 
-                            className="w-full px-3 py-2 bg-muted border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-foreground"
+                            className="w-full px-3 py-2 bg-muted border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-foreground text-sm"
                         >
                             {DIET_TYPES.map(type => <option key={type.id} value={type.id}>{type.label}</option>)}
                         </select>
                     </div>
                     <div>
-                        <label htmlFor="allergies" className="block text-sm font-medium text-foreground mb-1">Allergies (e.g., peanuts, shellfish)</label>
+                        <label htmlFor="allergies" className="block text-xs font-medium text-foreground mb-1">Allergies (e.g., peanuts, shellfish)</label>
                         <input 
                             type="text" 
                             id="allergies" 
@@ -298,7 +298,7 @@ const MealPlannerPage: React.FC<MealPlannerPageProps> = ({ user, onClose, onSave
                         />
                     </div>
                     <div>
-                        <label htmlFor="dislikes" className="block text-sm font-medium text-foreground mb-1">Dislikes (e.g., cilantro, mushrooms)</label>
+                        <label htmlFor="dislikes" className="block text-xs font-medium text-foreground mb-1">Dislikes (e.g., cilantro, mushrooms)</label>
                         <input 
                             type="text" 
                             id="dislikes" 
@@ -313,7 +313,7 @@ const MealPlannerPage: React.FC<MealPlannerPageProps> = ({ user, onClose, onSave
                 <button 
                     onClick={handleGeneratePlan} 
                     disabled={isLoading || !effectiveCalories}
-                    className="w-full flex items-center justify-center bg-gradient-to-r from-primary to-accent text-primary-foreground font-bold py-3 rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-full flex items-center justify-center bg-gradient-to-r from-primary to-accent text-primary-foreground font-semibold text-sm py-3 rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                     {isLoading ? (
                         <> <Loader className="w-5 h-5 mr-2 animate-spin" /> Generating... </>
@@ -337,20 +337,20 @@ const MealPlannerPage: React.FC<MealPlannerPageProps> = ({ user, onClose, onSave
                     {generatedPlan && (
                         <div className="space-y-3 animate-fade-in">
                             <div className="bg-card p-4 rounded-2xl shadow-lg">
-                                <h2 className="text-lg font-bold text-foreground mb-3">Your Meal Plan</h2>
+                                <h2 className="text-base font-semibold text-foreground mb-3">Your Meal Plan</h2>
                                 <div className="space-y-2">
-                                    <label htmlFor="planName" className="block text-sm font-medium text-foreground">Plan Name</label>
+                                    <label htmlFor="planName" className="block text-xs font-medium text-foreground">Plan Name</label>
                                     <input 
                                         type="text" 
                                         id="planName" 
                                         value={planNameToSave} 
                                         onChange={(e) => setPlanNameToSave(e.target.value)} 
-                                        className="w-full px-3 py-2 bg-muted border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-foreground" 
+                                        className="w-full px-3 py-2 bg-muted border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-foreground text-sm"
                                     />
                                 </div>
                                 <button 
                                     onClick={handleSavePlan} 
-                                    className="mt-3 w-full flex items-center justify-center bg-primary text-primary-foreground font-bold py-2.5 rounded-xl transition-colors hover:bg-primary/90"
+                                    className="mt-3 w-full flex items-center justify-center bg-primary text-primary-foreground font-semibold text-sm py-2.5 rounded-xl transition-colors hover:bg-primary/90"
                                 >
                                     <Save className="w-5 h-5 mr-2" /> Save This Plan
                                 </button>
@@ -359,7 +359,7 @@ const MealPlannerPage: React.FC<MealPlannerPageProps> = ({ user, onClose, onSave
                                 <div key={dailyPlan.day} className="bg-card rounded-2xl shadow-md overflow-hidden">
                                     <button 
                                         onClick={() => toggleDay(dailyPlan.day)} 
-                                        className="w-full flex justify-between items-center p-4 font-bold text-foreground hover:bg-muted transition-colors"
+                                        className="w-full flex justify-between items-center p-4 text-sm font-semibold text-foreground hover:bg-muted transition-colors"
                                     >
                                         <span>{dailyPlan.day}</span>
                                         <div className="flex items-center text-xs text-muted-foreground font-medium">
@@ -373,10 +373,10 @@ const MealPlannerPage: React.FC<MealPlannerPageProps> = ({ user, onClose, onSave
                                                 const meal = dailyPlan.meals[mealType as keyof typeof dailyPlan.meals];
                                                 return (
                                                     <div key={mealType}>
-                                                        <h4 className="font-semibold text-foreground capitalize">{mealType}</h4>
+                                                        <h4 className="text-xs font-semibold text-foreground capitalize">{mealType}</h4>
                                                         <div className="text-sm p-3 bg-muted rounded-lg mt-1 border border-border">
-                                                            <p className="font-bold text-foreground">{meal.name}</p>
-                                                            <p className="text-muted-foreground mt-0.5">{meal.description}</p>
+                                                            <p className="text-sm font-semibold text-foreground">{meal.name}</p>
+                                                            <p className="text-xs text-muted-foreground mt-0.5">{meal.description}</p>
                                                         </div>
                                                     </div>
                                                 );
