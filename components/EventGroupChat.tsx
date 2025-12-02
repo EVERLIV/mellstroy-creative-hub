@@ -146,7 +146,7 @@ const EventGroupChat: React.FC<EventGroupChatProps> = ({ eventId, currentUserId,
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 bg-background flex flex-col">
+    <div className="fixed inset-0 z-[100] bg-background flex flex-col">
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Header */}
         <div className="flex items-center gap-3 px-4 py-3 border-b border-border bg-card flex-shrink-0" style={{ paddingTop: 'calc(0.75rem + env(safe-area-inset-top))' }}>
