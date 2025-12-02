@@ -416,6 +416,51 @@ export type Database = {
           },
         ]
       }
+      event_photos: {
+        Row: {
+          caption: string | null
+          created_at: string | null
+          event_id: string
+          id: string
+          photo_url: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          caption?: string | null
+          created_at?: string | null
+          event_id: string
+          id?: string
+          photo_url: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          caption?: string | null
+          created_at?: string | null
+          event_id?: string
+          id?: string
+          photo_url?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_photos_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_photos_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       events: {
         Row: {
           created_at: string | null
