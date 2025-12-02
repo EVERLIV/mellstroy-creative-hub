@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Send, MessageCircle, Loader2, ArrowLeft } from 'lucide-react';
+import { Send, MessageCircle, Loader2, ArrowLeft, Reply, X } from 'lucide-react';
 import { supabase } from '../src/integrations/supabase/client';
 
 interface Message {
@@ -7,6 +7,7 @@ interface Message {
   content: string;
   created_at: string;
   user_id: string;
+  reply_to_id?: string | null;
   profiles?: {
     username: string;
     avatar_url: string | null;
@@ -25,6 +26,7 @@ const EventGroupChat: React.FC<EventGroupChatProps> = ({ eventId, currentUserId,
   const [newMessage, setNewMessage] = useState('');
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
+  const [replyTo, setReplyTo] = useState<Message | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -39,12 +41,11 @@ const EventGroupChat: React.FC<EventGroupChatProps> = ({ eventId, currentUserId,
       setLoading(true);
       const { data: messagesData, error } = await supabase
         .from('event_messages')
-        .select('id, content, created_at, user_id')
+        .select('id, content, created_at, user_id, reply_to_id')
         .eq('event_id', eventId)
         .order('created_at', { ascending: true });
 
       if (!error && messagesData) {
-        // Fetch profiles for all unique user IDs
         const userIds = [...new Set(messagesData.map(m => m.user_id))];
         const { data: profilesData } = await supabase
           .from('profiles')
@@ -65,7 +66,6 @@ const EventGroupChat: React.FC<EventGroupChatProps> = ({ eventId, currentUserId,
 
     fetchMessages();
 
-    // Subscribe to new messages
     const channel = supabase
       .channel(`event_chat_${eventId}`)
       .on('postgres_changes', {
@@ -75,7 +75,6 @@ const EventGroupChat: React.FC<EventGroupChatProps> = ({ eventId, currentUserId,
         filter: `event_id=eq.${eventId}`
       }, async (payload) => {
         const newMsg = payload.new as any;
-        // Fetch profile for the new message sender
         const { data: profileData } = await supabase
           .from('profiles')
           .select('id, username, avatar_url')
@@ -87,6 +86,7 @@ const EventGroupChat: React.FC<EventGroupChatProps> = ({ eventId, currentUserId,
           content: newMsg.content,
           created_at: newMsg.created_at,
           user_id: newMsg.user_id,
+          reply_to_id: newMsg.reply_to_id,
           profiles: profileData as any
         };
         
@@ -115,11 +115,13 @@ const EventGroupChat: React.FC<EventGroupChatProps> = ({ eventId, currentUserId,
       .insert({
         event_id: eventId,
         user_id: currentUserId,
-        content: newMessage.trim()
+        content: newMessage.trim(),
+        reply_to_id: replyTo?.id || null
       });
 
     if (!error) {
       setNewMessage('');
+      setReplyTo(null);
     }
     setSending(false);
   };
@@ -141,6 +143,10 @@ const EventGroupChat: React.FC<EventGroupChatProps> = ({ eventId, currentUserId,
     }
     return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }) + ' ' + 
            date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: true });
+  };
+
+  const getReplyMessage = (replyToId: string) => {
+    return messages.find(m => m.id === replyToId);
   };
 
   if (!isOpen) return null;
@@ -179,6 +185,8 @@ const EventGroupChat: React.FC<EventGroupChatProps> = ({ eventId, currentUserId,
               const isOwn = msg.user_id === currentUserId;
               const username = (msg.profiles as any)?.username || 'Unknown';
               const avatarUrl = (msg.profiles as any)?.avatar_url;
+              const repliedMsg = msg.reply_to_id ? getReplyMessage(msg.reply_to_id) : null;
+              const repliedUsername = repliedMsg?.profiles?.username || 'Unknown';
 
               return (
                 <div key={msg.id} className={`flex gap-2 ${isOwn ? 'flex-row-reverse' : ''}`}>
@@ -197,12 +205,34 @@ const EventGroupChat: React.FC<EventGroupChatProps> = ({ eventId, currentUserId,
                     {!isOwn && (
                       <p className="text-[10px] text-muted-foreground mb-0.5 ml-1">{username}</p>
                     )}
-                    <div className={`px-3 py-2 rounded-2xl ${
-                      isOwn 
-                        ? 'bg-primary text-primary-foreground rounded-br-md' 
-                        : 'bg-muted text-foreground rounded-bl-md'
-                    }`}>
+                    
+                    {/* Reply preview */}
+                    {repliedMsg && (
+                      <div className={`mb-1 px-2 py-1 rounded-lg border-l-2 border-primary/50 bg-muted/50 ${isOwn ? 'ml-auto' : ''}`}>
+                        <p className="text-[10px] text-primary font-medium">{repliedUsername}</p>
+                        <p className="text-[11px] text-muted-foreground truncate max-w-[200px]">{repliedMsg.content}</p>
+                      </div>
+                    )}
+                    
+                    <div 
+                      className={`group relative px-3 py-2 rounded-2xl ${
+                        isOwn 
+                          ? 'bg-primary text-primary-foreground rounded-br-md' 
+                          : 'bg-muted text-foreground rounded-bl-md'
+                      }`}
+                    >
                       <p className="text-sm break-words">{msg.content}</p>
+                      
+                      {/* Reply button */}
+                      <button
+                        onClick={() => {
+                          setReplyTo(msg);
+                          inputRef.current?.focus();
+                        }}
+                        className={`absolute ${isOwn ? '-left-8' : '-right-8'} top-1/2 -translate-y-1/2 w-6 h-6 rounded-full bg-card border border-border flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity hover:bg-muted`}
+                      >
+                        <Reply className="w-3 h-3 text-muted-foreground" />
+                      </button>
                     </div>
                     <p className={`text-[10px] text-muted-foreground mt-0.5 ${isOwn ? 'text-right mr-1' : 'ml-1'}`}>
                       {formatTime(msg.created_at)}
@@ -215,6 +245,25 @@ const EventGroupChat: React.FC<EventGroupChatProps> = ({ eventId, currentUserId,
           <div ref={messagesEndRef} />
         </div>
 
+        {/* Reply preview bar */}
+        {replyTo && (
+          <div className="px-4 py-2 bg-muted/50 border-t border-border flex items-center gap-2">
+            <div className="w-1 h-8 bg-primary rounded-full" />
+            <div className="flex-1 min-w-0">
+              <p className="text-xs text-primary font-medium">
+                Replying to {replyTo.user_id === currentUserId ? 'yourself' : replyTo.profiles?.username || 'Unknown'}
+              </p>
+              <p className="text-xs text-muted-foreground truncate">{replyTo.content}</p>
+            </div>
+            <button
+              onClick={() => setReplyTo(null)}
+              className="w-6 h-6 rounded-full hover:bg-muted flex items-center justify-center"
+            >
+              <X className="w-4 h-4 text-muted-foreground" />
+            </button>
+          </div>
+        )}
+
         {/* Input */}
         <div className="px-4 pt-3 border-t border-border bg-card flex-shrink-0" style={{ paddingBottom: 'calc(0.75rem + env(safe-area-inset-bottom))' }}>
           <div className="flex items-center gap-2">
@@ -224,7 +273,7 @@ const EventGroupChat: React.FC<EventGroupChatProps> = ({ eventId, currentUserId,
               value={newMessage}
               onChange={(e) => setNewMessage(e.target.value)}
               onKeyPress={handleKeyPress}
-              placeholder="Type a message..."
+              placeholder={replyTo ? "Reply..." : "Type a message..."}
               className="flex-1 px-4 py-2.5 bg-muted rounded-full text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary"
               maxLength={500}
             />
