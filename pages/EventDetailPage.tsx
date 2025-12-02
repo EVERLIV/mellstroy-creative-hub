@@ -411,7 +411,7 @@ const EventDetailPage: React.FC<EventDetailPageProps> = ({ event, currentUserId,
                 </button>
             </header>
 
-            <main className="flex-1 overflow-y-auto pb-28">
+            <main className="flex-1 overflow-y-auto pb-[calc(6rem+env(safe-area-inset-bottom))]">
                 <div className="h-64 w-full">
                     <img className="h-full w-full object-cover" src={event.image_url || 'https://images.unsplash.com/photo-1517836357463-d25dfeac3438?w=800'} alt={event.title} />
                 </div>
