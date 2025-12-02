@@ -74,11 +74,11 @@ const CreateEventPage: React.FC<CreateEventPageProps> = ({ onBack, onSuccess }) 
     return (
         <div className="bg-background h-full flex flex-col">
             {/* Header */}
-            <div className="bg-gradient-to-br from-primary to-accent px-4 py-4 relative">
-                <button onClick={onBack} className="absolute top-4 left-4 p-2 rounded-full bg-card/20 hover:bg-card/30 transition-colors">
+            <div className="bg-gradient-to-br from-primary to-accent px-4 h-14 flex items-center relative">
+                <button onClick={onBack} className="absolute left-4 p-2 rounded-full bg-card/20 hover:bg-card/30 transition-colors">
                     <ArrowLeft className="w-5 h-5 text-primary-foreground" />
                 </button>
-                <h1 className="text-lg font-semibold text-primary-foreground text-center">Create New Event</h1>
+                <h1 className="text-xl font-semibold text-primary-foreground text-center w-full">Create New Event</h1>
             </div>
             
             <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-4 space-y-4">
@@ -134,7 +134,7 @@ const CreateEventPage: React.FC<CreateEventPageProps> = ({ onBack, onSuccess }) 
                     <button
                         type="submit"
                         disabled={!isFormValid || loading}
-                        className="w-full flex items-center justify-center bg-primary text-primary-foreground font-semibold py-3 rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
+                        className="w-full flex items-center justify-center bg-primary text-primary-foreground font-semibold h-12 rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                         {loading ? (
                             <><Loader2 className="w-5 h-5 mr-2 animate-spin" />Submitting...</>
