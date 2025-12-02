@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Trainer, UserRole } from '../types';
-import { ArrowLeft, Calendar, MessageCircle, User as UserIcon, UtensilsCrossed, Heart, LogOut, Pencil, ChevronRight, Crown, ShieldCheck, MapPin, Sparkles } from 'lucide-react';
+import { ArrowLeft, Calendar, MessageCircle, User as UserIcon, UtensilsCrossed, Heart, LogOut, Pencil, ChevronRight, Crown, ShieldCheck, MapPin, Sparkles, CalendarDays } from 'lucide-react';
 import AboutMePage from './AboutMePage';
 import EditAboutMePage from './EditAboutMePage';
 import FavoritesPage from './FavoritesPage';
@@ -258,6 +258,17 @@ const StudentProfilePage: React.FC<StudentProfilePageProps> = (props) => {
                                 <div className="flex items-center gap-2.5">
                                     <UtensilsCrossed className="w-4 h-4 text-gray-600"/>
                                     <span className="text-xs font-semibold text-gray-900">My Meal Plans</span>
+                                </div>
+                                <ChevronRight className="w-4 h-4 text-gray-400" />
+                            </button>
+                            
+                            <button 
+                                onClick={() => navigate('/events')} 
+                                className="w-full flex items-center justify-between p-2.5 hover:bg-gray-50 rounded-lg transition-colors"
+                            >
+                                <div className="flex items-center gap-2.5">
+                                    <CalendarDays className="w-4 h-4 text-gray-600"/>
+                                    <span className="text-xs font-semibold text-gray-900">Events</span>
                                 </div>
                                 <ChevronRight className="w-4 h-4 text-gray-400" />
                             </button>
