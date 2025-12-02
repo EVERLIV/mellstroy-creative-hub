@@ -461,6 +461,41 @@ export type Database = {
           },
         ]
       }
+      event_waitlist: {
+        Row: {
+          created_at: string
+          event_id: string
+          id: string
+          notified_at: string | null
+          position: number
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          event_id: string
+          id?: string
+          notified_at?: string | null
+          position: number
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          event_id?: string
+          id?: string
+          notified_at?: string | null
+          position?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "event_waitlist_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       events: {
         Row: {
           created_at: string | null
@@ -1090,6 +1125,10 @@ export type Database = {
       is_event_registration_open: {
         Args: { event_id: string }
         Returns: boolean
+      }
+      register_for_event: {
+        Args: { _event_id: string; _user_id: string }
+        Returns: Json
       }
     }
     Enums: {
