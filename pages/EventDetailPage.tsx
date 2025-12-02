@@ -278,9 +278,22 @@ const EventDetailPage: React.FC<EventDetailPageProps> = ({ event, currentUserId,
         }
     };
 
+    const userPhotoCount = photos.filter(p => p.user_id === currentUserId).length;
+    const canUploadMore = userPhotoCount < 5;
+
     const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (!file) return;
+
+        // Check if user has reached max photos limit
+        if (!canUploadMore) {
+            toast({
+                title: "Upload limit reached",
+                description: "You can only upload up to 5 photos per event.",
+                variant: "destructive"
+            });
+            return;
+        }
 
         if (file.size > 5 * 1024 * 1024) {
             toast({
@@ -530,14 +543,17 @@ const EventDetailPage: React.FC<EventDetailPageProps> = ({ event, currentUserId,
                                     <Camera className="w-5 h-5 mr-2" />
                                     <h2>Event Photos</h2>
                                 </div>
-                                {hasJoined && (
+                                {hasJoined && canUploadMore && (
                                     <button
                                         onClick={() => setShowPhotoUpload(true)}
                                         className="text-sm text-primary font-semibold hover:underline flex items-center gap-1"
                                     >
                                         <Upload className="w-4 h-4" />
-                                        Upload
+                                        Upload ({5 - userPhotoCount} left)
                                     </button>
+                                )}
+                                {hasJoined && !canUploadMore && (
+                                    <span className="text-xs text-muted-foreground">Max 5 photos reached</span>
                                 )}
                             </div>
                             {photos.length > 0 ? (
@@ -574,7 +590,10 @@ const EventDetailPage: React.FC<EventDetailPageProps> = ({ event, currentUserId,
                 <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4" onClick={() => setShowPhotoUpload(false)}>
                     <div className="bg-card rounded-lg w-full max-w-md overflow-hidden shadow-lg" onClick={e => e.stopPropagation()}>
                         <div className="px-4 py-3 border-b border-border flex items-center justify-between">
-                            <h2 className="text-base font-bold text-foreground">Upload Photo</h2>
+                            <div>
+                                <h2 className="text-base font-bold text-foreground">Upload Photo</h2>
+                                <p className="text-xs text-muted-foreground">{userPhotoCount}/5 photos uploaded</p>
+                            </div>
                             <button onClick={() => setShowPhotoUpload(false)} className="p-2 -mr-2 rounded-lg hover:bg-muted transition-colors">
                                 <X className="w-5 h-5 text-foreground" />
                             </button>
@@ -584,7 +603,7 @@ const EventDetailPage: React.FC<EventDetailPageProps> = ({ event, currentUserId,
                                 <label className="flex flex-col items-center justify-center w-full h-48 border-2 border-dashed border-border rounded-lg cursor-pointer hover:bg-muted/50 transition-colors">
                                     <Upload className="w-12 h-12 text-muted-foreground mb-2" />
                                     <p className="text-sm text-muted-foreground mb-1">Click to upload photo</p>
-                                    <p className="text-xs text-muted-foreground">JPG, PNG, WEBP (max 5MB)</p>
+                                    <p className="text-xs text-muted-foreground">JPG, PNG, WEBP • Max 5MB • {5 - userPhotoCount} remaining</p>
                                     <input 
                                         type="file" 
                                         accept="image/jpeg,image/jpg,image/png,image/webp" 
