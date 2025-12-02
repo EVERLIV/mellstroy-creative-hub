@@ -8,11 +8,11 @@ interface ViewToggleProps {
 
 const ViewToggle: React.FC<ViewToggleProps> = React.memo(({ viewMode, setViewMode }) => {
   return (
-    <div className="flex items-center gap-1 bg-gray-100 p-1 rounded-lg border border-gray-200">
+    <div className="flex items-center gap-1 bg-muted p-1 rounded-lg border border-border">
       <button
         onClick={() => setViewMode('grid')}
         className={`p-1.5 rounded-md transition-all duration-200 ${
-          viewMode === 'grid' ? 'bg-white shadow-sm text-blue-600' : 'text-gray-500 hover:text-gray-700'
+          viewMode === 'grid' ? 'bg-card shadow-sm text-primary' : 'text-muted-foreground hover:text-foreground'
         }`}
         aria-label="Grid view"
       >
@@ -21,7 +21,7 @@ const ViewToggle: React.FC<ViewToggleProps> = React.memo(({ viewMode, setViewMod
       <button
         onClick={() => setViewMode('list')}
         className={`p-1.5 rounded-md transition-all duration-200 ${
-          viewMode === 'list' ? 'bg-white shadow-sm text-blue-600' : 'text-gray-500 hover:text-gray-700'
+          viewMode === 'list' ? 'bg-card shadow-sm text-primary' : 'text-muted-foreground hover:text-foreground'
         }`}
         aria-label="List view"
       >

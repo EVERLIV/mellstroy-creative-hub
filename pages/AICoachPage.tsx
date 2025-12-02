@@ -46,27 +46,27 @@ const AICoachPage: React.FC<AICoachPageProps> = ({ messages, onSendMessage, isLo
     };
 
     return (
-        <div className="flex flex-col h-screen bg-slate-50">
+        <div className="flex flex-col h-screen bg-background">
             {/* Header */}
-            <div className="bg-gradient-to-br from-orange-500 to-pink-500 px-4 py-4 relative">
+            <div className="bg-gradient-to-br from-primary to-accent px-4 py-4 relative">
                 <button 
                     onClick={onClose} 
-                    className="absolute top-4 left-4 p-2 rounded-full bg-white/20 hover:bg-white/30 transition-colors"
+                    className="absolute top-4 left-4 p-2 rounded-full bg-card/20 hover:bg-card/30 transition-colors"
                 >
-                    <ArrowLeft className="w-5 h-5 text-white" />
+                    <ArrowLeft className="w-5 h-5 text-primary-foreground" />
                 </button>
-                <h1 className="text-lg font-semibold text-white text-center">AI Fitness Coach</h1>
+                <h1 className="text-lg font-semibold text-primary-foreground text-center">AI Fitness Coach</h1>
             </div>
             
             {/* Messages Area */}
             <div className="flex-1 overflow-y-auto px-4 py-6 space-y-4 pb-32 max-w-4xl mx-auto w-full">
                 {messages.length === 0 && !isLoading && (
                     <div className="flex flex-col items-center justify-center h-full text-center px-4 animate-fade-in">
-                        <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-orange-100 to-pink-100 flex items-center justify-center mb-4">
-                            <Sparkles className="w-10 h-10 text-[#FF6B35]" />
+                        <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-primary/10 to-accent/10 flex items-center justify-center mb-4">
+                            <Sparkles className="w-10 h-10 text-primary" />
                         </div>
-                        <h3 className="text-lg font-bold text-slate-900 mb-2">Start a conversation</h3>
-                        <p className="text-sm text-slate-600 max-w-sm mb-6">
+                        <h3 className="text-lg font-bold text-foreground mb-2">Start a conversation</h3>
+                        <p className="text-sm text-muted-foreground max-w-sm mb-6">
                             Ask me anything about fitness, nutrition, workout plans, or health tips!
                         </p>
                         <div className="grid grid-cols-1 gap-2 w-full max-w-sm">
@@ -81,7 +81,7 @@ const AICoachPage: React.FC<AICoachPageProps> = ({ messages, onSendMessage, isLo
                                         setMessage(suggestion);
                                         setTimeout(() => handleSend(), 100);
                                     }}
-                                    className="px-4 py-3 bg-white rounded-xl text-sm text-slate-700 hover:bg-slate-50 transition-colors text-left border border-slate-200 shadow-sm"
+                                    className="px-4 py-3 bg-card rounded-xl text-sm text-foreground hover:bg-muted transition-colors text-left border border-border shadow-sm"
                                 >
                                     {suggestion}
                                 </button>
@@ -99,13 +99,13 @@ const AICoachPage: React.FC<AICoachPageProps> = ({ messages, onSendMessage, isLo
                         {/* Avatar */}
                         <div className={`w-10 h-10 rounded-xl flex-shrink-0 flex items-center justify-center shadow-md ${
                             msg.sender === 'user' 
-                                ? 'bg-gradient-to-br from-orange-500 to-pink-500' 
-                                : 'bg-gradient-to-br from-orange-100 to-pink-100'
+                                ? 'bg-gradient-to-br from-primary to-accent' 
+                                : 'bg-gradient-to-br from-primary/10 to-accent/10'
                         }`}>
                             {msg.sender === 'user' ? (
-                                <User className="w-5 h-5 text-white" />
+                                <User className="w-5 h-5 text-primary-foreground" />
                             ) : (
-                                <Bot className="w-5 h-5 text-[#FF6B35]" />
+                                <Bot className="w-5 h-5 text-primary" />
                             )}
                         </div>
 
@@ -113,15 +113,15 @@ const AICoachPage: React.FC<AICoachPageProps> = ({ messages, onSendMessage, isLo
                         <div className="flex flex-col max-w-[75%]">
                             <div className={`px-4 py-3 rounded-2xl shadow-md ${
                                 msg.sender === 'user' 
-                                    ? 'bg-gradient-to-br from-orange-500 to-pink-500 text-white rounded-tr-md' 
-                                    : 'bg-white text-slate-900 rounded-tl-md border border-slate-100'
+                                    ? 'bg-gradient-to-br from-primary to-accent text-primary-foreground rounded-tr-md' 
+                                    : 'bg-card text-foreground rounded-tl-md border border-border'
                             }`}>
                                 <p className="text-sm leading-relaxed whitespace-pre-wrap break-words">
                                     {msg.text}
                                 </p>
                             </div>
                             <span className={`text-xs mt-1 px-2 ${
-                                msg.sender === 'user' ? 'text-right text-slate-500' : 'text-left text-slate-400'
+                                msg.sender === 'user' ? 'text-right text-muted-foreground' : 'text-left text-muted-foreground'
                             }`}>
                                 {msg.timestamp}
                             </span>
@@ -132,15 +132,15 @@ const AICoachPage: React.FC<AICoachPageProps> = ({ messages, onSendMessage, isLo
                 {/* Loading Indicator */}
                 {isLoading && (
                     <div className="flex items-start gap-3 animate-fade-in">
-                        <div className="w-10 h-10 rounded-xl flex-shrink-0 flex items-center justify-center bg-gradient-to-br from-orange-100 to-pink-100 shadow-md">
-                            <Bot className="w-5 h-5 text-[#FF6B35]" />
+                        <div className="w-10 h-10 rounded-xl flex-shrink-0 flex items-center justify-center bg-gradient-to-br from-primary/10 to-accent/10 shadow-md">
+                            <Bot className="w-5 h-5 text-primary" />
                         </div>
                         <div className="flex flex-col max-w-[75%]">
-                            <div className="px-4 py-3 rounded-2xl rounded-tl-md bg-white shadow-md border border-slate-100">
+                            <div className="px-4 py-3 rounded-2xl rounded-tl-md bg-card shadow-md border border-border">
                                 <div className="flex items-center space-x-2">
-                                    <div className="w-2 h-2 bg-gradient-to-r from-orange-500 to-pink-500 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
-                                    <div className="w-2 h-2 bg-gradient-to-r from-orange-500 to-pink-500 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
-                                    <div className="w-2 h-2 bg-gradient-to-r from-orange-500 to-pink-500 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+                                    <div className="w-2 h-2 bg-gradient-to-r from-primary to-accent rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
+                                    <div className="w-2 h-2 bg-gradient-to-r from-primary to-accent rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
+                                    <div className="w-2 h-2 bg-gradient-to-r from-primary to-accent rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
                                 </div>
                             </div>
                         </div>
@@ -150,9 +150,9 @@ const AICoachPage: React.FC<AICoachPageProps> = ({ messages, onSendMessage, isLo
             </div>
 
             {/* Input Area */}
-            <div className="fixed bottom-16 left-0 right-0 bg-white border-t border-slate-200 shadow-2xl pb-safe">
+            <div className="fixed bottom-16 left-0 right-0 bg-card border-t border-border shadow-2xl pb-safe">
                 <div className="max-w-4xl mx-auto px-4 py-4">
-                    <div className="flex items-end gap-2 bg-slate-50 rounded-2xl p-2 border border-slate-200 focus-within:border-[#FF6B35] focus-within:ring-2 focus-within:ring-[#FF6B35]/20 transition-all">
+                    <div className="flex items-end gap-2 bg-muted rounded-2xl p-2 border border-border focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20 transition-all">
                         <textarea
                             ref={textareaRef}
                             value={message}
@@ -160,13 +160,13 @@ const AICoachPage: React.FC<AICoachPageProps> = ({ messages, onSendMessage, isLo
                             onKeyPress={handleKeyPress}
                             placeholder="Ask your fitness coach anything..."
                             rows={1}
-                            className="flex-1 bg-transparent border-none focus:outline-none resize-none max-h-32 text-sm py-2 px-2 text-slate-900 placeholder:text-slate-400"
+                            className="flex-1 bg-transparent border-none focus:outline-none resize-none max-h-32 text-sm py-2 px-2 text-foreground placeholder:text-muted-foreground"
                             style={{ minHeight: '40px' }}
                         />
                         <button 
                             onClick={handleSend} 
                             disabled={!message.trim() || isLoading}
-                            className="w-10 h-10 flex-shrink-0 flex items-center justify-center rounded-xl bg-gradient-to-br from-orange-500 to-pink-500 text-white hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:shadow-none" 
+                            className="w-10 h-10 flex-shrink-0 flex items-center justify-center rounded-xl bg-gradient-to-br from-primary to-accent text-primary-foreground hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:shadow-none" 
                             aria-label="Send message"
                         >
                             {isLoading ? (
@@ -176,7 +176,7 @@ const AICoachPage: React.FC<AICoachPageProps> = ({ messages, onSendMessage, isLo
                             )}
                         </button>
                     </div>
-                    <p className="text-xs text-slate-400 mt-2 text-center">
+                    <p className="text-xs text-muted-foreground mt-2 text-center">
                         AI can make mistakes. Verify important information.
                     </p>
                 </div>
