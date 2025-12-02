@@ -257,14 +257,12 @@ const MessageListPage: React.FC = () => {
 
   return (
     <div className="bg-background h-screen flex flex-col overflow-hidden">
-      {/* Modern Header */}
-      <div className="flex-shrink-0 bg-gradient-to-r from-primary/10 via-primary/5 to-background border-b border-border backdrop-blur-sm">
-        <div className="px-4 py-4">
-          <h1 className="text-xl font-bold text-foreground">Messages</h1>
-          <p className="text-xs text-muted-foreground mt-0.5">
-            {conversations.length} {conversations.length === 1 ? 'conversation' : 'conversations'}
-          </p>
-        </div>
+      {/* Header - matching AI Coach style */}
+      <div className="bg-gradient-to-br from-primary to-accent px-4 py-4 relative flex-shrink-0">
+        <h1 className="text-lg font-semibold text-primary-foreground text-center">Messages</h1>
+        <p className="text-xs text-primary-foreground/80 text-center mt-1">
+          {conversations.length} {conversations.length === 1 ? 'conversation' : 'conversations'}
+        </p>
       </div>
 
       {/* Conversations List */}
@@ -289,8 +287,13 @@ const MessageListPage: React.FC = () => {
                 return (
                   <button
                     key={conv.id}
-                    onClick={() => navigate(`/chat/${conv.other_participant.id}`, {
-                      state: { bookingDetails: conv.booking_details }
+                    onClick={() => navigate(`/messages/${conv.other_participant.id}`, {
+                      state: { 
+                        conversationId: conv.id,
+                        recipientName: conv.other_participant.username,
+                        recipientAvatar: conv.other_participant.avatar_url,
+                        bookingDetails: conv.booking_details 
+                      }
                     })}
                     className="w-full p-3 rounded-2xl border transition-all text-left group hover:scale-[1.02] active:scale-[0.98] bg-card border-border hover:border-primary/30 hover:shadow-md"
                   >
