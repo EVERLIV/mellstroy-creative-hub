@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { Send, MessageCircle, Loader2, ArrowLeft, Reply, X } from 'lucide-react';
 import { supabase } from '../src/integrations/supabase/client';
 
@@ -151,7 +152,7 @@ const EventGroupChat: React.FC<EventGroupChatProps> = ({ eventId, currentUserId,
 
   if (!isOpen) return null;
 
-  return (
+  const chatContent = (
     <div className="fixed inset-0 z-[9999] bg-background flex flex-col">
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Header */}
@@ -293,6 +294,8 @@ const EventGroupChat: React.FC<EventGroupChatProps> = ({ eventId, currentUserId,
       </div>
     </div>
   );
+
+  return createPortal(chatContent, document.body);
 };
 
 export default EventGroupChat;
