@@ -1,7 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Message } from '../types';
-import { Send, Sparkles, Loader, Bot, User, ArrowLeft, Settings } from 'lucide-react';
+import { Send, Sparkles, Loader, Bot, User, ArrowLeft, Settings, Copy, Check } from 'lucide-react';
+import { useToast } from '../src/hooks/use-toast';
 
 interface AICoachPageProps {
     messages: Message[];
@@ -101,9 +102,11 @@ const TypingMessage: React.FC<{ text: string; isLatest: boolean }> = ({ text, is
 
 const AICoachPage: React.FC<AICoachPageProps> = ({ messages, onSendMessage, isLoading, onClose }) => {
     const [message, setMessage] = useState('');
+    const [copiedId, setCopiedId] = useState<number | null>(null);
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const textareaRef = useRef<HTMLTextAreaElement>(null);
     const navigate = useNavigate();
+    const { toast } = useToast();
 
     const scrollToBottom = () => {
         messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -133,6 +136,24 @@ const AICoachPage: React.FC<AICoachPageProps> = ({ messages, onSendMessage, isLo
         if (e.key === 'Enter' && !e.shiftKey) {
             e.preventDefault();
             handleSend();
+        }
+    };
+
+    const handleCopyMessage = async (messageText: string, messageId: number) => {
+        try {
+            await navigator.clipboard.writeText(messageText);
+            setCopiedId(messageId);
+            toast({
+                title: "Copied!",
+                description: "AI response copied to clipboard",
+            });
+            setTimeout(() => setCopiedId(null), 2000);
+        } catch (error) {
+            toast({
+                title: "Copy failed",
+                description: "Failed to copy to clipboard",
+                variant: "destructive",
+            });
         }
     };
 
@@ -192,6 +213,7 @@ const AICoachPage: React.FC<AICoachPageProps> = ({ messages, onSendMessage, isLo
                 {messages.map((msg, index) => {
                     // Only apply typing effect to the very last AI message
                     const isLatestAI = msg.sender === 'trainer' && index === messages.length - 1;
+                    const isCopied = copiedId === msg.id;
                     
                     return (
                         <div 
@@ -213,18 +235,35 @@ const AICoachPage: React.FC<AICoachPageProps> = ({ messages, onSendMessage, isLo
                             </div>
 
                             {/* Message Bubble */}
-                            <div className="flex flex-col max-w-[80%]">
-                                <div className={`px-4 py-3 rounded-2xl shadow-md ${
-                                    msg.sender === 'user' 
-                                        ? 'bg-gradient-to-br from-primary to-accent text-primary-foreground rounded-tr-md' 
-                                        : 'bg-card text-foreground rounded-tl-md border border-border'
-                                }`}>
-                                    {msg.sender === 'user' ? (
-                                        <p className="text-sm leading-relaxed whitespace-pre-wrap break-words">
-                                            {msg.text}
-                                        </p>
-                                    ) : (
-                                        <TypingMessage text={msg.text} isLatest={isLatestAI} />
+                            <div className="flex flex-col max-w-[80%] flex-1">
+                                <div className="relative group">
+                                    <div className={`px-4 py-3 rounded-2xl shadow-md ${
+                                        msg.sender === 'user' 
+                                            ? 'bg-gradient-to-br from-primary to-accent text-primary-foreground rounded-tr-md' 
+                                            : 'bg-card text-foreground rounded-tl-md border border-border'
+                                    }`}>
+                                        {msg.sender === 'user' ? (
+                                            <p className="text-sm leading-relaxed whitespace-pre-wrap break-words">
+                                                {msg.text}
+                                            </p>
+                                        ) : (
+                                            <TypingMessage text={msg.text} isLatest={isLatestAI} />
+                                        )}
+                                    </div>
+                                    
+                                    {/* Copy Button for AI messages */}
+                                    {msg.sender === 'trainer' && (
+                                        <button
+                                            onClick={() => handleCopyMessage(msg.text, msg.id)}
+                                            className="absolute -right-10 top-3 p-2 rounded-lg bg-card border border-border hover:bg-muted transition-all opacity-0 group-hover:opacity-100 shadow-sm"
+                                            aria-label="Copy message"
+                                        >
+                                            {isCopied ? (
+                                                <Check className="w-4 h-4 text-green-500" />
+                                            ) : (
+                                                <Copy className="w-4 h-4 text-muted-foreground" />
+                                            )}
+                                        </button>
                                     )}
                                 </div>
                                 <span className={`text-xs mt-1 px-2 ${
