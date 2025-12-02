@@ -52,7 +52,7 @@ const EventsFlowPage: React.FC<EventsFlowPageProps> = ({ onBack, initialEvent })
                     .from('events')
                     .select(`
                         *,
-                        organizer:organizer_id (username)
+                        organizer:organizer_id (username, is_premium)
                     `)
                     .eq('status', 'approved')
                     .order('date', { ascending: true });

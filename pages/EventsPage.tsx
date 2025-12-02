@@ -1,5 +1,5 @@
 import React from 'react';
-import { ArrowLeft, Plus, Users, Calendar, MapPin, User, Lock, Clock, DollarSign } from 'lucide-react';
+import { ArrowLeft, Plus, Users, Calendar, MapPin, User, Lock, Clock, DollarSign, Crown } from 'lucide-react';
 
 interface EventCardProps {
   event: {
@@ -10,7 +10,7 @@ interface EventCardProps {
     time: string;
     location: string;
     image_url: string | null;
-    organizer: { username: string }[];
+    organizer: { username: string; is_premium?: boolean }[];
     status: string;
     participant_count?: number;
     event_type?: string;
@@ -37,6 +37,7 @@ const EventCard: React.FC<EventCardProps> = ({ event, onSelect }) => {
     const month = eventDate.toLocaleDateString('en-US', { month: 'short' }).toUpperCase();
     const day = eventDate.getDate();
     const organizerName = event.organizer?.[0]?.username || 'Unknown';
+    const isOrganizerPremium = event.organizer?.[0]?.is_premium || false;
     const participantCount = event.participant_count || 0;
     const isFree = !event.price || event.price === 0;
 
@@ -64,6 +65,9 @@ const EventCard: React.FC<EventCardProps> = ({ event, onSelect }) => {
                     <div className="flex items-center">
                         <User className="w-4 h-4 mr-2 flex-shrink-0" />
                         <span className="truncate">Organized by <span className="font-semibold">{organizerName}</span></span>
+                        {isOrganizerPremium && (
+                            <Crown className="w-3.5 h-3.5 ml-1.5 text-primary flex-shrink-0" />
+                        )}
                     </div>
                     <div className="flex items-center">
                         <MapPin className="w-4 h-4 mr-2 flex-shrink-0" />
