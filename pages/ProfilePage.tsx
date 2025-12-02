@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Trainer, Class, UserRole } from '../types';
-import { Star, Users, BookOpen, Pencil, ShieldCheck, Plus, MoreVertical, Edit3, Trash2, Clock, LogOut, Shield, FileText, Crown, MapPin, Sparkles } from 'lucide-react';
+import { Star, Users, BookOpen, Pencil, ShieldCheck, Plus, MoreVertical, Edit3, Trash2, Clock, LogOut, Shield, FileText, Crown, MapPin, Sparkles, CalendarDays } from 'lucide-react';
 import { isTrainerProfileComplete } from '../utils/profile';
 import CompleteProfilePrompt from '../components/CompleteProfilePrompt';
 import { supabase } from '../src/integrations/supabase/client';
@@ -383,6 +383,21 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ trainer, onEdit, onManageClas
                         </div>
                     )}
                 </div>
+
+                {/* Events Button */}
+                <button
+                    onClick={() => navigate('/events')}
+                    className="w-full bg-white p-4 rounded-lg shadow-sm mb-3 flex items-center justify-between hover:bg-gray-50 transition-colors"
+                >
+                    <div className="flex items-center gap-3">
+                        <CalendarDays className="w-5 h-5 text-blue-600" />
+                        <div className="text-left">
+                            <h3 className="text-sm font-bold text-gray-900">Events</h3>
+                            <p className="text-xs text-gray-500">Join community events</p>
+                        </div>
+                    </div>
+                    <span className="text-xs text-gray-400">View →</span>
+                </button>
 
                 {/* Admin Panel Link */}
                 {isAdmin && (
