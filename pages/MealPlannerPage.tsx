@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { Trainer, MealPlan, DietaryPreferences, Duration, EatingStyle, DietType } from '../types';
 import { ArrowLeft, UtensilsCrossed, Sparkles, Loader, AlertTriangle, ChevronDown, Save, FilePlus } from 'lucide-react';
 import { generateMealPlan } from '../utils/ai';
@@ -25,11 +25,11 @@ const MealPlannerPage: React.FC<MealPlannerPageProps> = ({ user, onClose, onSave
     const [error, setError] = useState<string | null>(null);
     const [activeDay, setActiveDay] = useState<string | null>(null);
 
-    const handlePrefChange = (field: keyof DietaryPreferences, value: string) => {
+    const handlePrefChange = useCallback((field: keyof DietaryPreferences, value: string) => {
         setPreferences(prev => ({ ...prev, [field]: value }));
-    };
+    }, []);
 
-    const handleGeneratePlan = async () => {
+    const handleGeneratePlan = useCallback(async () => {
         setIsLoading(true);
         setError(null);
         setGeneratedPlan(null);
@@ -51,9 +51,9 @@ const MealPlannerPage: React.FC<MealPlannerPageProps> = ({ user, onClose, onSave
         } finally {
             setIsLoading(false);
         }
-    };
+    }, [user, preferences]);
     
-    const handleSavePlan = () => {
+    const handleSavePlan = useCallback(() => {
         if (generatedPlan && planNameToSave.trim()) {
             onSavePlan({
                 ...generatedPlan,
@@ -61,11 +61,11 @@ const MealPlannerPage: React.FC<MealPlannerPageProps> = ({ user, onClose, onSave
                 preferences,
             });
         }
-    };
+    }, [generatedPlan, planNameToSave, preferences, onSavePlan]);
 
-    const toggleDay = (day: string) => {
+    const toggleDay = useCallback((day: string) => {
         setActiveDay(prev => (prev === day ? null : day));
-    };
+    }, []);
 
     return (
         <div className="bg-background min-h-screen flex flex-col pb-32">

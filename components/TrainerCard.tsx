@@ -59,12 +59,12 @@ const TrainerCard: React.FC<TrainerCardProps> = React.memo(({ trainer, onSelect,
     loadDocuments();
   }, [trainer.id]);
 
-  const handleFavoriteClick = (e: React.MouseEvent) => {
+  const handleFavoriteClick = React.useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
     onToggleFavorite(trainer.id);
-  }
+  }, [onToggleFavorite, trainer.id]);
 
-  const getDocumentIcon = (type: string) => {
+  const getDocumentIcon = React.useCallback((type: string) => {
     switch (type) {
       case 'certificate':
         return <FileText className="w-3 h-3" />;
@@ -73,7 +73,7 @@ const TrainerCard: React.FC<TrainerCardProps> = React.memo(({ trainer, onSelect,
       default:
         return <Award className="w-3 h-3" />;
     }
-  };
+  }, []);
 
   return (
     <div 
