@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Send, MessageCircle, Loader2 } from 'lucide-react';
+import { Send, MessageCircle, Loader2, ArrowLeft } from 'lucide-react';
 import { supabase } from '../src/integrations/supabase/client';
 
 interface Message {
@@ -146,28 +146,20 @@ const EventGroupChat: React.FC<EventGroupChatProps> = ({ eventId, currentUserId,
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/50 z-50 flex items-end justify-center" onClick={onClose}>
-      <div 
-        className="bg-card w-full max-w-lg rounded-t-2xl flex flex-col overflow-hidden animate-in slide-in-from-bottom duration-300"
-        style={{ 
-          height: 'calc(70vh)',
-          marginBottom: 'calc(5rem + env(safe-area-inset-bottom))'
-        }}
-        onClick={e => e.stopPropagation()}
-      >
+    <div className="fixed inset-0 z-50 bg-background flex flex-col">
+      <div className="flex-1 flex flex-col overflow-hidden">
         {/* Header */}
-        <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-card flex-shrink-0">
-          <div className="flex items-center gap-2">
-            <MessageCircle className="w-5 h-5 text-primary" />
-            <h2 className="text-base font-bold text-foreground">Group Chat</h2>
-            <span className="text-xs text-muted-foreground">({messages.length} messages)</span>
-          </div>
+        <div className="flex items-center gap-3 px-4 py-3 border-b border-border bg-card flex-shrink-0" style={{ paddingTop: 'calc(0.75rem + env(safe-area-inset-top))' }}>
           <button 
             onClick={onClose}
-            className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+            className="w-9 h-9 rounded-full bg-muted flex items-center justify-center hover:bg-muted/80 transition-colors"
           >
-            Close
+            <ArrowLeft className="w-5 h-5 text-foreground" />
           </button>
+          <div className="flex-1">
+            <h2 className="text-base font-bold text-foreground">Group Chat</h2>
+            <span className="text-xs text-muted-foreground">{messages.length} messages</span>
+          </div>
         </div>
 
         {/* Messages */}
@@ -224,7 +216,7 @@ const EventGroupChat: React.FC<EventGroupChatProps> = ({ eventId, currentUserId,
         </div>
 
         {/* Input */}
-        <div className="px-4 py-3 border-t border-border bg-card flex-shrink-0">
+        <div className="px-4 pt-3 border-t border-border bg-card flex-shrink-0" style={{ paddingBottom: 'calc(0.75rem + env(safe-area-inset-bottom))' }}>
           <div className="flex items-center gap-2">
             <input
               ref={inputRef}
