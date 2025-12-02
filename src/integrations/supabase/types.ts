@@ -785,6 +785,7 @@ export type Database = {
           bio: string | null
           created_at: string | null
           district: string | null
+          event_password: string | null
           experience_years: number | null
           goals: string[] | null
           height: number | null
@@ -811,6 +812,7 @@ export type Database = {
           bio?: string | null
           created_at?: string | null
           district?: string | null
+          event_password?: string | null
           experience_years?: number | null
           goals?: string[] | null
           height?: number | null
@@ -837,6 +839,7 @@ export type Database = {
           bio?: string | null
           created_at?: string | null
           district?: string | null
+          event_password?: string | null
           experience_years?: number | null
           goals?: string[] | null
           height?: number | null
