@@ -1,5 +1,6 @@
-import React from 'react';
-import { ArrowLeft, Plus, Users, Calendar, MapPin, User, Clock, DollarSign, Crown } from 'lucide-react';
+import React, { useState } from 'react';
+import { ArrowLeft, Plus, Users, Calendar, MapPin, User, Clock, DollarSign, Crown, List, CalendarDays } from 'lucide-react';
+import EventCalendar from '../components/EventCalendar';
 
 interface EventCardProps {
   event: {
@@ -108,6 +109,7 @@ interface EventsPageProps {
 }
 
 const EventsPage: React.FC<EventsPageProps> = ({ events, isPremium, onBack, onSelectEvent, onOpenCreate }) => {
+    const [viewMode, setViewMode] = useState<'list' | 'calendar'>('list');
 
     const CreateEventButton = () => (
         <button 
@@ -130,17 +132,51 @@ const EventsPage: React.FC<EventsPageProps> = ({ events, isPremium, onBack, onSe
                     <h1 className="text-3xl font-bold text-foreground mb-4">Community Events</h1>
                     <CreateEventButton />
                 </div>
+
+                {/* View Toggle */}
+                <div className="flex items-center justify-center gap-2 py-2">
+                    <button
+                        onClick={() => setViewMode('list')}
+                        className={`flex items-center gap-2 px-4 py-2 rounded-lg font-semibold text-sm transition-colors ${
+                            viewMode === 'list'
+                                ? 'bg-primary text-primary-foreground'
+                                : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                        }`}
+                    >
+                        <List className="w-4 h-4" />
+                        List
+                    </button>
+                    <button
+                        onClick={() => setViewMode('calendar')}
+                        className={`flex items-center gap-2 px-4 py-2 rounded-lg font-semibold text-sm transition-colors ${
+                            viewMode === 'calendar'
+                                ? 'bg-primary text-primary-foreground'
+                                : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                        }`}
+                    >
+                        <CalendarDays className="w-4 h-4" />
+                        Calendar
+                    </button>
+                </div>
                 
                 <div className="border-t border-border pt-4">
-                     <h2 className="text-xl font-bold text-foreground mb-3">Upcoming Events</h2>
-                     <div className="space-y-4">
-                        {events.map(event => (
-                            <EventCard key={event.id} event={event} onSelect={() => onSelectEvent(event)} />
-                        ))}
-                    </div>
-                </div>
-                 <div className="text-center mt-8">
-                    <p className="text-muted-foreground">More events coming soon!</p>
+                    {viewMode === 'list' ? (
+                        <>
+                            <h2 className="text-xl font-bold text-foreground mb-3">Upcoming Events</h2>
+                            <div className="space-y-4">
+                                {events.map(event => (
+                                    <EventCard key={event.id} event={event} onSelect={() => onSelectEvent(event)} />
+                                ))}
+                            </div>
+                            {events.length === 0 && (
+                                <div className="text-center mt-8">
+                                    <p className="text-muted-foreground">No upcoming events</p>
+                                </div>
+                            )}
+                        </>
+                    ) : (
+                        <EventCalendar events={events} onSelectEvent={onSelectEvent} />
+                    )}
                 </div>
             </main>
         </div>
