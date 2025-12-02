@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, Users, Calendar, Clock, MapPin, DollarSign, AlertCircle, User, Camera, Upload, X, Loader2, Crown, Dumbbell, Building2, MessageCircle } from 'lucide-react';
+import { ArrowLeft, Users, Calendar, Clock, MapPin, DollarSign, AlertCircle, User, Camera, Upload, X, Loader2, Crown, Dumbbell, Building2, MessageCircle, Lock } from 'lucide-react';
 import { supabase } from '../src/integrations/supabase/client';
 import { useToast } from '../src/hooks/use-toast';
 import EventGroupChat from '../components/EventGroupChat';
@@ -54,6 +54,10 @@ const EventDetailPage: React.FC<EventDetailPageProps> = ({ event, currentUserId,
     const [isEventEnded, setIsEventEnded] = useState(false);
     const [isOrganizerPremium, setIsOrganizerPremium] = useState(false);
     const [showGroupChat, setShowGroupChat] = useState(false);
+    const [currentUserIsPremium, setCurrentUserIsPremium] = useState(false);
+    const [showPasswordModal, setShowPasswordModal] = useState(false);
+    const [enteredPassword, setEnteredPassword] = useState('');
+    const [passwordError, setPasswordError] = useState('');
 
     useEffect(() => {
         const checkParticipation = async () => {
@@ -148,6 +152,17 @@ const EventDetailPage: React.FC<EventDetailPageProps> = ({ event, currentUserId,
                     
                     setIsOrganizerPremium(organizerProfile?.is_premium || false);
                 }
+
+                // Fetch current user's premium status
+                if (currentUserId) {
+                    const { data: userProfile } = await supabase
+                        .from('profiles')
+                        .select('is_premium')
+                        .eq('id', currentUserId)
+                        .single();
+                    
+                    setCurrentUserIsPremium(userProfile?.is_premium || false);
+                }
             } catch (error) {
                 console.error('Error checking participation:', error);
             }
@@ -195,6 +210,31 @@ const EventDetailPage: React.FC<EventDetailPageProps> = ({ event, currentUserId,
             return;
         }
 
+        // If trying to join (not leave), check privacy restrictions
+        if (!hasJoined && !isOnWaitlist) {
+            // Check premium_only restriction
+            if ((event as any).premium_only && !currentUserIsPremium) {
+                toast({
+                    title: "Premium Only",
+                    description: "This event is only for premium users.",
+                    variant: "destructive"
+                });
+                return;
+            }
+
+            // Check password restriction
+            if ((event as any).event_password) {
+                setShowPasswordModal(true);
+                setEnteredPassword('');
+                setPasswordError('');
+                return;
+            }
+        }
+
+        await executeJoinLeave();
+    };
+
+    const executeJoinLeave = async () => {
         setLoading(true);
 
         try {
@@ -277,6 +317,16 @@ const EventDetailPage: React.FC<EventDetailPageProps> = ({ event, currentUserId,
             });
         } finally {
             setLoading(false);
+        }
+    };
+
+    const handlePasswordSubmit = async () => {
+        if (enteredPassword === (event as any).event_password) {
+            setShowPasswordModal(false);
+            setEnteredPassword('');
+            await executeJoinLeave();
+        } else {
+            setPasswordError('Incorrect password');
         }
     };
 
@@ -436,6 +486,18 @@ const EventDetailPage: React.FC<EventDetailPageProps> = ({ event, currentUserId,
                                 <span className="inline-flex items-center gap-1 bg-green-500/10 text-green-600 dark:text-green-400 text-xs font-bold px-2 py-1 rounded-lg">
                                     <Building2 className="w-3 h-3" />
                                     {event.district}
+                                </span>
+                            )}
+                            {(event as any).premium_only && (
+                                <span className="inline-flex items-center gap-1 bg-amber-500/10 text-amber-600 dark:text-amber-400 text-xs font-bold px-2 py-1 rounded-lg">
+                                    <Crown className="w-3 h-3" />
+                                    Premium Only
+                                </span>
+                            )}
+                            {(event as any).event_password && (
+                                <span className="inline-flex items-center gap-1 bg-purple-500/10 text-purple-600 dark:text-purple-400 text-xs font-bold px-2 py-1 rounded-lg">
+                                    <Lock className="w-3 h-3" />
+                                    Password Protected
                                 </span>
                             )}
                         </div>
@@ -734,6 +796,71 @@ const EventDetailPage: React.FC<EventDetailPageProps> = ({ event, currentUserId,
                     )}
                 </button>
             </footer>
+
+            {/* Password Modal */}
+            {showPasswordModal && (
+                <div className="fixed inset-0 bg-black/50 z-[100] flex items-center justify-center p-4" onClick={() => setShowPasswordModal(false)}>
+                    <div className="bg-card rounded-2xl w-full max-w-sm overflow-hidden shadow-xl" onClick={e => e.stopPropagation()}>
+                        <div className="p-5">
+                            <div className="flex items-center justify-between mb-4">
+                                <div className="flex items-center gap-2">
+                                    <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                                        <Lock className="w-5 h-5 text-primary" />
+                                    </div>
+                                    <div>
+                                        <h2 className="text-lg font-bold text-foreground">Protected Event</h2>
+                                        <p className="text-xs text-muted-foreground">Password required to join</p>
+                                    </div>
+                                </div>
+                                <button 
+                                    onClick={() => setShowPasswordModal(false)}
+                                    className="w-8 h-8 rounded-full hover:bg-muted flex items-center justify-center"
+                                >
+                                    <X className="w-5 h-5 text-muted-foreground" />
+                                </button>
+                            </div>
+                            
+                            <p className="text-sm text-muted-foreground mb-4">
+                                Enter the event password to join.
+                            </p>
+                            
+                            <input
+                                type="password"
+                                value={enteredPassword}
+                                onChange={(e) => {
+                                    setEnteredPassword(e.target.value);
+                                    setPasswordError('');
+                                }}
+                                onKeyPress={(e) => e.key === 'Enter' && handlePasswordSubmit()}
+                                placeholder="Enter password"
+                                className={`w-full px-4 py-3 bg-muted rounded-xl text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary ${
+                                    passwordError ? 'ring-2 ring-destructive' : ''
+                                }`}
+                                autoFocus
+                            />
+                            {passwordError && (
+                                <p className="text-xs text-destructive mt-2">{passwordError}</p>
+                            )}
+                        </div>
+                        
+                        <div className="px-5 py-4 bg-muted/30 border-t border-border flex gap-2">
+                            <button
+                                onClick={() => setShowPasswordModal(false)}
+                                className="flex-1 py-2.5 rounded-xl font-semibold text-sm text-muted-foreground hover:bg-muted transition-colors"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={handlePasswordSubmit}
+                                disabled={!enteredPassword}
+                                className="flex-1 py-2.5 rounded-xl bg-primary text-primary-foreground font-semibold text-sm hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                            >
+                                Join Event
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };
