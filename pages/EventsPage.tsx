@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
-import { ArrowLeft, Plus, Users, Calendar, MapPin, User, Clock, DollarSign, Crown, List, CalendarDays, Dumbbell, Building2 } from 'lucide-react';
+import React, { useState, useMemo } from 'react';
+import { Plus, Users, Calendar, MapPin, User, DollarSign, Crown, List, CalendarDays, Dumbbell, Building2, Search, SlidersHorizontal, X } from 'lucide-react';
 import EventCalendar from '../components/EventCalendar';
+import { FITNESS_ACTIVITIES, HCMC_DISTRICTS } from '../constants';
 
 interface EventCardProps {
   event: {
@@ -131,74 +132,207 @@ interface EventsPageProps {
 
 const EventsPage: React.FC<EventsPageProps> = ({ events, isPremium, onBack, onSelectEvent, onOpenCreate }) => {
     const [viewMode, setViewMode] = useState<'list' | 'calendar'>('list');
+    const [searchQuery, setSearchQuery] = useState('');
+    const [selectedCategory, setSelectedCategory] = useState('');
+    const [selectedDistrict, setSelectedDistrict] = useState('');
+    const [showFilters, setShowFilters] = useState(false);
 
-    const CreateEventButton = () => (
-        <button 
-            onClick={onOpenCreate}
-            className="w-full flex items-center justify-center bg-primary text-primary-foreground font-semibold h-12 rounded-xl hover:bg-primary/90 transition-colors duration-200 shadow-md"
-        >
-            <Plus className="w-5 h-5 mr-2" />
-            Create New Event
-        </button>
-    );
+    // Filter events based on search and filters
+    const filteredEvents = useMemo(() => {
+        return events.filter(event => {
+            const matchesSearch = !searchQuery || 
+                event.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                event.description?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                event.location?.toLowerCase().includes(searchQuery.toLowerCase());
+            
+            const matchesCategory = !selectedCategory || event.sport_category === selectedCategory;
+            const matchesDistrict = !selectedDistrict || event.district === selectedDistrict;
+            
+            return matchesSearch && matchesCategory && matchesDistrict;
+        });
+    }, [events, searchQuery, selectedCategory, selectedDistrict]);
+
+    const activeFiltersCount = (selectedCategory ? 1 : 0) + (selectedDistrict ? 1 : 0);
+
+    const clearFilters = () => {
+        setSelectedCategory('');
+        setSelectedDistrict('');
+        setSearchQuery('');
+    };
 
     return (
-        <div className="bg-background h-full flex flex-col relative">
-            <button onClick={onBack} className="absolute top-4 left-4 z-10 bg-card border border-border shadow-md p-2 rounded-full text-foreground hover:bg-muted transition-colors">
-                <ArrowLeft className="w-6 h-6" />
-            </button>
-            
-            <main className="flex-1 overflow-y-auto p-4 space-y-4 pb-[calc(5rem+env(safe-area-inset-bottom))]">
-                <div className="pt-12">
-                    <h1 className="text-2xl font-bold text-foreground mb-4">Community Events</h1>
-                    <CreateEventButton />
-                </div>
+        <div className="bg-background h-full flex flex-col">
+            {/* Header Section */}
+            <div className="bg-gradient-to-br from-primary to-accent pt-4 pb-5 px-4 flex-shrink-0">
+                <div className="max-w-2xl mx-auto">
+                    {/* Title Row with Create Button */}
+                    <div className="flex items-center justify-between mb-4">
+                        <h1 className="text-xl font-bold text-primary-foreground">Community Events</h1>
+                        <button 
+                            onClick={onOpenCreate}
+                            className="w-10 h-10 flex items-center justify-center bg-card text-primary rounded-xl shadow-lg hover:bg-muted transition-colors"
+                        >
+                            <Plus className="w-5 h-5" />
+                        </button>
+                    </div>
 
-                {/* View Toggle */}
-                <div className="flex items-center justify-center gap-2 py-2">
-                    <button
-                        onClick={() => setViewMode('list')}
-                        className={`flex items-center gap-2 px-6 h-10 rounded-xl font-semibold text-sm transition-colors ${
-                            viewMode === 'list'
-                                ? 'bg-primary text-primary-foreground'
-                                : 'bg-muted text-muted-foreground hover:bg-muted/80'
-                        }`}
-                    >
-                        <List className="w-4 h-4" />
-                        List
-                    </button>
-                    <button
-                        onClick={() => setViewMode('calendar')}
-                        className={`flex items-center gap-2 px-6 h-10 rounded-xl font-semibold text-sm transition-colors ${
-                            viewMode === 'calendar'
-                                ? 'bg-primary text-primary-foreground'
-                                : 'bg-muted text-muted-foreground hover:bg-muted/80'
-                        }`}
-                    >
-                        <CalendarDays className="w-4 h-4" />
-                        Calendar
-                    </button>
-                </div>
-                
-                <div className="border-t border-border pt-4">
-                    {viewMode === 'list' ? (
-                        <>
-                            <h2 className="text-lg font-semibold text-foreground mb-3">Upcoming Events</h2>
-                            <div className="space-y-4">
-                                {events.map(event => (
-                                    <EventCard key={event.id} event={event} onSelect={() => onSelectEvent(event)} />
-                                ))}
-                            </div>
-                            {events.length === 0 && (
-                                <div className="text-center mt-8">
-                                    <p className="text-muted-foreground">No upcoming events</p>
-                                </div>
+                    {/* Search Bar */}
+                    <div className="flex gap-2">
+                        <div className="flex-1 relative">
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                            <input
+                                type="text"
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                placeholder="Search events..."
+                                className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-card text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring text-sm shadow-md"
+                            />
+                        </div>
+                        <button
+                            onClick={() => setShowFilters(!showFilters)}
+                            className={`relative w-10 h-10 flex items-center justify-center rounded-xl shadow-md transition-colors ${
+                                showFilters || activeFiltersCount > 0
+                                    ? 'bg-card text-primary'
+                                    : 'bg-card/80 text-foreground hover:bg-card'
+                            }`}
+                        >
+                            <SlidersHorizontal className="w-4 h-4" />
+                            {activeFiltersCount > 0 && (
+                                <span className="absolute -top-1 -right-1 w-4 h-4 bg-destructive text-destructive-foreground text-[10px] font-bold rounded-full flex items-center justify-center">
+                                    {activeFiltersCount}
+                                </span>
                             )}
-                        </>
-                    ) : (
-                        <EventCalendar events={events} onSelectEvent={onSelectEvent} />
+                        </button>
+                    </div>
+
+                    {/* Filter Dropdowns */}
+                    {showFilters && (
+                        <div className="mt-3 grid grid-cols-2 gap-2">
+                            <select
+                                value={selectedCategory}
+                                onChange={(e) => setSelectedCategory(e.target.value)}
+                                className="w-full px-3 py-2.5 rounded-xl bg-card text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-ring shadow-md appearance-none"
+                            >
+                                <option value="">All Sports</option>
+                                {FITNESS_ACTIVITIES.map(activity => (
+                                    <option key={activity} value={activity}>{activity}</option>
+                                ))}
+                            </select>
+                            <select
+                                value={selectedDistrict}
+                                onChange={(e) => setSelectedDistrict(e.target.value)}
+                                className="w-full px-3 py-2.5 rounded-xl bg-card text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-ring shadow-md appearance-none"
+                            >
+                                <option value="">All Districts</option>
+                                {HCMC_DISTRICTS.map(district => (
+                                    <option key={district} value={district}>{district}</option>
+                                ))}
+                            </select>
+                        </div>
                     )}
                 </div>
+            </div>
+            
+            {/* Active Filters Tags */}
+            {(activeFiltersCount > 0 || searchQuery) && (
+                <div className="px-4 py-2 bg-muted/50 flex flex-wrap items-center gap-2 flex-shrink-0">
+                    {searchQuery && (
+                        <span className="inline-flex items-center gap-1 bg-card text-foreground text-xs font-medium px-2.5 py-1 rounded-full border border-border">
+                            <Search className="w-3 h-3" />
+                            "{searchQuery}"
+                            <button onClick={() => setSearchQuery('')} className="ml-0.5 hover:text-destructive">
+                                <X className="w-3 h-3" />
+                            </button>
+                        </span>
+                    )}
+                    {selectedCategory && (
+                        <span className="inline-flex items-center gap-1 bg-blue-500/10 text-blue-600 dark:text-blue-400 text-xs font-medium px-2.5 py-1 rounded-full">
+                            <Dumbbell className="w-3 h-3" />
+                            {selectedCategory}
+                            <button onClick={() => setSelectedCategory('')} className="ml-0.5 hover:text-destructive">
+                                <X className="w-3 h-3" />
+                            </button>
+                        </span>
+                    )}
+                    {selectedDistrict && (
+                        <span className="inline-flex items-center gap-1 bg-green-500/10 text-green-600 dark:text-green-400 text-xs font-medium px-2.5 py-1 rounded-full">
+                            <Building2 className="w-3 h-3" />
+                            {selectedDistrict}
+                            <button onClick={() => setSelectedDistrict('')} className="ml-0.5 hover:text-destructive">
+                                <X className="w-3 h-3" />
+                            </button>
+                        </span>
+                    )}
+                    <button 
+                        onClick={clearFilters}
+                        className="text-xs text-muted-foreground hover:text-destructive ml-auto"
+                    >
+                        Clear all
+                    </button>
+                </div>
+            )}
+
+            {/* View Toggle */}
+            <div className="flex items-center justify-center gap-2 py-3 px-4 bg-background flex-shrink-0">
+                <button
+                    onClick={() => setViewMode('list')}
+                    className={`flex items-center gap-2 px-5 h-9 rounded-xl font-semibold text-sm transition-colors ${
+                        viewMode === 'list'
+                            ? 'bg-primary text-primary-foreground'
+                            : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                    }`}
+                >
+                    <List className="w-4 h-4" />
+                    List
+                </button>
+                <button
+                    onClick={() => setViewMode('calendar')}
+                    className={`flex items-center gap-2 px-5 h-9 rounded-xl font-semibold text-sm transition-colors ${
+                        viewMode === 'calendar'
+                            ? 'bg-primary text-primary-foreground'
+                            : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                    }`}
+                >
+                    <CalendarDays className="w-4 h-4" />
+                    Calendar
+                </button>
+            </div>
+            
+            {/* Content */}
+            <main className="flex-1 overflow-y-auto px-4 pb-[calc(5rem+env(safe-area-inset-bottom))]">
+                {viewMode === 'list' ? (
+                    <>
+                        <div className="flex items-center justify-between mb-3">
+                            <h2 className="text-base font-semibold text-foreground">
+                                {filteredEvents.length === events.length 
+                                    ? 'Upcoming Events' 
+                                    : `${filteredEvents.length} event${filteredEvents.length !== 1 ? 's' : ''} found`}
+                            </h2>
+                        </div>
+                        <div className="space-y-4">
+                            {filteredEvents.map(event => (
+                                <EventCard key={event.id} event={event} onSelect={() => onSelectEvent(event)} />
+                            ))}
+                        </div>
+                        {filteredEvents.length === 0 && (
+                            <div className="text-center py-12">
+                                <Calendar className="w-12 h-12 text-muted-foreground mx-auto mb-3" />
+                                <p className="text-muted-foreground font-medium">No events found</p>
+                                <p className="text-sm text-muted-foreground mt-1">Try adjusting your filters</p>
+                                {activeFiltersCount > 0 && (
+                                    <button 
+                                        onClick={clearFilters}
+                                        className="mt-3 text-sm text-primary font-medium hover:underline"
+                                    >
+                                        Clear all filters
+                                    </button>
+                                )}
+                            </div>
+                        )}
+                    </>
+                ) : (
+                    <EventCalendar events={filteredEvents} onSelectEvent={onSelectEvent} />
+                )}
             </main>
         </div>
     );
