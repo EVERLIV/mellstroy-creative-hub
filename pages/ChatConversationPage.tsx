@@ -290,49 +290,60 @@ const ChatConversationPage: React.FC = () => {
 
   return (
     <div className="bg-background h-screen flex flex-col overflow-hidden">
-      {/* Modern Header */}
-      <div className="flex items-center gap-3 px-4 py-3 bg-gradient-to-r from-primary/10 via-primary/5 to-background border-b border-border backdrop-blur-sm flex-shrink-0">
+      {/* Header - matching AI Coach style */}
+      <div className="bg-gradient-to-br from-primary to-accent px-4 py-4 relative flex-shrink-0">
         <button 
           onClick={() => navigate('/messages')} 
-          className="p-2 -ml-2 rounded-xl hover:bg-background/80 transition-all active:scale-95"
+          className="absolute top-4 left-4 p-2 rounded-full bg-card/20 hover:bg-card/30 transition-colors"
         >
-          <ArrowLeft className="w-5 h-5 text-foreground" />
+          <ArrowLeft className="w-5 h-5 text-primary-foreground" />
+        </button>
+        
+        <button 
+          onClick={() => setShowReportModal(true)} 
+          className="absolute top-4 right-4 px-3 py-1.5 rounded-full bg-card/20 hover:bg-card/30 transition-colors text-xs font-medium text-primary-foreground"
+        >
+          Report
         </button>
         
         {recipient && (
-          <>
-            <div className="relative">
-              <img
-                src={recipient.avatar_url || 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=100'}
-                alt={recipient.username}
-                className="w-10 h-10 rounded-full object-cover ring-2 ring-background"
-              />
-              <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-background" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <h2 className="text-sm font-bold text-foreground truncate">{recipient.username}</h2>
-              <p className="text-[10px] text-muted-foreground">Active now</p>
-            </div>
-          </>
+          <div className="flex flex-col items-center text-center pt-8">
+            <img
+              src={recipient.avatar_url || 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=100'}
+              alt={recipient.username}
+              className="w-16 h-16 rounded-full object-cover ring-4 ring-card/30 mb-2"
+            />
+            <h2 className="text-base font-bold text-primary-foreground">{recipient.username}</h2>
+          </div>
         )}
       </div>
 
-      {/* Booking details banner */}
+      {/* Booking details banner with payment warning */}
       {bookingDetails && (
-        <div className="bg-primary/10 border-b border-primary/20 p-3 flex-shrink-0">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-primary/20 rounded-lg flex items-center justify-center flex-shrink-0">
-              <Calendar className="w-4 h-4 text-primary" />
+        <div className="bg-primary/10 border-b border-primary/20 flex-shrink-0">
+          <div className="p-3">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 bg-primary/20 rounded-lg flex items-center justify-center flex-shrink-0">
+                <Calendar className="w-4 h-4 text-primary" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-xs font-bold text-foreground truncate">{bookingDetails.class_name}</p>
+                <p className="text-[10px] text-muted-foreground">
+                  {new Date(bookingDetails.booking_date).toLocaleDateString()} • {bookingDetails.booking_time}
+                </p>
+              </div>
+              <span className="px-2 py-1 bg-primary/20 rounded-md text-[10px] font-mono font-bold text-primary flex-shrink-0">
+                #{bookingDetails.verification_code}
+              </span>
             </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-xs font-bold text-foreground truncate">{bookingDetails.class_name}</p>
-              <p className="text-[10px] text-muted-foreground">
-                {new Date(bookingDetails.booking_date).toLocaleDateString()} • {bookingDetails.booking_time}
+          </div>
+          <div className="px-3 pb-3">
+            <div className="bg-amber-500/10 border border-amber-500/20 rounded-lg px-3 py-2 flex items-start gap-2">
+              <span className="text-amber-600 text-lg flex-shrink-0">⚠️</span>
+              <p className="text-[10px] text-amber-800 dark:text-amber-200 leading-relaxed">
+                <strong className="font-semibold">Payment at Meeting Only:</strong> Pay your trainer in person at the class. Never send money through the chat or other methods.
               </p>
             </div>
-            <span className="px-2 py-1 bg-primary/20 rounded-md text-[10px] font-mono font-bold text-primary flex-shrink-0">
-              #{bookingDetails.verification_code}
-            </span>
           </div>
         </div>
       )}
@@ -421,15 +432,15 @@ const ChatConversationPage: React.FC = () => {
         )}
       </div>
 
-      {/* Modern Input Area */}
-      <div className="px-3 py-3 bg-card border-t border-border pb-[calc(5rem+env(safe-area-inset-bottom))] flex-shrink-0">
+      {/* Input Area - No bottom nav needed */}
+      <div className="px-3 py-3 bg-card border-t border-border flex-shrink-0">
         <div className="flex items-end gap-2 bg-background rounded-2xl p-2 border border-border focus-within:border-primary/50 transition-colors">
           <textarea
             ref={inputRef}
             value={newMessage}
             onChange={handleInput}
             onKeyPress={handleKeyPress}
-            placeholder="Message..."
+            placeholder="Type your message..."
             rows={1}
             className="flex-1 resize-none px-2 py-1.5 bg-transparent focus:outline-none text-sm max-h-[120px] overflow-y-auto text-foreground placeholder-muted-foreground"
             disabled={sending}
