@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Message } from '../types';
-import { Send, Sparkles, Loader, ArrowLeft, Bot, User } from 'lucide-react';
+import { Send, Sparkles, Loader, Bot, User } from 'lucide-react';
 
 interface AICoachPageProps {
     messages: Message[];
@@ -47,19 +47,8 @@ const AICoachPage: React.FC<AICoachPageProps> = ({ messages, onSendMessage, isLo
 
     return (
         <div className="flex flex-col h-screen bg-background">
-            {/* Header */}
-            <div className="bg-gradient-to-br from-primary to-accent px-4 py-4 relative">
-                <button 
-                    onClick={onClose} 
-                    className="absolute top-4 left-4 p-2 rounded-full bg-card/20 hover:bg-card/30 transition-colors"
-                >
-                    <ArrowLeft className="w-5 h-5 text-primary-foreground" />
-                </button>
-                <h1 className="text-lg font-semibold text-primary-foreground text-center">AI Fitness Coach</h1>
-            </div>
-            
             {/* Messages Area */}
-            <div className="flex-1 overflow-y-auto px-4 py-6 space-y-4 pb-32 max-w-4xl mx-auto w-full">
+            <div className="flex-1 overflow-y-auto px-4 py-6 space-y-4 pb-6 max-w-4xl mx-auto w-full">
                 {messages.length === 0 && !isLoading && (
                     <div className="flex flex-col items-center justify-center h-full text-center px-4 animate-fade-in">
                         <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-primary/10 to-accent/10 flex items-center justify-center mb-4">
@@ -150,7 +139,7 @@ const AICoachPage: React.FC<AICoachPageProps> = ({ messages, onSendMessage, isLo
             </div>
 
             {/* Input Area */}
-            <div className="fixed bottom-16 left-0 right-0 bg-card border-t border-border shadow-2xl pb-safe">
+            <div className="fixed bottom-0 left-0 right-0 bg-card border-t border-border shadow-2xl pb-safe">
                 <div className="max-w-4xl mx-auto px-4 py-4">
                     <div className="flex items-end gap-2 bg-muted rounded-2xl p-2 border border-border focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20 transition-all">
                         <textarea

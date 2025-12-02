@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate, useParams } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate, useParams, useLocation } from 'react-router-dom';
 import { User, X } from 'lucide-react';
 import { AuthProvider, useAuth } from './src/hooks/useAuth';
 import { ThemeProvider } from './src/hooks/useTheme';
@@ -138,6 +138,7 @@ const AppRoutes = () => {
   const { user } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
+  const location = useLocation();
   const [userRole, setUserRole] = useState<UserRole>('student');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [bookingModalData, setBookingModalData] = useState<{ trainer: Trainer; cls: Class } | null>(null);
@@ -560,7 +561,7 @@ const AppRoutes = () => {
           }
         />
       </Routes>
-      {user && <BottomNav />}
+      {user && location.pathname !== '/ai-coach' && location.pathname !== '/meal-planner' && <BottomNav />}
       {bookingModalData && (
         <BookingModal
           bookingTarget={bookingModalData}
