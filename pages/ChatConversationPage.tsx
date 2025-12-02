@@ -457,51 +457,67 @@ const ChatConversationPage: React.FC = () => {
 
   return (
     <div className="bg-background h-screen flex flex-col overflow-hidden">
-      {/* Header - Minimalist with detailed trainer info */}
-      <div className="bg-card border-b border-border px-4 py-3 relative flex-shrink-0">
-        <button 
-          onClick={() => navigate('/messages')} 
-          className="absolute top-3 left-4 p-2 rounded-lg hover:bg-muted transition-colors"
-        >
-          <ArrowLeft className="w-5 h-5 text-foreground" />
-        </button>
-        
-        <button 
-          onClick={() => navigate(`/messages/${recipientId}/info`)} 
-          className="absolute top-3 right-4 p-2 rounded-lg hover:bg-muted transition-colors"
-        >
-          <MoreVertical className="w-5 h-5 text-foreground" />
-        </button>
-        
-        {recipient && (
-          <div className="flex items-center gap-3 pt-1">
-            <div className="relative">
-              <img
-                src={recipient.avatar_url || 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=100'}
-                alt={recipient.username}
-                className="w-14 h-14 rounded-full object-cover border-2 border-border"
-              />
-              <span className="absolute bottom-0 right-0 text-sm">{onlineStatus.dot}</span>
-            </div>
-            <div className="flex-1 min-w-0">
-              <h2 className="text-sm font-bold text-foreground truncate">{recipient.username}</h2>
-              <p className={`text-xs ${onlineStatus.color} font-medium`}>{onlineStatus.text}</p>
-              {recipient.location && (
-                <p className="text-xs text-muted-foreground truncate">📍 {recipient.location}</p>
-              )}
-              {recipient.specialty && recipient.specialty.length > 0 && (
-                <p className="text-xs text-muted-foreground truncate">
-                  {recipient.specialty.slice(0, 2).join(', ')}
-                </p>
-              )}
-              {recipient.rating && (
-                <p className="text-xs text-muted-foreground">
-                  ⭐ {recipient.rating.toFixed(1)}
-                </p>
-              )}
-            </div>
-          </div>
-        )}
+      {/* Header - WhatsApp/Telegram style */}
+      <div className="bg-card border-b border-border flex-shrink-0">
+        <div className="flex items-center gap-3 px-3 py-2.5">
+          {/* Back Button */}
+          <button 
+            onClick={() => navigate('/messages')} 
+            className="p-2 -ml-2 rounded-full hover:bg-muted transition-colors flex-shrink-0"
+            aria-label="Back to messages"
+          >
+            <ArrowLeft className="w-5 h-5 text-foreground" />
+          </button>
+          
+          {/* Clickable Trainer Info - opens profile */}
+          {recipient && (
+            <button
+              onClick={() => navigate(`/messages/${recipientId}/info`)}
+              className="flex items-center gap-3 flex-1 min-w-0 py-1 px-2 -mx-2 rounded-lg hover:bg-muted/50 transition-colors text-left"
+            >
+              {/* Avatar with online status */}
+              <div className="relative flex-shrink-0">
+                <img
+                  src={recipient.avatar_url || 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=100'}
+                  alt={recipient.username}
+                  className="w-10 h-10 rounded-full object-cover"
+                />
+                <span className="absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-card flex items-center justify-center text-[8px] leading-none">
+                  {onlineStatus.dot}
+                </span>
+              </div>
+              
+              {/* Trainer Details */}
+              <div className="flex-1 min-w-0">
+                <h2 className="text-sm font-semibold text-foreground truncate">
+                  {recipient.username}
+                </h2>
+                <div className="flex items-center gap-2 text-xs">
+                  <span className={`${onlineStatus.color} font-medium`}>
+                    {onlineStatus.text}
+                  </span>
+                  {recipient.rating && (
+                    <>
+                      <span className="text-muted-foreground">•</span>
+                      <span className="text-muted-foreground">
+                        ⭐ {recipient.rating.toFixed(1)}
+                      </span>
+                    </>
+                  )}
+                </div>
+              </div>
+            </button>
+          )}
+          
+          {/* More Options Button */}
+          <button 
+            onClick={() => navigate(`/messages/${recipientId}/info`)} 
+            className="p-2 -mr-2 rounded-full hover:bg-muted transition-colors flex-shrink-0"
+            aria-label="Chat options"
+          >
+            <MoreVertical className="w-5 h-5 text-foreground" />
+          </button>
+        </div>
       </div>
 
       {/* Booking details banner with payment warning */}
