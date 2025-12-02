@@ -56,10 +56,40 @@ export type Database = {
         }
         Relationships: []
       }
+      booking_cancellations_tracker: {
+        Row: {
+          cancellation_count: number
+          cancellation_date: string
+          created_at: string | null
+          id: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          cancellation_count?: number
+          cancellation_date?: string
+          created_at?: string | null
+          id?: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          cancellation_count?: number
+          cancellation_date?: string
+          created_at?: string | null
+          id?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       bookings: {
         Row: {
           booking_date: string
           booking_time: string
+          cancellation_reason: string | null
+          cancelled_at: string | null
+          cancelled_by: string | null
           class_id: string
           client_id: string
           created_at: string | null
@@ -74,6 +104,9 @@ export type Database = {
         Insert: {
           booking_date: string
           booking_time: string
+          cancellation_reason?: string | null
+          cancelled_at?: string | null
+          cancelled_by?: string | null
           class_id: string
           client_id: string
           created_at?: string | null
@@ -88,6 +121,9 @@ export type Database = {
         Update: {
           booking_date?: string
           booking_time?: string
+          cancellation_reason?: string | null
+          cancelled_at?: string | null
+          cancelled_by?: string | null
           class_id?: string
           client_id?: string
           created_at?: string | null
@@ -938,6 +974,18 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      can_cancel_booking: {
+        Args: { _booking_id: string; _user_id: string }
+        Returns: Json
+      }
+      cancel_booking: {
+        Args: {
+          _booking_id: string
+          _cancellation_reason: string
+          _user_id: string
+        }
+        Returns: Json
+      }
       generate_verification_code: { Args: never; Returns: string }
       has_role: {
         Args: {

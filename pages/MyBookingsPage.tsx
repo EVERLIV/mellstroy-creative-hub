@@ -11,6 +11,7 @@ import BookingCardSkeleton from '../components/BookingCardSkeleton';
 import { usePullToRefresh } from '../src/hooks/usePullToRefresh';
 import PullToRefreshIndicator from '../components/PullToRefreshIndicator';
 import EmptyBookingsState from '../components/EmptyBookingsState';
+import CancelBookingModal from '../components/CancelBookingModal';
 
 // Extended interfaces for this page
 interface BookingData {
@@ -44,57 +45,6 @@ interface TrainerData {
 }
 
 type BookingInfo = { trainer: TrainerData; cls: ClassData; booking: BookingData; student?: TrainerData };
-
-interface CancelBookingModalProps {
-    bookingInfo: BookingInfo;
-    onConfirm: (trainerId: string, classId: string, date: string, time: string) => void;
-    onClose: () => void;
-}
-
-const CancelBookingModal: React.FC<CancelBookingModalProps> = ({ bookingInfo, onConfirm, onClose }) => {
-    const { trainer, cls, booking } = bookingInfo;
-
-    const handleConfirm = () => {
-        onConfirm(trainer.id, cls.id, booking.date, booking.time);
-        onClose();
-    };
-
-    return (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 pb-20" onClick={onClose}>
-            <div className="bg-card rounded-lg w-full max-w-sm overflow-hidden shadow-lg" onClick={e => e.stopPropagation()}>
-                <div className="px-4 py-3 border-b border-border flex items-center justify-between">
-                    <div className="flex-1">
-                        <h2 className="text-base font-bold text-foreground text-center">Cancel Booking</h2>
-                        <p className="text-xs text-muted-foreground text-center mt-1">{cls.name}</p>
-                        <p className="text-xs text-muted-foreground text-center">{booking.date} at {booking.time}</p>
-                    </div>
-                    <button onClick={onClose} className="p-2 -mr-2 rounded-lg hover:bg-muted transition-colors">
-                        <X className="w-5 h-5 text-foreground" />
-                    </button>
-                </div>
-                <div className="p-4">
-                    <p className="text-sm text-foreground text-center">
-                        Are you sure you want to cancel this booking? This action cannot be undone.
-                    </p>
-                </div>
-                <div className="px-4 py-3 bg-muted/30 border-t border-border flex gap-2">
-                    <button 
-                        onClick={onClose} 
-                        className="flex-1 bg-card border border-border text-foreground text-xs font-semibold py-2.5 rounded-lg hover:bg-muted/50 active:scale-95 transition-all duration-200"
-                    >
-                        Keep Booking
-                    </button>
-                    <button 
-                        onClick={handleConfirm} 
-                        className="flex-1 bg-destructive text-destructive-foreground text-xs font-semibold py-2.5 rounded-lg hover:bg-destructive/90 active:scale-95 transition-all duration-200"
-                    >
-                        Cancel Booking
-                    </button>
-                </div>
-            </div>
-        </div>
-    );
-};
 
 interface BookedClassCardProps {
     bookingInfo: BookingInfo;
@@ -331,7 +281,7 @@ const MyBookingsPage: React.FC = () => {
     const navigate = useNavigate();
     const { toast } = useToast();
     const [activeTab, setActiveTab] = useState<'upcoming' | 'past'>('upcoming');
-    const [cancelBookingTarget, setCancelBookingTarget] = useState<BookingInfo | null>(null);
+    const [cancelBookingId, setCancelBookingId] = useState<string | null>(null);
     const [verificationCode, setVerificationCode] = useState<string | null>(null);
     const [verificationBookingId, setVerificationBookingId] = useState<string | null>(null);
     const [showVerifyModal, setShowVerifyModal] = useState<BookingInfo | null>(null);
@@ -534,36 +484,12 @@ const MyBookingsPage: React.FC = () => {
     };
 
     const handleStartCancellation = (bookingInfo: BookingInfo) => {
-        setCancelBookingTarget(bookingInfo);
+        setCancelBookingId(bookingInfo.booking.id);
     };
 
-    const handleCancelBooking = async (trainerId: string, classId: string, date: string, time: string) => {
-        if (!user) return;
-
-        try {
-            const { error } = await supabase
-                .from('bookings')
-                .delete()
-                .eq('client_id', user.id)
-                .eq('class_id', classId)
-                .eq('booking_date', new Date(date).toISOString().split('T')[0])
-                .eq('booking_time', time);
-
-            if (error) throw error;
-
-            toast({
-                title: "Success",
-                description: "Booking cancelled successfully"
-            });
-
-            loadBookings();
-        } catch (error) {
-            toast({
-                title: "Error",
-                description: "Failed to cancel booking",
-                variant: "destructive"
-            });
-        }
+    const handleCancelBookingSuccess = () => {
+        setCancelBookingId(null);
+        loadBookings();
     };
 
     const handleOpenReviewModal = (trainer: TrainerData, cls: ClassData, booking: BookingData) => {
@@ -684,11 +610,12 @@ const MyBookingsPage: React.FC = () => {
                 </div>
             </div>
 
-            {cancelBookingTarget && (
+            {cancelBookingId && (
                 <CancelBookingModal 
-                    bookingInfo={cancelBookingTarget} 
-                    onConfirm={handleCancelBooking} 
-                    onClose={() => setCancelBookingTarget(null)} 
+                    isOpen={true}
+                    bookingId={cancelBookingId}
+                    onClose={() => setCancelBookingId(null)}
+                    onSuccess={handleCancelBookingSuccess}
                 />
             )}
 
