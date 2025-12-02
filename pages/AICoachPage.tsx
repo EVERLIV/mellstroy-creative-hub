@@ -158,20 +158,25 @@ const AICoachPage: React.FC<AICoachPageProps> = ({ messages, onSendMessage, isLo
     };
 
     return (
-        <div className="flex flex-col h-screen bg-background">
+        <div className="flex flex-col h-screen bg-gradient-to-b from-background via-background to-muted/20">
             {/* Header */}
-            <div className="flex items-center justify-between px-4 py-3 bg-card shadow-sm z-20 flex-shrink-0 border-b border-border">
+            <div className="flex items-center justify-between px-4 sm:px-6 py-4 bg-card/80 backdrop-blur-xl shadow-lg z-20 flex-shrink-0 border-b border-border/50">
                 <button 
                     onClick={onClose}
-                    className="w-9 h-9 flex items-center justify-center rounded-lg hover:bg-muted transition-colors"
+                    className="w-10 h-10 flex items-center justify-center rounded-xl bg-muted/50 hover:bg-muted hover:scale-105 transition-all duration-200 active:scale-95"
                     aria-label="Go back"
                 >
                     <ArrowLeft className="w-5 h-5 text-foreground" />
                 </button>
-                <h1 className="text-lg font-bold text-foreground">AI Fitness Coach</h1>
+                <div className="flex items-center gap-2">
+                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center">
+                        <Bot className="w-5 h-5 text-primary-foreground" />
+                    </div>
+                    <h1 className="text-lg sm:text-xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">AI Coach</h1>
+                </div>
                 <button 
                     onClick={() => navigate('/ai-coach/profile')}
-                    className="w-9 h-9 flex items-center justify-center rounded-lg hover:bg-muted transition-colors"
+                    className="w-10 h-10 flex items-center justify-center rounded-xl bg-muted/50 hover:bg-muted hover:scale-105 transition-all duration-200 active:scale-95"
                     aria-label="Profile settings"
                 >
                     <Settings className="w-5 h-5 text-foreground" />
@@ -179,31 +184,35 @@ const AICoachPage: React.FC<AICoachPageProps> = ({ messages, onSendMessage, isLo
             </div>
             
             {/* Messages Area */}
-            <div className="flex-1 overflow-y-auto px-4 py-6 space-y-4 pb-6 max-w-4xl mx-auto w-full">
+            <div className="flex-1 overflow-y-auto px-4 sm:px-6 py-6 space-y-6 pb-6 max-w-4xl mx-auto w-full">
                 {messages.length === 0 && !isLoading && (
                     <div className="flex flex-col items-center justify-center h-full text-center px-4 animate-fade-in">
-                        <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-primary/10 to-accent/10 flex items-center justify-center mb-4">
-                            <Sparkles className="w-10 h-10 text-primary" />
+                        <div className="relative mb-6">
+                            <div className="absolute inset-0 bg-gradient-to-br from-primary/20 to-accent/20 rounded-3xl blur-2xl"></div>
+                            <div className="relative w-24 h-24 rounded-3xl bg-gradient-to-br from-primary/10 to-accent/10 border border-primary/20 flex items-center justify-center backdrop-blur-sm">
+                                <Sparkles className="w-12 h-12 text-primary animate-pulse" />
+                            </div>
                         </div>
-                        <h3 className="text-lg font-bold text-foreground mb-2">Start a conversation</h3>
-                        <p className="text-sm text-muted-foreground max-w-sm mb-6">
-                            Ask me anything about fitness, nutrition, workout plans, or health tips!
+                        <h3 className="text-xl sm:text-2xl font-bold text-foreground mb-3">Welcome to AI Coach</h3>
+                        <p className="text-sm sm:text-base text-muted-foreground max-w-md mb-8 leading-relaxed">
+                            Your personal fitness assistant. Ask about workouts, nutrition, or get customized training plans!
                         </p>
-                        <div className="grid grid-cols-1 gap-2 w-full max-w-sm">
+                        <div className="grid grid-cols-1 gap-3 w-full max-w-md">
                             {[
-                                "How do I build muscle?",
-                                "Create a workout plan for me",
-                                "What should I eat pre-workout?"
+                                { text: "How do I build muscle?", icon: "💪" },
+                                { text: "Create a workout plan for me", icon: "🏋️" },
+                                { text: "What should I eat pre-workout?", icon: "🥗" }
                             ].map((suggestion, i) => (
                                 <button
                                     key={i}
                                     onClick={() => {
-                                        setMessage(suggestion);
+                                        setMessage(suggestion.text);
                                         setTimeout(() => handleSend(), 100);
                                     }}
-                                    className="px-4 py-3 bg-card rounded-xl text-sm text-foreground hover:bg-muted transition-colors text-left border border-border shadow-sm"
+                                    className="group px-5 py-4 bg-card/50 backdrop-blur-sm rounded-2xl text-sm text-foreground hover:bg-card transition-all duration-200 text-left border border-border/50 hover:border-primary/30 shadow-sm hover:shadow-md hover:scale-[1.02] active:scale-[0.98]"
                                 >
-                                    {suggestion}
+                                    <span className="mr-2 text-lg">{suggestion.icon}</span>
+                                    <span className="group-hover:text-primary transition-colors">{suggestion.text}</span>
                                 </button>
                             ))}
                         </div>
@@ -218,32 +227,32 @@ const AICoachPage: React.FC<AICoachPageProps> = ({ messages, onSendMessage, isLo
                     return (
                         <div 
                             key={msg.id} 
-                            className={`flex items-start gap-3 animate-fade-in ${msg.sender === 'user' ? 'flex-row-reverse' : 'flex-row'}`}
+                            className={`flex items-start gap-3 sm:gap-4 animate-fade-in ${msg.sender === 'user' ? 'flex-row-reverse' : 'flex-row'}`}
                             style={{ animationDelay: `${index * 0.05}s` }}
                         >
                             {/* Avatar */}
-                            <div className={`w-10 h-10 rounded-xl flex-shrink-0 flex items-center justify-center shadow-md ${
+                            <div className={`w-9 h-9 sm:w-10 sm:h-10 rounded-2xl flex-shrink-0 flex items-center justify-center shadow-lg transition-transform hover:scale-110 ${
                                 msg.sender === 'user' 
-                                    ? 'bg-gradient-to-br from-primary to-accent' 
-                                    : 'bg-gradient-to-br from-primary/10 to-accent/10'
+                                    ? 'bg-gradient-to-br from-primary to-accent ring-2 ring-primary/20' 
+                                    : 'bg-gradient-to-br from-primary/10 to-accent/10 border border-primary/20'
                             }`}>
                                 {msg.sender === 'user' ? (
-                                    <User className="w-5 h-5 text-primary-foreground" />
+                                    <User className="w-4 h-4 sm:w-5 sm:h-5 text-primary-foreground" />
                                 ) : (
-                                    <Bot className="w-5 h-5 text-primary" />
+                                    <Bot className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
                                 )}
                             </div>
 
                             {/* Message Bubble */}
-                            <div className="flex flex-col max-w-[80%] flex-1">
+                            <div className="flex flex-col max-w-[85%] sm:max-w-[80%] flex-1">
                                 <div className="relative group">
-                                    <div className={`px-4 py-3 rounded-2xl shadow-md ${
+                                    <div className={`px-4 sm:px-5 py-3 sm:py-4 rounded-2xl shadow-lg transition-all duration-200 ${
                                         msg.sender === 'user' 
-                                            ? 'bg-gradient-to-br from-primary to-accent text-primary-foreground rounded-tr-md' 
-                                            : 'bg-card text-foreground rounded-tl-md border border-border'
+                                            ? 'bg-gradient-to-br from-primary via-primary to-accent text-primary-foreground rounded-tr-sm hover:shadow-xl' 
+                                            : 'bg-card/80 backdrop-blur-sm text-foreground rounded-tl-sm border border-border/50 hover:border-primary/30 hover:shadow-xl'
                                     }`}>
                                         {msg.sender === 'user' ? (
-                                            <p className="text-sm leading-relaxed whitespace-pre-wrap break-words">
+                                            <p className="text-sm sm:text-base leading-relaxed whitespace-pre-wrap break-words">
                                                 {msg.text}
                                             </p>
                                         ) : (
@@ -255,7 +264,7 @@ const AICoachPage: React.FC<AICoachPageProps> = ({ messages, onSendMessage, isLo
                                     {msg.sender === 'trainer' && (
                                         <button
                                             onClick={() => handleCopyMessage(msg.text, msg.id)}
-                                            className="absolute -right-10 top-3 p-2 rounded-lg bg-card border border-border hover:bg-muted transition-all opacity-0 group-hover:opacity-100 shadow-sm"
+                                            className="absolute -right-10 sm:-right-12 top-3 p-2 sm:p-2.5 rounded-xl bg-card/90 backdrop-blur-sm border border-border/50 hover:bg-muted hover:border-primary/30 transition-all opacity-0 group-hover:opacity-100 shadow-lg hover:scale-110 active:scale-95"
                                             aria-label="Copy message"
                                         >
                                             {isCopied ? (
@@ -266,8 +275,8 @@ const AICoachPage: React.FC<AICoachPageProps> = ({ messages, onSendMessage, isLo
                                         </button>
                                     )}
                                 </div>
-                                <span className={`text-xs mt-1 px-2 ${
-                                    msg.sender === 'user' ? 'text-right text-muted-foreground' : 'text-left text-muted-foreground'
+                                <span className={`text-xs mt-2 px-2 font-medium ${
+                                    msg.sender === 'user' ? 'text-right text-muted-foreground/70' : 'text-left text-muted-foreground/70'
                                 }`}>
                                     {msg.timestamp}
                                 </span>
@@ -278,18 +287,13 @@ const AICoachPage: React.FC<AICoachPageProps> = ({ messages, onSendMessage, isLo
 
                 {/* Loading Indicator */}
                 {isLoading && (
-                    <div className="flex items-start gap-3 animate-fade-in">
-                        <div className="w-10 h-10 rounded-xl flex-shrink-0 flex items-center justify-center bg-gradient-to-br from-primary/10 to-accent/10 shadow-md">
-                            <Bot className="w-5 h-5 text-primary" />
+                    <div className="flex items-center gap-3 sm:gap-4 animate-fade-in">
+                        <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-2xl flex-shrink-0 flex items-center justify-center shadow-lg bg-gradient-to-br from-primary/10 to-accent/10 border border-primary/20 animate-pulse">
+                            <Bot className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
                         </div>
-                        <div className="flex flex-col max-w-[75%]">
-                            <div className="px-4 py-3 rounded-2xl rounded-tl-md bg-card shadow-md border border-border">
-                                <div className="flex items-center space-x-2">
-                                    <div className="w-2 h-2 bg-gradient-to-r from-primary to-accent rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
-                                    <div className="w-2 h-2 bg-gradient-to-r from-primary to-accent rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
-                                    <div className="w-2 h-2 bg-gradient-to-r from-primary to-accent rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
-                                </div>
-                            </div>
+                        <div className="flex gap-3 items-center px-5 py-4 rounded-2xl bg-card/80 backdrop-blur-sm border border-border/50 shadow-lg">
+                            <Loader className="w-5 h-5 text-primary animate-spin" />
+                            <span className="text-sm sm:text-base text-muted-foreground font-medium">AI is thinking...</span>
                         </div>
                     </div>
                 )}
@@ -297,32 +301,27 @@ const AICoachPage: React.FC<AICoachPageProps> = ({ messages, onSendMessage, isLo
             </div>
 
             {/* Input Area */}
-            <div className="fixed bottom-0 left-0 right-0 bg-card border-t border-border pb-safe flex-shrink-0">
-                <div className="max-w-4xl mx-auto px-4 py-3">
-                    <div className="flex items-end gap-2">
+            <div className="flex-shrink-0 border-t border-border/50 bg-card/80 backdrop-blur-xl p-4 sm:p-5 shadow-2xl">
+                <div className="max-w-4xl mx-auto flex items-end gap-3">
+                    <div className="flex-1 relative">
                         <textarea
                             ref={textareaRef}
                             value={message}
                             onChange={handleInput}
                             onKeyPress={handleKeyPress}
-                            placeholder="Ask your fitness coach anything..."
+                            placeholder="Ask about fitness, nutrition, workouts..."
+                            className="w-full px-4 sm:px-5 py-3 sm:py-4 rounded-2xl border border-border/50 bg-background/50 backdrop-blur-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary/50 focus:bg-background transition-all duration-200 resize-none min-h-[52px] max-h-[120px] text-sm sm:text-base"
                             rows={1}
-                            className="flex-1 bg-muted border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary resize-none max-h-32 text-sm py-2 px-3 text-foreground placeholder:text-muted-foreground"
-                            style={{ minHeight: '40px' }}
                         />
-                        <button 
-                            onClick={handleSend} 
-                            disabled={!message.trim() || isLoading}
-                            className="w-10 h-10 flex-shrink-0 flex items-center justify-center rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed" 
-                            aria-label="Send message"
-                        >
-                            {isLoading ? (
-                                <Loader className="w-5 h-5 animate-spin" />
-                            ) : (
-                                <Send className="w-5 h-5" />
-                            )}
-                        </button>
                     </div>
+                    <button
+                        onClick={handleSend}
+                        disabled={!message.trim() || isLoading}
+                        className="w-12 h-12 sm:w-14 sm:h-14 flex items-center justify-center rounded-2xl bg-gradient-to-br from-primary via-primary to-accent text-primary-foreground hover:shadow-xl hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 transition-all duration-200 active:scale-95"
+                        aria-label="Send message"
+                    >
+                        <Send className="w-5 h-5 sm:w-6 sm:h-6" />
+                    </button>
                 </div>
             </div>
         </div>

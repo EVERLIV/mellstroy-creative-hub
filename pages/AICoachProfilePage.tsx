@@ -125,22 +125,22 @@ export default function AICoachProfilePage() {
   };
 
   return (
-    <div className="h-screen flex flex-col overflow-hidden bg-background">
+    <div className="h-screen flex flex-col overflow-hidden bg-gradient-to-b from-background via-background to-muted/20">
       {/* Header */}
-      <div className="flex-shrink-0 border-b border-border bg-card/50 backdrop-blur-sm">
-        <div className="flex items-center justify-between p-4">
+      <div className="flex-shrink-0 border-b border-border/50 bg-card/80 backdrop-blur-xl shadow-lg">
+        <div className="flex items-center justify-between p-4 sm:p-5">
           <button
             onClick={() => navigate(-1)}
-            className="p-2 hover:bg-muted rounded-lg transition-colors"
+            className="w-10 h-10 flex items-center justify-center rounded-xl bg-muted/50 hover:bg-muted hover:scale-105 transition-all duration-200 active:scale-95"
           >
             <ArrowLeft className="w-5 h-5 text-foreground" />
           </button>
-          <h1 className="text-lg font-semibold text-foreground">AI Coach Profile</h1>
+          <h1 className="text-lg sm:text-xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">AI Coach Settings</h1>
           <Button
             onClick={handleSave}
             disabled={loading}
             size="sm"
-            className="bg-primary hover:bg-primary/90"
+            className="bg-gradient-to-br from-primary to-accent hover:shadow-lg hover:scale-105 transition-all duration-200 active:scale-95"
           >
             <Save className="w-4 h-4 mr-2" />
             Save
@@ -150,21 +150,21 @@ export default function AICoachProfilePage() {
 
       {/* Content */}
       <div className="flex-1 overflow-y-auto min-h-0 pb-[calc(5rem+env(safe-area-inset-bottom))]">
-        <div className="p-4 space-y-6">
+        <div className="max-w-3xl mx-auto p-4 sm:p-6 space-y-6 sm:space-y-8">
           {/* Fitness Level */}
-          <div>
-            <label className="block text-sm font-medium text-foreground mb-2">
-              Fitness Level
+          <div className="space-y-3">
+            <label className="block text-sm font-semibold text-foreground">
+              💪 Fitness Level
             </label>
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-3 gap-2 sm:gap-3">
               {FITNESS_LEVELS.map(level => (
                 <button
                   key={level}
                   onClick={() => setProfile({ ...profile, fitness_level: level })}
-                  className={`p-3 rounded-lg border transition-all capitalize ${
+                  className={`p-3 sm:p-4 rounded-xl border-2 transition-all duration-200 capitalize font-medium text-sm sm:text-base ${
                     profile.fitness_level === level
-                      ? 'bg-primary text-primary-foreground border-primary'
-                      : 'bg-card border-border text-foreground hover:border-primary/50'
+                      ? 'bg-gradient-to-br from-primary to-accent text-primary-foreground border-primary shadow-lg scale-105'
+                      : 'bg-card/50 backdrop-blur-sm border-border text-foreground hover:border-primary/50 hover:scale-105 active:scale-95'
                   }`}
                 >
                   {level}
@@ -174,11 +174,11 @@ export default function AICoachProfilePage() {
           </div>
 
           {/* Goals */}
-          <div>
-            <label className="block text-sm font-medium text-foreground mb-2">
-              Goals (select multiple)
+          <div className="space-y-3">
+            <label className="block text-sm font-semibold text-foreground">
+              🎯 Goals <span className="text-xs text-muted-foreground font-normal">(select multiple)</span>
             </label>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-2 gap-2 sm:gap-3">
               {GOALS.map(goal => (
                 <button
                   key={goal}
@@ -186,10 +186,10 @@ export default function AICoachProfilePage() {
                     ...profile,
                     goals: toggleArrayValue(profile.goals, goal)
                   })}
-                  className={`p-3 rounded-lg border transition-all text-sm ${
+                  className={`p-3 sm:p-4 rounded-xl border-2 transition-all duration-200 text-xs sm:text-sm font-medium ${
                     profile.goals.includes(goal)
-                      ? 'bg-primary text-primary-foreground border-primary'
-                      : 'bg-card border-border text-foreground hover:border-primary/50'
+                      ? 'bg-gradient-to-br from-primary to-accent text-primary-foreground border-primary shadow-lg scale-105'
+                      : 'bg-card/50 backdrop-blur-sm border-border text-foreground hover:border-primary/50 hover:scale-105 active:scale-95'
                   }`}
                 >
                   {goal.replace(/_/g, ' ')}
@@ -199,19 +199,19 @@ export default function AICoachProfilePage() {
           </div>
 
           {/* Equipment Access */}
-          <div>
-            <label className="block text-sm font-medium text-foreground mb-2">
-              Equipment Access
+          <div className="space-y-3">
+            <label className="block text-sm font-semibold text-foreground">
+              🏋️ Equipment Access
             </label>
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-3 gap-2 sm:gap-3">
               {EQUIPMENT_OPTIONS.map(option => (
                 <button
                   key={option}
                   onClick={() => setProfile({ ...profile, equipment_access: option })}
-                  className={`p-3 rounded-lg border transition-all capitalize ${
+                  className={`p-3 sm:p-4 rounded-xl border-2 transition-all duration-200 capitalize font-medium text-sm sm:text-base ${
                     profile.equipment_access === option
-                      ? 'bg-primary text-primary-foreground border-primary'
-                      : 'bg-card border-border text-foreground hover:border-primary/50'
+                      ? 'bg-gradient-to-br from-primary to-accent text-primary-foreground border-primary shadow-lg scale-105'
+                      : 'bg-card/50 backdrop-blur-sm border-border text-foreground hover:border-primary/50 hover:scale-105 active:scale-95'
                   }`}
                 >
                   {option}
@@ -221,33 +221,40 @@ export default function AICoachProfilePage() {
           </div>
 
           {/* Training Days */}
-          <div>
-            <label className="block text-sm font-medium text-foreground mb-2">
-              Training Days Per Week: {profile.training_days_per_week}
-            </label>
-            <input
-              type="range"
-              min="1"
-              max="7"
-              value={profile.training_days_per_week}
-              onChange={(e) => setProfile({
-                ...profile,
-                training_days_per_week: parseInt(e.target.value)
-              })}
-              className="w-full accent-primary"
-            />
-            <div className="flex justify-between text-xs text-muted-foreground mt-1">
-              <span>1 day</span>
-              <span>7 days</span>
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <label className="text-sm font-semibold text-foreground">
+                📅 Training Days Per Week
+              </label>
+              <span className="text-2xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+                {profile.training_days_per_week}
+              </span>
+            </div>
+            <div className="bg-card/50 backdrop-blur-sm rounded-xl p-4 border border-border/50">
+              <input
+                type="range"
+                min="1"
+                max="7"
+                value={profile.training_days_per_week}
+                onChange={(e) => setProfile({
+                  ...profile,
+                  training_days_per_week: parseInt(e.target.value)
+                })}
+                className="w-full h-2 accent-primary cursor-pointer"
+              />
+              <div className="flex justify-between text-xs text-muted-foreground mt-2 font-medium">
+                <span>1 day</span>
+                <span>7 days</span>
+              </div>
             </div>
           </div>
 
           {/* Dietary Restrictions */}
-          <div>
-            <label className="block text-sm font-medium text-foreground mb-2">
-              Dietary Restrictions
+          <div className="space-y-3">
+            <label className="block text-sm font-semibold text-foreground">
+              🥗 Dietary Restrictions
             </label>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-2 gap-2 sm:gap-3">
               {DIETARY_RESTRICTIONS.map(restriction => (
                 <button
                   key={restriction}
@@ -255,10 +262,10 @@ export default function AICoachProfilePage() {
                     ...profile,
                     dietary_restrictions: toggleArrayValue(profile.dietary_restrictions, restriction)
                   })}
-                  className={`p-3 rounded-lg border transition-all text-sm ${
+                  className={`p-3 sm:p-4 rounded-xl border-2 transition-all duration-200 text-xs sm:text-sm font-medium ${
                     profile.dietary_restrictions.includes(restriction)
-                      ? 'bg-primary text-primary-foreground border-primary'
-                      : 'bg-card border-border text-foreground hover:border-primary/50'
+                      ? 'bg-gradient-to-br from-primary to-accent text-primary-foreground border-primary shadow-lg scale-105'
+                      : 'bg-card/50 backdrop-blur-sm border-border text-foreground hover:border-primary/50 hover:scale-105 active:scale-95'
                   }`}
                 >
                   {restriction.replace(/_/g, ' ')}
@@ -268,19 +275,19 @@ export default function AICoachProfilePage() {
           </div>
 
           {/* Preferred Training Time */}
-          <div>
-            <label className="block text-sm font-medium text-foreground mb-2">
-              Preferred Training Time
+          <div className="space-y-3">
+            <label className="block text-sm font-semibold text-foreground">
+              ⏰ Preferred Training Time
             </label>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-2 gap-2 sm:gap-3">
               {TRAINING_TIMES.map(time => (
                 <button
                   key={time}
                   onClick={() => setProfile({ ...profile, preferred_training_time: time })}
-                  className={`p-3 rounded-lg border transition-all capitalize ${
+                  className={`p-3 sm:p-4 rounded-xl border-2 transition-all duration-200 capitalize font-medium text-sm sm:text-base ${
                     profile.preferred_training_time === time
-                      ? 'bg-primary text-primary-foreground border-primary'
-                      : 'bg-card border-border text-foreground hover:border-primary/50'
+                      ? 'bg-gradient-to-br from-primary to-accent text-primary-foreground border-primary shadow-lg scale-105'
+                      : 'bg-card/50 backdrop-blur-sm border-border text-foreground hover:border-primary/50 hover:scale-105 active:scale-95'
                   }`}
                 >
                   {time}
@@ -290,15 +297,15 @@ export default function AICoachProfilePage() {
           </div>
 
           {/* Health Limitations */}
-          <div>
-            <label className="block text-sm font-medium text-foreground mb-2">
-              Health Limitations or Injuries
+          <div className="space-y-3">
+            <label className="block text-sm font-semibold text-foreground">
+              🏥 Health Limitations or Injuries
             </label>
             <textarea
               value={profile.health_limitations}
               onChange={(e) => setProfile({ ...profile, health_limitations: e.target.value })}
               placeholder="Any injuries, health conditions, or limitations..."
-              className="w-full p-3 rounded-lg border border-border bg-card text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary min-h-[100px]"
+              className="w-full p-4 rounded-xl border-2 border-border/50 bg-card/50 backdrop-blur-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary/50 transition-all duration-200 min-h-[120px] text-sm sm:text-base"
             />
           </div>
         </div>
