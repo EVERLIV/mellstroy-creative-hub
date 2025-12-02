@@ -185,7 +185,7 @@ const DashboardPage: React.FC<DashboardPageProps> = () => {
 
   if (selectedVenue) {
     return (
-      <div className="bg-white h-screen flex flex-col overflow-hidden">
+      <div className="bg-background h-screen flex flex-col overflow-hidden">
         <VenueDetailPage 
           venue={selectedVenue}
           onBack={() => setSelectedVenue(null)}
@@ -195,25 +195,25 @@ const DashboardPage: React.FC<DashboardPageProps> = () => {
   }
 
   return (
-    <div className="bg-slate-50 min-h-screen pb-24">
+    <div className="bg-background min-h-screen pb-24">
       {/* Header Section */}
-      <div className="bg-gradient-to-br from-orange-500 to-pink-500 pt-6 pb-8 px-4">
+      <div className="bg-gradient-to-br from-primary to-accent pt-6 pb-8 px-4">
         <div className="max-w-2xl mx-auto">
           {/* Greeting */}
           <div className="mb-6">
-            <h1 className="text-2xl font-bold text-white">Welcome to RhinoFit!</h1>
-            <p className="text-white/90 text-sm mt-1">Find your perfect trainer today</p>
+            <h1 className="text-2xl font-bold text-primary-foreground">Welcome to RhinoFit!</h1>
+            <p className="text-primary-foreground/90 text-sm mt-1">Find your perfect trainer today</p>
           </div>
 
           {/* Search Bar */}
           <form onSubmit={handleSearch} className="relative">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search trainers, classes, or locations..."
-              className="w-full pl-12 pr-4 py-3.5 rounded-xl bg-white text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-white/50 shadow-lg"
+              className="w-full pl-12 pr-4 py-3.5 rounded-xl bg-card text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring shadow-lg"
             />
           </form>
         </div>
@@ -221,8 +221,8 @@ const DashboardPage: React.FC<DashboardPageProps> = () => {
 
       {/* Categories Grid */}
       <div className="px-4 -mt-4 mb-6">
-        <div className="bg-white rounded-2xl shadow-lg shadow-slate-200/60 p-4">
-          <h2 className="font-bold text-slate-900 text-base mb-4">Categories</h2>
+        <div className="bg-card rounded-2xl shadow-lg p-4">
+          <h2 className="font-bold text-foreground text-base mb-4">Categories</h2>
           <div className="grid grid-cols-4 gap-2">
             {categories.map((category) => {
               const IconComponent = category.icon;
@@ -233,26 +233,26 @@ const DashboardPage: React.FC<DashboardPageProps> = () => {
                   className="flex flex-col items-center gap-1 group"
                 >
                   {category.imageUrl ? (
-                    <div className="relative w-[70px] h-[70px] flex items-center justify-center p-1.5 bg-white rounded-xl overflow-hidden">
+                    <div className="relative w-[70px] h-[70px] flex items-center justify-center p-1.5 bg-card rounded-xl overflow-hidden">
                       <img 
                         src={category.imageUrl} 
                         alt={category.name}
                         className="w-full h-full object-contain transition-transform duration-200 group-hover:scale-105"
                       />
-                      <div className="absolute inset-0 bg-orange-500/0 group-hover:bg-orange-500/10 transition-colors duration-200 rounded-xl"></div>
+                      <div className="absolute inset-0 bg-primary/0 group-hover:bg-primary/10 transition-colors duration-200 rounded-xl"></div>
                       {category.id === 'gym' && (
-                        <div className="absolute -top-0.5 -right-0.5 bg-orange-500 text-white text-[8px] font-semibold px-2 py-0.5 rounded-md shadow-sm whitespace-nowrap">
+                        <div className="absolute -top-0.5 -right-0.5 bg-primary text-primary-foreground text-[8px] font-semibold px-2 py-0.5 rounded-md shadow-sm whitespace-nowrap">
                           Popular
                         </div>
                       )}
                     </div>
                   ) : (
-                    <div className="relative w-[70px] h-[70px] flex items-center justify-center rounded-xl bg-slate-100 overflow-hidden">
-                      <IconComponent className="w-8 h-8 text-slate-700" />
-                      <div className="absolute inset-0 bg-orange-500/0 group-hover:bg-orange-500/10 transition-colors duration-200"></div>
+                    <div className="relative w-[70px] h-[70px] flex items-center justify-center rounded-xl bg-muted overflow-hidden">
+                      <IconComponent className="w-8 h-8 text-foreground" />
+                      <div className="absolute inset-0 bg-primary/0 group-hover:bg-primary/10 transition-colors duration-200"></div>
                     </div>
                   )}
-                  <span className="text-xs font-medium text-slate-700 text-center">{category.name}</span>
+                  <span className="text-xs font-medium text-foreground text-center">{category.name}</span>
                 </button>
               );
             })}
@@ -263,8 +263,8 @@ const DashboardPage: React.FC<DashboardPageProps> = () => {
       {/* AI Premium Features */}
       <div className="px-4 mb-6">
         <div className="flex justify-between items-center mb-3">
-          <h2 className="font-bold text-slate-900 text-base">RhinoFit Premium</h2>
-          <span className="text-xs text-slate-500 bg-slate-200 px-2 py-1 rounded-full">New</span>
+          <h2 className="font-bold text-foreground text-base">RhinoFit Premium</h2>
+          <span className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded-full">New</span>
         </div>
         <div className="space-y-3">
           {aiFeatures.map((feature) => {
@@ -273,22 +273,22 @@ const DashboardPage: React.FC<DashboardPageProps> = () => {
               <button
                 key={feature.id}
                 onClick={() => navigate(feature.path)}
-                className="w-full bg-white rounded-2xl shadow-md shadow-slate-200/60 p-4 flex items-center gap-4 hover:shadow-lg transition-all duration-200"
+                className="w-full bg-card rounded-2xl shadow-md p-4 flex items-center gap-4 hover:shadow-lg transition-all duration-200"
               >
                 <div className={`w-16 h-16 rounded-xl bg-gradient-to-br ${feature.gradient} flex items-center justify-center flex-shrink-0 shadow-md`}>
-                  <IconComponent className="w-7 h-7 text-white" />
+                  <IconComponent className="w-7 h-7 text-primary-foreground" />
                 </div>
                 <div className="flex-1 text-left min-w-0">
                   <div className="flex items-center gap-2 mb-1">
-                    <h3 className="font-bold text-slate-900 text-sm">{feature.title}</h3>
-                    <span className="text-[10px] font-bold text-orange-500 bg-orange-50 px-2 py-0.5 rounded-full">
+                    <h3 className="font-bold text-foreground text-sm">{feature.title}</h3>
+                    <span className="text-[10px] font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-full">
                       {feature.badge}
                     </span>
                   </div>
-                  <p className="text-xs text-slate-600 line-clamp-2">{feature.description}</p>
+                  <p className="text-xs text-muted-foreground line-clamp-2">{feature.description}</p>
                 </div>
-                <div className="w-6 h-6 rounded-full bg-slate-100 flex items-center justify-center flex-shrink-0">
-                  <span className="text-slate-600 text-sm">›</span>
+                <div className="w-6 h-6 rounded-full bg-muted flex items-center justify-center flex-shrink-0">
+                  <span className="text-foreground text-sm">›</span>
                 </div>
               </button>
             );
@@ -300,10 +300,10 @@ const DashboardPage: React.FC<DashboardPageProps> = () => {
       {!loading && upcomingEvents.length > 0 && (
         <div className="mb-6">
           <div className="flex justify-between items-center mb-3 px-4">
-            <h2 className="font-bold text-slate-900 text-base">Upcoming Events</h2>
+            <h2 className="font-bold text-foreground text-base">Upcoming Events</h2>
             <button
               onClick={() => navigate('/events')}
-              className="text-xs font-semibold text-[#FF6B35] hover:text-orange-600 transition-colors"
+              className="text-xs font-semibold text-primary hover:text-primary/80 transition-colors"
             >
               See All
             </button>
@@ -319,7 +319,7 @@ const DashboardPage: React.FC<DashboardPageProps> = () => {
                 <button
                   key={event.id}
                   onClick={() => navigate('/events', { state: { selectedEvent: event } })}
-                  className="bg-white rounded-xl shadow-md shadow-slate-200/60 overflow-hidden hover:shadow-lg transition-all duration-200"
+                  className="bg-card rounded-xl shadow-md overflow-hidden hover:shadow-lg transition-all duration-200"
                   style={{ width: '140px', flexShrink: 0 }}
                 >
                   <div className="relative h-20">
@@ -328,16 +328,16 @@ const DashboardPage: React.FC<DashboardPageProps> = () => {
                       alt={event.title}
                       className="w-full h-full object-cover"
                     />
-                    <div className="absolute top-1 right-1 bg-white shadow-sm px-1.5 py-0.5 rounded-md flex items-center gap-0.5">
-                      <Calendar className="w-2.5 h-2.5 text-[#FF6B35]" />
-                      <span className="text-[10px] font-semibold text-slate-700">
+                    <div className="absolute top-1 right-1 bg-card shadow-sm px-1.5 py-0.5 rounded-md flex items-center gap-0.5">
+                      <Calendar className="w-2.5 h-2.5 text-primary" />
+                      <span className="text-[10px] font-semibold text-foreground">
                         {new Date(event.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                       </span>
                     </div>
                   </div>
                   <div className="p-2">
-                    <h3 className="font-semibold text-slate-900 text-xs mb-1 line-clamp-2">{event.title}</h3>
-                    <div className="flex items-center gap-0.5 text-[10px] text-slate-500">
+                    <h3 className="font-semibold text-foreground text-xs mb-1 line-clamp-2">{event.title}</h3>
+                    <div className="flex items-center gap-0.5 text-[10px] text-muted-foreground">
                       <MapPin className="w-2.5 h-2.5 flex-shrink-0" />
                       <span className="line-clamp-1">{event.location}</span>
                     </div>
@@ -363,19 +363,19 @@ const DashboardPage: React.FC<DashboardPageProps> = () => {
       {/* Premium Banner */}
       <div className="px-4 mb-6">
         <div 
-          className="rounded-2xl p-6 shadow-lg bg-gradient-to-r from-amber-500 via-orange-500 to-pink-500 relative overflow-hidden"
+          className="rounded-2xl p-6 shadow-lg bg-gradient-to-r from-primary via-primary to-accent relative overflow-hidden"
         >
-          <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-16 -mt-16"></div>
-          <div className="absolute bottom-0 left-0 w-24 h-24 bg-white/10 rounded-full -ml-12 -mb-12"></div>
+          <div className="absolute top-0 right-0 w-32 h-32 bg-card/10 rounded-full -mr-16 -mt-16"></div>
+          <div className="absolute bottom-0 left-0 w-24 h-24 bg-card/10 rounded-full -ml-12 -mb-12"></div>
           <div className="relative z-10">
             <div className="flex items-center gap-2 mb-2">
-              <Crown className="w-6 h-6 text-white" />
-              <h3 className="font-bold text-white text-lg drop-shadow-lg">Get Your Premium</h3>
+              <Crown className="w-6 h-6 text-primary-foreground" />
+              <h3 className="font-bold text-primary-foreground text-lg drop-shadow-lg">Get Your Premium</h3>
             </div>
-            <p className="text-white text-sm mb-4 drop-shadow-md">Unlock exclusive features, discounts, and unlimited bookings!</p>
+            <p className="text-primary-foreground text-sm mb-4 drop-shadow-md">Unlock exclusive features, discounts, and unlimited bookings!</p>
             <button
               onClick={() => setIsPremiumModalOpen(true)}
-              className="bg-white text-orange-600 font-semibold px-5 py-2.5 rounded-lg text-sm hover:bg-orange-50 transition-all duration-200 shadow-lg hover:shadow-xl active:scale-95 flex items-center gap-2"
+              className="bg-card text-primary font-semibold px-5 py-2.5 rounded-lg text-sm hover:bg-muted transition-all duration-200 shadow-lg hover:shadow-xl active:scale-95 flex items-center gap-2"
             >
               <Sparkles className="w-4 h-4" />
               View Premium Benefits

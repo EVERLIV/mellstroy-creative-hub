@@ -39,7 +39,7 @@ const BottomNav: React.FC = () => {
   };
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 w-full bg-gray-100 border-t border-gray-200 z-50 shadow-[0_-1px_4px_rgba(0,0,0,0.05)] pb-[env(safe-area-inset-bottom)]">
+    <nav className="fixed bottom-0 left-0 right-0 w-full bg-card border-t border-border z-50 shadow-sm pb-[env(safe-area-inset-bottom)]">
       <div className="flex justify-around items-center h-16 px-4 sm:px-6 md:px-8 lg:px-12 max-w-full">
         {navItems.map((item) => {
           const isActive = location.pathname === item.path;
@@ -54,8 +54,8 @@ const BottomNav: React.FC = () => {
                 active:scale-90 active:opacity-80
                 ${
                   isActive
-                    ? 'bg-orange-100 text-orange-600 px-4 gap-2 shadow-sm'
-                    : 'w-10 text-gray-500 hover:bg-gray-200 hover:scale-110'
+                    ? 'bg-primary/10 text-primary px-4 gap-2 shadow-sm'
+                    : 'w-10 text-muted-foreground hover:bg-muted hover:scale-110'
                 }`
               }
               aria-label={item.name}
@@ -70,7 +70,7 @@ const BottomNav: React.FC = () => {
               </span>
               
               {/* Ripple effect on tap */}
-              <span className={`absolute inset-0 rounded-full bg-gray-400 opacity-0 group-active:opacity-20 group-active:animate-ping`} />
+              <span className={`absolute inset-0 rounded-full bg-foreground/20 opacity-0 group-active:opacity-20 group-active:animate-ping`} />
             </NavLink>
           );
         })}

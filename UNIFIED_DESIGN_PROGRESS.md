@@ -30,25 +30,72 @@
 
 ### 5. **MyBookingsPage** - DONE (already using semantic tokens)
 
+### 6. **BottomNav** - DONE ✅
+- Replaced `bg-white` → `bg-card`
+- Replaced `border-gray-200` → `border-border`
+- Replaced `text-[#FF6B35]` → `text-primary`
+- Replaced `text-gray-500` → `text-muted-foreground`
+- Replaced `bg-orange-100` → `bg-primary/10`
+- Replaced ripple `bg-gray-400` → `bg-foreground/20`
+
+### 7. **ViewToggle** - DONE ✅
+- Replaced `bg-gray-100` → `bg-muted`
+- Replaced `border-gray-200` → `border-border`
+- Replaced `bg-white` → `bg-card`
+- Replaced `text-blue-600` → `text-primary`
+- Replaced `text-gray-*` → `text-muted-foreground` / `text-foreground`
+
+### 8. **CategoryFilters** - DONE ✅
+- Replaced `bg-[#FF6B35]` → `bg-primary`
+- Replaced `text-white` → `text-primary-foreground`
+- Replaced `bg-gray-100` → `bg-muted`
+- Replaced `text-gray-700` → `text-foreground`
+
+### 9. **AICoachPage** - DONE ✅
+- Replaced all gradient colors with `from-primary to-accent`
+- Replaced `bg-slate-50` → `bg-background`
+- Replaced `text-white` → `text-primary-foreground`
+- Replaced `text-slate-*` → `text-foreground` / `text-muted-foreground`
+- Replaced `bg-white` → `bg-card`
+- Replaced `border-slate-*` → `border-border`
+- Replaced message bubbles with semantic tokens
+
+### 10. **Explore Page** - DONE ✅
+- Replaced `bg-gray-50` → `bg-background`
+- Replaced `bg-white` → `bg-card`
+- Replaced `text-gray-*` → `text-foreground` / `text-muted-foreground`
+- Replaced `border-gray-*` → `border-border`
+- Replaced `text-blue-500` → `text-primary`
+- All search and filter components use semantic tokens
+
+### 11. **DashboardPage** - DONE ✅
+- Replaced `bg-slate-50` → `bg-background`
+- Replaced `bg-white` → `bg-card`
+- Replaced all gradient sections with semantic color combinations
+- Replaced `text-slate-*` → `text-foreground` / `text-muted-foreground`
+- Replaced `text-[#FF6B35]` → `text-primary`
+- Replaced `bg-orange-*` → `bg-primary` variants
+- Category icons use semantic tokens
+- AI features use semantic tokens
+- Events use semantic tokens
+- Premium banner uses semantic tokens
+
 ## Still Need Updating ❌
 
 ### High Priority Components
 - [ ] AddEditClassModal (~50 instances)
 - [ ] VenueCard
 - [ ] TrainerListItem
-- [ ] Header/UnifiedHeader
-- [ ] BottomNav
+- [ ] UnifiedHeader
 
 ### High Priority Pages
 - [ ] AuthPage (background, buttons)
-- [ ] HomePage/DashboardPage
 - [ ] ClassDetailPage
-- [ ] Explore (search bar, headers)
+- [ ] HomePage (if different from DashboardPage)
 
 ### Medium Priority
 - [ ] AdminPage
 - [ ] AdminDashboardPage
-- [ ] AICoachPage
 - [ ] MealPlannerPage
 - [ ] ProfilePage
 - [ ] EditTrainerProfilePage

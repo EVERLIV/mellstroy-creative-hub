@@ -334,30 +334,30 @@ const Explore: React.FC<ExploreProps> = ({
   };
 
   return (
-    <div className="bg-gray-50 h-screen flex flex-col relative overflow-hidden">
+    <div className="bg-background h-screen flex flex-col relative overflow-hidden">
         {/* Header */}
-        <div className="sticky top-0 bg-white z-10 shadow-sm flex-shrink-0">
+        <div className="sticky top-0 bg-card z-10 shadow-sm flex-shrink-0">
           <div className="px-4 py-3">
             <div className="flex items-center justify-between mb-2">
-              <h1 className="text-base font-bold text-gray-900">Explore</h1>
+              <h1 className="text-base font-bold text-foreground">Explore</h1>
               <button
                 onClick={() => setIsFilterModalOpen(true)}
-                className="p-2 rounded-lg bg-gray-100 hover:bg-gray-200 transition-colors active:scale-95"
+                className="p-2 rounded-lg bg-muted hover:bg-muted/80 transition-colors active:scale-95"
                 aria-label="Open filters"
               >
-                <SlidersHorizontal className="w-5 h-5 text-gray-800" />
+                <SlidersHorizontal className="w-5 h-5 text-foreground" />
               </button>
             </div>
             
             {/* Search Bar */}
             <div className="relative mb-2">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
               <input
                 type="text"
                 placeholder="Search trainers..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-9 pr-3 py-2 bg-white border border-gray-200 rounded-lg text-xs text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 placeholder:text-gray-400 transition-all duration-200"
+                className="w-full pl-9 pr-3 py-2 bg-background border border-border rounded-lg text-xs text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary placeholder:text-muted-foreground transition-all duration-200"
               />
             </div>
 
@@ -379,7 +379,7 @@ const Explore: React.FC<ExploreProps> = ({
           />
           <div className="px-4 py-3 pb-[calc(5rem+env(safe-area-inset-bottom))]">
             <div className="flex justify-between items-center mb-3">
-              <h2 className="text-xs font-medium text-gray-600">
+              <h2 className="text-xs font-medium text-muted-foreground">
                 {filteredTrainers.length} {filteredTrainers.length === 1 ? 'trainer' : 'trainers'} found
               </h2>
               <ViewToggle viewMode={viewMode} setViewMode={setViewMode} />
@@ -397,7 +397,7 @@ const Explore: React.FC<ExploreProps> = ({
             {hasMore && (
               <div ref={observerTarget} className="flex justify-center items-center py-6">
                 {loadingMore && (
-                  <div className="flex items-center gap-2 text-gray-600">
+                  <div className="flex items-center gap-2 text-muted-foreground">
                     <Loader className="w-5 h-5 animate-spin" />
                     <span className="text-xs">Loading more trainers...</span>
                   </div>
@@ -407,7 +407,7 @@ const Explore: React.FC<ExploreProps> = ({
             
             {!hasMore && displayedTrainers.length > 0 && (
               <div className="text-center py-6">
-                <p className="text-xs text-gray-500">No more trainers to load</p>
+                <p className="text-xs text-muted-foreground">No more trainers to load</p>
               </div>
             )}
           </div>
@@ -415,7 +415,7 @@ const Explore: React.FC<ExploreProps> = ({
 
       {/* Trainer Detail Overlay */}
       {selectedTrainer && (
-        <div className={`absolute inset-0 z-20 bg-white transition-all duration-300 ${
+        <div className={`absolute inset-0 z-20 bg-background transition-all duration-300 ${
           isExitingDetail 
             ? 'translate-x-full opacity-0' 
             : 'translate-x-0 opacity-100'
