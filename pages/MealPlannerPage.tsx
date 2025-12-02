@@ -1,8 +1,9 @@
-import React, { useState, useCallback } from 'react';
-import { Trainer, MealPlan, DietaryPreferences, Duration, EatingStyle, DietType } from '../types';
-import { ArrowLeft, UtensilsCrossed, Sparkles, Loader, AlertTriangle, ChevronDown, Save, FilePlus } from 'lucide-react';
+import React, { useState, useCallback, useMemo } from 'react';
+import { Trainer, MealPlan, DietaryPreferences, Duration, EatingStyle, DietType, Gender, ActivityLevel } from '../types';
+import { ArrowLeft, UtensilsCrossed, Sparkles, Loader, AlertTriangle, ChevronDown, Save, Calculator } from 'lucide-react';
 import { generateMealPlan } from '../utils/ai';
 import { EATING_STYLES, DIET_TYPES } from '../constants';
+import { calculateTDEE, getActivityLevelDescription } from '../utils/calorieCalculator';
 
 
 interface MealPlannerPageProps {
@@ -18,16 +19,49 @@ const MealPlannerPage: React.FC<MealPlannerPageProps> = ({ user, onClose, onSave
         dietType: 'Anything',
         allergies: '',
         dislikes: '',
+        age: user.age,
+        weight: user.weight,
+        height: user.height,
+        gender: 'male',
+        activityLevel: 'moderate',
     });
+    const [useManualCalories, setUseManualCalories] = useState(false);
     const [generatedPlan, setGeneratedPlan] = useState<Omit<MealPlan, 'id' | 'createdAt' | 'preferences'> | null>(null);
     const [planNameToSave, setPlanNameToSave] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [activeDay, setActiveDay] = useState<string | null>(null);
 
-    const handlePrefChange = useCallback((field: keyof DietaryPreferences, value: string) => {
-        setPreferences(prev => ({ ...prev, [field]: value }));
+    const handlePrefChange = useCallback((field: keyof DietaryPreferences, value: string | number) => {
+        setPreferences(prev => {
+            // Handle numeric fields
+            if (field === 'age' || field === 'weight' || field === 'height' || field === 'targetCalories') {
+                const numValue = typeof value === 'string' ? parseFloat(value) : value;
+                return { ...prev, [field]: isNaN(numValue) ? undefined : numValue };
+            }
+            // Handle string fields
+            return { ...prev, [field]: value };
+        });
     }, []);
+
+    // Calculate recommended calories based on user data
+    const calculatedCalories = useMemo(() => {
+        if (preferences.age && preferences.weight && preferences.height && preferences.gender && preferences.activityLevel) {
+            return calculateTDEE(
+                preferences.weight,
+                preferences.height,
+                preferences.age,
+                preferences.gender,
+                preferences.activityLevel
+            );
+        }
+        return null;
+    }, [preferences.age, preferences.weight, preferences.height, preferences.gender, preferences.activityLevel]);
+
+    // Use manual or calculated calories
+    const effectiveCalories = useManualCalories 
+        ? preferences.targetCalories 
+        : calculatedCalories;
 
     const handleGeneratePlan = useCallback(async () => {
         setIsLoading(true);
@@ -36,7 +70,13 @@ const MealPlannerPage: React.FC<MealPlannerPageProps> = ({ user, onClose, onSave
         setActiveDay(null);
         
         try {
-            const plan = await generateMealPlan(user, preferences);
+            // Set targetCalories based on manual or calculated
+            const prefsWithCalories: DietaryPreferences = {
+                ...preferences,
+                targetCalories: effectiveCalories || undefined,
+            };
+            
+            const plan = await generateMealPlan(user, prefsWithCalories);
             if (plan) {
                 setGeneratedPlan(plan);
                 setPlanNameToSave(plan.name); // Pre-fill with AI-generated name
@@ -51,7 +91,7 @@ const MealPlannerPage: React.FC<MealPlannerPageProps> = ({ user, onClose, onSave
         } finally {
             setIsLoading(false);
         }
-    }, [user, preferences]);
+    }, [user, preferences, effectiveCalories]);
     
     const handleSavePlan = useCallback(() => {
         if (generatedPlan && planNameToSave.trim()) {
@@ -67,6 +107,14 @@ const MealPlannerPage: React.FC<MealPlannerPageProps> = ({ user, onClose, onSave
         setActiveDay(prev => (prev === day ? null : day));
     }, []);
 
+    const activityLevels: { id: ActivityLevel; label: string }[] = [
+        { id: 'sedentary', label: 'Sedentary' },
+        { id: 'light', label: 'Light' },
+        { id: 'moderate', label: 'Moderate' },
+        { id: 'very_active', label: 'Very Active' },
+        { id: 'extremely_active', label: 'Extremely Active' },
+    ];
+
     return (
         <div className="bg-background min-h-screen flex flex-col pb-32">
             {/* Header */}
@@ -78,9 +126,121 @@ const MealPlannerPage: React.FC<MealPlannerPageProps> = ({ user, onClose, onSave
             </div>
 
             <main className="flex-1 px-4 space-y-4 mt-4 overflow-y-auto">
-                {/* Preferences Form */}
+                {/* Calorie Calculator Section */}
                 <div className="bg-card p-4 rounded-2xl shadow-lg">
-                    <h3 className="font-bold text-foreground mb-3">1. Select Duration</h3>
+                    <div className="flex items-center gap-2 mb-3">
+                        <Calculator className="w-5 h-5 text-primary" />
+                        <h3 className="font-bold text-foreground">Calorie Calculator</h3>
+                    </div>
+                    
+                    {/* Personal Details */}
+                    <div className="grid grid-cols-2 gap-3 mb-3">
+                        <div>
+                            <label className="block text-xs font-medium text-foreground mb-1">Age</label>
+                            <input 
+                                type="number" 
+                                value={preferences.age || ''} 
+                                onChange={(e) => handlePrefChange('age', e.target.value)} 
+                                placeholder="25" 
+                                className="w-full px-3 py-2 bg-muted border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-foreground text-sm"
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-xs font-medium text-foreground mb-1">Gender</label>
+                            <select 
+                                value={preferences.gender || 'male'} 
+                                onChange={(e) => handlePrefChange('gender', e.target.value)} 
+                                className="w-full px-3 py-2 bg-muted border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-foreground text-sm"
+                            >
+                                <option value="male">Male</option>
+                                <option value="female">Female</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3 mb-3">
+                        <div>
+                            <label className="block text-xs font-medium text-foreground mb-1">Weight (kg)</label>
+                            <input 
+                                type="number" 
+                                value={preferences.weight || ''} 
+                                onChange={(e) => handlePrefChange('weight', e.target.value)} 
+                                placeholder="70" 
+                                className="w-full px-3 py-2 bg-muted border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-foreground text-sm"
+                            />
+                        </div>
+                        <div>
+                            <label className="block text-xs font-medium text-foreground mb-1">Height (cm)</label>
+                            <input 
+                                type="number" 
+                                value={preferences.height || ''} 
+                                onChange={(e) => handlePrefChange('height', e.target.value)} 
+                                placeholder="170" 
+                                className="w-full px-3 py-2 bg-muted border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-foreground text-sm"
+                            />
+                        </div>
+                    </div>
+
+                    <div className="mb-3">
+                        <label className="block text-xs font-medium text-foreground mb-1">Activity Level</label>
+                        <select 
+                            value={preferences.activityLevel || 'moderate'} 
+                            onChange={(e) => handlePrefChange('activityLevel', e.target.value)} 
+                            className="w-full px-3 py-2 bg-muted border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-foreground text-sm"
+                        >
+                            {activityLevels.map(level => (
+                                <option key={level.id} value={level.id}>
+                                    {level.label} - {getActivityLevelDescription(level.id)}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
+
+                    {/* Calculated Calories Display */}
+                    {calculatedCalories && (
+                        <div className="bg-primary/10 border border-primary/20 rounded-lg p-3 mb-3">
+                            <div className="flex items-center justify-between">
+                                <div>
+                                    <p className="text-xs text-muted-foreground">Recommended Daily Calories</p>
+                                    <p className="text-2xl font-bold text-primary">{calculatedCalories} <span className="text-sm">kcal</span></p>
+                                </div>
+                                <Sparkles className="w-8 h-8 text-primary" />
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Manual Override Option */}
+                    <div className="flex items-center justify-between mb-2">
+                        <label className="text-xs font-medium text-foreground">Set custom calorie target</label>
+                        <button
+                            onClick={() => setUseManualCalories(!useManualCalories)}
+                            className={`px-3 py-1 rounded-full text-xs font-semibold transition-colors ${
+                                useManualCalories 
+                                    ? 'bg-primary text-primary-foreground' 
+                                    : 'bg-muted text-muted-foreground'
+                            }`}
+                        >
+                            {useManualCalories ? 'ON' : 'OFF'}
+                        </button>
+                    </div>
+
+                    {useManualCalories && (
+                        <div>
+                            <label className="block text-xs font-medium text-foreground mb-1">Target Calories (kcal/day)</label>
+                            <input 
+                                type="number" 
+                                value={preferences.targetCalories || ''} 
+                                onChange={(e) => handlePrefChange('targetCalories', e.target.value)} 
+                                placeholder={calculatedCalories?.toString() || '2000'} 
+                                className="w-full px-3 py-2 bg-muted border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-foreground text-sm"
+                            />
+                        </div>
+                    )}
+                </div>
+
+                {/* Duration Selection */}
+                <div className="bg-card p-4 rounded-2xl shadow-lg">
+                    <h3 className="font-bold text-foreground mb-3">Plan Duration</h3>
                     <div className="bg-muted p-1 rounded-xl grid grid-cols-3 gap-1">
                         {(['day', 'week', 'month'] as Duration[]).map(d => (
                             <button
@@ -99,8 +259,9 @@ const MealPlannerPage: React.FC<MealPlannerPageProps> = ({ user, onClose, onSave
                     )}
                 </div>
 
+                {/* Dietary Preferences */}
                 <div className="bg-card p-4 rounded-2xl shadow-lg space-y-4">
-                    <h3 className="font-bold text-foreground">2. Refine Details</h3>
+                    <h3 className="font-bold text-foreground">Dietary Preferences</h3>
                     <div>
                         <label className="block text-sm font-medium text-foreground mb-2">Eating Style</label>
                         <div className="flex flex-col sm:flex-row gap-2">
@@ -151,15 +312,19 @@ const MealPlannerPage: React.FC<MealPlannerPageProps> = ({ user, onClose, onSave
                 
                 <button 
                     onClick={handleGeneratePlan} 
-                    disabled={isLoading}
+                    disabled={isLoading || !effectiveCalories}
                     className="w-full flex items-center justify-center bg-gradient-to-r from-primary to-accent text-primary-foreground font-bold py-3 rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                     {isLoading ? (
                         <> <Loader className="w-5 h-5 mr-2 animate-spin" /> Generating... </>
                     ) : (
-                        <> <Sparkles className="w-5 h-5 mr-2" /> Generate My Plan </>
+                        <> <Sparkles className="w-5 h-5 mr-2" /> Generate {effectiveCalories ? `${effectiveCalories} kcal` : ''} Plan </>
                     )}
                 </button>
+                
+                {!effectiveCalories && (
+                    <p className="text-xs text-destructive text-center">Please fill in your personal details to calculate calories</p>
+                )}
 
                 {/* Results */}
                 <div className="flex-1 pb-6">

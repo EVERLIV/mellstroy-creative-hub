@@ -102,7 +102,8 @@ export interface DailyPlan {
 export type Duration = 'day' | 'week' | 'month';
 export type EatingStyle = 'Cooking' | 'Eat Out' | 'Mix';
 export type DietType = 'Anything' | 'Vegetarian' | 'Vegan' | 'Low-Carb';
-
+export type Gender = 'male' | 'female';
+export type ActivityLevel = 'sedentary' | 'light' | 'moderate' | 'very_active' | 'extremely_active';
 
 export interface DietaryPreferences {
   duration: Duration;
@@ -110,6 +111,13 @@ export interface DietaryPreferences {
   dietType: DietType;
   allergies: string;
   dislikes: string;
+  // Calorie calculation fields
+  age?: number;
+  weight?: number; // in kg
+  height?: number; // in cm
+  gender?: Gender;
+  activityLevel?: ActivityLevel;
+  targetCalories?: number; // Optional: user can override calculated calories
 }
 
 export interface MealPlan {
