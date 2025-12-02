@@ -653,19 +653,16 @@ const ChatConversationPage: React.FC = () => {
                       
                       {/* Reaction picker - centered above message, compact */}
                       {showReactionPicker === message.id && (
-                        <div className="absolute left-1/2 -translate-x-1/2 -top-10 bg-card border border-border rounded-full px-1.5 py-1 shadow-xl flex gap-1 z-10 animate-in slide-in-from-bottom-3">
-                          {(['like', 'love', 'fire'] as const).map(type => (
-                            <button
-                              key={type}
-                              onClick={() => {
-                                handleReaction(message.id, type);
-                                setShowReactionPicker(null);
-                              }}
-                              className="hover:scale-125 transition-transform active:scale-110 p-0.5"
-                            >
-                              <span className="text-lg">{getReactionEmoji(type)}</span>
-                            </button>
-                          ))}
+                        <div className="absolute left-1/2 -translate-x-1/2 -top-8 flex z-10 animate-in slide-in-from-bottom-3">
+                          <button
+                            onClick={() => {
+                              handleReaction(message.id, 'like');
+                              setShowReactionPicker(null);
+                            }}
+                            className="hover:scale-125 transition-transform active:scale-110"
+                          >
+                            <span className="text-xl">👍</span>
+                          </button>
                         </div>
                       )}
                       
@@ -676,11 +673,7 @@ const ChatConversationPage: React.FC = () => {
                             <button
                               key={type}
                               onClick={() => handleReaction(message.id, type as any)}
-                              className={`flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-xs transition-all ${
-                                users.includes(user?.id || '')
-                                  ? 'border-2 border-primary scale-105'
-                                  : 'border border-border hover:scale-110'
-                              }`}
+                              className="flex items-center gap-0.5 transition-all hover:scale-110"
                             >
                               <span className="text-sm leading-none">{getReactionEmoji(type)}</span>
                               {count > 1 && <span className="text-[10px] font-semibold text-foreground">{count}</span>}
