@@ -1,1 +1,7 @@
 project_id = "sakcqmqjxzfgdgegnxgv"
+
+[functions.generate-meal-plan]
+verify_jwt = false
+
+[functions.ai-coach-chat]
+verify_jwt = false
