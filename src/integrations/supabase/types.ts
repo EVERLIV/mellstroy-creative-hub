@@ -386,6 +386,7 @@ export type Database = {
           created_at: string
           event_id: string
           id: string
+          reply_to_id: string | null
           user_id: string
         }
         Insert: {
@@ -393,6 +394,7 @@ export type Database = {
           created_at?: string
           event_id: string
           id?: string
+          reply_to_id?: string | null
           user_id: string
         }
         Update: {
@@ -400,6 +402,7 @@ export type Database = {
           created_at?: string
           event_id?: string
           id?: string
+          reply_to_id?: string | null
           user_id?: string
         }
         Relationships: [
@@ -408,6 +411,13 @@ export type Database = {
             columns: ["event_id"]
             isOneToOne: false
             referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_messages_reply_to_id_fkey"
+            columns: ["reply_to_id"]
+            isOneToOne: false
+            referencedRelation: "event_messages"
             referencedColumns: ["id"]
           },
         ]
