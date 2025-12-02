@@ -58,6 +58,8 @@ const ChatConversationPage: React.FC = () => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const longPressTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const longPressMessageIdRef = useRef<string | null>(null);
 
   // Scroll to bottom
   const scrollToBottom = () => {
@@ -67,6 +69,18 @@ const ChatConversationPage: React.FC = () => {
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
+
+  // Cleanup long-press timer on unmount
+  useEffect(() => {
+    return () => {
+      if (longPressTimerRef.current) {
+        clearTimeout(longPressTimerRef.current);
+      }
+      if (typingTimeoutRef.current) {
+        clearTimeout(typingTimeoutRef.current);
+      }
+    };
+  }, []);
 
   // Load recipient profile
   useEffect(() => {
@@ -368,6 +382,46 @@ const ChatConversationPage: React.FC = () => {
     }
   };
 
+  // Long-press handlers for mobile
+  const handleTouchStart = (messageId: string) => {
+    longPressMessageIdRef.current = messageId;
+    longPressTimerRef.current = setTimeout(() => {
+      // Trigger haptic feedback if available
+      if (navigator.vibrate) {
+        navigator.vibrate(50);
+      }
+      setShowReactionPicker(messageId);
+      longPressMessageIdRef.current = 'triggered'; // Mark as triggered
+    }, 500); // 500ms long press
+  };
+
+  const handleTouchEnd = () => {
+    if (longPressTimerRef.current) {
+      clearTimeout(longPressTimerRef.current);
+      longPressTimerRef.current = null;
+    }
+    // Reset after a short delay to prevent onClick from firing
+    setTimeout(() => {
+      longPressMessageIdRef.current = null;
+    }, 100);
+  };
+
+  const handleTouchMove = () => {
+    // Cancel long press if user moves finger
+    if (longPressTimerRef.current) {
+      clearTimeout(longPressTimerRef.current);
+      longPressTimerRef.current = null;
+    }
+  };
+
+  const handleMessageClick = (messageId: string) => {
+    // Don't toggle picker if long press was triggered
+    if (longPressMessageIdRef.current === 'triggered') {
+      return;
+    }
+    setShowReactionPicker(showReactionPicker === messageId ? null : messageId);
+  };
+
   const handleReaction = async (messageId: string, reactionType: 'like' | 'love' | 'fire') => {
     if (!user) return;
 
@@ -584,8 +638,11 @@ const ChatConversationPage: React.FC = () => {
                   <div className={`max-w-[75%] ${isMyMessage ? 'items-end' : 'items-start'} flex flex-col`}>
                     <div className="relative">
                       <div
-                        onClick={() => setShowReactionPicker(showReactionPicker === message.id ? null : message.id)}
-                        className={`px-3 py-2 cursor-pointer ${
+                        onClick={() => handleMessageClick(message.id)}
+                        onTouchStart={() => handleTouchStart(message.id)}
+                        onTouchEnd={handleTouchEnd}
+                        onTouchMove={handleTouchMove}
+                        className={`px-3 py-2 cursor-pointer select-none ${
                           isMyMessage
                             ? 'bg-primary text-primary-foreground rounded-2xl rounded-br-sm shadow-sm'
                             : 'bg-card text-foreground border border-border rounded-2xl rounded-bl-sm'
