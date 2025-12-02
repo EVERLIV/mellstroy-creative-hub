@@ -17,6 +17,14 @@ interface TrainerProfile {
   bio: string | null;
   experience_years: number | null;
   last_seen: string | null;
+  price_per_hour: number | null;
+}
+
+interface TrainerClass {
+  id: string;
+  name: string;
+  price: number;
+  class_type: string;
 }
 
 interface Booking {
@@ -38,6 +46,7 @@ const ChatInfoPage: React.FC = () => {
   const { toast } = useToast();
   
   const [trainer, setTrainer] = useState<TrainerProfile | null>(null);
+  const [trainerClasses, setTrainerClasses] = useState<TrainerClass[]>([]);
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [messageCount, setMessageCount] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -61,6 +70,17 @@ const ChatInfoPage: React.FC = () => {
 
       if (profileError) throw profileError;
       setTrainer(profileData);
+
+      // Load trainer's classes
+      const { data: classesData, error: classesError } = await supabase
+        .from('classes')
+        .select('id, name, price, class_type')
+        .eq('trainer_id', recipientId)
+        .order('name');
+
+      if (!classesError && classesData) {
+        setTrainerClasses(classesData);
+      }
 
       // Load bookings between user and trainer
       const { data: bookingsData, error: bookingsError } = await supabase
@@ -180,51 +200,67 @@ const ChatInfoPage: React.FC = () => {
 
       {/* Content */}
       <div className="flex-1 overflow-y-auto pb-20">
-        {/* Trainer Profile */}
-        <div className="bg-card border-b border-border">
-          <div className="p-6 flex flex-col items-center text-center">
+        {/* Trainer Profile - Compact */}
+        <div className="bg-card border-b border-border p-4">
+          <div className="flex items-start gap-3 mb-4">
+            {/* Small Avatar */}
             <img
               src={trainer.avatar_url || 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=200'}
               alt={trainer.username}
-              className="w-24 h-24 rounded-full object-cover border-4 border-border mb-3"
+              className="w-16 h-16 rounded-full object-cover border-2 border-border flex-shrink-0"
             />
-            <h2 className="text-xl font-bold text-foreground mb-1">{trainer.username}</h2>
-            <p className={`text-sm ${onlineStatus.color} font-medium mb-2`}>{onlineStatus.text}</p>
             
-            {trainer.location && (
-              <div className="flex items-center gap-1 text-sm text-muted-foreground mb-2">
-                <MapPin className="w-4 h-4" />
-                {trainer.location}
+            {/* Trainer Info */}
+            <div className="flex-1 min-w-0">
+              <h2 className="text-lg font-bold text-foreground mb-1">{trainer.username}</h2>
+              <p className={`text-xs ${onlineStatus.color} font-medium mb-2`}>{onlineStatus.text}</p>
+              
+              <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground mb-2">
+                {trainer.location && (
+                  <div className="flex items-center gap-1">
+                    <MapPin className="w-3 h-3" />
+                    {trainer.location}
+                  </div>
+                )}
+                
+                {trainer.rating && (
+                  <div className="flex items-center gap-1">
+                    <Star className="w-3 h-3 text-yellow-500 fill-yellow-500" />
+                    <span className="font-semibold text-foreground">{trainer.rating.toFixed(1)}</span>
+                    <span>({trainer.reviews_count || 0})</span>
+                  </div>
+                )}
+                
+                {trainer.experience_years && (
+                  <span>{trainer.experience_years} years exp.</span>
+                )}
               </div>
-            )}
 
-            {trainer.rating && (
-              <div className="flex items-center gap-2 bg-muted px-3 py-1.5 rounded-full">
-                <Star className="w-4 h-4 text-yellow-500 fill-yellow-500" />
-                <span className="font-semibold text-foreground">{trainer.rating.toFixed(1)}</span>
-                <span className="text-xs text-muted-foreground">
-                  ({trainer.reviews_count || 0} reviews)
-                </span>
-              </div>
-            )}
+              {/* Price per hour */}
+              {trainer.price_per_hour && (
+                <div className="bg-primary/10 text-primary px-3 py-1.5 rounded-lg inline-flex items-center gap-1 text-sm font-semibold">
+                  ${trainer.price_per_hour}/hour
+                </div>
+              )}
+            </div>
           </div>
 
+          {/* Bio */}
           {trainer.bio && (
-            <div className="px-6 pb-6">
-              <p className="text-sm text-muted-foreground leading-relaxed">{trainer.bio}</p>
-            </div>
+            <p className="text-xs text-muted-foreground leading-relaxed mb-4">{trainer.bio}</p>
           )}
 
+          {/* Specializations */}
           {trainer.specialty && trainer.specialty.length > 0 && (
-            <div className="px-6 pb-6">
+            <div className="mb-4">
               <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wide mb-2">
                 Specializations
               </h3>
-              <div className="flex flex-wrap gap-2">
+              <div className="flex flex-wrap gap-1.5">
                 {trainer.specialty.map((spec, idx) => (
                   <span
                     key={idx}
-                    className="px-3 py-1 bg-primary/10 text-primary rounded-full text-xs font-medium"
+                    className="px-2 py-0.5 bg-primary/10 text-primary rounded-full text-xs font-medium"
                   >
                     {spec}
                   </span>
@@ -233,28 +269,40 @@ const ChatInfoPage: React.FC = () => {
             </div>
           )}
 
-          {trainer.experience_years && (
-            <div className="px-6 pb-6">
-              <div className="flex items-center gap-2 text-sm text-foreground">
-                <span className="font-semibold">{trainer.experience_years} years</span>
-                <span className="text-muted-foreground">of experience</span>
-              </div>
-            </div>
-          )}
-
-          <div className="px-6 pb-6">
-            <button
-              onClick={() => navigate(`/trainer/${trainer.id}`)}
-              className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-medium py-2.5 rounded-lg transition-colors"
-            >
-              View Full Profile
-            </button>
-          </div>
+          <button
+            onClick={() => navigate(`/trainer/${trainer.id}`)}
+            className="w-full bg-primary hover:bg-primary/90 text-primary-foreground font-medium py-2 rounded-lg transition-colors text-sm"
+          >
+            View Full Profile
+          </button>
         </div>
 
+        {/* Trainer's Classes */}
+        {trainerClasses.length > 0 && (
+          <div className="bg-card border-b border-border p-4">
+            <h3 className="text-sm font-bold text-foreground mb-3">Classes</h3>
+            <div className="space-y-2">
+              {trainerClasses.map((cls) => (
+                <div
+                  key={cls.id}
+                  className="flex items-center justify-between p-3 bg-muted rounded-lg"
+                >
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-foreground truncate">{cls.name}</p>
+                    <p className="text-xs text-muted-foreground">{cls.class_type}</p>
+                  </div>
+                  <div className="text-sm font-semibold text-primary ml-3">
+                    ${cls.price}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         {/* Chat Statistics */}
-        <div className="bg-card border-b border-border p-6">
-          <h3 className="text-sm font-bold text-foreground mb-4">Chat Statistics</h3>
+        <div className="bg-card border-b border-border p-4">
+          <h3 className="text-sm font-bold text-foreground mb-3">Chat Statistics</h3>
           <div className="grid grid-cols-2 gap-4">
             <div className="bg-muted rounded-lg p-4">
               <div className="flex items-center gap-2 mb-1">
