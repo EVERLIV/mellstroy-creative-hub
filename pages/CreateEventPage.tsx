@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { ArrowLeft, Save, Loader2 } from 'lucide-react';
+import React, { useState, useRef } from 'react';
+import { ArrowLeft, Save, Loader2, Upload, X, Image } from 'lucide-react';
 import { supabase } from '../src/integrations/supabase/client';
 import { useToast } from '../src/hooks/use-toast';
 import { FITNESS_ACTIVITIES, HCMC_DISTRICTS } from '../constants';
@@ -12,13 +12,17 @@ interface CreateEventPageProps {
 const CreateEventPage: React.FC<CreateEventPageProps> = ({ onBack, onSuccess }) => {
     const { toast } = useToast();
     const [loading, setLoading] = useState(false);
+    const [imageFile, setImageFile] = useState<File | null>(null);
+    const [imagePreview, setImagePreview] = useState<string | null>(null);
+    const [uploadingImage, setUploadingImage] = useState(false);
+    const fileInputRef = useRef<HTMLInputElement>(null);
+    
     const [formData, setFormData] = useState({
         title: '',
         description: '',
         date: '',
         time: '',
         location: '',
-        image_url: '',
         event_type: 'general',
         sport_category: '',
         district: '',
@@ -31,6 +35,68 @@ const CreateEventPage: React.FC<CreateEventPageProps> = ({ onBack, onSuccess }) 
         setFormData(prev => ({ ...prev, [name]: value }));
     };
 
+    const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        // Validate file type
+        if (!file.type.startsWith('image/')) {
+            toast({
+                title: 'Invalid file',
+                description: 'Please select an image file (JPG, PNG, WEBP)',
+                variant: 'destructive',
+            });
+            return;
+        }
+
+        // Validate file size (max 5MB)
+        if (file.size > 5 * 1024 * 1024) {
+            toast({
+                title: 'File too large',
+                description: 'Image must be less than 5MB',
+                variant: 'destructive',
+            });
+            return;
+        }
+
+        setImageFile(file);
+        setImagePreview(URL.createObjectURL(file));
+    };
+
+    const removeImage = () => {
+        setImageFile(null);
+        if (imagePreview) {
+            URL.revokeObjectURL(imagePreview);
+            setImagePreview(null);
+        }
+        if (fileInputRef.current) {
+            fileInputRef.current.value = '';
+        }
+    };
+
+    const uploadImage = async (userId: string): Promise<string | null> => {
+        if (!imageFile) return null;
+
+        setUploadingImage(true);
+        const fileExt = imageFile.name.split('.').pop();
+        const fileName = `${userId}/${Date.now()}.${fileExt}`;
+
+        const { error: uploadError } = await supabase.storage
+            .from('event-photos')
+            .upload(fileName, imageFile, { contentType: imageFile.type });
+
+        if (uploadError) {
+            throw new Error('Failed to upload image');
+        }
+
+        const { data: { publicUrl } } = supabase.storage
+            .from('event-photos')
+            .getPublicUrl(fileName);
+
+        setUploadingImage(false);
+        return publicUrl;
+    };
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setLoading(true);
@@ -39,13 +105,19 @@ const CreateEventPage: React.FC<CreateEventPageProps> = ({ onBack, onSuccess }) 
             const { data: { user } } = await supabase.auth.getUser();
             if (!user) throw new Error('Not authenticated');
 
+            // Upload image if selected
+            let imageUrl: string | null = null;
+            if (imageFile) {
+                imageUrl = await uploadImage(user.id);
+            }
+
             const { error } = await supabase.from('events').insert({
                 title: formData.title,
                 description: formData.description,
                 date: formData.date,
                 time: formData.time,
                 location: formData.location,
-                image_url: formData.image_url || null,
+                image_url: imageUrl,
                 event_type: formData.event_type,
                 sport_category: formData.sport_category || null,
                 district: formData.district || null,
@@ -70,6 +142,7 @@ const CreateEventPage: React.FC<CreateEventPageProps> = ({ onBack, onSuccess }) 
             });
         } finally {
             setLoading(false);
+            setUploadingImage(false);
         }
     };
 
@@ -152,9 +225,44 @@ const CreateEventPage: React.FC<CreateEventPageProps> = ({ onBack, onSuccess }) 
                             <input type="number" id="max_participants" name="max_participants" value={formData.max_participants} onChange={handleChange} min="1" placeholder="No limit" className="w-full px-3 py-2 bg-muted border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-foreground text-sm placeholder:text-muted-foreground" />
                         </div>
                     </div>
+                    
+                    {/* Image Upload */}
                     <div>
-                        <label htmlFor="image_url" className="block text-xs font-medium text-foreground mb-1">Image URL (optional)</label>
-                        <input type="url" id="image_url" name="image_url" value={formData.image_url} onChange={handleChange} placeholder="https://example.com/image.jpg" className="w-full px-3 py-2 bg-muted border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-foreground text-sm placeholder:text-muted-foreground" />
+                        <label className="block text-xs font-medium text-foreground mb-1">Event Cover Image (optional)</label>
+                        <input
+                            ref={fileInputRef}
+                            type="file"
+                            accept="image/jpeg,image/png,image/webp"
+                            onChange={handleImageSelect}
+                            className="hidden"
+                        />
+                        
+                        {imagePreview ? (
+                            <div className="relative">
+                                <img
+                                    src={imagePreview}
+                                    alt="Preview"
+                                    className="w-full h-40 object-cover rounded-lg"
+                                />
+                                <button
+                                    type="button"
+                                    onClick={removeImage}
+                                    className="absolute top-2 right-2 p-1.5 bg-destructive text-destructive-foreground rounded-full hover:bg-destructive/90"
+                                >
+                                    <X className="w-4 h-4" />
+                                </button>
+                            </div>
+                        ) : (
+                            <button
+                                type="button"
+                                onClick={() => fileInputRef.current?.click()}
+                                className="w-full h-32 border-2 border-dashed border-border rounded-lg flex flex-col items-center justify-center gap-2 hover:border-primary hover:bg-primary/5 transition-colors"
+                            >
+                                <Image className="w-8 h-8 text-muted-foreground" />
+                                <span className="text-sm text-muted-foreground">Click to upload image</span>
+                                <span className="text-xs text-muted-foreground">Max 5MB • JPG, PNG, WEBP</span>
+                            </button>
+                        )}
                     </div>
                     
                     <button
@@ -163,7 +271,7 @@ const CreateEventPage: React.FC<CreateEventPageProps> = ({ onBack, onSuccess }) 
                         className="w-full flex items-center justify-center bg-primary text-primary-foreground font-semibold h-12 rounded-xl transition-all duration-200 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                         {loading ? (
-                            <><Loader2 className="w-5 h-5 mr-2 animate-spin" />Submitting...</>
+                            <><Loader2 className="w-5 h-5 mr-2 animate-spin" />{uploadingImage ? 'Uploading image...' : 'Submitting...'}</>
                         ) : (
                             <><Save className="w-5 h-5 mr-2" />Submit Event</>
                         )}
