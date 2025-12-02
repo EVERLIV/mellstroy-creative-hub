@@ -644,7 +644,7 @@ const ChatConversationPage: React.FC = () => {
                         onTouchMove={handleTouchMove}
                         className={`px-3 py-2 cursor-pointer select-none ${
                           isMyMessage
-                            ? 'bg-primary text-primary-foreground rounded-2xl rounded-br-sm shadow-sm'
+                            ? 'bg-primary/10 text-foreground rounded-2xl rounded-br-sm shadow-sm border border-primary/20'
                             : 'bg-card text-foreground border border-border rounded-2xl rounded-bl-sm'
                         } ${isConsecutive ? 'mt-0.5' : 'mt-1'} active:scale-95 transition-transform`}
                       >
