@@ -14,12 +14,17 @@ interface AICoachPageProps {
 const TypingMessage: React.FC<{ text: string; isLatest: boolean }> = ({ text, isLatest }) => {
     const [displayedText, setDisplayedText] = useState('');
     const [currentIndex, setCurrentIndex] = useState(0);
+    const [hasStartedTyping, setHasStartedTyping] = useState(false);
 
     useEffect(() => {
-        if (!isLatest) {
+        // If not latest or already started typing for this message, show full text immediately
+        if (!isLatest || hasStartedTyping) {
             setDisplayedText(text);
             return;
         }
+
+        // Mark that we've started typing for this message
+        setHasStartedTyping(true);
 
         if (currentIndex < text.length) {
             const timeout = setTimeout(() => {
@@ -28,7 +33,16 @@ const TypingMessage: React.FC<{ text: string; isLatest: boolean }> = ({ text, is
             }, 20);
             return () => clearTimeout(timeout);
         }
-    }, [currentIndex, text, isLatest]);
+    }, [currentIndex, text, isLatest, hasStartedTyping]);
+
+    // Reset state when text changes (new message)
+    useEffect(() => {
+        if (isLatest) {
+            setDisplayedText('');
+            setCurrentIndex(0);
+            setHasStartedTyping(false);
+        }
+    }, [text, isLatest]);
 
     // Format text with structure
     const formatText = (rawText: string) => {
@@ -176,6 +190,7 @@ const AICoachPage: React.FC<AICoachPageProps> = ({ messages, onSendMessage, isLo
                 )}
 
                 {messages.map((msg, index) => {
+                    // Only apply typing effect to the very last AI message
                     const isLatestAI = msg.sender === 'trainer' && index === messages.length - 1;
                     
                     return (
@@ -209,7 +224,7 @@ const AICoachPage: React.FC<AICoachPageProps> = ({ messages, onSendMessage, isLo
                                             {msg.text}
                                         </p>
                                     ) : (
-                                        <TypingMessage text={msg.text} isLatest={isLatestAI && !isLoading} />
+                                        <TypingMessage text={msg.text} isLatest={isLatestAI} />
                                     )}
                                 </div>
                                 <span className={`text-xs mt-1 px-2 ${
