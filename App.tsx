@@ -633,16 +633,21 @@ const AppRoutes = () => {
                 .or(`and(participant_1_id.eq.${user.id},participant_2_id.eq.${trainerId}),and(participant_1_id.eq.${trainerId},participant_2_id.eq.${user.id})`)
                 .maybeSingle();
 
+              let conversationId: string;
+
               if (!existingConversation) {
                 // Create new conversation
-                await supabase
+                const { data: newConversation } = await supabase
                   .from('conversations')
                   .insert({
                     participant_1_id: user.id,
                     participant_2_id: trainerId,
                     booking_id: bookingData.id,
                     last_message_at: new Date().toISOString()
-                  });
+                  })
+                  .select('id')
+                  .single();
+                conversationId = newConversation?.id || '';
               } else {
                 // Update existing conversation with booking reference
                 await supabase
@@ -652,6 +657,26 @@ const AppRoutes = () => {
                     last_message_at: new Date().toISOString()
                   })
                   .eq('id', existingConversation.id);
+                conversationId = existingConversation.id;
+              }
+
+              // Send automatic booking details message
+              if (conversationId) {
+                const bookingMessage = `📅 *Booking Confirmed*\n\n` +
+                  `🏋️ Class: ${bookingModalData.cls.name}\n` +
+                  `📆 Date: ${new Date(bookingDate).toLocaleDateString('en-US', { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric' })}\n` +
+                  `⏰ Time: ${bookingTime}\n` +
+                  `🔢 Verification Code: ${bookingData.verification_code}\n\n` +
+                  `⚠️ *Important:* Payment at meeting only. Pay your trainer in person at the class. Never send money through chat.`;
+
+                await supabase
+                  .from('messages')
+                  .insert({
+                    conversation_id: conversationId,
+                    sender_id: user.id,
+                    recipient_id: trainerId,
+                    content: bookingMessage
+                  });
               }
 
               // Show verification code modal
