@@ -178,7 +178,7 @@ const EventsFlowPage: React.FC<EventsFlowPageProps> = ({ onBack, initialEvent })
     };
 
     return (
-        <div className="relative w-full h-full overflow-hidden">
+        <div className="h-screen w-full overflow-hidden bg-background">
             {renderContent()}
         </div>
     );
