@@ -161,15 +161,21 @@ const ChatInfoPage: React.FC = () => {
 
   return (
     <div className="h-screen bg-background flex flex-col overflow-hidden">
-      {/* Header */}
-      <div className="bg-card border-b border-border px-4 py-3 flex items-center gap-3 flex-shrink-0">
-        <button 
-          onClick={() => navigate(`/messages/${recipientId}`)} 
-          className="p-2 rounded-lg hover:bg-muted transition-colors"
-        >
-          <ArrowLeft className="w-5 h-5 text-foreground" />
-        </button>
-        <h1 className="text-base font-bold text-foreground">Chat Info</h1>
+      {/* Header - WhatsApp/Telegram style */}
+      <div className="bg-card border-b border-border flex-shrink-0">
+        <div className="flex items-center gap-3 px-3 py-2.5">
+          {/* Back Button */}
+          <button 
+            onClick={() => navigate(`/messages/${recipientId}`)} 
+            className="p-2 -ml-2 rounded-full hover:bg-muted transition-colors flex-shrink-0"
+            aria-label="Back to chat"
+          >
+            <ArrowLeft className="w-5 h-5 text-foreground" />
+          </button>
+          
+          {/* Title */}
+          <h1 className="text-base font-semibold text-foreground flex-1">Chat Info</h1>
+        </div>
       </div>
 
       {/* Content */}
