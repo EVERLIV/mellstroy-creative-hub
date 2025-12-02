@@ -47,6 +47,11 @@ const AICoachPage: React.FC<AICoachPageProps> = ({ messages, onSendMessage, isLo
 
     return (
         <div className="flex flex-col h-screen bg-background">
+            {/* Header */}
+            <div className="bg-card border-b border-border px-4 py-3 flex-shrink-0">
+                <h1 className="text-base font-semibold text-foreground text-center">AI Fitness Coach</h1>
+            </div>
+            
             {/* Messages Area */}
             <div className="flex-1 overflow-y-auto px-4 py-6 space-y-4 pb-6 max-w-4xl mx-auto w-full">
                 {messages.length === 0 && !isLoading && (
@@ -139,9 +144,9 @@ const AICoachPage: React.FC<AICoachPageProps> = ({ messages, onSendMessage, isLo
             </div>
 
             {/* Input Area */}
-            <div className="fixed bottom-0 left-0 right-0 bg-card border-t border-border shadow-2xl pb-safe">
-                <div className="max-w-4xl mx-auto px-4 py-4">
-                    <div className="flex items-end gap-2 bg-muted rounded-2xl p-2 border border-border focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/20 transition-all">
+            <div className="fixed bottom-0 left-0 right-0 bg-card border-t border-border pb-safe flex-shrink-0">
+                <div className="max-w-4xl mx-auto px-4 py-3">
+                    <div className="flex items-end gap-2">
                         <textarea
                             ref={textareaRef}
                             value={message}
@@ -149,13 +154,13 @@ const AICoachPage: React.FC<AICoachPageProps> = ({ messages, onSendMessage, isLo
                             onKeyPress={handleKeyPress}
                             placeholder="Ask your fitness coach anything..."
                             rows={1}
-                            className="flex-1 bg-transparent border-none focus:outline-none resize-none max-h-32 text-sm py-2 px-2 text-foreground placeholder:text-muted-foreground"
+                            className="flex-1 bg-muted border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary resize-none max-h-32 text-sm py-2 px-3 text-foreground placeholder:text-muted-foreground"
                             style={{ minHeight: '40px' }}
                         />
                         <button 
                             onClick={handleSend} 
                             disabled={!message.trim() || isLoading}
-                            className="w-10 h-10 flex-shrink-0 flex items-center justify-center rounded-xl bg-gradient-to-br from-primary to-accent text-primary-foreground hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:shadow-none" 
+                            className="w-10 h-10 flex-shrink-0 flex items-center justify-center rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed" 
                             aria-label="Send message"
                         >
                             {isLoading ? (
@@ -165,9 +170,6 @@ const AICoachPage: React.FC<AICoachPageProps> = ({ messages, onSendMessage, isLo
                             )}
                         </button>
                     </div>
-                    <p className="text-xs text-muted-foreground mt-2 text-center">
-                        AI can make mistakes. Verify important information.
-                    </p>
                 </div>
             </div>
         </div>
