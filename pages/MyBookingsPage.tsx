@@ -12,6 +12,7 @@ import { usePullToRefresh } from '../src/hooks/usePullToRefresh';
 import PullToRefreshIndicator from '../components/PullToRefreshIndicator';
 import EmptyBookingsState from '../components/EmptyBookingsState';
 import CancelBookingModal from '../components/CancelBookingModal';
+import ReviewModal from '../components/ReviewModal';
 
 // Extended interfaces for this page
 interface BookingData {
@@ -83,13 +84,19 @@ const BookedClassCard: React.FC<BookedClassCardProps> = ({
         <>
             <div className="bg-card rounded-lg shadow-sm border border-border overflow-hidden transition-all duration-300 hover:shadow-md hover:-translate-y-0.5">
                 <div className="p-3">
-                    {/* Status Badge */}
-                    {booking.status === 'attended' && (
-                        <div className="mb-3 inline-flex items-center bg-primary/10 text-primary text-xs font-bold px-2.5 py-1 rounded-full">
-                            <CheckCircle className="w-3.5 h-3.5 mr-1" />
-                            Verified
-                        </div>
-                    )}
+                {/* Status Badge */}
+                {booking.status === 'attended' && (
+                    <div className="mb-3 inline-flex items-center bg-primary/10 text-primary text-xs font-bold px-2.5 py-1 rounded-full">
+                        <CheckCircle className="w-3.5 h-3.5 mr-1" />
+                        Verified
+                    </div>
+                )}
+                {booking.status === 'closed' && (
+                    <div className="mb-3 inline-flex items-center bg-muted text-muted-foreground text-xs font-bold px-2.5 py-1 rounded-full">
+                        <X className="w-3.5 h-3.5 mr-1" />
+                        Closed
+                    </div>
+                )}
 
                     {/* Class Name & Person */}
                     <div className="mb-3">
@@ -176,8 +183,9 @@ const BookedClassCard: React.FC<BookedClassCardProps> = ({
                             {booking.status === 'attended' && !booking.hasReview && (
                                 <button 
                                     onClick={() => onOpenReviewModal(trainer, cls, booking)}
-                                    className="flex-1 bg-primary text-primary-foreground text-xs font-semibold py-2.5 px-3 rounded-lg hover:bg-primary/90 active:scale-95 transition-all duration-200"
+                                    className="flex-1 bg-primary text-primary-foreground text-xs font-semibold py-2.5 px-3 rounded-lg hover:bg-primary/90 active:scale-95 transition-all duration-200 flex items-center justify-center gap-1.5"
                                 >
+                                    <Star className="w-3.5 h-3.5" />
                                     Leave Review
                                 </button>
                             )}
@@ -287,6 +295,7 @@ const MyBookingsPage: React.FC = () => {
     const [showVerifyModal, setShowVerifyModal] = useState<BookingInfo | null>(null);
     const [bookingsData, setBookingsData] = useState<BookingInfo[]>([]);
     const [isLoading, setIsLoading] = useState(true);
+    const [reviewModalData, setReviewModalData] = useState<{ trainer: TrainerData; cls: ClassData; booking: BookingData } | null>(null);
 
     // Pull-to-refresh functionality
     const { containerRef, pullDistance, isRefreshing, pullProgress } = usePullToRefresh({
@@ -295,8 +304,42 @@ const MyBookingsPage: React.FC = () => {
         }
     });
 
+    const checkAndCloseExpiredBookings = async () => {
+        if (!user) return;
+        
+        const now = new Date();
+        const twentyFourHoursAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+        
+        // Get all booked (not verified) bookings
+        const { data: expiredBookings, error } = await supabase
+            .from('bookings')
+            .select('id, booking_date, booking_time')
+            .eq('status', 'booked')
+            .lte('booking_date', twentyFourHoursAgo.toISOString().split('T')[0]);
+        
+        if (error || !expiredBookings || expiredBookings.length === 0) return;
+        
+        // Update expired bookings to closed
+        const bookingIdsToClose = expiredBookings
+            .filter(booking => {
+                const bookingDateTime = parseBookingDateTime(booking.booking_date, booking.booking_time);
+                return bookingDateTime < twentyFourHoursAgo;
+            })
+            .map(b => b.id);
+        
+        if (bookingIdsToClose.length > 0) {
+            await supabase
+                .from('bookings')
+                .update({ status: 'closed' })
+                .in('id', bookingIdsToClose);
+        }
+    };
+
     const loadBookings = async () => {
         if (!user || !userRole) return;
+        
+        // Check and close expired bookings first
+        await checkAndCloseExpiredBookings();
         
         setIsLoading(true);
         try {
@@ -493,7 +536,56 @@ const MyBookingsPage: React.FC = () => {
     };
 
     const handleOpenReviewModal = (trainer: TrainerData, cls: ClassData, booking: BookingData) => {
-        navigate('/explore');
+        setReviewModalData({ trainer, cls, booking });
+    };
+
+    const handleReviewSubmit = async (rating: number, comment: string) => {
+        if (!reviewModalData || !user) return;
+        
+        try {
+            // First check if review already exists
+            const { data: existingReview } = await supabase
+                .from('reviews')
+                .select('id')
+                .eq('booking_id', reviewModalData.booking.id)
+                .single();
+
+            if (existingReview) {
+                toast({
+                    title: "Review already exists",
+                    description: "You have already reviewed this booking.",
+                    variant: "destructive"
+                });
+                setReviewModalData(null);
+                return;
+            }
+
+            const { error } = await supabase
+                .from('reviews')
+                .insert({
+                    booking_id: reviewModalData.booking.id,
+                    trainer_id: reviewModalData.trainer.id,
+                    client_id: user.id,
+                    rating,
+                    comment: comment || null
+                });
+
+            if (error) throw error;
+
+            toast({
+                title: "Review submitted!",
+                description: "Thank you for your feedback.",
+            });
+
+            setReviewModalData(null);
+            await loadBookings();
+        } catch (error: any) {
+            toast({
+                title: "Error",
+                description: error.message || "Failed to submit review.",
+                variant: "destructive"
+            });
+        }
     };
 
     const handleShowVerificationCode = (code: string, bookingId: string) => {
@@ -652,6 +744,16 @@ const MyBookingsPage: React.FC = () => {
                             description: "Attendance verified successfully"
                         });
                     }}
+                />
+            )}
+
+            {reviewModalData && (
+                <ReviewModal
+                    isOpen={true}
+                    onClose={() => setReviewModalData(null)}
+                    onSubmit={handleReviewSubmit}
+                    trainerName={reviewModalData.trainer.name}
+                    className={reviewModalData.cls.name}
                 />
             )}
         </div>
