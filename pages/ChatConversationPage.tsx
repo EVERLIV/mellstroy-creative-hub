@@ -582,74 +582,72 @@ const ChatConversationPage: React.FC = () => {
                   )}
                   
                   <div className={`max-w-[75%] ${isMyMessage ? 'items-end' : 'items-start'} flex flex-col`}>
-                    <div className="relative group">
+                    <div className="relative">
                       <div
-                        className={`px-3 py-2 ${
+                        onClick={() => setShowReactionPicker(showReactionPicker === message.id ? null : message.id)}
+                        className={`px-3 py-2 cursor-pointer ${
                           isMyMessage
                             ? 'bg-primary text-primary-foreground rounded-2xl rounded-br-sm shadow-sm'
                             : 'bg-card text-foreground border border-border rounded-2xl rounded-bl-sm'
-                        } ${isConsecutive ? 'mt-0.5' : 'mt-1'}`}
+                        } ${isConsecutive ? 'mt-0.5' : 'mt-1'} active:scale-95 transition-transform`}
                       >
                         <p className="text-sm whitespace-pre-wrap break-words leading-relaxed">{message.content}</p>
                       </div>
                       
-                      {/* Reaction button - show on hover */}
-                      <button
-                        onClick={() => setShowReactionPicker(showReactionPicker === message.id ? null : message.id)}
-                        className={`absolute ${isMyMessage ? '-left-8' : '-right-8'} top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity bg-card border border-border rounded-full p-1.5 hover:bg-muted shadow-sm`}
-                      >
-                        <span className="text-sm">😊</span>
-                      </button>
-                      
-                      {/* Reaction picker */}
+                      {/* Reaction picker - centered above message */}
                       {showReactionPicker === message.id && (
-                        <div className={`absolute ${isMyMessage ? 'right-0' : 'left-0'} -top-12 bg-card border border-border rounded-full px-2 py-1.5 shadow-lg flex gap-1 z-10 animate-in slide-in-from-bottom-2`}>
+                        <div className="absolute left-1/2 -translate-x-1/2 -top-14 bg-card border border-border rounded-full px-3 py-2 shadow-xl flex gap-2 z-10 animate-in slide-in-from-bottom-3">
                           {(['like', 'love', 'fire'] as const).map(type => (
                             <button
                               key={type}
-                              onClick={() => handleReaction(message.id, type)}
-                              className="hover:scale-125 transition-transform p-1"
+                              onClick={() => {
+                                handleReaction(message.id, type);
+                                setShowReactionPicker(null);
+                              }}
+                              className="hover:scale-125 transition-transform active:scale-110"
                             >
-                              <span className="text-lg">{getReactionEmoji(type)}</span>
+                              <span className="text-2xl">{getReactionEmoji(type)}</span>
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                      
+                      {/* Reactions display - compact under message */}
+                      {reactions[message.id] && reactions[message.id].length > 0 && (
+                        <div className="absolute -bottom-2 left-2 flex gap-0.5">
+                          {Object.entries(getReactionCounts(message.id)).map(([type, { count, users }]) => (
+                            <button
+                              key={type}
+                              onClick={() => handleReaction(message.id, type as any)}
+                              className={`flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-xs transition-all shadow-sm ${
+                                users.includes(user?.id || '')
+                                  ? 'bg-primary text-primary-foreground scale-105'
+                                  : 'bg-card border border-border hover:scale-110'
+                              }`}
+                            >
+                              <span className="text-sm leading-none">{getReactionEmoji(type)}</span>
+                              {count > 1 && <span className="text-[10px] font-semibold">{count}</span>}
                             </button>
                           ))}
                         </div>
                       )}
                     </div>
                     
-                    {/* Reactions display */}
-                    {reactions[message.id] && reactions[message.id].length > 0 && (
-                      <div className={`flex flex-wrap gap-1 mt-1 ${isMyMessage ? 'justify-end' : 'justify-start'}`}>
-                        {Object.entries(getReactionCounts(message.id)).map(([type, { count, users }]) => (
-                          <button
-                            key={type}
-                            onClick={() => handleReaction(message.id, type as any)}
-                            className={`flex items-center gap-0.5 px-2 py-0.5 rounded-full text-xs transition-all ${
-                              users.includes(user?.id || '')
-                                ? 'bg-primary/20 border border-primary/40'
-                                : 'bg-card border border-border hover:bg-muted'
-                            }`}
-                          >
-                            <span>{getReactionEmoji(type)}</span>
-                            {count > 1 && <span className="text-[10px] font-medium text-foreground">{count}</span>}
-                          </button>
-                        ))}
-                      </div>
-                    )}
-                    
-                    {(!isConsecutive || index === messages.length - 1) && (
-                      <div className={`flex items-center gap-1 mt-1 px-1 ${isMyMessage ? 'flex-row-reverse' : 'flex-row'}`}>
-                        <span className="text-[10px] text-muted-foreground">
-                          {formatDistanceToNow(new Date(message.created_at), { addSuffix: false })}
-                        </span>
-                        {isMyMessage && (
-                          <div className="flex items-center">
-                            <div className="w-1 h-1 rounded-full bg-primary mr-0.5" />
-                            <div className="w-1 h-1 rounded-full bg-primary" />
-                          </div>
-                        )}
-                      </div>
-                    )}
+                    <div className={`flex items-center gap-1 ${reactions[message.id]?.length > 0 ? 'mt-3' : 'mt-1'} px-1 ${isMyMessage ? 'flex-row-reverse' : 'flex-row'}`}>
+                      {(!isConsecutive || index === messages.length - 1) && (
+                        <>
+                          <span className="text-[10px] text-muted-foreground">
+                            {formatDistanceToNow(new Date(message.created_at), { addSuffix: false })}
+                          </span>
+                          {isMyMessage && (
+                            <div className="flex items-center">
+                              <div className="w-1 h-1 rounded-full bg-primary mr-0.5" />
+                              <div className="w-1 h-1 rounded-full bg-primary" />
+                            </div>
+                          )}
+                        </>
+                      )}
+                    </div>
                   </div>
                 </div>
               );
