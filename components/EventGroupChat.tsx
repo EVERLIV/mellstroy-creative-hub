@@ -265,7 +265,7 @@ const EventGroupChat: React.FC<EventGroupChatProps> = ({ eventId, currentUserId,
         )}
 
         {/* Input */}
-        <div className="px-4 py-3 border-t border-border bg-card flex-shrink-0">
+        <div className="px-4 py-3 border-t border-border bg-card flex-shrink-0" style={{ paddingBottom: 'calc(0.75rem + env(safe-area-inset-bottom))' }}>
           <div className="flex items-center gap-2">
             <input
               ref={inputRef}

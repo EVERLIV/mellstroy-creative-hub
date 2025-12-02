@@ -544,6 +544,7 @@ export type Database = {
           date: string
           description: string
           district: string | null
+          event_password: string | null
           event_type: string | null
           id: string
           image_url: string | null
@@ -551,6 +552,7 @@ export type Database = {
           max_participants: number | null
           organizer_id: string
           participant_count: number | null
+          premium_only: boolean | null
           price: number | null
           sport_category: string | null
           status: string
@@ -563,6 +565,7 @@ export type Database = {
           date: string
           description: string
           district?: string | null
+          event_password?: string | null
           event_type?: string | null
           id?: string
           image_url?: string | null
@@ -570,6 +573,7 @@ export type Database = {
           max_participants?: number | null
           organizer_id: string
           participant_count?: number | null
+          premium_only?: boolean | null
           price?: number | null
           sport_category?: string | null
           status?: string
@@ -582,6 +586,7 @@ export type Database = {
           date?: string
           description?: string
           district?: string | null
+          event_password?: string | null
           event_type?: string | null
           id?: string
           image_url?: string | null
@@ -589,6 +594,7 @@ export type Database = {
           max_participants?: number | null
           organizer_id?: string
           participant_count?: number | null
+          premium_only?: boolean | null
           price?: number | null
           sport_category?: string | null
           status?: string
