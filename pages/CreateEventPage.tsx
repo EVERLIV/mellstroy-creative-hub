@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { ArrowLeft, Save, Loader2, Upload, X, Image } from 'lucide-react';
+import { ArrowLeft, Save, Loader2, Upload, X, Image, Crown, Lock } from 'lucide-react';
 import { supabase } from '../src/integrations/supabase/client';
 import { useToast } from '../src/hooks/use-toast';
 import { FITNESS_ACTIVITIES, HCMC_DISTRICTS } from '../constants';
@@ -28,11 +28,14 @@ const CreateEventPage: React.FC<CreateEventPageProps> = ({ onBack, onSuccess }) 
         district: '',
         price: '0',
         max_participants: '',
+        premium_only: false,
+        event_password: '',
     });
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-        const { name, value } = e.target;
-        setFormData(prev => ({ ...prev, [name]: value }));
+        const { name, value, type } = e.target;
+        const newValue = type === 'checkbox' ? (e.target as HTMLInputElement).checked : value;
+        setFormData(prev => ({ ...prev, [name]: newValue }));
     };
 
     const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -125,7 +128,9 @@ const CreateEventPage: React.FC<CreateEventPageProps> = ({ onBack, onSuccess }) 
                 max_participants: formData.max_participants ? parseInt(formData.max_participants) : null,
                 organizer_id: user.id,
                 status: 'approved',
-            });
+                premium_only: formData.premium_only,
+                event_password: formData.event_password || null,
+            } as any);
 
             if (error) throw error;
 
@@ -223,6 +228,43 @@ const CreateEventPage: React.FC<CreateEventPageProps> = ({ onBack, onSuccess }) 
                         <div>
                             <label htmlFor="max_participants" className="block text-xs font-medium text-foreground mb-1">Max Participants</label>
                             <input type="number" id="max_participants" name="max_participants" value={formData.max_participants} onChange={handleChange} min="1" placeholder="No limit" className="w-full px-3 py-2 bg-muted border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-foreground text-sm placeholder:text-muted-foreground" />
+                        </div>
+                    </div>
+                    
+                    {/* Event Privacy Options */}
+                    <div className="space-y-3 p-3 bg-muted/50 rounded-xl border border-border">
+                        <p className="text-xs font-medium text-foreground flex items-center gap-1.5">
+                            <Lock className="w-3.5 h-3.5 text-primary" />
+                            Event Privacy (optional)
+                        </p>
+                        
+                        <label className="flex items-center gap-3 cursor-pointer">
+                            <input
+                                type="checkbox"
+                                name="premium_only"
+                                checked={formData.premium_only}
+                                onChange={handleChange}
+                                className="w-4 h-4 rounded border-border text-primary focus:ring-primary"
+                            />
+                            <span className="flex items-center gap-1.5 text-sm text-foreground">
+                                <Crown className="w-4 h-4 text-primary" />
+                                Premium users only
+                            </span>
+                        </label>
+                        
+                        <div>
+                            <label htmlFor="event_password" className="block text-xs text-muted-foreground mb-1">
+                                Or set a password to join
+                            </label>
+                            <input
+                                type="text"
+                                id="event_password"
+                                name="event_password"
+                                value={formData.event_password}
+                                onChange={handleChange}
+                                placeholder="Leave empty for no password"
+                                className="w-full px-3 py-2 bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary text-foreground text-sm placeholder:text-muted-foreground"
+                            />
                         </div>
                     </div>
                     
