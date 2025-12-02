@@ -36,23 +36,6 @@ const CreateEventPage: React.FC<CreateEventPageProps> = ({ onBack, onSuccess }) 
             const { data: { user } } = await supabase.auth.getUser();
             if (!user) throw new Error('Not authenticated');
 
-            // Check if user is premium
-            const { data: profile } = await supabase
-                .from('profiles')
-                .select('is_premium')
-                .eq('id', user.id)
-                .single();
-
-            if (!profile?.is_premium) {
-                toast({
-                    title: 'Premium feature',
-                    description: 'Only premium users can create events. Upgrade to premium to continue.',
-                    variant: 'destructive',
-                });
-                setLoading(false);
-                return;
-            }
-
             const { error } = await supabase.from('events').insert({
                 title: formData.title,
                 description: formData.description,
