@@ -600,7 +600,7 @@ const AppRoutes = () => {
               }
 
               // Insert booking into database
-              const { data, error } = await supabase
+              const { data: bookingData, error: bookingError } = await supabase
                 .from('bookings')
                 .insert({
                   class_id: classId,
@@ -612,20 +612,48 @@ const AppRoutes = () => {
                 .select()
                 .single();
 
-              if (error) {
+              if (bookingError) {
                 toast({
                   title: "Booking Failed",
-                  description: error.message || "Failed to create booking. Please try again.",
+                  description: bookingError.message || "Failed to create booking. Please try again.",
                   variant: "destructive",
                 });
                 return;
               }
 
+              // Create or find existing conversation between student and trainer
+              const { data: existingConversation } = await supabase
+                .from('conversations')
+                .select('id')
+                .or(`and(participant_1_id.eq.${user.id},participant_2_id.eq.${trainerId}),and(participant_1_id.eq.${trainerId},participant_2_id.eq.${user.id})`)
+                .maybeSingle();
+
+              if (!existingConversation) {
+                // Create new conversation
+                await supabase
+                  .from('conversations')
+                  .insert({
+                    participant_1_id: user.id,
+                    participant_2_id: trainerId,
+                    booking_id: bookingData.id,
+                    last_message_at: new Date().toISOString()
+                  });
+              } else {
+                // Update existing conversation with booking reference
+                await supabase
+                  .from('conversations')
+                  .update({
+                    booking_id: bookingData.id,
+                    last_message_at: new Date().toISOString()
+                  })
+                  .eq('id', existingConversation.id);
+              }
+
               // Show verification code modal
-              if (data && data.verification_code) {
+              if (bookingData && bookingData.verification_code) {
                 setVerificationCode({
-                  code: data.verification_code,
-                  bookingId: data.id
+                  code: bookingData.verification_code,
+                  bookingId: bookingData.id
                 });
               }
 
