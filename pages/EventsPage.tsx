@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ArrowLeft, Plus, Users, Calendar, MapPin, User, Clock, DollarSign, Crown, List, CalendarDays } from 'lucide-react';
+import { ArrowLeft, Plus, Users, Calendar, MapPin, User, Clock, DollarSign, Crown, List, CalendarDays, Dumbbell, Building2 } from 'lucide-react';
 import EventCalendar from '../components/EventCalendar';
 
 interface EventCardProps {
@@ -17,6 +17,8 @@ interface EventCardProps {
     event_type?: string;
     price?: number;
     max_participants?: number;
+    sport_category?: string;
+    district?: string;
   };
   onSelect: () => void;
 }
@@ -62,6 +64,25 @@ const EventCard: React.FC<EventCardProps> = ({ event, onSelect }) => {
             </div>
             <div className="p-4">
                 <h3 className="font-bold text-foreground text-lg truncate">{event.title}</h3>
+                
+                {/* Sport Category & District Badges */}
+                {(event.sport_category || event.district) && (
+                    <div className="flex flex-wrap gap-1.5 mt-2">
+                        {event.sport_category && (
+                            <span className="inline-flex items-center gap-1 bg-blue-500/10 text-blue-600 dark:text-blue-400 text-xs font-medium px-2 py-0.5 rounded-md">
+                                <Dumbbell className="w-3 h-3" />
+                                {event.sport_category}
+                            </span>
+                        )}
+                        {event.district && (
+                            <span className="inline-flex items-center gap-1 bg-green-500/10 text-green-600 dark:text-green-400 text-xs font-medium px-2 py-0.5 rounded-md">
+                                <Building2 className="w-3 h-3" />
+                                {event.district}
+                            </span>
+                        )}
+                    </div>
+                )}
+
                 <div className="mt-2 space-y-2 text-sm text-muted-foreground">
                     <div className="flex items-center">
                         <User className="w-4 h-4 mr-2 flex-shrink-0" />

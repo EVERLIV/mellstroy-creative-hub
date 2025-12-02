@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, Users, Calendar, Clock, MapPin, DollarSign, AlertCircle, User, Camera, Upload, X, Loader2, Crown } from 'lucide-react';
+import { ArrowLeft, Users, Calendar, Clock, MapPin, DollarSign, AlertCircle, User, Camera, Upload, X, Loader2, Crown, Dumbbell, Building2 } from 'lucide-react';
 import { supabase } from '../src/integrations/supabase/client';
 import { useToast } from '../src/hooks/use-toast';
 
@@ -418,10 +418,22 @@ const EventDetailPage: React.FC<EventDetailPageProps> = ({ event, currentUserId,
 
                 <div className="bg-card p-5 rounded-t-2xl -mt-8 relative z-10 space-y-6">
                     <div>
-                        <div className="flex items-center gap-2 mb-2">
+                        <div className="flex flex-wrap items-center gap-2 mb-2">
                             {event.event_type && event.event_type !== 'general' && (
                                 <span className="inline-flex items-center bg-primary/10 text-primary text-xs font-bold px-2 py-1 rounded-lg">
                                     {getEventTypeLabel(event.event_type)}
+                                </span>
+                            )}
+                            {event.sport_category && (
+                                <span className="inline-flex items-center gap-1 bg-blue-500/10 text-blue-600 dark:text-blue-400 text-xs font-bold px-2 py-1 rounded-lg">
+                                    <Dumbbell className="w-3 h-3" />
+                                    {event.sport_category}
+                                </span>
+                            )}
+                            {event.district && (
+                                <span className="inline-flex items-center gap-1 bg-green-500/10 text-green-600 dark:text-green-400 text-xs font-bold px-2 py-1 rounded-lg">
+                                    <Building2 className="w-3 h-3" />
+                                    {event.district}
                                 </span>
                             )}
                         </div>
