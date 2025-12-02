@@ -9,6 +9,81 @@ interface AICoachPageProps {
     onClose: () => void;
 }
 
+// Component to handle typing animation for AI messages
+const TypingMessage: React.FC<{ text: string; isLatest: boolean }> = ({ text, isLatest }) => {
+    const [displayedText, setDisplayedText] = useState('');
+    const [currentIndex, setCurrentIndex] = useState(0);
+
+    useEffect(() => {
+        if (!isLatest) {
+            setDisplayedText(text);
+            return;
+        }
+
+        if (currentIndex < text.length) {
+            const timeout = setTimeout(() => {
+                setDisplayedText(text.slice(0, currentIndex + 1));
+                setCurrentIndex(currentIndex + 1);
+            }, 20);
+            return () => clearTimeout(timeout);
+        }
+    }, [currentIndex, text, isLatest]);
+
+    // Format text with structure
+    const formatText = (rawText: string) => {
+        const paragraphs = rawText.split('\n\n');
+        return paragraphs.map((paragraph, idx) => {
+            // Check for bullet points
+            if (paragraph.trim().startsWith('•') || paragraph.trim().startsWith('-')) {
+                const items = paragraph.split('\n').filter(line => line.trim());
+                return (
+                    <ul key={idx} className="list-disc list-inside space-y-1 my-2">
+                        {items.map((item, i) => (
+                            <li key={i} className="text-sm">
+                                {item.replace(/^[•\-]\s*/, '')}
+                            </li>
+                        ))}
+                    </ul>
+                );
+            }
+            
+            // Check for numbered lists
+            if (/^\d+\./.test(paragraph.trim())) {
+                const items = paragraph.split('\n').filter(line => line.trim());
+                return (
+                    <ol key={idx} className="list-decimal list-inside space-y-1 my-2">
+                        {items.map((item, i) => (
+                            <li key={i} className="text-sm">
+                                {item.replace(/^\d+\.\s*/, '')}
+                            </li>
+                        ))}
+                    </ol>
+                );
+            }
+
+            // Check for bold text markers
+            const boldText = paragraph.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+            
+            return (
+                <p 
+                    key={idx} 
+                    className="text-sm leading-relaxed mb-2 last:mb-0"
+                    dangerouslySetInnerHTML={{ __html: boldText }}
+                />
+            );
+        });
+    };
+
+    return (
+        <div>
+            {formatText(displayedText)}
+            {isLatest && currentIndex < text.length && (
+                <span className="inline-block w-0.5 h-4 bg-primary animate-pulse ml-0.5" />
+            )}
+        </div>
+    );
+};
+
 const AICoachPage: React.FC<AICoachPageProps> = ({ messages, onSendMessage, isLoading, onClose }) => {
     const [message, setMessage] = useState('');
     const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -92,44 +167,52 @@ const AICoachPage: React.FC<AICoachPageProps> = ({ messages, onSendMessage, isLo
                     </div>
                 )}
 
-                {messages.map((msg, index) => (
-                    <div 
-                        key={msg.id} 
-                        className={`flex items-start gap-3 animate-fade-in ${msg.sender === 'user' ? 'flex-row-reverse' : 'flex-row'}`}
-                        style={{ animationDelay: `${index * 0.05}s` }}
-                    >
-                        {/* Avatar */}
-                        <div className={`w-10 h-10 rounded-xl flex-shrink-0 flex items-center justify-center shadow-md ${
-                            msg.sender === 'user' 
-                                ? 'bg-gradient-to-br from-primary to-accent' 
-                                : 'bg-gradient-to-br from-primary/10 to-accent/10'
-                        }`}>
-                            {msg.sender === 'user' ? (
-                                <User className="w-5 h-5 text-primary-foreground" />
-                            ) : (
-                                <Bot className="w-5 h-5 text-primary" />
-                            )}
-                        </div>
-
-                        {/* Message Bubble */}
-                        <div className="flex flex-col max-w-[75%]">
-                            <div className={`px-4 py-3 rounded-2xl shadow-md ${
+                {messages.map((msg, index) => {
+                    const isLatestAI = msg.sender === 'trainer' && index === messages.length - 1;
+                    
+                    return (
+                        <div 
+                            key={msg.id} 
+                            className={`flex items-start gap-3 animate-fade-in ${msg.sender === 'user' ? 'flex-row-reverse' : 'flex-row'}`}
+                            style={{ animationDelay: `${index * 0.05}s` }}
+                        >
+                            {/* Avatar */}
+                            <div className={`w-10 h-10 rounded-xl flex-shrink-0 flex items-center justify-center shadow-md ${
                                 msg.sender === 'user' 
-                                    ? 'bg-gradient-to-br from-primary to-accent text-primary-foreground rounded-tr-md' 
-                                    : 'bg-card text-foreground rounded-tl-md border border-border'
+                                    ? 'bg-gradient-to-br from-primary to-accent' 
+                                    : 'bg-gradient-to-br from-primary/10 to-accent/10'
                             }`}>
-                                <p className="text-sm leading-relaxed whitespace-pre-wrap break-words">
-                                    {msg.text}
-                                </p>
+                                {msg.sender === 'user' ? (
+                                    <User className="w-5 h-5 text-primary-foreground" />
+                                ) : (
+                                    <Bot className="w-5 h-5 text-primary" />
+                                )}
                             </div>
-                            <span className={`text-xs mt-1 px-2 ${
-                                msg.sender === 'user' ? 'text-right text-muted-foreground' : 'text-left text-muted-foreground'
-                            }`}>
-                                {msg.timestamp}
-                            </span>
+
+                            {/* Message Bubble */}
+                            <div className="flex flex-col max-w-[80%]">
+                                <div className={`px-4 py-3 rounded-2xl shadow-md ${
+                                    msg.sender === 'user' 
+                                        ? 'bg-gradient-to-br from-primary to-accent text-primary-foreground rounded-tr-md' 
+                                        : 'bg-card text-foreground rounded-tl-md border border-border'
+                                }`}>
+                                    {msg.sender === 'user' ? (
+                                        <p className="text-sm leading-relaxed whitespace-pre-wrap break-words">
+                                            {msg.text}
+                                        </p>
+                                    ) : (
+                                        <TypingMessage text={msg.text} isLatest={isLatestAI && !isLoading} />
+                                    )}
+                                </div>
+                                <span className={`text-xs mt-1 px-2 ${
+                                    msg.sender === 'user' ? 'text-right text-muted-foreground' : 'text-left text-muted-foreground'
+                                }`}>
+                                    {msg.timestamp}
+                                </span>
+                            </div>
                         </div>
-                    </div>
-                ))}
+                    );
+                })}
 
                 {/* Loading Indicator */}
                 {isLoading && (
