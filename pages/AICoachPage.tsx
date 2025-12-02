@@ -148,27 +148,14 @@ const AICoachPage: React.FC<AICoachPageProps> = ({ messages, onSendMessage, isLo
     return (
         <div className="flex flex-col h-screen bg-gradient-to-b from-background via-background to-muted/20">
             {/* Header */}
-            <div className="flex items-center justify-between px-4 sm:px-6 py-4 bg-card/80 backdrop-blur-xl shadow-lg z-20 flex-shrink-0 border-b border-border/50">
-                <button 
-                    onClick={onClose}
-                    className="w-10 h-10 flex items-center justify-center rounded-xl bg-muted/50 hover:bg-muted hover:scale-105 transition-all duration-200 active:scale-95"
-                    aria-label="Go back"
-                >
-                    <ArrowLeft className="w-5 h-5 text-foreground" />
+            <div className="bg-gradient-to-br from-primary to-accent px-4 py-4 relative flex-shrink-0">
+                <button onClick={onClose} className="absolute top-4 left-4 p-2 rounded-full bg-card/20 hover:bg-card/30 transition-colors">
+                    <ArrowLeft className="w-5 h-5 text-primary-foreground" />
                 </button>
-                <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center">
-                        <Bot className="w-5 h-5 text-primary-foreground" />
-                    </div>
-                    <h1 className="text-lg sm:text-xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">AI Coach</h1>
-                </div>
-                <button 
-                    onClick={() => navigate('/ai-coach/profile')}
-                    className="w-10 h-10 flex items-center justify-center rounded-xl bg-muted/50 hover:bg-muted hover:scale-105 transition-all duration-200 active:scale-95"
-                    aria-label="Profile settings"
-                >
-                    <Settings className="w-5 h-5 text-foreground" />
+                <button onClick={() => navigate('/ai-coach/profile')} className="absolute top-4 right-4 p-2 rounded-full bg-card/20 hover:bg-card/30 transition-colors">
+                    <Settings className="w-5 h-5 text-primary-foreground" />
                 </button>
+                <h1 className="text-lg font-semibold text-primary-foreground text-center">AI Coach</h1>
             </div>
             
             {/* Messages Area */}
