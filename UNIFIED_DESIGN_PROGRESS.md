@@ -80,6 +80,25 @@
 - Events use semantic tokens
 - Premium banner uses semantic tokens
 
+### 12. **AuthPage** - DONE ✅
+- Replaced gradient overlays with `from-transparent to-primary/90`
+- Replaced `text-white` → `text-primary-foreground`
+- Replaced `bg-white` → `bg-card`
+- Replaced `text-orange-*` → `text-primary`
+- Replaced `border-white` → `border-card`
+- Replaced all form inputs with semantic tokens
+- Social login buttons use semantic tokens
+
+### 13. **MealPlannerPage** - DONE ✅
+- Replaced `bg-slate-50` → `bg-background`
+- Replaced `bg-white` → `bg-card`
+- Replaced `text-slate-*` → `text-foreground` / `text-muted-foreground`
+- Replaced `bg-[#FF6B35]` → `bg-primary`
+- Replaced `border-slate-*` → `border-border`
+- Replaced gradient buttons with `from-primary to-accent`
+- All form inputs use semantic tokens
+- Error messages use `bg-destructive/10`
+
 ## Still Need Updating ❌
 
 ### High Priority Components
@@ -89,8 +108,8 @@
 - [ ] UnifiedHeader
 
 ### High Priority Pages
-- [ ] AuthPage (background, buttons)
-- [ ] ClassDetailPage
+- [ ] ClassDetailPage (very large file - 674 lines)
+- [ ] ProfilePage (large file - 410 lines)
 - [ ] HomePage (if different from DashboardPage)
 
 ### Medium Priority
