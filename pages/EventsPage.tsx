@@ -392,62 +392,55 @@ const EventsPage: React.FC<EventsPageProps> = ({ events, isPremium, onBack, onSe
                                     : `${filteredEvents.length} event${filteredEvents.length !== 1 ? 's' : ''} found`}
                             </h2>
                         </div>
-                        <div className="space-y-2">
+                        {/* Table Header */}
+                        <div className="grid grid-cols-[44px_1fr_70px_50px_60px_20px] gap-2 px-3 py-2 text-[10px] font-semibold text-muted-foreground uppercase tracking-wide border-b border-border">
+                            <span>Date</span>
+                            <span>Event</span>
+                            <span>Category</span>
+                            <span className="text-center">Join</span>
+                            <span className="text-right">Price</span>
+                            <span></span>
+                        </div>
+                        
+                        {/* Table Rows */}
+                        <div className="divide-y divide-border">
                             {filteredEvents.map(event => {
                                 const eventDate = new Date(event.date);
-                                const dateStr = eventDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
                                 const isFree = !event.price || event.price === 0;
                                 const participantCount = event.participant_count || 0;
-                                const organizerName = event.organizer?.username || 'Unknown';
-                                const isOrganizerPremium = event.organizer?.is_premium || false;
                                 
                                 return (
                                     <button 
                                         key={event.id} 
                                         onClick={() => onSelectEvent(event)}
-                                        className="w-full bg-card rounded-xl border border-border p-3 flex items-center gap-3 text-left hover:shadow-md transition-all duration-200 hover:border-primary/30"
+                                        className="w-full grid grid-cols-[44px_1fr_70px_50px_60px_20px] gap-2 items-center px-3 py-3 text-left hover:bg-muted/50 transition-colors"
                                     >
                                         {/* Date */}
-                                        <div className="flex-shrink-0 w-12 text-center">
-                                            <p className="text-[10px] font-bold text-primary uppercase">{eventDate.toLocaleDateString('en-US', { month: 'short' })}</p>
-                                            <p className="text-lg font-bold text-foreground -mt-0.5">{eventDate.getDate()}</p>
+                                        <div className="text-center">
+                                            <p className="text-[9px] font-bold text-primary uppercase leading-tight">{eventDate.toLocaleDateString('en-US', { month: 'short' })}</p>
+                                            <p className="text-base font-bold text-foreground leading-tight">{eventDate.getDate()}</p>
                                         </div>
                                         
-                                        {/* Content */}
-                                        <div className="flex-1 min-w-0">
-                                            <div className="flex items-center gap-2">
-                                                <h3 className="font-semibold text-foreground text-sm truncate">
-                                                    {event.title}
-                                                </h3>
-                                                {isOrganizerPremium && (
-                                                    <Crown className="w-3.5 h-3.5 text-primary flex-shrink-0" />
-                                                )}
-                                            </div>
-                                            <div className="flex items-center gap-3 mt-1 text-[11px] text-muted-foreground">
-                                                <span className="flex items-center gap-1">
-                                                    <User className="w-3 h-3" />
-                                                    {organizerName}
-                                                </span>
-                                                <span className="flex items-center gap-1">
-                                                    <Users className="w-3 h-3" />
-                                                    {participantCount}
-                                                </span>
-                                                {event.sport_category && (
-                                                    <span className="flex items-center gap-1 text-blue-600 dark:text-blue-400">
-                                                        <Dumbbell className="w-3 h-3" />
-                                                        {event.sport_category}
-                                                    </span>
-                                                )}
-                                            </div>
-                                        </div>
+                                        {/* Title */}
+                                        <p className="font-medium text-foreground text-sm truncate">{event.title}</p>
                                         
-                                        {/* Price & Arrow */}
-                                        <div className="flex-shrink-0 flex items-center gap-2">
-                                            <span className={`text-xs font-bold ${isFree ? 'text-green-600 dark:text-green-400' : 'text-primary'}`}>
-                                                {isFree ? 'FREE' : formatPrice(event.price) + '₫'}
-                                            </span>
-                                            <ChevronRight className="w-4 h-4 text-muted-foreground" />
-                                        </div>
+                                        {/* Category */}
+                                        <span className="text-[11px] text-muted-foreground truncate">
+                                            {event.sport_category || '—'}
+                                        </span>
+                                        
+                                        {/* Participants */}
+                                        <span className="text-[11px] text-muted-foreground text-center">
+                                            {participantCount}{event.max_participants ? `/${event.max_participants}` : ''}
+                                        </span>
+                                        
+                                        {/* Price */}
+                                        <span className={`text-[11px] font-semibold text-right ${isFree ? 'text-green-600 dark:text-green-400' : 'text-primary'}`}>
+                                            {isFree ? 'FREE' : formatPrice(event.price) + '₫'}
+                                        </span>
+                                        
+                                        {/* Arrow */}
+                                        <ChevronRight className="w-4 h-4 text-muted-foreground" />
                                     </button>
                                 );
                             })}
