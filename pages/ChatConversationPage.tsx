@@ -17,6 +17,14 @@ interface Message {
   created_at: string;
 }
 
+interface MessageReaction {
+  id: string;
+  message_id: string;
+  user_id: string;
+  reaction_type: 'like' | 'love' | 'fire';
+  created_at: string;
+}
+
 interface Participant {
   id: string;
   username: string;
@@ -39,6 +47,8 @@ const ChatConversationPage: React.FC = () => {
   const [showMenu, setShowMenu] = useState(false);
   const [showReportModal, setShowReportModal] = useState(false);
   const [isTyping, setIsTyping] = useState(false);
+  const [reactions, setReactions] = useState<{ [messageId: string]: MessageReaction[] }>({});
+  const [showReactionPicker, setShowReactionPicker] = useState<string | null>(null);
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
@@ -131,20 +141,40 @@ const ChatConversationPage: React.FC = () => {
     loadConversation();
   }, [user, recipientId, toast]);
 
-  // Load messages
+  // Load messages and reactions
   useEffect(() => {
     if (!conversationId) return;
 
-    const loadMessages = async () => {
+    const loadMessagesAndReactions = async () => {
       try {
-        const { data, error } = await supabase
+        const { data: messagesData, error: messagesError } = await supabase
           .from('messages')
           .select('*')
           .eq('conversation_id', conversationId)
           .order('created_at', { ascending: true });
 
-        if (error) throw error;
-        setMessages(data || []);
+        if (messagesError) throw messagesError;
+        setMessages(messagesData || []);
+
+        // Load reactions for all messages
+        if (messagesData && messagesData.length > 0) {
+          const messageIds = messagesData.map(m => m.id);
+          const { data: reactionsData, error: reactionsError } = await supabase
+            .from('message_reactions')
+            .select('*')
+            .in('message_id', messageIds);
+
+          if (!reactionsError && reactionsData) {
+            const reactionsByMessage: { [messageId: string]: MessageReaction[] } = {};
+            reactionsData.forEach(reaction => {
+              if (!reactionsByMessage[reaction.message_id]) {
+                reactionsByMessage[reaction.message_id] = [];
+              }
+              reactionsByMessage[reaction.message_id].push(reaction as MessageReaction);
+            });
+            setReactions(reactionsByMessage);
+          }
+        }
 
         // Mark messages as read
         if (user) {
@@ -160,10 +190,10 @@ const ChatConversationPage: React.FC = () => {
       }
     };
 
-    loadMessages();
+    loadMessagesAndReactions();
   }, [conversationId, user]);
 
-  // Subscribe to real-time messages and typing presence
+  // Subscribe to real-time messages, reactions, and typing presence
   useEffect(() => {
     if (!conversationId || !user) return;
 
@@ -188,6 +218,41 @@ const ChatConversationPage: React.FC = () => {
               .update({ is_read: true })
               .eq('id', newMessage.id);
           }
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'message_reactions'
+        },
+        (payload) => {
+          const newReaction = payload.new as MessageReaction;
+          setReactions(prev => ({
+            ...prev,
+            [newReaction.message_id]: [
+              ...(prev[newReaction.message_id] || []),
+              newReaction
+            ]
+          }));
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'DELETE',
+          schema: 'public',
+          table: 'message_reactions'
+        },
+        (payload) => {
+          const deletedReaction = payload.old as MessageReaction;
+          setReactions(prev => ({
+            ...prev,
+            [deletedReaction.message_id]: (prev[deletedReaction.message_id] || []).filter(
+              r => r.id !== deletedReaction.id
+            )
+          }));
         }
       )
       .on('presence', { event: 'sync' }, () => {
@@ -278,6 +343,66 @@ const ChatConversationPage: React.FC = () => {
         await channel.track({ user_id: user.id, typing: false });
       }, 2000);
     }
+  };
+
+  const handleReaction = async (messageId: string, reactionType: 'like' | 'love' | 'fire') => {
+    if (!user) return;
+
+    const messageReactions = reactions[messageId] || [];
+    const existingReaction = messageReactions.find(
+      r => r.user_id === user.id && r.reaction_type === reactionType
+    );
+
+    try {
+      if (existingReaction) {
+        // Remove reaction
+        await supabase
+          .from('message_reactions')
+          .delete()
+          .eq('id', existingReaction.id);
+      } else {
+        // Add reaction
+        await supabase
+          .from('message_reactions')
+          .insert({
+            message_id: messageId,
+            user_id: user.id,
+            reaction_type: reactionType
+          });
+      }
+      setShowReactionPicker(null);
+    } catch (error) {
+      console.error('Error handling reaction:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to update reaction',
+        variant: 'destructive'
+      });
+    }
+  };
+
+  const getReactionEmoji = (type: string) => {
+    switch (type) {
+      case 'like': return '👍';
+      case 'love': return '❤️';
+      case 'fire': return '🔥';
+      default: return '👍';
+    }
+  };
+
+  const getReactionCounts = (messageId: string) => {
+    const messageReactions = reactions[messageId] || [];
+    const counts: { [key: string]: { count: number; users: string[] } } = {};
+    
+    messageReactions.forEach(reaction => {
+      if (!counts[reaction.reaction_type]) {
+        counts[reaction.reaction_type] = { count: 0, users: [] };
+      }
+      counts[reaction.reaction_type].count++;
+      counts[reaction.reaction_type].users.push(reaction.user_id);
+    });
+    
+    return counts;
   };
 
   if (loading) {
@@ -380,15 +505,61 @@ const ChatConversationPage: React.FC = () => {
                   )}
                   
                   <div className={`max-w-[75%] ${isMyMessage ? 'items-end' : 'items-start'} flex flex-col`}>
-                    <div
-                      className={`px-3 py-2 ${
-                        isMyMessage
-                          ? 'bg-primary text-primary-foreground rounded-2xl rounded-br-sm shadow-sm'
-                          : 'bg-card text-foreground border border-border rounded-2xl rounded-bl-sm'
-                      } ${isConsecutive ? 'mt-0.5' : 'mt-1'}`}
-                    >
-                      <p className="text-sm whitespace-pre-wrap break-words leading-relaxed">{message.content}</p>
+                    <div className="relative group">
+                      <div
+                        className={`px-3 py-2 ${
+                          isMyMessage
+                            ? 'bg-primary text-primary-foreground rounded-2xl rounded-br-sm shadow-sm'
+                            : 'bg-card text-foreground border border-border rounded-2xl rounded-bl-sm'
+                        } ${isConsecutive ? 'mt-0.5' : 'mt-1'}`}
+                      >
+                        <p className="text-sm whitespace-pre-wrap break-words leading-relaxed">{message.content}</p>
+                      </div>
+                      
+                      {/* Reaction button - show on hover */}
+                      <button
+                        onClick={() => setShowReactionPicker(showReactionPicker === message.id ? null : message.id)}
+                        className={`absolute ${isMyMessage ? '-left-8' : '-right-8'} top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity bg-card border border-border rounded-full p-1.5 hover:bg-muted shadow-sm`}
+                      >
+                        <span className="text-sm">😊</span>
+                      </button>
+                      
+                      {/* Reaction picker */}
+                      {showReactionPicker === message.id && (
+                        <div className={`absolute ${isMyMessage ? 'right-0' : 'left-0'} -top-12 bg-card border border-border rounded-full px-2 py-1.5 shadow-lg flex gap-1 z-10 animate-in slide-in-from-bottom-2`}>
+                          {(['like', 'love', 'fire'] as const).map(type => (
+                            <button
+                              key={type}
+                              onClick={() => handleReaction(message.id, type)}
+                              className="hover:scale-125 transition-transform p-1"
+                            >
+                              <span className="text-lg">{getReactionEmoji(type)}</span>
+                            </button>
+                          ))}
+                        </div>
+                      )}
                     </div>
+                    
+                    {/* Reactions display */}
+                    {reactions[message.id] && reactions[message.id].length > 0 && (
+                      <div className={`flex flex-wrap gap-1 mt-1 ${isMyMessage ? 'justify-end' : 'justify-start'}`}>
+                        {Object.entries(getReactionCounts(message.id)).map(([type, { count, users }]) => (
+                          <button
+                            key={type}
+                            onClick={() => handleReaction(message.id, type as any)}
+                            className={`flex items-center gap-0.5 px-2 py-0.5 rounded-full text-xs transition-all ${
+                              users.includes(user?.id || '')
+                                ? 'bg-primary/20 border border-primary/40'
+                                : 'bg-card border border-border hover:bg-muted'
+                            }`}
+                          >
+                            <span>{getReactionEmoji(type)}</span>
+                            {count > 1 && <span className="text-[10px] font-medium text-foreground">{count}</span>}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                    
                     {(!isConsecutive || index === messages.length - 1) && (
                       <div className={`flex items-center gap-1 mt-1 px-1 ${isMyMessage ? 'flex-row-reverse' : 'flex-row'}`}>
                         <span className="text-[10px] text-muted-foreground">
