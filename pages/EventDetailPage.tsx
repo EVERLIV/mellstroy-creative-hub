@@ -37,7 +37,10 @@ interface EventDetailPageProps {
 const EventDetailPage: React.FC<EventDetailPageProps> = ({ event, currentUserId, onBack, onJoinEvent }) => {
     const { toast } = useToast();
     const [hasJoined, setHasJoined] = useState(false);
+    const [isOnWaitlist, setIsOnWaitlist] = useState(false);
+    const [waitlistPosition, setWaitlistPosition] = useState<number | null>(null);
     const [participantCount, setParticipantCount] = useState(0);
+    const [waitlistCount, setWaitlistCount] = useState(0);
     const [participants, setParticipants] = useState<any[]>([]);
     const [isRegistrationOpen, setIsRegistrationOpen] = useState(true);
     const [loading, setLoading] = useState(false);
@@ -65,6 +68,17 @@ const EventDetailPage: React.FC<EventDetailPageProps> = ({ event, currentUserId,
 
                 setHasJoined(!!participation);
 
+                // Check if user is on waitlist
+                const { data: waitlistEntry } = await supabase
+                    .from('event_waitlist')
+                    .select('position')
+                    .eq('event_id', event.id)
+                    .eq('user_id', currentUserId)
+                    .maybeSingle();
+
+                setIsOnWaitlist(!!waitlistEntry);
+                setWaitlistPosition(waitlistEntry?.position || null);
+
                 // Get all participants with profile data
                 const { data: participantsData, error: participantsError } = await supabase
                     .from('event_participants')
@@ -84,6 +98,14 @@ const EventDetailPage: React.FC<EventDetailPageProps> = ({ event, currentUserId,
 
                 setParticipants(participantsData || []);
                 setParticipantCount(participantsData?.length || 0);
+
+                // Get waitlist count
+                const { count: waitlistTotal } = await supabase
+                    .from('event_waitlist')
+                    .select('*', { count: 'exact', head: true })
+                    .eq('event_id', event.id);
+
+                setWaitlistCount(waitlistTotal || 0);
 
                 // Check if registration is still open (6 hours before event)
                 const eventDateTime = new Date(`${event.date}T${event.time}`);
@@ -130,6 +152,26 @@ const EventDetailPage: React.FC<EventDetailPageProps> = ({ event, currentUserId,
         };
 
         checkParticipation();
+
+        // Subscribe to realtime updates for participants and waitlist
+        const participantsChannel = supabase
+            .channel('event_participants_changes')
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'event_participants', filter: `event_id=eq.${event.id}` }, () => {
+                checkParticipation();
+            })
+            .subscribe();
+
+        const waitlistChannel = supabase
+            .channel('event_waitlist_changes')
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'event_waitlist', filter: `event_id=eq.${event.id}` }, () => {
+                checkParticipation();
+            })
+            .subscribe();
+
+        return () => {
+            supabase.removeChannel(participantsChannel);
+            supabase.removeChannel(waitlistChannel);
+        };
     }, [event.id, event.date, event.time, currentUserId, event.organizer_id]);
 
     const handleJoinLeave = async () => {
@@ -146,16 +188,6 @@ const EventDetailPage: React.FC<EventDetailPageProps> = ({ event, currentUserId,
             toast({
                 title: "Registration closed",
                 description: "Registration closes 6 hours before the event.",
-                variant: "destructive"
-            });
-            return;
-        }
-
-        // Check if event is full
-        if (event.max_participants && participantCount >= event.max_participants && !hasJoined) {
-            toast({
-                title: "Event full",
-                description: "This event has reached maximum capacity.",
                 variant: "destructive"
             });
             return;
@@ -180,24 +212,60 @@ const EventDetailPage: React.FC<EventDetailPageProps> = ({ event, currentUserId,
                     title: "Left event",
                     description: "You have left this event."
                 });
-            } else {
-                // Join event
+            } else if (isOnWaitlist) {
+                // Leave waitlist
                 const { error } = await supabase
-                    .from('event_participants')
-                    .insert({
-                        event_id: event.id,
-                        user_id: currentUserId
-                    });
+                    .from('event_waitlist')
+                    .delete()
+                    .eq('event_id', event.id)
+                    .eq('user_id', currentUserId);
 
                 if (error) throw error;
 
-                setHasJoined(true);
-                setParticipantCount(prev => prev + 1);
+                setIsOnWaitlist(false);
+                setWaitlistPosition(null);
+                setWaitlistCount(prev => prev - 1);
                 toast({
-                    title: "Joined event!",
-                    description: "You have successfully joined this event."
+                    title: "Left waitlist",
+                    description: "You have been removed from the waitlist."
                 });
-                onJoinEvent(event.id);
+            } else {
+                // Register for event (handles capacity and waitlist automatically)
+                const { data, error } = await supabase.rpc('register_for_event', {
+                    _event_id: event.id,
+                    _user_id: currentUserId
+                });
+
+                if (error) throw error;
+
+                const result = data as { success: boolean; message: string; status: string; waitlist_position?: number };
+
+                if (!result.success) {
+                    toast({
+                        title: "Registration failed",
+                        description: result.message,
+                        variant: "destructive"
+                    });
+                    return;
+                }
+
+                if (result.status === 'registered') {
+                    setHasJoined(true);
+                    setParticipantCount(prev => prev + 1);
+                    toast({
+                        title: "Registered!",
+                        description: "You have successfully registered for this event."
+                    });
+                    onJoinEvent(event.id);
+                } else if (result.status === 'waitlisted') {
+                    setIsOnWaitlist(true);
+                    setWaitlistPosition(result.waitlist_position || null);
+                    setWaitlistCount(prev => prev + 1);
+                    toast({
+                        title: "Added to waitlist",
+                        description: `You are #${result.waitlist_position} on the waitlist. We'll notify you if a spot opens up.`,
+                    });
+                }
             }
         } catch (error: any) {
             toast({
@@ -395,6 +463,35 @@ const EventDetailPage: React.FC<EventDetailPageProps> = ({ event, currentUserId,
                                 )}
                             </div>
                         </div>
+                        
+                        {/* Capacity progress bar */}
+                        {event.max_participants && (
+                            <div className="mb-4">
+                                <div className="h-2 bg-muted rounded-full overflow-hidden">
+                                    <div 
+                                        className={`h-full transition-all duration-300 ${
+                                            participantCount >= event.max_participants 
+                                                ? 'bg-orange-500' 
+                                                : 'bg-primary'
+                                        }`}
+                                        style={{ width: `${Math.min((participantCount / event.max_participants) * 100, 100)}%` }}
+                                    />
+                                </div>
+                                {waitlistCount > 0 && (
+                                    <p className="text-xs text-muted-foreground mt-2">
+                                        {waitlistCount} {waitlistCount === 1 ? 'person' : 'people'} on waitlist
+                                    </p>
+                                )}
+                            </div>
+                        )}
+                        
+                        {/* Waitlist status for current user */}
+                        {isOnWaitlist && waitlistPosition && (
+                            <div className="bg-orange-500/10 border border-orange-500/20 text-orange-700 dark:text-orange-400 p-3 rounded-lg mb-4">
+                                <p className="font-semibold text-sm">You're on the waitlist</p>
+                                <p className="text-xs mt-0.5">Position #{waitlistPosition} - We'll notify you if a spot opens up!</p>
+                            </div>
+                        )}
                         {participants.length > 0 ? (
                             <div className="space-y-2">
                                 {participants.slice(0, 5).map((participant, index) => (
@@ -547,15 +644,39 @@ const EventDetailPage: React.FC<EventDetailPageProps> = ({ event, currentUserId,
             <footer className="absolute bottom-0 left-0 right-0 px-4 pt-4 bg-card border-t border-border shadow-lg pb-[calc(1rem+env(safe-area-inset-bottom))]">
                  <button 
                     onClick={handleJoinLeave}
-                    disabled={loading || (!hasJoined && !isRegistrationOpen) || (!hasJoined && event.max_participants && participantCount >= event.max_participants)}
+                    disabled={loading || !isRegistrationOpen}
                     className={`w-full flex items-center justify-center font-bold py-3.5 px-4 rounded-xl transition-all duration-300 text-base shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none
-                    ${hasJoined 
+                    ${hasJoined || isOnWaitlist
                         ? 'bg-card text-foreground border-2 border-border hover:bg-muted'
                         : 'bg-primary text-primary-foreground hover:bg-primary/90'
                     }`}
                 >
-                    <Users className={`w-5 h-5 mr-2 transition-all`} />
-                    {loading ? 'Loading...' : hasJoined ? "Leave Event" : "Join Event"}
+                    {loading ? (
+                        <>
+                            <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                            Processing...
+                        </>
+                    ) : hasJoined ? (
+                        <>
+                            <Users className="w-5 h-5 mr-2" />
+                            Leave Event
+                        </>
+                    ) : isOnWaitlist ? (
+                        <>
+                            <Users className="w-5 h-5 mr-2" />
+                            Leave Waitlist
+                        </>
+                    ) : event.max_participants && participantCount >= event.max_participants ? (
+                        <>
+                            <Users className="w-5 h-5 mr-2" />
+                            Join Waitlist
+                        </>
+                    ) : (
+                        <>
+                            <Users className="w-5 h-5 mr-2" />
+                            Register for Event
+                        </>
+                    )}
                 </button>
             </footer>
         </div>
