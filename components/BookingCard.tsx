@@ -8,7 +8,7 @@ interface BookingCardProps {
   onChat?: (booking: any) => void;
 }
 
-const BookingCard: React.FC<BookingCardProps> = ({ booking, onCancel, onShowQR, onChat }) => {
+const BookingCard: React.FC<BookingCardProps> = React.memo(({ booking, onCancel, onShowQR, onChat }) => {
   const trainer = booking.trainer || {};
   const cls = booking.cls || {};
   const bookingData = booking.booking || {};
@@ -83,6 +83,8 @@ const BookingCard: React.FC<BookingCardProps> = ({ booking, onCancel, onShowQR, 
       </div>
     </div>
   );
-};
+});
+
+BookingCard.displayName = 'BookingCard';
 
 export default BookingCard;

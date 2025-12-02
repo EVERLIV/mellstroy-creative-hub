@@ -80,7 +80,7 @@ const transformTrainerData = (profile: any, classes: any[], reviews: any[]): Tra
     };
 };
 
-const Explore: React.FC<ExploreProps> = ({
+const Explore: React.FC<ExploreProps> = React.memo(({
   onInitiateBooking,
   userRole = 'student',
   currentUserId = '',
@@ -300,12 +300,12 @@ const Explore: React.FC<ExploreProps> = ({
     };
   }, [hasMore, loadingMore, loadMoreTrainers]);
 
-  const handleApplyFilters = (newFilters: typeof activeFilters) => {
+  const handleApplyFilters = useCallback((newFilters: typeof activeFilters) => {
     setActiveFilters(newFilters);
     setIsFilterModalOpen(false);
-  };
+  }, []);
 
-  const handleResetFilters = () => {
+  const handleResetFilters = useCallback(() => {
     setActiveFilters({
       specialty: [],
       verified: false,
@@ -317,21 +317,21 @@ const Explore: React.FC<ExploreProps> = ({
       languages: [],
       level: '',
     });
-  };
+  }, []);
 
-  const handleSelectTrainer = (trainer: Trainer) => {
+  const handleSelectTrainer = useCallback((trainer: Trainer) => {
     setIsExitingDetail(false);
     setSelectedTrainer(trainer);
     window.scrollTo(0, 0);
-  };
+  }, []);
 
-  const handleBackFromDetail = () => {
+  const handleBackFromDetail = useCallback(() => {
     setIsExitingDetail(true);
     setTimeout(() => {
       setSelectedTrainer(null);
       setIsExitingDetail(false);
     }, 300);
-  };
+  }, []);
 
   return (
     <div className="bg-background h-screen flex flex-col relative overflow-hidden">
@@ -443,6 +443,8 @@ const Explore: React.FC<ExploreProps> = ({
       />
     </div>
   );
-};
+});
+
+Explore.displayName = 'Explore';
 
 export default Explore;

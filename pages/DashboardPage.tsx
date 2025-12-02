@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Search, Dumbbell, Calendar, UtensilsCrossed, Sparkles, MapPin, Trophy, Users, TrendingUp, Heart, Crown } from 'lucide-react';
 import { supabase } from '../src/integrations/supabase/client';
@@ -86,13 +86,13 @@ const DashboardPage: React.FC<DashboardPageProps> = () => {
     fetchEvents();
   }, []);
 
-  // Helper to get Supabase storage URL for category icons
-  const getCategoryIconUrl = (iconName: string) => {
+  // Helper to get Supabase storage URL for category icons (memoized)
+  const getCategoryIconUrl = useCallback((iconName: string) => {
     const supabaseUrl = supabase.storage.from('category-icons').getPublicUrl(iconName);
     return supabaseUrl.data.publicUrl;
-  };
+  }, []);
 
-  const categories = [
+  const categories = React.useMemo(() => [
     { 
       id: 'gym', 
       name: 'Gym', 
@@ -149,9 +149,9 @@ const DashboardPage: React.FC<DashboardPageProps> = () => {
       imageUrl: getCategoryIconUrl('pickleball.png'),
       color: 'from-yellow-100 to-yellow-50' 
     },
-  ];
+  ], [getCategoryIconUrl]);
 
-  const aiFeatures = [
+  const aiFeatures = React.useMemo(() => [
     {
       id: 'meal-planner',
       title: 'AI Meal Planner',
@@ -170,18 +170,18 @@ const DashboardPage: React.FC<DashboardPageProps> = () => {
       path: '/ai-coach',
       badge: 'Premium'
     }
-  ];
+  ], []);
 
-  const handleSearch = (e: React.FormEvent) => {
+  const handleSearch = useCallback((e: React.FormEvent) => {
     e.preventDefault();
     if (searchQuery.trim()) {
       navigate(`/explore?search=${encodeURIComponent(searchQuery)}`);
     }
-  };
+  }, [searchQuery, navigate]);
 
-  const handleCategoryClick = (categoryId: string) => {
+  const handleCategoryClick = useCallback((categoryId: string) => {
     navigate(`/category/${categoryId}`);
-  };
+  }, [navigate]);
 
   if (selectedVenue) {
     return (
