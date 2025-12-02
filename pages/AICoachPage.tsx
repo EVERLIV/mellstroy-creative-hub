@@ -305,24 +305,24 @@ const AICoachPage: React.FC<AICoachPageProps> = ({ messages, onSendMessage, isLo
             </div>
 
             {/* Input Area */}
-            <div className="flex-shrink-0 border-t border-border bg-card/80 backdrop-blur-xl p-4 sm:p-6 shadow-2xl">
+            <div className="flex-shrink-0 border-t border-border bg-background p-4 sm:p-6">
                 <div className="max-w-4xl mx-auto">
-                    <div className="flex items-end gap-3">
-                        <div className="flex-1 relative">
+                    <div className="flex items-center gap-3">
+                        <div className="flex-1 relative bg-muted rounded-xl px-4 py-3 flex items-center gap-2">
                             <textarea
                                 ref={textareaRef}
                                 value={message}
                                 onChange={handleInput}
                                 onKeyPress={handleKeyPress}
                                 placeholder="Ask about fitness, nutrition, workouts..."
-                                className="w-full px-4 py-3 rounded-lg bg-input border border-input text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:border-ring transition-all duration-200 resize-none min-h-[44px] max-h-[120px] text-base"
+                                className="flex-1 bg-transparent border-none text-foreground placeholder:text-muted-foreground focus:outline-none resize-none min-h-[24px] max-h-[120px] text-sm"
                                 rows={1}
                             />
                         </div>
                         <button
                             onClick={handleSend}
                             disabled={!message.trim() || isLoading}
-                            className="h-11 px-5 flex items-center justify-center rounded-lg bg-gradient-to-r from-primary to-accent text-primary-foreground hover:shadow-lg hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 transition-all duration-200 active:scale-95 font-medium"
+                            className="h-12 w-12 flex items-center justify-center rounded-xl bg-primary text-primary-foreground hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 active:scale-95 shadow-sm flex-shrink-0"
                             aria-label="Send message"
                         >
                             <Send className="w-5 h-5" />
