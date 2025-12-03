@@ -129,17 +129,23 @@ const AuthPage = () => {
         {/* Gradient Overlay - lighter, more white at bottom */}
         <div className="absolute inset-0 bg-gradient-to-b from-transparent via-white/10 to-white/80" />
 
-      <div className="relative z-10 flex flex-col h-full p-6 animate-fade-in">
-        <header className="flex items-start pt-4">
+      <div className="relative z-10 flex flex-col h-full p-6">
+        <header className="flex items-start pt-4 animate-fade-in" style={{ animationDelay: '0.1s', animationFillMode: 'both' }}>
           <img src={rhinoLogo} alt="RhinoFit" className="w-20 h-20 object-contain drop-shadow-lg" />
         </header>
 
         <main className="flex-1 flex flex-col justify-end pb-16">
-          <div className="space-y-4 animate-slide-up">
-            <h1 className="text-6xl font-extrabold leading-tight tracking-tight drop-shadow-lg text-foreground">
+          <div className="space-y-4">
+            <h1 
+              className="text-6xl font-extrabold leading-tight tracking-tight drop-shadow-lg text-foreground animate-fade-in"
+              style={{ animationDelay: '0.3s', animationFillMode: 'both' }}
+            >
               Becoming<br />Fit
             </h1>
-            <p className="mt-6 text-xl opacity-90 max-w-sm leading-relaxed drop-shadow text-foreground/80">
+            <p 
+              className="mt-6 text-xl opacity-90 max-w-sm leading-relaxed drop-shadow text-foreground/80 animate-fade-in"
+              style={{ animationDelay: '0.5s', animationFillMode: 'both' }}
+            >
               Make your first step towards becoming fit with Vietnam's top trainers
             </p>
           </div>
@@ -148,13 +154,15 @@ const AuthPage = () => {
         <footer className="flex flex-col gap-4 pb-8">
           <button
             onClick={() => switchView('login')}
-            className="w-full bg-primary text-primary-foreground font-bold py-4 rounded-2xl transition-all transform hover:scale-[1.02] active:scale-95 shadow-lg hover:shadow-xl"
+            className="w-full bg-primary text-primary-foreground font-bold py-4 rounded-2xl transition-all transform hover:scale-[1.02] active:scale-95 shadow-lg hover:shadow-xl animate-fade-in"
+            style={{ animationDelay: '0.7s', animationFillMode: 'both' }}
           >
             Login
           </button>
           <button
             onClick={() => switchView('signup')}
-            className="w-full bg-foreground/10 backdrop-blur-sm border-2 border-foreground/20 text-foreground font-bold py-4 rounded-2xl transition-all transform hover:scale-[1.02] active:scale-95 hover:bg-foreground/20"
+            className="w-full bg-foreground/10 backdrop-blur-sm border-2 border-foreground/20 text-foreground font-bold py-4 rounded-2xl transition-all transform hover:scale-[1.02] active:scale-95 hover:bg-foreground/20 animate-fade-in"
+            style={{ animationDelay: '0.9s', animationFillMode: 'both' }}
           >
             Sign Up
           </button>
@@ -176,9 +184,12 @@ const AuthPage = () => {
       {/* Gradient Overlay - lighter, more white at bottom */}
       <div className="absolute inset-0 bg-gradient-to-b from-transparent via-white/10 to-white/80" />
 
-      <div className="relative z-10 h-full p-6 flex flex-col animate-fade-in overflow-y-auto">
+      <div className="relative z-10 h-full p-6 flex flex-col overflow-y-auto">
         {/* Logo & Back Button */}
-        <div className="flex items-center justify-between pt-4 pb-8">
+        <div 
+          className="flex items-center justify-between pt-4 pb-8 animate-fade-in"
+          style={{ animationDelay: '0.1s', animationFillMode: 'both' }}
+        >
           <img src={rhinoLogo} alt="RhinoFit Logo" className="w-20 h-20 object-contain drop-shadow-lg" />
           <button 
             onClick={() => setView('welcome')}
@@ -192,7 +203,10 @@ const AuthPage = () => {
         </div>
 
         {/* Header */}
-        <header className="space-y-2 animate-slide-up">
+        <header 
+          className="space-y-2 animate-fade-in"
+          style={{ animationDelay: '0.2s', animationFillMode: 'both' }}
+        >
           <h1 className="text-4xl font-extrabold tracking-tight drop-shadow-lg text-foreground">
             {isLogin ? "Welcome Back" : "Create Account"}
           </h1>
@@ -203,7 +217,11 @@ const AuthPage = () => {
 
         {/* Form */}
         <main className="flex-1 mt-10">
-          <form onSubmit={isLogin ? handleLoginSubmit : handleSignUpSubmit} className="space-y-5 animate-slide-up" style={{ animationDelay: '0.1s' }}>
+          <form 
+            onSubmit={isLogin ? handleLoginSubmit : handleSignUpSubmit} 
+            className="space-y-5 animate-fade-in" 
+            style={{ animationDelay: '0.3s', animationFillMode: 'both' }}
+          >
             {!isLogin && (
               <div className="space-y-2">
                 <label className="text-sm font-medium text-foreground/80">Full Name</label>
@@ -335,7 +353,10 @@ const AuthPage = () => {
         </main>
 
         {/* Footer */}
-        <footer className="pb-6 pt-8">
+        <footer 
+          className="pb-6 pt-8 animate-fade-in"
+          style={{ animationDelay: '0.5s', animationFillMode: 'both' }}
+        >
           <p className="text-center text-base text-foreground/80">
             {isLogin ? "Don't have an account?" : "Already have an account?"}{' '}
             <button 
