@@ -1,22 +1,87 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, Dumbbell, Calendar, UtensilsCrossed, Sparkles, MapPin, Trophy, Users, TrendingUp, Heart, Crown } from 'lucide-react';
+import { Search, Dumbbell, Calendar, UtensilsCrossed, Sparkles, MapPin, Trophy, Users, TrendingUp, Heart, Crown, Clock, BookOpen, Star } from 'lucide-react';
 import { supabase } from '../src/integrations/supabase/client';
+import { useAuth } from '../src/hooks/useAuth';
 import VenueSlider from '../components/VenueSlider';
 import VenueDetailPage from './VenueDetailPage';
 import PremiumDetailsModal from '../components/PremiumDetailsModal';
 import { mockVenues } from '../data/mockVenues';
-import { Venue } from '../types';
+import { Venue, UserRole } from '../types';
 
 interface DashboardPageProps {}
 
 const DashboardPage: React.FC<DashboardPageProps> = () => {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [searchQuery, setSearchQuery] = useState('');
   const [upcomingEvents, setUpcomingEvents] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedVenue, setSelectedVenue] = useState<Venue | null>(null);
   const [isPremiumModalOpen, setIsPremiumModalOpen] = useState(false);
+  const [userRole, setUserRole] = useState<UserRole>('student');
+  const [myClasses, setMyClasses] = useState<any[]>([]);
+  const [myEvents, setMyEvents] = useState<any[]>([]);
+
+  // Fetch user role
+  useEffect(() => {
+    const fetchUserRole = async () => {
+      if (!user?.id) return;
+      
+      const { data, error } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', user.id)
+        .maybeSingle();
+      
+      if (!error && data) {
+        setUserRole(data.role as UserRole);
+      }
+    };
+
+    fetchUserRole();
+  }, [user?.id]);
+
+  // Fetch trainer's classes
+  useEffect(() => {
+    const fetchMyClasses = async () => {
+      if (!user?.id || userRole !== 'trainer') return;
+      
+      const { data, error } = await supabase
+        .from('classes')
+        .select('*')
+        .eq('trainer_id', user.id)
+        .order('created_at', { ascending: false })
+        .limit(4);
+      
+      if (!error && data) {
+        setMyClasses(data);
+      }
+    };
+
+    fetchMyClasses();
+  }, [user?.id, userRole]);
+
+  // Fetch trainer's events
+  useEffect(() => {
+    const fetchMyEvents = async () => {
+      if (!user?.id || userRole !== 'trainer') return;
+      
+      const { data, error } = await supabase
+        .from('events')
+        .select('*')
+        .eq('organizer_id', user.id)
+        .gte('date', new Date().toISOString().split('T')[0])
+        .order('date', { ascending: true })
+        .limit(4);
+      
+      if (!error && data) {
+        setMyEvents(data);
+      }
+    };
+
+    fetchMyEvents();
+  }, [user?.id, userRole]);
 
   // Mock events data for testing
   const mockEvents = [
@@ -56,6 +121,12 @@ const DashboardPage: React.FC<DashboardPageProps> = () => {
 
   useEffect(() => {
     const fetchEvents = async () => {
+      // Skip fetching public events for trainers - they see their own events
+      if (userRole === 'trainer') {
+        setLoading(false);
+        return;
+      }
+
       try {
         const { data, error } = await supabase
           .from('events')
@@ -70,13 +141,11 @@ const DashboardPage: React.FC<DashboardPageProps> = () => {
           .limit(4);
 
         if (error) {
-          // Fallback to mock data if fetch fails
           setUpcomingEvents(mockEvents);
         } else {
           setUpcomingEvents(data && data.length > 0 ? data : mockEvents);
         }
       } catch (error) {
-        // Fallback to mock data on error
         setUpcomingEvents(mockEvents);
       } finally {
         setLoading(false);
@@ -84,7 +153,7 @@ const DashboardPage: React.FC<DashboardPageProps> = () => {
     };
     
     fetchEvents();
-  }, []);
+  }, [userRole]);
 
   // Helper to get Supabase storage URL for category icons (memoized)
   const getCategoryIconUrl = useCallback((iconName: string) => {
@@ -194,6 +263,228 @@ const DashboardPage: React.FC<DashboardPageProps> = () => {
     );
   }
 
+  // Trainer Dashboard View
+  if (userRole === 'trainer') {
+    return (
+      <div className="bg-background min-h-screen pb-24">
+        {/* Header Section */}
+        <div className="bg-gradient-to-br from-primary to-accent pt-6 pb-8 px-4">
+          <div className="max-w-2xl mx-auto">
+            <div className="mb-4">
+              <h1 className="text-2xl font-bold text-primary-foreground">Trainer Dashboard</h1>
+              <p className="text-primary-foreground/90 text-sm mt-1">Manage your classes and events</p>
+            </div>
+          </div>
+        </div>
+
+        {/* My Classes Section */}
+        <div className="px-4 -mt-4 mb-6">
+          <div className="bg-card rounded-2xl shadow-lg p-4">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="font-bold text-foreground text-base flex items-center gap-2">
+                <BookOpen className="w-5 h-5 text-primary" />
+                My Classes
+              </h2>
+              <button
+                onClick={() => navigate('/profile')}
+                className="text-xs font-semibold text-primary hover:text-primary/80 transition-colors"
+              >
+                Manage All
+              </button>
+            </div>
+            {myClasses.length > 0 ? (
+              <div className="space-y-3">
+                {myClasses.map((cls) => (
+                  <div
+                    key={cls.id}
+                    onClick={() => navigate(`/class/${cls.id}`)}
+                    className="flex items-center gap-3 p-3 bg-muted/50 rounded-xl cursor-pointer hover:bg-muted transition-colors"
+                  >
+                    <div className="w-14 h-14 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0 overflow-hidden">
+                      {cls.image_url ? (
+                        <img src={cls.image_url} alt={cls.name} className="w-full h-full object-cover" />
+                      ) : (
+                        <Dumbbell className="w-6 h-6 text-primary" />
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-semibold text-foreground text-sm truncate">{cls.name}</h3>
+                      <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1">
+                        <span>{cls.class_type}</span>
+                        <span>•</span>
+                        <span>{cls.price?.toLocaleString()} VND</span>
+                      </div>
+                    </div>
+                    <div className="text-right flex-shrink-0">
+                      <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                        <Users className="w-3.5 h-3.5" />
+                        <span>{cls.capacity}</span>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-6">
+                <BookOpen className="w-10 h-10 text-muted-foreground/50 mx-auto mb-2" />
+                <p className="text-sm text-muted-foreground">No classes yet</p>
+                <button
+                  onClick={() => navigate('/profile')}
+                  className="mt-3 text-sm font-semibold text-primary hover:text-primary/80"
+                >
+                  Create Your First Class
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* My Events Section */}
+        <div className="px-4 mb-6">
+          <div className="bg-card rounded-2xl shadow-lg p-4">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="font-bold text-foreground text-base flex items-center gap-2">
+                <Calendar className="w-5 h-5 text-primary" />
+                My Events
+              </h2>
+              <button
+                onClick={() => navigate('/events')}
+                className="text-xs font-semibold text-primary hover:text-primary/80 transition-colors"
+              >
+                View All
+              </button>
+            </div>
+            {myEvents.length > 0 ? (
+              <div className="space-y-3">
+                {myEvents.map((event) => (
+                  <div
+                    key={event.id}
+                    onClick={() => navigate('/events', { state: { selectedEvent: event } })}
+                    className="flex items-center gap-3 p-3 bg-muted/50 rounded-xl cursor-pointer hover:bg-muted transition-colors"
+                  >
+                    <div className="w-14 h-14 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0 overflow-hidden">
+                      {event.image_url ? (
+                        <img src={event.image_url} alt={event.title} className="w-full h-full object-cover" />
+                      ) : (
+                        <Calendar className="w-6 h-6 text-primary" />
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-semibold text-foreground text-sm truncate">{event.title}</h3>
+                      <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1">
+                        <Clock className="w-3 h-3" />
+                        <span>{new Date(event.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}</span>
+                        <span>•</span>
+                        <span>{event.time}</span>
+                      </div>
+                    </div>
+                    <div className="flex-shrink-0">
+                      <span className={`text-[10px] font-semibold px-2 py-1 rounded-full ${
+                        event.status === 'approved' 
+                          ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' 
+                          : 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400'
+                      }`}>
+                        {event.status === 'approved' ? 'Active' : 'Pending'}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-6">
+                <Calendar className="w-10 h-10 text-muted-foreground/50 mx-auto mb-2" />
+                <p className="text-sm text-muted-foreground">No upcoming events</p>
+                <button
+                  onClick={() => navigate('/events')}
+                  className="mt-3 text-sm font-semibold text-primary hover:text-primary/80"
+                >
+                  Create an Event
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* AI Premium Features */}
+        <div className="px-4 mb-6">
+          <div className="flex justify-between items-center mb-3">
+            <h2 className="font-bold text-foreground text-base">RhinoFit Premium</h2>
+            <span className="text-xs text-muted-foreground bg-muted px-2 py-1 rounded-full">New</span>
+          </div>
+          <div className="space-y-3">
+            {aiFeatures.map((feature) => {
+              const IconComponent = feature.icon;
+              return (
+                <button
+                  key={feature.id}
+                  onClick={() => navigate(feature.path)}
+                  className="w-full bg-card rounded-2xl shadow-md p-4 flex items-center gap-4 hover:shadow-lg transition-all duration-200"
+                >
+                  <div className={`w-16 h-16 rounded-xl bg-gradient-to-br ${feature.gradient} flex items-center justify-center flex-shrink-0 shadow-md`}>
+                    <IconComponent className="w-7 h-7 text-primary-foreground" />
+                  </div>
+                  <div className="flex-1 text-left min-w-0">
+                    <div className="flex items-center gap-2 mb-1">
+                      <h3 className="font-bold text-foreground text-sm">{feature.title}</h3>
+                      <span className="text-[10px] font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-full">
+                        {feature.badge}
+                      </span>
+                    </div>
+                    <p className="text-xs text-muted-foreground line-clamp-2">{feature.description}</p>
+                  </div>
+                  <div className="w-6 h-6 rounded-full bg-muted flex items-center justify-center flex-shrink-0">
+                    <span className="text-foreground text-sm">›</span>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Sports Venues Slider */}
+        {mockVenues.length > 0 && (
+          <div className="mb-6">
+            <VenueSlider 
+              venues={mockVenues}
+              onSelectVenue={(venue) => setSelectedVenue(venue)}
+              onViewAll={() => navigate('/venues')}
+            />
+          </div>
+        )}
+
+        {/* Premium Banner */}
+        <div className="px-4 mb-6">
+          <div 
+            className="rounded-2xl p-6 shadow-lg bg-gradient-to-r from-primary via-primary to-accent relative overflow-hidden"
+          >
+            <div className="absolute top-0 right-0 w-32 h-32 bg-card/10 rounded-full -mr-16 -mt-16"></div>
+            <div className="absolute bottom-0 left-0 w-24 h-24 bg-card/10 rounded-full -ml-12 -mb-12"></div>
+            <div className="relative z-10">
+              <div className="flex items-center gap-2 mb-2">
+                <Crown className="w-6 h-6 text-primary-foreground" />
+                <h3 className="font-bold text-primary-foreground text-lg drop-shadow-lg">Get Your Premium</h3>
+              </div>
+              <p className="text-primary-foreground text-sm mb-4 drop-shadow-md">Unlock exclusive features and reach more clients!</p>
+              <button
+                onClick={() => setIsPremiumModalOpen(true)}
+                className="bg-card text-primary font-semibold px-5 py-2.5 rounded-lg text-sm hover:bg-muted transition-all duration-200 shadow-lg hover:shadow-xl active:scale-95 flex items-center gap-2"
+              >
+                <Sparkles className="w-4 h-4" />
+                View Premium Benefits
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <PremiumDetailsModal 
+          isOpen={isPremiumModalOpen}
+          onClose={() => setIsPremiumModalOpen(false)}
+        />
+      </div>
+    );
+  }
+
+  // Student Dashboard View (original)
   return (
     <div className="bg-background min-h-screen pb-24">
       {/* Header Section */}

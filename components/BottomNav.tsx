@@ -1,25 +1,57 @@
-import React from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { NavLink } from './NavLink';
 import { Home, Search, MessageCircle, Calendar, User } from 'lucide-react';
+import { supabase } from '../src/integrations/supabase/client';
+import { useAuth } from '../src/hooks/useAuth';
+import { UserRole } from '../types';
 
 interface NavItem {
   name: string;
   path: string;
   icon: React.FC<any>;
+  hideForTrainer?: boolean;
 }
 
 const BottomNav: React.FC = () => {
   const location = useLocation();
-  const navigate = useNavigate();
+  const { user } = useAuth();
+  const [userRole, setUserRole] = useState<UserRole>('student');
+
+  // Fetch user role
+  useEffect(() => {
+    const fetchUserRole = async () => {
+      if (!user?.id) return;
+      
+      const { data, error } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', user.id)
+        .maybeSingle();
+      
+      if (!error && data) {
+        setUserRole(data.role as UserRole);
+      }
+    };
+
+    fetchUserRole();
+  }, [user?.id]);
   
   const navItems: NavItem[] = [
     { name: 'Home', path: '/', icon: Home },
-    { name: 'Explore', path: '/explore', icon: Search },
+    { name: 'Explore', path: '/explore', icon: Search, hideForTrainer: true },
     { name: 'Messages', path: '/messages', icon: MessageCircle },
     { name: 'Bookings', path: '/bookings', icon: Calendar },
     { name: 'Profile', path: '/profile', icon: User },
   ];
+
+  // Filter nav items based on user role
+  const filteredNavItems = navItems.filter(item => {
+    if (userRole === 'trainer' && item.hideForTrainer) {
+      return false;
+    }
+    return true;
+  });
 
   // Haptic feedback function
   const triggerHapticFeedback = () => {
@@ -41,7 +73,7 @@ const BottomNav: React.FC = () => {
   return (
     <nav className="fixed bottom-0 left-0 right-0 w-full bg-card border-t border-border z-50 shadow-sm pb-[env(safe-area-inset-bottom)]">
       <div className="flex justify-around items-center h-16 px-4 sm:px-6 md:px-8 lg:px-12 max-w-full">
-        {navItems.map((item) => {
+        {filteredNavItems.map((item) => {
           const isActive = location.pathname === item.path;
 
           return (

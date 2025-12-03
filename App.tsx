@@ -343,15 +343,19 @@ const AppRoutes = () => {
           path="/explore"
           element={
             <ProtectedRoute>
-              <Explore
-                onInitiateBooking={handleInitiateBooking}
-                onOpenChat={handleOpenChat}
-                userRole={userRole}
-                currentUserId={currentUserId}
-                favoriteTrainerIds={favoriteTrainerIds}
-                onToggleFavorite={toggleFavorite}
-                onOpenReviewsModal={handleOpenReviewsModal}
-              />
+              {userRole === 'trainer' ? (
+                <Navigate to="/" replace />
+              ) : (
+                <Explore
+                  onInitiateBooking={handleInitiateBooking}
+                  onOpenChat={handleOpenChat}
+                  userRole={userRole}
+                  currentUserId={currentUserId}
+                  favoriteTrainerIds={favoriteTrainerIds}
+                  onToggleFavorite={toggleFavorite}
+                  onOpenReviewsModal={handleOpenReviewsModal}
+                />
+              )}
             </ProtectedRoute>
           }
         />
@@ -387,16 +391,20 @@ const AppRoutes = () => {
           path="/category/:categoryId"
           element={
             <ProtectedRoute>
-              <CategoryRoute
-                trainers={trainers}
-                onInitiateBooking={handleInitiateBooking}
-                onOpenChat={handleOpenChat}
-                userRole={userRole}
-                currentUserId={currentUserId}
-                favoriteTrainerIds={favoriteTrainerIds}
-                onToggleFavorite={toggleFavorite}
-                onOpenReviewsModal={handleOpenReviewsModal}
-              />
+              {userRole === 'trainer' ? (
+                <Navigate to="/" replace />
+              ) : (
+                <CategoryRoute
+                  trainers={trainers}
+                  onInitiateBooking={handleInitiateBooking}
+                  onOpenChat={handleOpenChat}
+                  userRole={userRole}
+                  currentUserId={currentUserId}
+                  favoriteTrainerIds={favoriteTrainerIds}
+                  onToggleFavorite={toggleFavorite}
+                  onOpenReviewsModal={handleOpenReviewsModal}
+                />
+              )}
             </ProtectedRoute>
           }
         />
