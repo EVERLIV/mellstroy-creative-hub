@@ -392,55 +392,70 @@ const EventsPage: React.FC<EventsPageProps> = ({ events, isPremium, onBack, onSe
                                     : `${filteredEvents.length} event${filteredEvents.length !== 1 ? 's' : ''} found`}
                             </h2>
                         </div>
-                        {/* Table Header */}
-                        <div className="grid grid-cols-[44px_1fr_70px_50px_60px_20px] gap-2 px-3 py-2 text-[10px] font-semibold text-muted-foreground uppercase tracking-wide border-b border-border">
-                            <span>Date</span>
-                            <span>Event</span>
-                            <span>Category</span>
-                            <span className="text-center">Join</span>
-                            <span className="text-right">Price</span>
-                            <span></span>
-                        </div>
                         
-                        {/* Table Rows */}
-                        <div className="divide-y divide-border">
+                        {/* Modern Compact Cards */}
+                        <div className="space-y-2">
                             {filteredEvents.map(event => {
                                 const eventDate = new Date(event.date);
-                                const isFree = !event.price || event.price === 0;
                                 const participantCount = event.participant_count || 0;
+                                const freeSlots = event.max_participants ? event.max_participants - participantCount : null;
+                                const isFull = event.max_participants && participantCount >= event.max_participants;
                                 
                                 return (
                                     <button 
                                         key={event.id} 
                                         onClick={() => onSelectEvent(event)}
-                                        className="w-full grid grid-cols-[44px_1fr_70px_50px_60px_20px] gap-2 items-center px-3 py-3 text-left hover:bg-muted/50 transition-colors"
+                                        className="w-full bg-card rounded-xl border border-border p-3 text-left hover:border-primary/50 hover:shadow-md transition-all duration-200 active:scale-[0.98]"
                                     >
-                                        {/* Date */}
-                                        <div className="text-center">
-                                            <p className="text-[9px] font-bold text-primary uppercase leading-tight">{eventDate.toLocaleDateString('en-US', { month: 'short' })}</p>
-                                            <p className="text-base font-bold text-foreground leading-tight">{eventDate.getDate()}</p>
+                                        <div className="flex items-center gap-3">
+                                            {/* Date Badge */}
+                                            <div className="w-12 h-12 flex-shrink-0 bg-primary/10 rounded-xl flex flex-col items-center justify-center">
+                                                <span className="text-[10px] font-bold text-primary uppercase leading-none">
+                                                    {eventDate.toLocaleDateString('en-US', { month: 'short' })}
+                                                </span>
+                                                <span className="text-lg font-bold text-primary leading-none mt-0.5">
+                                                    {eventDate.getDate()}
+                                                </span>
+                                            </div>
+                                            
+                                            {/* Content */}
+                                            <div className="flex-1 min-w-0">
+                                                {/* Title */}
+                                                <h3 className="font-semibold text-foreground text-sm leading-tight line-clamp-1">
+                                                    {event.title}
+                                                </h3>
+                                                
+                                                {/* Category & Slots Row */}
+                                                <div className="flex items-center gap-2 mt-1.5">
+                                                    {event.sport_category && (
+                                                        <span className="inline-flex items-center gap-1 bg-blue-500/10 text-blue-600 dark:text-blue-400 text-[10px] font-semibold px-2 py-0.5 rounded-md">
+                                                            <Dumbbell className="w-2.5 h-2.5" />
+                                                            {event.sport_category}
+                                                        </span>
+                                                    )}
+                                                    
+                                                    {/* Free Slots Badge */}
+                                                    <span className={`inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-md ${
+                                                        isFull 
+                                                            ? 'bg-destructive/10 text-destructive' 
+                                                            : freeSlots !== null && freeSlots <= 3 
+                                                                ? 'bg-amber-500/10 text-amber-600 dark:text-amber-400'
+                                                                : 'bg-green-500/10 text-green-600 dark:text-green-400'
+                                                    }`}>
+                                                        <Users className="w-2.5 h-2.5" />
+                                                        {isFull 
+                                                            ? 'Full' 
+                                                            : freeSlots !== null 
+                                                                ? `${freeSlots} slots left`
+                                                                : `${participantCount} joined`
+                                                        }
+                                                    </span>
+                                                </div>
+                                            </div>
+                                            
+                                            {/* Arrow */}
+                                            <ChevronRight className="w-5 h-5 text-muted-foreground flex-shrink-0" />
                                         </div>
-                                        
-                                        {/* Title */}
-                                        <p className="font-medium text-foreground text-sm truncate">{event.title}</p>
-                                        
-                                        {/* Category */}
-                                        <span className="text-[11px] text-muted-foreground truncate">
-                                            {event.sport_category || '—'}
-                                        </span>
-                                        
-                                        {/* Participants */}
-                                        <span className="text-[11px] text-muted-foreground text-center">
-                                            {participantCount}{event.max_participants ? `/${event.max_participants}` : ''}
-                                        </span>
-                                        
-                                        {/* Price */}
-                                        <span className={`text-[11px] font-semibold text-right ${isFree ? 'text-green-600 dark:text-green-400' : 'text-primary'}`}>
-                                            {isFree ? 'FREE' : formatPrice(event.price) + '₫'}
-                                        </span>
-                                        
-                                        {/* Arrow */}
-                                        <ChevronRight className="w-4 h-4 text-muted-foreground" />
                                     </button>
                                 );
                             })}
