@@ -116,16 +116,16 @@ const MealPlannerPage: React.FC<MealPlannerPageProps> = ({ user, onClose, onSave
     ];
 
     return (
-        <div className="bg-background min-h-screen flex flex-col pb-32">
+        <div className="bg-background h-[100dvh] flex flex-col overflow-hidden">
             {/* Header */}
-            <div className="bg-gradient-to-br from-primary to-accent px-4 py-4 relative">
+            <div className="bg-gradient-to-br from-primary to-accent px-4 py-4 relative flex-shrink-0">
                 <button onClick={onClose} className="absolute top-4 left-4 p-2 rounded-full bg-card/20 hover:bg-card/30 transition-colors">
                     <ArrowLeft className="w-5 h-5 text-primary-foreground" />
                 </button>
                 <h1 className="text-lg font-semibold text-primary-foreground text-center">AI Meal Planner</h1>
             </div>
 
-            <main className="flex-1 px-4 space-y-4 mt-4 overflow-y-auto">
+            <main className="flex-1 px-4 space-y-4 py-4 overflow-y-auto min-h-0 pb-[calc(1rem+env(safe-area-inset-bottom))]">
                 {/* Calorie Calculator Section */}
                 <div className="bg-card p-4 rounded-2xl shadow-lg">
                 <div className="flex items-center gap-2 mb-3">
@@ -327,7 +327,7 @@ const MealPlannerPage: React.FC<MealPlannerPageProps> = ({ user, onClose, onSave
                 )}
 
                 {/* Results */}
-                <div className="flex-1 pb-6">
+                <div className="flex-1">
                     {error && (
                         <div className="bg-destructive/10 border-l-4 border-destructive text-destructive-foreground p-4 rounded-lg flex items-center">
                             <AlertTriangle className="w-5 h-5 mr-3 flex-shrink-0" />

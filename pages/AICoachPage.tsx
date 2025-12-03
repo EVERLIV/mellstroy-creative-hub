@@ -146,7 +146,7 @@ const AICoachPage: React.FC<AICoachPageProps> = ({ messages, onSendMessage, isLo
     };
 
     return (
-        <div className="flex flex-col h-screen bg-gradient-to-b from-background via-background to-muted/20">
+        <div className="flex flex-col h-[100dvh] bg-gradient-to-b from-background via-background to-muted/20 overflow-hidden">
             {/* Header */}
             <div className="bg-gradient-to-br from-primary to-accent px-4 py-4 relative flex-shrink-0">
                 <button onClick={onClose} className="absolute top-4 left-4 p-2 rounded-full bg-card/20 hover:bg-card/30 transition-colors">
@@ -159,7 +159,7 @@ const AICoachPage: React.FC<AICoachPageProps> = ({ messages, onSendMessage, isLo
             </div>
             
             {/* Messages Area */}
-            <div className="flex-1 overflow-y-auto px-4 sm:px-6 py-6 space-y-6 pb-6 max-w-4xl mx-auto w-full">
+            <div className="flex-1 overflow-y-auto px-4 sm:px-6 py-4 space-y-6 max-w-4xl mx-auto w-full min-h-0">
                 {messages.length === 0 && !isLoading && (
                     <div className="flex flex-col items-center justify-center h-full text-center px-4 animate-fade-in">
                         <div className="relative mb-6">
@@ -280,7 +280,7 @@ const AICoachPage: React.FC<AICoachPageProps> = ({ messages, onSendMessage, isLo
             </div>
 
             {/* Input Area */}
-            <div className="flex-shrink-0 border-t border-border bg-background p-3">
+            <div className="flex-shrink-0 border-t border-border bg-background px-3 pt-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))]">
                 <div className="max-w-4xl mx-auto">
                     <div className="flex items-center gap-2">
                         <div className="flex-1 relative bg-muted rounded-lg px-3 py-2 flex items-center">
