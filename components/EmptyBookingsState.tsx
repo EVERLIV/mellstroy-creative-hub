@@ -1,24 +1,39 @@
 import React from 'react';
-import { Calendar, Search, Sparkles } from 'lucide-react';
+import { Calendar, Search, Sparkles, Users } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '../src/components/ui/button';
+import { UserRole } from '../types';
 
 interface EmptyBookingsStateProps {
   type: 'upcoming' | 'past';
+  userRole?: UserRole;
 }
 
-const EmptyBookingsState: React.FC<EmptyBookingsStateProps> = ({ type }) => {
+const EmptyBookingsState: React.FC<EmptyBookingsStateProps> = ({ type, userRole = 'student' }) => {
   const navigate = useNavigate();
+  const isTrainer = userRole === 'trainer';
 
   const content = {
-    upcoming: {
+    upcoming: isTrainer ? {
+      title: "No Upcoming Bookings",
+      description: "You don't have any upcoming client bookings yet. Share your classes to get more bookings!",
+      icon: Users,
+      buttonText: "View My Classes",
+      buttonAction: () => navigate('/profile')
+    } : {
       title: "No Upcoming Classes",
       description: "You haven't booked any classes yet. Start your fitness journey today!",
       icon: Calendar,
       buttonText: "Browse Classes",
       buttonAction: () => navigate('/explore')
     },
-    past: {
+    past: isTrainer ? {
+      title: "No Past Bookings",
+      description: "Your completed client sessions will appear here once you start teaching.",
+      icon: Sparkles,
+      buttonText: "View My Classes",
+      buttonAction: () => navigate('/profile')
+    } : {
       title: "No Past Classes",
       description: "Your completed classes will appear here. Book your first class to get started!",
       icon: Sparkles,
