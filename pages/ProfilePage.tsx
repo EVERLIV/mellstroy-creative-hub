@@ -1,12 +1,13 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Trainer, Class, UserRole } from '../types';
-import { Star, Users, BookOpen, Pencil, ShieldCheck, Plus, MoreVertical, Edit3, Trash2, Clock, LogOut, Shield, FileText, Crown, MapPin, Sparkles, CalendarDays, Heart } from 'lucide-react';
+import { Star, Users, BookOpen, Pencil, ShieldCheck, Plus, MoreVertical, Edit3, Trash2, Clock, LogOut, Shield, FileText, Crown, MapPin, Sparkles, CalendarDays, Heart, MessageSquare, Calendar } from 'lucide-react';
 import { isTrainerProfileComplete } from '../utils/profile';
 import CompleteProfilePrompt from '../components/CompleteProfilePrompt';
 import { supabase } from '../src/integrations/supabase/client';
 import MyDocumentsPage from './MyDocumentsPage';
 import { getVersionString } from '../src/config/appVersion';
+import { format } from 'date-fns';
 
 const formatVND = (amount: number) => {
     return new Intl.NumberFormat('vi-VN', {
@@ -26,12 +27,39 @@ interface ProfilePageProps {
     onLogout: () => void;
 }
 
+interface Review {
+    id: string;
+    rating: number;
+    comment: string | null;
+    created_at: string;
+    client: {
+        username: string;
+        avatar_url: string | null;
+    };
+}
+
+interface UpcomingBooking {
+    id: string;
+    booking_date: string;
+    booking_time: string;
+    status: string;
+    client: {
+        username: string;
+        avatar_url: string | null;
+    };
+    class: {
+        name: string;
+    };
+}
+
 const ProfilePage: React.FC<ProfilePageProps> = ({ trainer, onEdit, onManageClass, onDeleteClass, userRole, onStartVerification, onLogout }) => {
     const navigate = useNavigate();
     const [menuOpenFor, setMenuOpenFor] = useState<number | null>(null);
     const [isAdmin, setIsAdmin] = useState(false);
     const [showDocuments, setShowDocuments] = useState(false);
     const [documents, setDocuments] = useState<any[]>([]);
+    const [reviews, setReviews] = useState<Review[]>([]);
+    const [upcomingBookings, setUpcomingBookings] = useState<UpcomingBooking[]>([]);
     const menuRef = useRef<HTMLDivElement>(null);
     const profileIsIncomplete = !isTrainerProfileComplete(trainer);
 
@@ -48,6 +76,8 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ trainer, onEdit, onManageClas
     useEffect(() => {
         checkAdminStatus();
         loadDocuments();
+        loadReviews();
+        loadUpcomingBookings();
     }, []);
 
     const loadDocuments = async () => {
@@ -62,6 +92,75 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ trainer, onEdit, onManageClas
             .limit(3);
 
         setDocuments(data || []);
+    };
+
+    const loadReviews = async () => {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+
+        const { data } = await supabase
+            .from('reviews')
+            .select(`
+                id,
+                rating,
+                comment,
+                created_at,
+                client:profiles!reviews_client_id_fkey(username, avatar_url)
+            `)
+            .eq('trainer_id', user.id)
+            .order('created_at', { ascending: false })
+            .limit(3);
+
+        if (data) {
+            setReviews(data.map((r: any) => ({
+                ...r,
+                client: r.client || { username: 'Unknown', avatar_url: null }
+            })));
+        }
+    };
+
+    const loadUpcomingBookings = async () => {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return;
+
+        const today = new Date().toISOString().split('T')[0];
+
+        // Get trainer's class IDs first
+        const { data: trainerClasses } = await supabase
+            .from('classes')
+            .select('id')
+            .eq('trainer_id', user.id);
+
+        if (!trainerClasses || trainerClasses.length === 0) {
+            setUpcomingBookings([]);
+            return;
+        }
+
+        const classIds = trainerClasses.map(c => c.id);
+
+        const { data } = await supabase
+            .from('bookings')
+            .select(`
+                id,
+                booking_date,
+                booking_time,
+                status,
+                client:profiles!bookings_client_id_fkey(username, avatar_url),
+                class:classes!bookings_class_id_fkey(name)
+            `)
+            .in('class_id', classIds)
+            .gte('booking_date', today)
+            .in('status', ['booked', 'confirmed'])
+            .order('booking_date', { ascending: true })
+            .limit(5);
+
+        if (data) {
+            setUpcomingBookings(data.map((b: any) => ({
+                ...b,
+                client: b.client || { username: 'Unknown', avatar_url: null },
+                class: b.class || { name: 'Unknown Class' }
+            })));
+        }
     };
 
     const checkAdminStatus = async () => {
@@ -262,6 +361,103 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ trainer, onEdit, onManageClas
                             <span className="text-xs text-muted-foreground">View →</span>
                         </button>
                     )}
+
+                    {/* Upcoming Bookings */}
+                    <div className="bg-card p-4 rounded-xl border border-border">
+                        <div className="flex justify-between items-center mb-3">
+                            <h3 className="text-sm font-semibold text-foreground">Upcoming Bookings</h3>
+                            <button 
+                                onClick={() => navigate('/bookings')} 
+                                className="flex items-center text-xs font-medium text-primary hover:text-primary/80"
+                            >
+                                <Calendar className="w-4 h-4 mr-1" />
+                                View All
+                            </button>
+                        </div>
+                        {upcomingBookings.length > 0 ? (
+                            <div className="space-y-2">
+                                {upcomingBookings.map((booking) => (
+                                    <div key={booking.id} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
+                                        <div className="flex items-center gap-3 flex-1 min-w-0">
+                                            <img 
+                                                src={booking.client.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(booking.client.username)}&background=random`}
+                                                alt={booking.client.username}
+                                                className="w-10 h-10 rounded-full object-cover"
+                                            />
+                                            <div className="min-w-0 flex-1">
+                                                <p className="text-sm font-medium text-foreground truncate">{booking.client.username}</p>
+                                                <p className="text-xs text-muted-foreground truncate">{booking.class.name}</p>
+                                            </div>
+                                        </div>
+                                        <div className="text-right flex-shrink-0">
+                                            <p className="text-xs font-medium text-foreground">{format(new Date(booking.booking_date), 'MMM d')}</p>
+                                            <p className="text-xs text-muted-foreground">{booking.booking_time}</p>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        ) : (
+                            <div className="text-center py-6">
+                                <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center mx-auto mb-3">
+                                    <Calendar className="w-6 h-6 text-muted-foreground" />
+                                </div>
+                                <p className="text-sm text-muted-foreground">No upcoming bookings</p>
+                                <p className="text-xs text-muted-foreground mt-1">Bookings will appear here when clients book your classes</p>
+                            </div>
+                        )}
+                    </div>
+
+                    {/* My Reviews */}
+                    <div className="bg-card p-4 rounded-xl border border-border">
+                        <div className="flex justify-between items-center mb-3">
+                            <h3 className="text-sm font-semibold text-foreground">My Reviews</h3>
+                            <div className="flex items-center gap-1">
+                                <Star className="w-4 h-4 text-yellow-500 fill-yellow-500" />
+                                <span className="text-sm font-semibold text-foreground">{trainer.rating.toFixed(1)}</span>
+                                <span className="text-xs text-muted-foreground">({trainer.reviews})</span>
+                            </div>
+                        </div>
+                        {reviews.length > 0 ? (
+                            <div className="space-y-3">
+                                {reviews.map((review) => (
+                                    <div key={review.id} className="p-3 bg-muted/50 rounded-lg">
+                                        <div className="flex items-center gap-3 mb-2">
+                                            <img 
+                                                src={review.client.avatar_url || `https://ui-avatars.com/api/?name=${encodeURIComponent(review.client.username)}&background=random`}
+                                                alt={review.client.username}
+                                                className="w-8 h-8 rounded-full object-cover"
+                                            />
+                                            <div className="flex-1 min-w-0">
+                                                <p className="text-sm font-medium text-foreground truncate">{review.client.username}</p>
+                                                <div className="flex items-center gap-1">
+                                                    {[...Array(5)].map((_, i) => (
+                                                        <Star 
+                                                            key={i} 
+                                                            className={`w-3 h-3 ${i < review.rating ? 'text-yellow-500 fill-yellow-500' : 'text-muted-foreground'}`} 
+                                                        />
+                                                    ))}
+                                                </div>
+                                            </div>
+                                            <span className="text-xs text-muted-foreground">
+                                                {format(new Date(review.created_at), 'MMM d')}
+                                            </span>
+                                        </div>
+                                        {review.comment && (
+                                            <p className="text-sm text-muted-foreground line-clamp-2">{review.comment}</p>
+                                        )}
+                                    </div>
+                                ))}
+                            </div>
+                        ) : (
+                            <div className="text-center py-6">
+                                <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center mx-auto mb-3">
+                                    <MessageSquare className="w-6 h-6 text-muted-foreground" />
+                                </div>
+                                <p className="text-sm text-muted-foreground">No reviews yet</p>
+                                <p className="text-xs text-muted-foreground mt-1">Reviews from clients will appear here</p>
+                            </div>
+                        )}
+                    </div>
 
                     {/* My Documents */}
                     <div className="bg-card p-4 rounded-xl border border-border">
