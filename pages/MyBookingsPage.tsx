@@ -8,6 +8,7 @@ import { useToast } from '../src/hooks/use-toast';
 import BookingVerificationDisplay from '../components/BookingVerificationDisplay';
 import VerifyAttendanceModal from '../components/VerifyAttendanceModal';
 import BookingCardSkeleton from '../components/BookingCardSkeleton';
+import BookingsPageSkeleton from '../components/BookingsPageSkeleton';
 import { usePullToRefresh } from '../src/hooks/usePullToRefresh';
 import PullToRefreshIndicator from '../components/PullToRefreshIndicator';
 import EmptyBookingsState from '../components/EmptyBookingsState';
@@ -593,12 +594,8 @@ const MyBookingsPage: React.FC = () => {
         setVerificationBookingId(bookingId);
     };
 
-    if (loading) {
-        return (
-            <div className="bg-background h-full flex items-center justify-center">
-                <p className="text-sm text-muted-foreground">Loading...</p>
-            </div>
-        );
+    if (loading || !userRole) {
+        return <BookingsPageSkeleton />;
     }
 
     if (!user) {
