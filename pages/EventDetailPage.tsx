@@ -815,7 +815,7 @@ const EventDetailPage: React.FC<EventDetailPageProps> = ({ event, currentUserId,
 
             {/* Leave Reason Modal */}
             {showLeaveModal && (
-                <div className="fixed inset-0 bg-black/50 z-[100] flex items-center justify-center p-4 animate-fade-in" onClick={() => setShowLeaveModal(false)}>
+                <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[100] flex items-center justify-center p-4 animate-fade-in" onClick={() => setShowLeaveModal(false)}>
                     <div className="bg-card rounded-2xl w-full max-w-sm overflow-hidden shadow-xl animate-scale-in" onClick={e => e.stopPropagation()}>
                         <div className="p-5">
                             <div className="flex items-center justify-between mb-4">
@@ -892,7 +892,7 @@ const EventDetailPage: React.FC<EventDetailPageProps> = ({ event, currentUserId,
 
             {/* Password Modal */}
             {showPasswordModal && (
-                <div className="fixed inset-0 bg-black/50 z-[100] flex items-center justify-center p-4 animate-fade-in" onClick={() => setShowPasswordModal(false)}>
+                <div className="fixed inset-0 bg-black/40 backdrop-blur-sm z-[100] flex items-center justify-center p-4 animate-fade-in" onClick={() => setShowPasswordModal(false)}>
                     <div className="bg-card rounded-2xl w-full max-w-sm overflow-hidden shadow-xl animate-scale-in" onClick={e => e.stopPropagation()}>
                         <div className="p-5">
                             <div className="flex items-center justify-between mb-4">

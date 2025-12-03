@@ -59,7 +59,7 @@ const TrainerClassPreviewModal: React.FC<TrainerClassPreviewModalProps> = ({
     : [];
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 animate-fade-in" onClick={onClose}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm animate-fade-in" onClick={onClose}>
       <div 
         className="bg-card rounded-2xl w-full max-w-md max-h-[85vh] overflow-hidden flex flex-col animate-scale-in"
         onClick={e => e.stopPropagation()}
