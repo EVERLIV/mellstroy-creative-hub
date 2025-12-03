@@ -425,6 +425,14 @@ const EventsPage: React.FC<EventsPageProps> = ({ events, isPremium, onBack, onSe
                                                     {event.title}
                                                 </h3>
                                                 
+                                                {/* Location */}
+                                                {event.location && (
+                                                    <div className="flex items-center gap-1 mt-1 text-muted-foreground">
+                                                        <MapPin className="w-3 h-3 flex-shrink-0" />
+                                                        <span className="text-[11px] truncate">{event.location}</span>
+                                                    </div>
+                                                )}
+                                                
                                                 {/* Category & Slots Row */}
                                                 <div className="flex items-center gap-2 mt-1.5">
                                                     {event.sport_category && (
