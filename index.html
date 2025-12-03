@@ -6,7 +6,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-    <meta name="theme-color" content="#ffffff" />
+    <meta name="theme-color" content="#f97316" />
+    <link rel="apple-touch-icon" href="/favicon.png" />
+    <link rel="manifest" href="/manifest.webmanifest" />
     <title>RhinoFit - Personal Trainer Discovery Platform</title>
     <meta name="description" content="Find and book personal trainers in Vietnam. Browse by specialty, location, and price." />
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -109,6 +111,20 @@
       }
       .animate-slide-up {
         animation: slide-up 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+      }
+
+      @keyframes slide-down-banner {
+        from { 
+          opacity: 0;
+          transform: translateY(-100%);
+        }
+        to { 
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+      .animate-slide-down-banner {
+        animation: slide-down-banner 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
       }
 
       /* Auth Page Animations */
