@@ -50,6 +50,7 @@ import { Trainer, Class, Booking, UserRole, Event, Message, MealPlan, Venue, Cat
 import { mockVenues } from './data/mockVenues';
 import { getAICoachResponse } from './utils/ai';
 import PWAInstallPrompt from './components/PWAInstallPrompt';
+import { PWAUpdatePrompt } from './components/PWAUpdatePrompt';
 // ErrorBoundary temporarily disabled due to React 19 TypeScript compatibility
 // import { ErrorBoundary } from './src/components/ErrorBoundary';
 
@@ -311,6 +312,7 @@ const AppRoutes = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      <PWAUpdatePrompt />
       <PWAInstallPrompt />
       <Routes>
         <Route path="/auth" element={user ? <Navigate to="/" replace /> : <AuthPage />} />
