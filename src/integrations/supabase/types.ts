@@ -843,6 +843,42 @@ export type Database = {
         }
         Relationships: []
       }
+      notification_preferences: {
+        Row: {
+          bookings_enabled: boolean
+          created_at: string
+          daily_reminder_enabled: boolean
+          events_enabled: boolean
+          id: string
+          messages_enabled: boolean
+          reviews_enabled: boolean
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          bookings_enabled?: boolean
+          created_at?: string
+          daily_reminder_enabled?: boolean
+          events_enabled?: boolean
+          id?: string
+          messages_enabled?: boolean
+          reviews_enabled?: boolean
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          bookings_enabled?: boolean
+          created_at?: string
+          daily_reminder_enabled?: boolean
+          events_enabled?: boolean
+          id?: string
+          messages_enabled?: boolean
+          reviews_enabled?: boolean
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       notifications: {
         Row: {
           created_at: string | null
