@@ -789,9 +789,15 @@ const EventDetailPage: React.FC<EventDetailPageProps> = ({ event, currentUserId,
 
             {/* Floating Join/Leave Button - Right Side */}
             <button 
-                onClick={handleJoinLeave}
+                onClick={(e) => {
+                    // Haptic feedback on mobile
+                    if ('vibrate' in navigator) {
+                        navigator.vibrate(50);
+                    }
+                    handleJoinLeave();
+                }}
                 disabled={loading || !isRegistrationOpen}
-                className={`fixed right-4 top-1/2 -translate-y-1/2 z-30 w-12 h-12 rounded-full shadow-lg flex items-center justify-center transition-all duration-300 hover:scale-110 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed ${
+                className={`fixed right-0 top-1/2 -translate-y-1/2 z-30 w-11 h-14 rounded-l-lg shadow-lg flex items-center justify-center transition-all duration-300 hover:w-14 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed ${
                     hasJoined || isOnWaitlist
                         ? 'bg-destructive text-destructive-foreground hover:bg-destructive/90'
                         : 'bg-primary text-primary-foreground hover:bg-primary/90'
@@ -801,9 +807,9 @@ const EventDetailPage: React.FC<EventDetailPageProps> = ({ event, currentUserId,
                 {loading ? (
                     <Loader2 className="w-5 h-5 animate-spin" />
                 ) : hasJoined || isOnWaitlist ? (
-                    <Minus className="w-6 h-6" />
+                    <Minus className="w-5 h-5" />
                 ) : (
-                    <Plus className="w-6 h-6" />
+                    <Plus className="w-5 h-5" />
                 )}
             </button>
 
