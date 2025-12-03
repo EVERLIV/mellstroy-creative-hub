@@ -815,8 +815,8 @@ const EventDetailPage: React.FC<EventDetailPageProps> = ({ event, currentUserId,
 
             {/* Leave Reason Modal */}
             {showLeaveModal && (
-                <div className="fixed inset-0 bg-black/50 z-[100] flex items-end justify-center sm:items-center p-4" onClick={() => setShowLeaveModal(false)}>
-                    <div className="bg-card rounded-t-2xl sm:rounded-2xl w-full max-w-sm overflow-hidden shadow-xl" onClick={e => e.stopPropagation()}>
+                <div className="fixed inset-0 bg-black/50 z-[100] flex items-center justify-center p-4" onClick={() => setShowLeaveModal(false)}>
+                    <div className="bg-card rounded-2xl w-full max-w-sm overflow-hidden shadow-xl" onClick={e => e.stopPropagation()}>
                         <div className="p-5">
                             <div className="flex items-center justify-between mb-4">
                                 <div className="flex items-center gap-3">
