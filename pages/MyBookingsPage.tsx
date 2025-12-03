@@ -620,7 +620,9 @@ const MyBookingsPage: React.FC = () => {
             {/* Header */}
             <div className="flex items-center justify-between px-4 py-3 bg-card shadow-sm z-20 flex-shrink-0 border-b border-border">
                 <div className="w-9"></div>
-                <h1 className="text-lg font-bold text-foreground">My Bookings</h1>
+                <h1 className="text-lg font-bold text-foreground">
+                    {userRole === 'trainer' ? 'Client Bookings' : 'My Bookings'}
+                </h1>
                 <div className="w-9"></div>
             </div>
 
@@ -679,7 +681,7 @@ const MyBookingsPage: React.FC = () => {
                                         />
                                     ))
                                 ) : (
-                                    <EmptyBookingsState type="upcoming" />
+                                    <EmptyBookingsState type="upcoming" userRole={userRole} />
                                 )
                             ) : (
                                 pastClasses.length > 0 ? (
@@ -694,7 +696,7 @@ const MyBookingsPage: React.FC = () => {
                                         />
                                     ))
                                 ) : (
-                                    <EmptyBookingsState type="past" />
+                                    <EmptyBookingsState type="past" userRole={userRole} />
                                 )
                             )}
                         </div>
