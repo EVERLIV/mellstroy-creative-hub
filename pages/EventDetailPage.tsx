@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ArrowLeft, Users, Calendar, Clock, MapPin, DollarSign, AlertCircle, User, Camera, Upload, X, Loader2, Crown, Dumbbell, Building2, MessageCircle, Lock } from 'lucide-react';
+import { ArrowLeft, Users, Calendar, Clock, MapPin, DollarSign, AlertCircle, User, Camera, Upload, X, Loader2, Crown, Dumbbell, Building2, MessageCircle, Lock, Plus, Minus } from 'lucide-react';
 import { supabase } from '../src/integrations/supabase/client';
 import { useToast } from '../src/hooks/use-toast';
 import EventGroupChat from '../components/EventGroupChat';
@@ -27,6 +27,14 @@ const getEventTypeLabel = (type: string) => {
     };
     return types[type] || 'General Event';
 };
+
+const LEAVE_REASONS = [
+    'Schedule conflict',
+    'Found another event',
+    'Personal reasons',
+    'No longer interested',
+    'Other'
+];
 
 interface EventDetailPageProps {
     event: any;
@@ -58,6 +66,9 @@ const EventDetailPage: React.FC<EventDetailPageProps> = ({ event, currentUserId,
     const [showPasswordModal, setShowPasswordModal] = useState(false);
     const [enteredPassword, setEnteredPassword] = useState('');
     const [passwordError, setPasswordError] = useState('');
+    const [showLeaveModal, setShowLeaveModal] = useState(false);
+    const [selectedLeaveReason, setSelectedLeaveReason] = useState<string | null>(null);
+    const [customLeaveReason, setCustomLeaveReason] = useState('');
 
     useEffect(() => {
         const checkParticipation = async () => {
@@ -210,28 +221,47 @@ const EventDetailPage: React.FC<EventDetailPageProps> = ({ event, currentUserId,
             return;
         }
 
-        // If trying to join (not leave), check privacy restrictions
-        if (!hasJoined && !isOnWaitlist) {
-            // Check premium_only restriction
-            if ((event as any).premium_only && !currentUserIsPremium) {
-                toast({
-                    title: "Premium Only",
-                    description: "This event is only for premium users.",
-                    variant: "destructive"
-                });
-                return;
-            }
+        // If user wants to leave, show the leave modal first
+        if (hasJoined || isOnWaitlist) {
+            setShowLeaveModal(true);
+            return;
+        }
 
-            // Check password restriction
-            if ((event as any).event_password) {
-                setShowPasswordModal(true);
-                setEnteredPassword('');
-                setPasswordError('');
-                return;
-            }
+        // If trying to join, check privacy restrictions
+        // Check premium_only restriction
+        if ((event as any).premium_only && !currentUserIsPremium) {
+            toast({
+                title: "Premium Only",
+                description: "This event is only for premium users.",
+                variant: "destructive"
+            });
+            return;
+        }
+
+        // Check password restriction
+        if ((event as any).event_password) {
+            setShowPasswordModal(true);
+            setEnteredPassword('');
+            setPasswordError('');
+            return;
         }
 
         await executeJoinLeave();
+    };
+
+    const handleConfirmLeave = async () => {
+        if (!selectedLeaveReason && !customLeaveReason) {
+            toast({
+                title: "Please select a reason",
+                description: "Choose why you're leaving the event.",
+                variant: "destructive"
+            });
+            return;
+        }
+        setShowLeaveModal(false);
+        await executeJoinLeave();
+        setSelectedLeaveReason(null);
+        setCustomLeaveReason('');
     };
 
     const executeJoinLeave = async () => {
@@ -757,45 +787,102 @@ const EventDetailPage: React.FC<EventDetailPageProps> = ({ event, currentUserId,
                 </div>
             )}
 
-            {/* Sticky Join Button */}
-            <footer className="fixed left-0 right-0 px-4 py-3 bg-card/95 backdrop-blur-sm border-t border-border shadow-lg z-30" style={{ bottom: 'calc(5rem + env(safe-area-inset-bottom))' }}>
-                <button 
-                    onClick={handleJoinLeave}
-                    disabled={loading || !isRegistrationOpen}
-                    className={`w-full flex items-center justify-center font-bold py-3.5 px-4 rounded-xl transition-all duration-300 text-base shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none
-                    ${hasJoined || isOnWaitlist
-                        ? 'bg-card text-foreground border-2 border-border hover:bg-muted'
+            {/* Floating Join/Leave Button - Right Side */}
+            <button 
+                onClick={handleJoinLeave}
+                disabled={loading || !isRegistrationOpen}
+                className={`fixed right-4 top-1/2 -translate-y-1/2 z-30 w-12 h-12 rounded-full shadow-lg flex items-center justify-center transition-all duration-300 hover:scale-110 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed ${
+                    hasJoined || isOnWaitlist
+                        ? 'bg-destructive text-destructive-foreground hover:bg-destructive/90'
                         : 'bg-primary text-primary-foreground hover:bg-primary/90'
-                    }`}
-                >
-                    {loading ? (
-                        <>
-                            <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                            Processing...
-                        </>
-                    ) : hasJoined ? (
-                        <>
-                            <Users className="w-5 h-5 mr-2" />
-                            Leave Event
-                        </>
-                    ) : isOnWaitlist ? (
-                        <>
-                            <Users className="w-5 h-5 mr-2" />
-                            Leave Waitlist
-                        </>
-                    ) : event.max_participants && participantCount >= event.max_participants ? (
-                        <>
-                            <Users className="w-5 h-5 mr-2" />
-                            Join Waitlist
-                        </>
-                    ) : (
-                        <>
-                            <Users className="w-5 h-5 mr-2" />
-                            Join Event
-                        </>
-                    )}
-                </button>
-            </footer>
+                }`}
+                title={hasJoined ? 'Leave Event' : isOnWaitlist ? 'Leave Waitlist' : 'Join Event'}
+            >
+                {loading ? (
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                ) : hasJoined || isOnWaitlist ? (
+                    <Minus className="w-6 h-6" />
+                ) : (
+                    <Plus className="w-6 h-6" />
+                )}
+            </button>
+
+            {/* Leave Reason Modal */}
+            {showLeaveModal && (
+                <div className="fixed inset-0 bg-black/50 z-[100] flex items-end justify-center sm:items-center p-4" onClick={() => setShowLeaveModal(false)}>
+                    <div className="bg-card rounded-t-2xl sm:rounded-2xl w-full max-w-sm overflow-hidden shadow-xl" onClick={e => e.stopPropagation()}>
+                        <div className="p-5">
+                            <div className="flex items-center justify-between mb-4">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-10 h-10 rounded-full bg-destructive/10 flex items-center justify-center">
+                                        <Minus className="w-5 h-5 text-destructive" />
+                                    </div>
+                                    <div>
+                                        <h2 className="text-lg font-bold text-foreground">Leave Event</h2>
+                                        <p className="text-xs text-muted-foreground">Tell us why you're leaving</p>
+                                    </div>
+                                </div>
+                                <button 
+                                    onClick={() => setShowLeaveModal(false)}
+                                    className="w-8 h-8 rounded-full hover:bg-muted flex items-center justify-center"
+                                >
+                                    <X className="w-5 h-5 text-muted-foreground" />
+                                </button>
+                            </div>
+                            
+                            <div className="space-y-2">
+                                {LEAVE_REASONS.map((reason) => (
+                                    <button
+                                        key={reason}
+                                        onClick={() => {
+                                            setSelectedLeaveReason(reason);
+                                            if (reason !== 'Other') setCustomLeaveReason('');
+                                        }}
+                                        className={`w-full text-left px-4 py-3 rounded-xl text-sm font-medium transition-all ${
+                                            selectedLeaveReason === reason
+                                                ? 'bg-primary text-primary-foreground'
+                                                : 'bg-muted text-foreground hover:bg-muted/80'
+                                        }`}
+                                    >
+                                        {reason}
+                                    </button>
+                                ))}
+                            </div>
+                            
+                            {selectedLeaveReason === 'Other' && (
+                                <textarea
+                                    value={customLeaveReason}
+                                    onChange={(e) => setCustomLeaveReason(e.target.value)}
+                                    placeholder="Please specify..."
+                                    className="w-full mt-3 px-4 py-3 bg-muted rounded-xl text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary text-sm resize-none"
+                                    rows={2}
+                                    autoFocus
+                                />
+                            )}
+                        </div>
+                        
+                        <div className="px-5 py-4 bg-muted/30 border-t border-border flex gap-2">
+                            <button
+                                onClick={() => {
+                                    setShowLeaveModal(false);
+                                    setSelectedLeaveReason(null);
+                                    setCustomLeaveReason('');
+                                }}
+                                className="flex-1 py-2.5 rounded-xl font-semibold text-sm text-muted-foreground hover:bg-muted transition-colors"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={handleConfirmLeave}
+                                disabled={!selectedLeaveReason || (selectedLeaveReason === 'Other' && !customLeaveReason.trim())}
+                                className="flex-1 py-2.5 rounded-xl bg-destructive text-destructive-foreground font-semibold text-sm hover:bg-destructive/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                            >
+                                Leave
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             {/* Password Modal */}
             {showPasswordModal && (
