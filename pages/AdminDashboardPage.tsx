@@ -14,7 +14,10 @@ import {
   UserCheck,
   UserX,
   FileText,
-  Crown
+  Crown,
+  Flag,
+  AlertTriangle,
+  MessageSquare
 } from 'lucide-react';
 import { supabase } from '../src/integrations/supabase/client';
 import { useToast } from '../src/hooks/use-toast';
@@ -28,6 +31,7 @@ interface Stats {
   totalBookings: number;
   totalReviews: number;
   avgRating: number;
+  pendingDisputes: number;
 }
 
 interface PendingEvent {
@@ -52,6 +56,28 @@ interface User {
   roles: string[];
 }
 
+interface ReviewDispute {
+  id: string;
+  review_id: string;
+  trainer_id: string;
+  reason: string;
+  created_at: string;
+  review: {
+    id: string;
+    rating: number;
+    comment: string | null;
+    client: {
+      username: string;
+      avatar_url: string | null;
+    };
+    class_name: string;
+  };
+  trainer: {
+    username: string;
+    avatar_url: string | null;
+  };
+}
+
 const AdminDashboardPage: React.FC = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -65,11 +91,13 @@ const AdminDashboardPage: React.FC = () => {
     totalBookings: 0,
     totalReviews: 0,
     avgRating: 0,
+    pendingDisputes: 0,
   });
   const [pendingEvents, setPendingEvents] = useState<PendingEvent[]>([]);
   const [users, setUsers] = useState<User[]>([]);
   const [pendingDocuments, setPendingDocuments] = useState<any[]>([]);
-  const [activeTab, setActiveTab] = useState<'overview' | 'events' | 'users' | 'documents'>('overview');
+  const [disputes, setDisputes] = useState<ReviewDispute[]>([]);
+  const [activeTab, setActiveTab] = useState<'overview' | 'events' | 'users' | 'documents' | 'disputes'>('overview');
 
   useEffect(() => {
     checkAdminAccess();
@@ -77,6 +105,7 @@ const AdminDashboardPage: React.FC = () => {
     fetchPendingEvents();
     fetchUsers();
     fetchPendingDocuments();
+    fetchDisputes();
   }, []);
 
   const fetchPendingDocuments = async () => {
@@ -95,6 +124,129 @@ const AdminDashboardPage: React.FC = () => {
       setPendingDocuments(data || []);
     } catch (error: any) {
       console.error('Error fetching pending documents:', error);
+    }
+  };
+
+  const fetchDisputes = async () => {
+    try {
+      // Fetch notifications with type 'review_dispute'
+      const { data: disputeNotifications, error } = await supabase
+        .from('notifications')
+        .select('*')
+        .eq('type', 'review_dispute')
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      if (!disputeNotifications || disputeNotifications.length === 0) {
+        setDisputes([]);
+        return;
+      }
+
+      // For each dispute, fetch the review and related data
+      const disputesWithDetails = await Promise.all(
+        disputeNotifications.map(async (notification) => {
+          // Fetch the review
+          const { data: review } = await supabase
+            .from('reviews')
+            .select(`
+              id,
+              rating,
+              comment,
+              client_id,
+              trainer_id,
+              booking_id
+            `)
+            .eq('id', notification.reference_id)
+            .maybeSingle();
+
+          if (!review) return null;
+
+          // Fetch client profile
+          const { data: client } = await supabase
+            .from('profiles')
+            .select('username, avatar_url')
+            .eq('id', review.client_id)
+            .maybeSingle();
+
+          // Fetch trainer profile
+          const { data: trainer } = await supabase
+            .from('profiles')
+            .select('username, avatar_url')
+            .eq('id', review.trainer_id)
+            .maybeSingle();
+
+          // Fetch class name from booking
+          const { data: booking } = await supabase
+            .from('bookings')
+            .select('class_id, classes(name)')
+            .eq('id', review.booking_id)
+            .maybeSingle();
+
+          return {
+            id: notification.id,
+            review_id: review.id,
+            trainer_id: review.trainer_id,
+            reason: notification.message.replace(/^Review dispute submitted for review from.*\. Reason: /, ''),
+            created_at: notification.created_at,
+            review: {
+              id: review.id,
+              rating: review.rating,
+              comment: review.comment,
+              client: {
+                username: client?.username || 'Unknown',
+                avatar_url: client?.avatar_url
+              },
+              class_name: (booking?.classes as any)?.name || 'Unknown Class'
+            },
+            trainer: {
+              username: trainer?.username || 'Unknown',
+              avatar_url: trainer?.avatar_url
+            }
+          };
+        })
+      );
+
+      setDisputes(disputesWithDetails.filter(d => d !== null) as ReviewDispute[]);
+    } catch (error: any) {
+      console.error('Error fetching disputes:', error);
+    }
+  };
+
+  const handleDisputeAction = async (disputeId: string, reviewId: string, action: 'approve' | 'reject') => {
+    try {
+      if (action === 'approve') {
+        // Delete the review if dispute is approved
+        await supabase
+          .from('reviews')
+          .delete()
+          .eq('id', reviewId);
+
+        toast({
+          title: 'Dispute Approved',
+          description: 'The review has been removed.',
+        });
+      } else {
+        toast({
+          title: 'Dispute Rejected',
+          description: 'The review will remain.',
+        });
+      }
+
+      // Delete the dispute notification
+      await supabase
+        .from('notifications')
+        .delete()
+        .eq('id', disputeId);
+
+      fetchDisputes();
+      fetchStats();
+    } catch (error: any) {
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to process dispute',
+        variant: 'destructive',
+      });
     }
   };
 
@@ -205,6 +357,12 @@ const AdminDashboardPage: React.FC = () => {
         ? avgRatingData.reduce((sum, r) => sum + r.rating, 0) / avgRatingData.length
         : 0;
 
+      // Pending disputes
+      const { count: disputesCount } = await supabase
+        .from('notifications')
+        .select('*', { count: 'exact', head: true })
+        .eq('type', 'review_dispute');
+
       setStats({
         totalUsers: usersCount || 0,
         totalTrainers: trainers,
@@ -214,6 +372,7 @@ const AdminDashboardPage: React.FC = () => {
         totalBookings: bookingsCount || 0,
         totalReviews: reviewsCount || 0,
         avgRating: Math.round(avgRating * 10) / 10,
+        pendingDisputes: disputesCount || 0,
       });
     } catch (error) {
       console.error('Error fetching stats:', error);
@@ -397,7 +556,17 @@ const AdminDashboardPage: React.FC = () => {
                 : 'text-muted-foreground hover:text-foreground'
             }`}
           >
-            Documents ({pendingDocuments.length})
+            Docs ({pendingDocuments.length})
+          </button>
+          <button
+            onClick={() => setActiveTab('disputes')}
+            className={`flex-1 py-2 px-4 rounded-md font-medium transition-colors ${
+              activeTab === 'disputes'
+                ? 'bg-primary text-primary-foreground'
+                : 'text-muted-foreground hover:text-foreground'
+            }`}
+          >
+            Disputes ({stats.pendingDisputes})
           </button>
         </div>
 
@@ -732,6 +901,124 @@ const AdminDashboardPage: React.FC = () => {
                 </div>
               ))}
             </div>
+          </div>
+        )}
+
+        {/* Disputes Tab */}
+        {activeTab === 'disputes' && (
+          <div className="space-y-4">
+            <h2 className="text-xl font-semibold text-foreground mb-4">
+              Review Disputes ({disputes.length})
+            </h2>
+            {disputes.length === 0 ? (
+              <div className="bg-card rounded-lg p-8 text-center border border-border">
+                <Flag className="w-12 h-12 text-muted-foreground mx-auto mb-3" />
+                <p className="text-muted-foreground">No pending disputes to review</p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {disputes.map((dispute) => (
+                  <div key={dispute.id} className="bg-card rounded-lg p-6 border border-border">
+                    {/* Dispute Header */}
+                    <div className="flex items-start justify-between mb-4">
+                      <div className="flex items-center gap-2">
+                        <AlertTriangle className="w-5 h-5 text-yellow-500" />
+                        <span className="font-semibold text-foreground">Review Dispute</span>
+                        <span className="text-xs text-muted-foreground">
+                          {new Date(dispute.created_at).toLocaleDateString()}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Trainer Info */}
+                    <div className="flex items-center gap-3 mb-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                      {dispute.trainer.avatar_url ? (
+                        <img
+                          src={dispute.trainer.avatar_url}
+                          alt={dispute.trainer.username}
+                          className="w-10 h-10 rounded-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center">
+                          <Users className="w-5 h-5 text-muted-foreground" />
+                        </div>
+                      )}
+                      <div>
+                        <p className="text-sm font-medium text-foreground">Disputed by: {dispute.trainer.username}</p>
+                        <p className="text-xs text-muted-foreground">Trainer</p>
+                      </div>
+                    </div>
+
+                    {/* Review Being Disputed */}
+                    <div className="bg-muted/50 rounded-lg p-4 mb-4">
+                      <div className="flex items-center gap-3 mb-2">
+                        {dispute.review.client.avatar_url ? (
+                          <img
+                            src={dispute.review.client.avatar_url}
+                            alt={dispute.review.client.username}
+                            className="w-8 h-8 rounded-full object-cover"
+                          />
+                        ) : (
+                          <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center">
+                            <Users className="w-4 h-4 text-muted-foreground" />
+                          </div>
+                        )}
+                        <div className="flex-1">
+                          <p className="text-sm font-medium text-foreground">{dispute.review.client.username}</p>
+                          <div className="flex items-center gap-1">
+                            {[1, 2, 3, 4, 5].map((star) => (
+                              <Star
+                                key={star}
+                                className={`w-3 h-3 ${
+                                  star <= dispute.review.rating
+                                    ? 'fill-yellow-400 text-yellow-400'
+                                    : 'text-muted-foreground'
+                                }`}
+                              />
+                            ))}
+                          </div>
+                        </div>
+                        <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded-md">
+                          {dispute.review.class_name}
+                        </span>
+                      </div>
+                      {dispute.review.comment && (
+                        <p className="text-sm text-foreground mt-2">"{dispute.review.comment}"</p>
+                      )}
+                    </div>
+
+                    {/* Dispute Reason */}
+                    <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-3 mb-4">
+                      <div className="flex items-start gap-2">
+                        <MessageSquare className="w-4 h-4 text-yellow-600 dark:text-yellow-400 mt-0.5" />
+                        <div>
+                          <p className="text-xs font-medium text-yellow-700 dark:text-yellow-300 mb-1">Dispute Reason:</p>
+                          <p className="text-sm text-yellow-800 dark:text-yellow-200">{dispute.reason}</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Actions */}
+                    <div className="flex gap-3">
+                      <button
+                        onClick={() => handleDisputeAction(dispute.id, dispute.review_id, 'reject')}
+                        className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-muted hover:bg-muted/80 text-foreground rounded-lg transition-colors"
+                      >
+                        <XCircle className="w-4 h-4" />
+                        Keep Review
+                      </button>
+                      <button
+                        onClick={() => handleDisputeAction(dispute.id, dispute.review_id, 'approve')}
+                        className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg transition-colors"
+                      >
+                        <CheckCircle className="w-4 h-4" />
+                        Remove Review
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
       </div>
