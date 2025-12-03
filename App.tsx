@@ -54,6 +54,7 @@ import { PWAUpdatePrompt } from './components/PWAUpdatePrompt';
 import { WhatsNewModal } from './components/WhatsNewModal';
 import { NotificationPermissionPrompt } from './src/components/NotificationPermissionPrompt';
 import { useNotificationTriggers, useDailyReminder } from './src/hooks/usePushNotifications';
+import NotificationSettingsPage from './pages/NotificationSettingsPage';
 // ErrorBoundary temporarily disabled due to React 19 TypeScript compatibility
 // import { ErrorBoundary } from './src/components/ErrorBoundary';
 
@@ -605,6 +606,14 @@ const AppRoutes = () => {
           element={
             <ProtectedRoute>
               <VenuesPageWrapper />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/notification-settings"
+          element={
+            <ProtectedRoute>
+              <NotificationSettingsPage />
             </ProtectedRoute>
           }
         />

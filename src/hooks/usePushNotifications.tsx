@@ -1,6 +1,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { supabase } from '@/src/integrations/supabase/client';
 import { useAuth } from './useAuth';
+import { useNotificationPreferences } from './useNotificationPreferences';
 
 export const usePushNotifications = () => {
   const { user } = useAuth();
@@ -92,6 +93,7 @@ export const usePushNotifications = () => {
 export const useNotificationTriggers = () => {
   const { user } = useAuth();
   const { permission, showLocalNotification } = usePushNotifications();
+  const { preferences } = useNotificationPreferences();
 
   useEffect(() => {
     if (!user || permission !== 'granted') return;
@@ -108,6 +110,8 @@ export const useNotificationTriggers = () => {
           filter: `recipient_id=eq.${user.id}`
         },
         async (payload) => {
+          if (!preferences.messages_enabled) return;
+          
           const message = payload.new as any;
           
           // Don't notify if app is in foreground and focused
@@ -140,6 +144,8 @@ export const useNotificationTriggers = () => {
           table: 'bookings'
         },
         async (payload) => {
+          if (!preferences.bookings_enabled) return;
+          
           const booking = payload.new as any;
           
           // Check if current user is the trainer for this class
@@ -179,6 +185,8 @@ export const useNotificationTriggers = () => {
           table: 'events'
         },
         async (payload) => {
+          if (!preferences.events_enabled) return;
+          
           const event = payload.new as any;
           
           if (document.visibilityState === 'visible') return;
@@ -207,16 +215,17 @@ export const useNotificationTriggers = () => {
       supabase.removeChannel(bookingsChannel);
       supabase.removeChannel(eventsChannel);
     };
-  }, [user, permission, showLocalNotification]);
+  }, [user, permission, showLocalNotification, preferences]);
 };
 
 // Daily reminder hook
 export const useDailyReminder = () => {
   const { user } = useAuth();
   const { permission, showLocalNotification } = usePushNotifications();
+  const { preferences } = useNotificationPreferences();
 
   useEffect(() => {
-    if (!user || permission !== 'granted') return;
+    if (!user || permission !== 'granted' || !preferences.daily_reminder_enabled) return;
 
     const REMINDER_KEY = 'rhinofit_daily_reminder';
     const REMINDER_HOUR = 18; // 6 PM
@@ -244,6 +253,7 @@ export const useDailyReminder = () => {
         // Schedule for later today
         const delay = reminderTime.getTime() - now.getTime();
         setTimeout(() => {
+          if (!preferences.daily_reminder_enabled) return;
           showLocalNotification('Time to Train! 💪', {
             body: "Don't skip your workout today! Your fitness goals are waiting.",
             tag: 'daily-reminder',
@@ -260,5 +270,5 @@ export const useDailyReminder = () => {
     const interval = setInterval(checkAndScheduleReminder, 60 * 60 * 1000);
 
     return () => clearInterval(interval);
-  }, [user, permission, showLocalNotification]);
+  }, [user, permission, showLocalNotification, preferences.daily_reminder_enabled]);
 };
