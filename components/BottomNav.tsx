@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import { NavLink } from './NavLink';
-import { Home, Search, MessageCircle, Calendar, User } from 'lucide-react';
+import { Home, Search, MessageCircle, Calendar, User, Star } from 'lucide-react';
 import { supabase } from '../src/integrations/supabase/client';
 import { useAuth } from '../src/hooks/useAuth';
 import { UserRole } from '../types';
@@ -11,6 +11,7 @@ interface NavItem {
   path: string;
   icon: React.FC<any>;
   hideForTrainer?: boolean;
+  showOnlyForTrainer?: boolean;
 }
 
 const BottomNav: React.FC = () => {
@@ -40,6 +41,7 @@ const BottomNav: React.FC = () => {
   const navItems: NavItem[] = [
     { name: 'Home', path: '/', icon: Home },
     { name: 'Explore', path: '/explore', icon: Search, hideForTrainer: true },
+    { name: 'Reviews', path: '/my-reviews', icon: Star, showOnlyForTrainer: true },
     { name: 'Messages', path: '/messages', icon: MessageCircle },
     { name: 'Bookings', path: '/bookings', icon: Calendar },
     { name: 'Profile', path: '/profile', icon: User },
@@ -48,6 +50,9 @@ const BottomNav: React.FC = () => {
   // Filter nav items based on user role
   const filteredNavItems = navItems.filter(item => {
     if (userRole === 'trainer' && item.hideForTrainer) {
+      return false;
+    }
+    if (userRole !== 'trainer' && item.showOnlyForTrainer) {
       return false;
     }
     return true;

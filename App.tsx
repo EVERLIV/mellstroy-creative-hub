@@ -38,6 +38,7 @@ import ClassDetailPage from './pages/ClassDetailPage';
 import TrainerProfileViewPage from './pages/TrainerProfileViewPage';
 import VenuesPage from './pages/VenuesPage';
 import SubscriptionManagementPage from './pages/SubscriptionManagementPage';
+import MyReviewsPage from './pages/MyReviewsPage';
 import BottomNav from './components/BottomNav';
 import BookingModal from './components/BookingModal';
 import ReviewModal from './components/ReviewModal';
@@ -499,6 +500,14 @@ const AppRoutes = () => {
           element={
             <ProtectedRoute>
               <ProfileContainer />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/my-reviews"
+          element={
+            <ProtectedRoute>
+              <MyReviewsPage />
             </ProtectedRoute>
           }
         />
