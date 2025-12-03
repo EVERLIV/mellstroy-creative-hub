@@ -176,13 +176,6 @@ const TrainerClassCard: React.FC<TrainerClassCardProps> = ({ cls, bookingCount =
                 Edit Class
               </button>
               <button
-                onClick={() => navigate(`/class/${cls.id}`)}
-                className="w-full px-4 py-2.5 text-left text-sm text-popover-foreground hover:bg-muted flex items-center gap-2"
-              >
-                <Eye className="w-4 h-4" />
-                View Details
-              </button>
-              <button
                 onClick={handleDelete}
                 className="w-full px-4 py-2.5 text-left text-sm text-destructive hover:bg-destructive/10 flex items-center gap-2"
               >

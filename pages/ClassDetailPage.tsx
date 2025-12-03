@@ -50,9 +50,14 @@ const ClassDetailPage: React.FC<ClassDetailPageProps> = ({
   const [similarClasses, setSimilarClasses] = useState<Class[]>([]);
 
   useEffect(() => {
+    // Trainers cannot access class detail pages (student view)
+    if (userRole === 'trainer') {
+      navigate('/');
+      return;
+    }
     if (!classId) return;
     loadClassData();
-  }, [classId]);
+  }, [classId, userRole, navigate]);
 
 
   const loadClassData = async () => {
