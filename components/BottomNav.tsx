@@ -1,10 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { useLocation } from 'react-router-dom';
 import { NavLink } from './NavLink';
 import { Home, Search, MessageCircle, Calendar, User, Star } from 'lucide-react';
-import { supabase } from '../src/integrations/supabase/client';
 import { useAuth } from '../src/hooks/useAuth';
-import { UserRole } from '../types';
 
 interface NavItem {
   name: string;
@@ -16,27 +14,12 @@ interface NavItem {
 
 const BottomNav: React.FC = () => {
   const location = useLocation();
-  const { user } = useAuth();
-  const [userRole, setUserRole] = useState<UserRole>('student');
+  const { userRole, loading } = useAuth();
 
-  // Fetch user role
-  useEffect(() => {
-    const fetchUserRole = async () => {
-      if (!user?.id) return;
-      
-      const { data, error } = await supabase
-        .from('user_roles')
-        .select('role')
-        .eq('user_id', user.id)
-        .maybeSingle();
-      
-      if (!error && data) {
-        setUserRole(data.role as UserRole);
-      }
-    };
-
-    fetchUserRole();
-  }, [user?.id]);
+  // Don't render until role is loaded to prevent flash
+  if (loading || !userRole) {
+    return null;
+  }
   
   const navItems: NavItem[] = [
     { name: 'Home', path: '/', icon: Home },

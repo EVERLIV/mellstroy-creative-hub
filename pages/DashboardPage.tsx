@@ -21,13 +21,12 @@ interface DashboardPageProps {}
 
 const DashboardPage: React.FC<DashboardPageProps> = () => {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, userRole, loading: authLoading } = useAuth();
   const [searchQuery, setSearchQuery] = useState('');
   const [upcomingEvents, setUpcomingEvents] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedVenue, setSelectedVenue] = useState<Venue | null>(null);
   const [isPremiumModalOpen, setIsPremiumModalOpen] = useState(false);
-  const [userRole, setUserRole] = useState<UserRole>('student');
   const [myClasses, setMyClasses] = useState<any[]>([]);
   const [myEvents, setMyEvents] = useState<any[]>([]);
   const [bookingStats, setBookingStats] = useState<BookingStats>({
@@ -37,25 +36,6 @@ const DashboardPage: React.FC<DashboardPageProps> = () => {
     completed: 0,
     cancelled: 0
   });
-
-  // Fetch user role
-  useEffect(() => {
-    const fetchUserRole = async () => {
-      if (!user?.id) return;
-      
-      const { data, error } = await supabase
-        .from('user_roles')
-        .select('role')
-        .eq('user_id', user.id)
-        .maybeSingle();
-      
-      if (!error && data) {
-        setUserRole(data.role as UserRole);
-      }
-    };
-
-    fetchUserRole();
-  }, [user?.id]);
 
   // Fetch trainer's classes
   useEffect(() => {
@@ -305,6 +285,15 @@ const DashboardPage: React.FC<DashboardPageProps> = () => {
   const handleCategoryClick = useCallback((categoryId: string) => {
     navigate(`/category/${categoryId}`);
   }, [navigate]);
+
+  // Show loading state while auth is loading to prevent UI flash
+  if (authLoading || !userRole) {
+    return (
+      <div className="bg-background min-h-screen flex items-center justify-center">
+        <div className="animate-pulse text-muted-foreground">Loading...</div>
+      </div>
+    );
+  }
 
   if (selectedVenue) {
     return (
