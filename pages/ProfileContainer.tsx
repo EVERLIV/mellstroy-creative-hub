@@ -3,29 +3,31 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../src/hooks/useAuth';
 import { supabase } from '../src/integrations/supabase/client';
 import { useToast } from '../src/hooks/use-toast';
-import { Trainer, UserRole, Class } from '../types';
+import { Trainer, Class } from '../types';
 import ProfilePage from './ProfilePage';
 import StudentProfilePage from './StudentProfilePage';
 import EditAboutMePage from './EditAboutMePage';
 import EditTrainerProfilePage from './EditTrainerProfilePage';
 import AddEditClassModal from '../components/AddEditClassModal';
+import ProfilePageSkeleton from '../components/ProfilePageSkeleton';
 
 const ProfileContainer: React.FC = () => {
-  const { user, signOut } = useAuth();
+  const { user, signOut, userRole, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
   const [currentUser, setCurrentUser] = useState<Trainer | null>(null);
-  const [userRole, setUserRole] = useState<UserRole>('student');
   const [isLoading, setIsLoading] = useState(true);
   const [editingClass, setEditingClass] = useState<Class | null | undefined>(undefined);
   const [isEditingProfile, setIsEditingProfile] = useState(false);
 
   useEffect(() => {
-    loadUserData();
-  }, [user]);
+    if (!authLoading && userRole) {
+      loadUserData();
+    }
+  }, [user, authLoading, userRole]);
 
   const loadUserData = async () => {
-    if (!user) {
+    if (!user || !userRole) {
       navigate('/auth');
       return;
     }
@@ -48,29 +50,9 @@ const ProfileContainer: React.FC = () => {
         return;
       }
 
-      // Load user role directly from Supabase database (ONE role per user)
-      const { data: roleData } = await supabase
-        .from('user_roles')
-        .select('role')
-        .eq('user_id', user.id)
-        .single(); // Use single() since there's only one role per user now
-
-      if (!roleData) {
-        toast({
-          variant: "destructive",
-          title: "Role not found",
-          description: "Please complete onboarding first.",
-        });
-        navigate('/onboarding');
-        return;
-      }
-
-      const role: UserRole = roleData.role === 'trainer' ? 'trainer' : 'student';
-      setUserRole(role);
-
       // Load classes if trainer
       let classes: Class[] = [];
-      if (role === 'trainer') {
+      if (userRole === 'trainer') {
         const { data: classesData } = await supabase
           .from('classes')
           .select('*')
@@ -137,7 +119,7 @@ const ProfileContainer: React.FC = () => {
         weight: profile.weight,
         goals: profile.goals || [],
         interests: profile.interests || [],
-        role,
+        role: userRole,
       });
     } catch (error: any) {
       console.error('Error loading profile:', error);
@@ -404,15 +386,8 @@ const ProfileContainer: React.FC = () => {
     navigate('/auth');
   };
 
-  if (isLoading || !currentUser) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-muted-foreground">Loading profile...</p>
-        </div>
-      </div>
-    );
+  if (authLoading || isLoading || !currentUser || !userRole) {
+    return <ProfilePageSkeleton />;
   }
 
   // Show edit profile page
