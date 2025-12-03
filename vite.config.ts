@@ -17,7 +17,7 @@ export default defineConfig(({ mode }) => {
         react(),
         mode === 'development' && componentTagger(),
         VitePWA({
-          registerType: 'autoUpdate',
+          registerType: 'prompt',
           includeAssets: ['favicon.png', 'src/assets/rhino-logo.png'],
           manifest: {
             name: 'RhinoFit - Personal Trainer Discovery',
