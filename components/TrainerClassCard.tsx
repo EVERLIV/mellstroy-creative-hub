@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Edit3, Trash2, Users, Clock, TrendingUp, Eye, MoreVertical, Calendar, DollarSign, Loader2 } from 'lucide-react';
+import { Edit3, Trash2, Users, Clock, TrendingUp, Eye, MoreVertical, Calendar, DollarSign, Loader2, ChevronRight } from 'lucide-react';
 import { supabase } from '../src/integrations/supabase/client';
 import TrainerClassPreviewModal from './TrainerClassPreviewModal';
+import ClassStatisticsModal from './ClassStatisticsModal';
 
 interface TrainerClassCardProps {
   cls: {
@@ -41,6 +42,7 @@ const TrainerClassCard: React.FC<TrainerClassCardProps> = ({ cls, bookingCount =
   const navigate = useNavigate();
   const [showMenu, setShowMenu] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
+  const [showStats, setShowStats] = useState(false);
   const [viewStats, setViewStats] = useState<ViewStats | null>(null);
   const [loadingStats, setLoadingStats] = useState(true);
   const menuRef = React.useRef<HTMLDivElement>(null);
@@ -239,25 +241,31 @@ const TrainerClassCard: React.FC<TrainerClassCardProps> = ({ cls, bookingCount =
           {formatSchedule()}
         </div>
 
-        {/* View statistics */}
-        <div className="bg-primary/5 rounded-lg p-3 border border-primary/10">
+        {/* View statistics - Clickable */}
+        <button 
+          onClick={() => setShowStats(true)}
+          className="w-full bg-primary/5 rounded-lg p-3 border border-primary/10 hover:bg-primary/10 transition-colors text-left"
+        >
           <div className="flex items-center justify-between mb-2">
             <span className="text-xs font-semibold text-foreground flex items-center gap-1">
               <Eye className="w-3.5 h-3.5 text-primary" />
               View Statistics
             </span>
-            {loadingStats ? (
-              <Loader2 className="w-3 h-3 animate-spin text-muted-foreground" />
-            ) : viewStats && viewStats.trendPercent > 0 ? (
-              <span className={`text-xs font-semibold flex items-center gap-0.5 ${
-                viewStats.trend === 'up' ? 'text-green-600' : viewStats.trend === 'down' ? 'text-red-500' : 'text-muted-foreground'
-              }`}>
-                <TrendingUp className={`w-3 h-3 ${viewStats.trend === 'down' ? 'rotate-180' : ''}`} />
-                {viewStats.trendPercent}%
-              </span>
-            ) : (
-              <span className="text-xs text-muted-foreground">—</span>
-            )}
+            <div className="flex items-center gap-1">
+              {loadingStats ? (
+                <Loader2 className="w-3 h-3 animate-spin text-muted-foreground" />
+              ) : viewStats && viewStats.trendPercent > 0 ? (
+                <span className={`text-xs font-semibold flex items-center gap-0.5 ${
+                  viewStats.trend === 'up' ? 'text-green-600' : viewStats.trend === 'down' ? 'text-red-500' : 'text-muted-foreground'
+                }`}>
+                  <TrendingUp className={`w-3 h-3 ${viewStats.trend === 'down' ? 'rotate-180' : ''}`} />
+                  {viewStats.trendPercent}%
+                </span>
+              ) : (
+                <span className="text-xs text-muted-foreground">—</span>
+              )}
+              <ChevronRight className="w-3.5 h-3.5 text-muted-foreground" />
+            </div>
           </div>
           <div className="flex justify-between text-xs">
             {loadingStats ? (
@@ -275,7 +283,7 @@ const TrainerClassCard: React.FC<TrainerClassCardProps> = ({ cls, bookingCount =
               </>
             )}
           </div>
-        </div>
+        </button>
 
         {/* Action buttons */}
         <div className="flex gap-2 mt-4">
@@ -303,6 +311,14 @@ const TrainerClassCard: React.FC<TrainerClassCardProps> = ({ cls, bookingCount =
         isOpen={showPreview}
         onClose={() => setShowPreview(false)}
         onEdit={onEdit}
+      />
+
+      {/* Statistics Modal */}
+      <ClassStatisticsModal
+        classId={cls.id}
+        className={cls.name}
+        isOpen={showStats}
+        onClose={() => setShowStats(false)}
       />
     </div>
   );
