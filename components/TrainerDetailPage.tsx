@@ -287,10 +287,10 @@ const TrainerDetailPage: React.FC<TrainerDetailPageProps> = ({
 
     if (!trainer) {
         return (
-            <div className="bg-white h-screen flex items-center justify-center">
+            <div className="bg-background h-[100dvh] flex items-center justify-center">
                 <div className="text-center">
-                    <div className="w-12 h-12 border-4 border-[#FF6B35] border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-                    <p className="text-sm text-gray-600">Loading trainer...</p>
+                    <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+                    <p className="text-sm text-muted-foreground">Loading trainer...</p>
                 </div>
             </div>
         );
@@ -365,39 +365,39 @@ const TrainerDetailPage: React.FC<TrainerDetailPageProps> = ({
     };
 
     return (
-        <div className="bg-white h-screen flex flex-col overflow-hidden">
+        <div className="bg-background h-[100dvh] flex flex-col overflow-hidden">
             {/* Header */}
-            <div className="flex items-center justify-between px-4 py-3 bg-white shadow-sm z-20 flex-shrink-0">
+            <div className="flex items-center justify-between px-4 py-3 bg-background border-b border-border flex-shrink-0">
                 <button 
                     onClick={onBack} 
                     className="p-2 -ml-2"
                 >
-                    <ArrowLeft className="w-5 h-5 text-gray-800" />
+                    <ArrowLeft className="w-5 h-5 text-foreground" />
                 </button>
-                <h1 className="text-base font-bold text-gray-900">Trainer Profile</h1>
+                <h1 className="text-base font-bold text-foreground">Trainer Profile</h1>
                 <div className="flex items-center gap-1">
                     <button 
                         onClick={() => onToggleFavorite(trainer.id)}
                         className="p-2 -mr-2"
                         aria-label={isFavorite ? 'Remove from favorites' : 'Add to favorites'}
                     >
-                        <Heart className={`w-5 h-5 transition-all ${isFavorite ? 'text-red-500 fill-red-500' : 'text-gray-800'}`} />
+                        <Heart className={`w-5 h-5 transition-all ${isFavorite ? 'text-red-500 fill-red-500' : 'text-foreground'}`} />
                     </button>
                     <button 
                         onClick={handleShare}
                         className="p-2 -mr-2"
                         aria-label="Share trainer"
                     >
-                        <Share2 className="w-5 h-5 text-gray-800" />
+                        <Share2 className="w-5 h-5 text-foreground" />
                     </button>
                 </div>
             </div>
 
             {/* Scrollable Content */}
-            <div ref={scrollContainerRef} className="flex-1 overflow-y-auto">
-                <div className="px-4 py-3 bg-gray-50 pb-[calc(5rem+env(safe-area-inset-bottom))]">
+            <div ref={scrollContainerRef} className="flex-1 overflow-y-auto min-h-0">
+                <div className="px-4 py-3 bg-muted/30 pb-[calc(5rem+env(safe-area-inset-bottom))]">
                     {/* Trainer Profile Card */}
-                    <div className="bg-white rounded-lg p-3 mb-3 shadow-sm">
+                    <div className="bg-card rounded-lg p-3 mb-3 border border-border">
                         <div className="flex items-start gap-3">
                             <div className="relative flex-shrink-0">
                                 <div className={`w-16 h-16 rounded-full overflow-hidden border-2 ${
@@ -410,19 +410,19 @@ const TrainerDetailPage: React.FC<TrainerDetailPageProps> = ({
                                     />
                                 </div>
                                 {trainer.isPremium && (
-                                    <div className="absolute -top-1 -left-1 bg-gradient-to-r from-amber-400 to-yellow-500 rounded-full p-0.5 border-2 border-white shadow-sm">
+                                    <div className="absolute -top-1 -left-1 bg-gradient-to-r from-amber-400 to-yellow-500 rounded-full p-0.5 border-2 border-background shadow-sm">
                                         <Crown className="w-3 h-3 text-white" />
                                     </div>
                                 )}
                                 {trainer.verificationStatus === 'verified' && (
-                                    <div className="absolute -bottom-1 -right-1 bg-blue-500 rounded-full p-0.5 border-2 border-white">
+                                    <div className="absolute -bottom-1 -right-1 bg-blue-500 rounded-full p-0.5 border-2 border-background">
                                         <ShieldCheck className="w-3 h-3 text-white" />
                                     </div>
                                 )}
                             </div>
                             <div className="flex-1 min-w-0">
                                 <div className="flex items-center gap-2 mb-1 flex-wrap">
-                                    <h2 className="text-base font-bold text-gray-900">{trainer.name}</h2>
+                                    <h2 className="text-base font-bold text-foreground">{trainer.name}</h2>
                                     {trainer.isPremium && (
                                         <div className="flex items-center gap-1 px-2 py-0.5 bg-gradient-to-r from-amber-400 to-yellow-500 rounded-full shadow-sm">
                                             <Crown className="w-3 h-3 text-white" />
@@ -432,12 +432,12 @@ const TrainerDetailPage: React.FC<TrainerDetailPageProps> = ({
                                 </div>
                                 <div className="flex items-center gap-1 mb-1">
                                     <StarRating rating={trainer.rating} />
-                                    <span className="text-xs font-bold text-gray-900">{trainer.rating.toFixed(1)}</span>
-                                    <span className="text-xs text-gray-500">({trainer.reviews} reviews)</span>
+                                    <span className="text-xs font-bold text-foreground">{trainer.rating.toFixed(1)}</span>
+                                    <span className="text-xs text-muted-foreground">({trainer.reviews} reviews)</span>
                                 </div>
                                 {trainer.location && (
-                                    <div className="flex items-center gap-1 text-xs text-gray-600">
-                                        <MapPin className="w-3.5 h-3.5 text-[#FF6B35]" />
+                                    <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                                        <MapPin className="w-3.5 h-3.5 text-primary" />
                                         <span>{trainer.location}</span>
                                     </div>
                                 )}
@@ -447,13 +447,13 @@ const TrainerDetailPage: React.FC<TrainerDetailPageProps> = ({
 
                     {/* Categories Section */}
                     {trainer.specialty && trainer.specialty.length > 0 && (
-                        <div className="bg-white rounded-lg p-3 mb-3 shadow-sm">
-                            <h3 className="text-sm font-bold text-gray-900 mb-2">Categories</h3>
+                        <div className="bg-card rounded-lg p-3 mb-3 border border-border">
+                            <h3 className="text-sm font-bold text-foreground mb-2">Categories</h3>
                             <div className="flex flex-wrap gap-1.5">
                                 {trainer.specialty.map((category, index) => (
                                     <span
                                         key={index}
-                                        className="px-2.5 py-1 bg-orange-100 text-orange-700 text-xs font-medium rounded-full"
+                                        className="px-2.5 py-1 bg-primary/10 text-primary text-xs font-medium rounded-full"
                                     >
                                         {category}
                                     </span>
@@ -464,15 +464,15 @@ const TrainerDetailPage: React.FC<TrainerDetailPageProps> = ({
 
                     {/* About Me Section */}
                     {trainer.bio && (
-                        <div className="bg-white rounded-lg p-3 mb-3 shadow-sm">
-                            <h3 className="text-sm font-bold text-gray-900 mb-2">About Me</h3>
-                            <p className="text-xs text-gray-600 leading-relaxed">{trainer.bio}</p>
+                        <div className="bg-card rounded-lg p-3 mb-3 border border-border">
+                            <h3 className="text-sm font-bold text-foreground mb-2">About Me</h3>
+                            <p className="text-xs text-muted-foreground leading-relaxed">{trainer.bio}</p>
                         </div>
                     )}
 
                     {/* Classes Section */}
-                    <div className="bg-white rounded-lg p-3 mb-3 shadow-sm">
-                        <h3 className="text-sm font-bold text-gray-900 mb-3">Classes</h3>
+                    <div className="bg-card rounded-lg p-3 mb-3 border border-border">
+                        <h3 className="text-sm font-bold text-foreground mb-3">Classes</h3>
                         {displayClasses.length > 0 ? (
                             <div className="space-y-0">
                                 {displayClasses.map((cls, index) => (
@@ -486,46 +486,46 @@ const TrainerDetailPage: React.FC<TrainerDetailPageProps> = ({
                                             onBack={onBack} 
                                         />
                                         {index < displayClasses.length - 1 && (
-                                            <div className="border-t border-gray-100 mb-3"></div>
+                                            <div className="border-t border-border mb-3"></div>
                                         )}
                                     </React.Fragment>
                                 ))}
                             </div>
                         ) : (
-                            <p className="text-xs text-gray-500 text-center py-4">No classes available yet.</p>
+                            <p className="text-xs text-muted-foreground text-center py-4">No classes available yet.</p>
                         )}
                     </div>
                     
                     {/* Reviews Section */}
-                    <div className="bg-white rounded-lg p-3 mb-3 shadow-sm">
-                        <h3 className="text-sm font-bold text-gray-900 mb-2">Ratings & Reviews ({trainer.reviews})</h3>
+                    <div className="bg-card rounded-lg p-3 border border-border">
+                        <h3 className="text-sm font-bold text-foreground mb-2">Ratings & Reviews ({trainer.reviews})</h3>
                         {trainer.reviewsData && trainer.reviewsData.length > 0 ? (
                             <div className="space-y-3">
                                 {trainer.reviewsData.slice(0, 2).map((review, index) => (
                                     <div key={index} className="flex gap-3">
-                                        <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center flex-shrink-0">
-                                            <Users className="w-4 h-4 text-gray-500" />
+                                        <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center flex-shrink-0">
+                                            <Users className="w-4 h-4 text-muted-foreground" />
                                         </div>
                                         <div className="flex-1 min-w-0">
                                             <div className="flex items-center justify-between mb-1">
-                                                <p className="text-xs font-bold text-gray-900">{review.reviewerName}</p>
+                                                <p className="text-xs font-bold text-foreground">{review.reviewerName}</p>
                                                 <StarRating rating={review.rating} />
                                             </div>
-                                            <p className="text-xs text-gray-600">{review.comment}</p>
+                                            <p className="text-xs text-muted-foreground">{review.comment}</p>
                                         </div>
                                     </div>
                                 ))}
                                 {trainer.reviewsData.length > 2 && (
                                     <button 
                                         onClick={() => onOpenReviewsModal(trainer)}
-                                        className="w-full mt-2 text-center text-xs font-medium text-[#FF6B35] hover:text-orange-600 transition-colors"
+                                        className="w-full mt-2 text-center text-xs font-medium text-primary hover:text-primary/80 transition-colors"
                                     >
                                         View all {trainer.reviews} reviews
                                     </button>
                                 )}
                             </div>
                         ) : (
-                            <p className="text-xs text-gray-500 text-center py-4">No reviews yet.</p>
+                            <p className="text-xs text-muted-foreground text-center py-4">No reviews yet.</p>
                         )}
                     </div>
                 </div>
