@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Trainer, Class, UserRole } from '../types';
-import { Star, Users, BookOpen, Pencil, ShieldCheck, Plus, MoreVertical, Edit3, Trash2, Clock, LogOut, Shield, FileText, Crown, MapPin, Sparkles, CalendarDays } from 'lucide-react';
+import { Star, Users, BookOpen, Pencil, ShieldCheck, Plus, MoreVertical, Edit3, Trash2, Clock, LogOut, Shield, FileText, Crown, MapPin, Sparkles, CalendarDays, Heart } from 'lucide-react';
 import { isTrainerProfileComplete } from '../utils/profile';
 import CompleteProfilePrompt from '../components/CompleteProfilePrompt';
 import { supabase } from '../src/integrations/supabase/client';
@@ -93,14 +93,14 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ trainer, onEdit, onManageClas
         switch (trainer.verificationStatus) {
             case 'unverified':
                 return (
-                    <div className="bg-white p-3 rounded-lg shadow-sm mb-3 flex items-center justify-between">
+                    <div className="bg-card p-4 rounded-xl border border-border flex items-center justify-between">
                         <div>
-                            <h3 className="text-sm font-bold text-gray-900">Become a Verified Trainer</h3>
-                            <p className="text-xs text-gray-600 mt-1">Build trust and attract more clients.</p>
+                            <h3 className="text-sm font-semibold text-foreground">Become a Verified Trainer</h3>
+                            <p className="text-xs text-muted-foreground mt-1">Build trust and attract more clients.</p>
                         </div>
                         <button
                             onClick={onStartVerification}
-                            className="px-4 py-2 bg-blue-600 text-white rounded-lg text-xs font-medium hover:bg-blue-700 active:scale-95 shadow-sm transition-all duration-200"
+                            className="px-4 py-2 bg-primary text-primary-foreground rounded-lg text-xs font-semibold hover:bg-primary/90 transition-colors"
                         >
                             Verify
                         </button>
@@ -108,23 +108,25 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ trainer, onEdit, onManageClas
                 );
             case 'pending':
                 return (
-                    <div className="bg-white p-3 rounded-lg shadow-sm mb-3 flex items-center justify-between">
-                        <div className="flex items-center gap-3">
+                    <div className="bg-card p-4 rounded-xl border border-border flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-full bg-amber-500/10 flex items-center justify-center">
                             <Clock className="w-5 h-5 text-amber-500" />
-                            <div>
-                                <h3 className="text-sm font-bold text-gray-900">Verification Pending</h3>
-                                <p className="text-xs text-gray-600 mt-1">Your verification request is being reviewed.</p>
-                            </div>
+                        </div>
+                        <div>
+                            <h3 className="text-sm font-semibold text-foreground">Verification Pending</h3>
+                            <p className="text-xs text-muted-foreground mt-0.5">Your request is being reviewed.</p>
                         </div>
                     </div>
                 );
             case 'verified':
                 return (
-                    <div className="bg-white p-3 rounded-lg shadow-sm mb-3 flex items-center gap-3">
-                        <ShieldCheck className="w-5 h-5 text-green-500" />
+                    <div className="bg-card p-4 rounded-xl border border-border flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-full bg-emerald-500/10 flex items-center justify-center">
+                            <ShieldCheck className="w-5 h-5 text-emerald-500" />
+                        </div>
                         <div>
-                            <h3 className="text-sm font-bold text-gray-900">Verified Trainer</h3>
-                            <p className="text-xs text-gray-600 mt-1">Your profile is verified and trusted.</p>
+                            <h3 className="text-sm font-semibold text-foreground">Verified Trainer</h3>
+                            <p className="text-xs text-muted-foreground mt-0.5">Your profile is verified and trusted.</p>
                         </div>
                     </div>
                 );
@@ -138,292 +140,319 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ trainer, onEdit, onManageClas
     }
 
     return (
-        <div className="bg-gray-50 h-full overflow-y-auto relative">
-            {/* Modern Compact Header */}
-            <div className="bg-white border-b border-gray-100 shadow-sm sticky top-0 z-10">
-                <div className="px-4 py-3">
-                    {/* Top Row: Title and Edit Button */}
-                    <div className="flex items-center justify-between mb-3">
-                        <h1 className="text-base font-bold text-gray-900">Profile</h1>
+        <div className="bg-background h-full flex flex-col overflow-hidden">
+            {/* Header */}
+            <header className="bg-card border-b border-border flex-shrink-0">
+                <div className="px-4 py-4">
+                    <div className="flex items-center justify-between mb-4">
+                        <h1 className="text-lg font-bold text-foreground">Profile</h1>
                         <button 
                             onClick={onEdit}
-                            className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors"
+                            className="p-2 rounded-lg hover:bg-muted transition-colors"
                             aria-label="Edit profile"
                         >
-                            <Pencil className="w-4 h-4 text-gray-600" />
+                            <Pencil className="w-5 h-5 text-muted-foreground" />
                         </button>
                     </div>
 
-                    {/* Profile Info Row: Avatar, Name, Badges, Stats */}
-                    <div className="flex items-center gap-3">
-                        {/* Avatar */}
+                    {/* Profile Card */}
+                    <div className="flex items-center gap-4">
                         <div className="relative flex-shrink-0">
                             <img 
                                 src={trainer.imageUrl} 
                                 alt={trainer.name} 
-                                className="w-14 h-14 rounded-full object-cover border-2 border-white shadow-sm"
+                                className="w-16 h-16 rounded-full object-cover ring-2 ring-border"
                             />
                             {trainer.verificationStatus === 'verified' && (
-                                <div className="absolute -bottom-1 -right-1 bg-green-500 rounded-full p-0.5 border-2 border-white">
+                                <div className="absolute -bottom-1 -right-1 bg-emerald-500 rounded-full p-1 ring-2 ring-card">
                                     <ShieldCheck className="w-3 h-3 text-white" />
                                 </div>
                             )}
                         </div>
 
-                        {/* Name and Info */}
                         <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2 mb-1 flex-wrap">
-                                <h2 className="text-base font-bold text-gray-900 truncate">
+                            <div className="flex items-center gap-2 flex-wrap mb-1">
+                                <h2 className="text-base font-bold text-foreground truncate">
                                     {trainer.name}
                                 </h2>
-                                {trainer.isPremium && (
-                                    <div className="flex items-center gap-1 px-2 py-0.5 bg-gradient-to-r from-amber-400 to-yellow-500 rounded-full shadow-sm">
+                                {trainer.isPremium ? (
+                                    <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-gradient-to-r from-amber-400 to-yellow-500 rounded-full">
                                         <Crown className="w-3 h-3 text-white" />
                                         <span className="text-xs font-bold text-white">Premium</span>
-                                    </div>
-                                )}
-                                {!trainer.isPremium && (
-                                    <div className="flex items-center gap-1 px-2 py-0.5 bg-gray-100 rounded-full">
-                                        <Sparkles className="w-3 h-3 text-gray-600" />
-                                        <span className="text-xs font-medium text-gray-700">Basic</span>
-                                    </div>
+                                    </span>
+                                ) : (
+                                    <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-muted rounded-full">
+                                        <Sparkles className="w-3 h-3 text-muted-foreground" />
+                                        <span className="text-xs font-medium text-muted-foreground">Basic</span>
+                                    </span>
                                 )}
                             </div>
-                            <div className="flex items-center gap-3 flex-wrap">
+                            <div className="flex items-center gap-3 flex-wrap text-xs">
                                 {trainer.location && (
-                                    <div className="flex items-center gap-1 text-xs text-gray-500">
+                                    <span className="flex items-center gap-1 text-muted-foreground">
                                         <MapPin className="w-3 h-3" />
-                                        <span className="truncate">{trainer.location}</span>
-                                    </div>
+                                        {trainer.location}
+                                    </span>
                                 )}
-                                <div className="flex items-center gap-1 text-xs text-gray-500">
+                                <span className="flex items-center gap-1">
                                     <Star className="w-3 h-3 text-yellow-500 fill-yellow-500" />
-                                    <span className="font-medium text-gray-900">{trainer.rating.toFixed(1)}</span>
-                                    <span className="text-gray-400">({trainer.reviews})</span>
-                                </div>
-                                {trainer.specialty && trainer.specialty.length > 0 && (
-                                    <div className="flex items-center gap-1">
-                                        {trainer.specialty.slice(0, 2).map((spec, idx) => (
-                                            <span key={idx} className="text-xs font-medium bg-blue-50 text-blue-700 px-1.5 py-0.5 rounded">
-                                                {spec}
-                                            </span>
-                                        ))}
-                                        {trainer.specialty.length > 2 && (
-                                            <span className="text-xs text-gray-400">+{trainer.specialty.length - 2}</span>
-                                        )}
-                                    </div>
-                                )}
+                                    <span className="font-semibold text-foreground">{trainer.rating.toFixed(1)}</span>
+                                    <span className="text-muted-foreground">({trainer.reviews})</span>
+                                </span>
                             </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            
-            <div className="px-4 py-3 pb-[calc(5rem+env(safe-area-inset-bottom))]">
-                {/* Complete Profile Prompt */}
-                {profileIsIncomplete && (
-                    <CompleteProfilePrompt role="trainer" onComplete={onEdit} />
-                )}
-
-                {/* Verification */}
-                <VerificationStatus />
-
-                {/* Premium CTA */}
-                {!trainer.isPremium ? (
-                    <div className="bg-gradient-to-r from-amber-400 to-yellow-500 p-4 rounded-lg mb-3 shadow-sm">
-                        <div className="flex items-start gap-3">
-                            <Crown className="w-6 h-6 text-white flex-shrink-0 mt-0.5" />
-                            <div className="flex-1">
-                                <h3 className="text-sm font-bold text-white mb-1">Upgrade to Premium</h3>
-                                <p className="text-xs text-white/90 mb-3">Unlock 5 photos per class, priority listing, verified badge, and advanced analytics</p>
-                                <button 
-                                    onClick={() => navigate('/subscription')}
-                                    className="w-full bg-white text-amber-600 px-4 py-2 rounded-lg text-xs font-bold hover:bg-amber-50 transition-colors"
-                                >
-                                    Get Premium RhinoFit
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                ) : (
-                    <button
-                        onClick={() => navigate('/subscription')}
-                        className="w-full bg-white p-3 rounded-lg shadow-sm mb-3 flex items-center justify-between hover:bg-gray-50 transition-colors"
-                    >
-                        <div className="flex items-center gap-2">
-                            <Crown className="w-5 h-5 text-amber-500" />
-                            <span className="text-sm font-bold text-gray-900">Manage Subscription</span>
-                        </div>
-                        <span className="text-xs text-gray-500">View details →</span>
-                    </button>
-                )}
-
-                {/* My Documents */}
-                    <div className="bg-white p-3 rounded-lg shadow-sm mb-3">
-                    <div className="flex justify-between items-center mb-3">
-                        <h3 className="text-sm font-bold text-gray-900">My Documents</h3>
-                        <button 
-                            onClick={() => setShowDocuments(true)} 
-                            className="flex items-center text-xs font-medium text-blue-600 hover:text-blue-700"
-                        >
-                            <FileText className="w-4 h-4 mr-1" />
-                            View All
-                        </button>
-                    </div>
-                    {documents.length > 0 ? (
-                        <div className="space-y-2">
-                            {documents.map((doc) => (
-                                <div key={doc.id} className="flex items-center justify-between p-2.5 bg-gray-50 rounded-lg">
-                                    <div className="flex items-center gap-2 flex-1 min-w-0">
-                                        <FileText className="w-4 h-4 text-gray-500 flex-shrink-0" />
-                                        <span className="text-xs text-gray-900 truncate">{doc.title}</span>
-                                    </div>
-                                    {doc.is_verified ? (
-                                        <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-medium">Verified</span>
-                                    ) : (
-                                        <span className="text-xs bg-amber-100 text-amber-700 px-2 py-0.5 rounded-full font-medium">Not Verified</span>
+                            {trainer.specialty && trainer.specialty.length > 0 && (
+                                <div className="flex items-center gap-1.5 mt-2 flex-wrap">
+                                    {trainer.specialty.slice(0, 3).map((spec, idx) => (
+                                        <span key={idx} className="text-xs font-medium bg-primary/10 text-primary px-2 py-0.5 rounded-full">
+                                            {spec}
+                                        </span>
+                                    ))}
+                                    {trainer.specialty.length > 3 && (
+                                        <span className="text-xs text-muted-foreground">+{trainer.specialty.length - 3}</span>
                                     )}
                                 </div>
-                            ))}
+                            )}
+                        </div>
+                    </div>
+                </div>
+            </header>
+            
+            {/* Content */}
+            <main className="flex-1 overflow-y-auto min-h-0">
+                <div className="px-4 py-4 space-y-4 pb-[calc(6rem+env(safe-area-inset-bottom))]">
+                    
+                    {/* Complete Profile Prompt */}
+                    {profileIsIncomplete && (
+                        <CompleteProfilePrompt role="trainer" onComplete={onEdit} />
+                    )}
+
+                    {/* Verification */}
+                    <VerificationStatus />
+
+                    {/* Premium CTA */}
+                    {!trainer.isPremium ? (
+                        <div className="bg-gradient-to-r from-amber-400 to-yellow-500 p-4 rounded-xl">
+                            <div className="flex items-start gap-3">
+                                <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center flex-shrink-0">
+                                    <Crown className="w-5 h-5 text-white" />
+                                </div>
+                                <div className="flex-1">
+                                    <h3 className="text-sm font-bold text-white mb-1">Upgrade to Premium</h3>
+                                    <p className="text-xs text-white/90 mb-3">Unlock 5 photos per class, priority listing, and advanced analytics</p>
+                                    <button 
+                                        onClick={() => navigate('/subscription')}
+                                        className="w-full bg-white text-amber-600 px-4 py-2.5 rounded-lg text-xs font-bold hover:bg-amber-50 transition-colors"
+                                    >
+                                        Get Premium RhinoFit
+                                    </button>
+                                </div>
+                            </div>
                         </div>
                     ) : (
-                        <div className="text-center py-4">
-                            <p className="text-xs text-gray-600 mb-2">No documents uploaded</p>
+                        <button
+                            onClick={() => navigate('/subscription')}
+                            className="w-full bg-card p-4 rounded-xl border border-border flex items-center justify-between hover:bg-muted/50 transition-colors"
+                        >
+                            <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-full bg-amber-500/10 flex items-center justify-center">
+                                    <Crown className="w-5 h-5 text-amber-500" />
+                                </div>
+                                <span className="text-sm font-semibold text-foreground">Manage Subscription</span>
+                            </div>
+                            <span className="text-xs text-muted-foreground">View →</span>
+                        </button>
+                    )}
+
+                    {/* My Documents */}
+                    <div className="bg-card p-4 rounded-xl border border-border">
+                        <div className="flex justify-between items-center mb-3">
+                            <h3 className="text-sm font-semibold text-foreground">My Documents</h3>
                             <button 
-                                onClick={() => setShowDocuments(true)}
-                                className="text-xs font-medium text-blue-600 hover:text-blue-700"
+                                onClick={() => setShowDocuments(true)} 
+                                className="flex items-center text-xs font-medium text-primary hover:text-primary/80"
                             >
-                                Upload Documents
+                                <FileText className="w-4 h-4 mr-1" />
+                                View All
                             </button>
                         </div>
-                    )}
-                </div>
-
-                {/* Classes Section */}
-                    <div className="bg-white p-3 rounded-lg shadow-sm mb-3">
-                    <div className="flex justify-between items-center mb-4">
-                        <h3 className="text-sm font-bold text-gray-900">My Classes ({trainer.classes.length})</h3>
-                        <button
-                            onClick={() => onManageClass(null)}
-                            className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 text-white rounded-lg text-xs font-medium hover:bg-blue-700 active:scale-95 shadow-sm transition-all duration-200"
-                        >
-                            <Plus className="w-4 h-4" />
-                            Add Class
-                        </button>
+                        {documents.length > 0 ? (
+                            <div className="space-y-2">
+                                {documents.map((doc) => (
+                                    <div key={doc.id} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
+                                        <div className="flex items-center gap-3 flex-1 min-w-0">
+                                            <FileText className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+                                            <span className="text-sm text-foreground truncate">{doc.title}</span>
+                                        </div>
+                                        {doc.is_verified ? (
+                                            <span className="text-xs bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 px-2 py-1 rounded-full font-medium">Verified</span>
+                                        ) : (
+                                            <span className="text-xs bg-amber-500/10 text-amber-600 dark:text-amber-400 px-2 py-1 rounded-full font-medium">Pending</span>
+                                        )}
+                                    </div>
+                                ))}
+                            </div>
+                        ) : (
+                            <div className="text-center py-6">
+                                <p className="text-sm text-muted-foreground mb-2">No documents uploaded</p>
+                                <button 
+                                    onClick={() => setShowDocuments(true)}
+                                    className="text-sm font-medium text-primary hover:text-primary/80"
+                                >
+                                    Upload Documents
+                                </button>
+                            </div>
+                        )}
                     </div>
 
-                    {trainer.classes.length === 0 ? (
-                        <div className="text-center py-8">
-                            <BookOpen className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-                            <p className="text-xs text-gray-900 font-medium mb-1">No classes yet</p>
-                            <p className="text-xs text-gray-600 mb-4">Create your first class to start teaching</p>
+                    {/* Classes Section */}
+                    <div className="bg-card p-4 rounded-xl border border-border">
+                        <div className="flex justify-between items-center mb-4">
+                            <h3 className="text-sm font-semibold text-foreground">My Classes ({trainer.classes.length})</h3>
                             <button
                                 onClick={() => onManageClass(null)}
-                                className="px-4 py-2 bg-blue-600 text-white rounded-lg text-xs font-medium hover:bg-blue-700 active:scale-95 shadow-sm transition-all duration-200"
+                                className="flex items-center gap-1.5 px-3 py-2 bg-primary text-primary-foreground rounded-lg text-xs font-semibold hover:bg-primary/90 transition-colors"
                             >
-                                Create Class
+                                <Plus className="w-4 h-4" />
+                                Add Class
                             </button>
                         </div>
-                    ) : (
-                        <div className="space-y-3">
-                            {trainer.classes.map((cls) => (
-                                <div key={cls.id} className="bg-gray-50 rounded-lg p-3 border border-gray-200 hover:border-blue-300 transition-colors">
-                                    <div className="flex items-start justify-between gap-3">
-                                        <div className="flex-1 min-w-0">
-                                            <div className="flex items-start gap-2 mb-2">
+
+                        {trainer.classes.length === 0 ? (
+                            <div className="text-center py-8">
+                                <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center mx-auto mb-3">
+                                    <BookOpen className="w-6 h-6 text-muted-foreground" />
+                                </div>
+                                <p className="text-sm font-medium text-foreground mb-1">No classes yet</p>
+                                <p className="text-xs text-muted-foreground mb-4">Create your first class to start teaching</p>
+                                <button
+                                    onClick={() => onManageClass(null)}
+                                    className="px-4 py-2 bg-primary text-primary-foreground rounded-lg text-xs font-semibold hover:bg-primary/90 transition-colors"
+                                >
+                                    Create Class
+                                </button>
+                            </div>
+                        ) : (
+                            <div className="space-y-3">
+                                {trainer.classes.map((cls) => (
+                                    <div key={cls.id} className="bg-muted/50 rounded-xl p-3 border border-border hover:border-primary/30 transition-colors">
+                                        <div className="flex items-start justify-between gap-3">
+                                            <div className="flex gap-3 flex-1 min-w-0">
                                                 <img 
                                                     src={cls.imageUrl || 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48'} 
                                                     alt={cls.name} 
                                                     className="w-16 h-16 rounded-lg object-cover flex-shrink-0"
                                                 />
                                                 <div className="flex-1 min-w-0">
-                                                    <h4 className="text-xs font-bold text-gray-900 mb-1 truncate">{cls.name}</h4>
-                                                    <p className="text-xs text-gray-600 line-clamp-2 mb-2">{cls.description}</p>
-                                                    <div className="flex items-center gap-2 flex-wrap">
-                                                        <span className="text-xs font-medium text-blue-600">{formatVND(cls.price)}</span>
-                                                        <span className="text-gray-300">•</span>
-                                                        <span className="text-xs text-gray-500">{cls.duration} min</span>
-                                                        <span className="text-gray-300">•</span>
-                                                        <span className="text-xs text-gray-500">{cls.capacity} spots</span>
+                                                    <h4 className="text-sm font-semibold text-foreground mb-1 truncate">{cls.name}</h4>
+                                                    <p className="text-xs text-muted-foreground line-clamp-2 mb-2">{cls.description}</p>
+                                                    <div className="flex items-center gap-2 flex-wrap text-xs">
+                                                        <span className="font-semibold text-primary">{formatVND(cls.price)}</span>
+                                                        <span className="text-muted-foreground">•</span>
+                                                        <span className="text-muted-foreground">{cls.duration} min</span>
+                                                        <span className="text-muted-foreground">•</span>
+                                                        <span className="text-muted-foreground">{cls.capacity} spots</span>
                                                     </div>
                                                 </div>
                                             </div>
-                                        </div>
-                                        <div className="relative flex-shrink-0" ref={menuRef}>
-                                            <button
-                                                onClick={() => handleMenuToggle(cls.id as number)}
-                                                className="p-2 hover:bg-gray-200 rounded-lg transition-colors"
-                                            >
-                                                <MoreVertical className="w-4 h-4 text-gray-600" />
-                                            </button>
-                                            {menuOpenFor === cls.id && (
-                                                <div className="absolute right-0 top-10 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-20 min-w-[120px]">
-                                                    <button
-                                                        onClick={() => {
-                                                            onManageClass(cls);
-                                                            setMenuOpenFor(null);
-                                                        }}
-                                                        className="w-full px-4 py-2 text-left text-xs text-gray-900 hover:bg-gray-50 flex items-center gap-2"
-                                                    >
-                                                        <Edit3 className="w-4 h-4" />
-                                                        Edit
-                                                    </button>
-                                                    <button
-                                                        onClick={() => handleDelete(cls.id as number)}
-                                                        className="w-full px-4 py-2 text-left text-xs text-red-600 hover:bg-red-50 flex items-center gap-2"
-                                                    >
-                                                        <Trash2 className="w-4 h-4" />
-                                                        Delete
-                                                    </button>
-                                                </div>
-                                            )}
+                                            <div className="relative flex-shrink-0" ref={menuRef}>
+                                                <button
+                                                    onClick={() => handleMenuToggle(cls.id as number)}
+                                                    className="p-2 hover:bg-muted rounded-lg transition-colors"
+                                                >
+                                                    <MoreVertical className="w-4 h-4 text-muted-foreground" />
+                                                </button>
+                                                {menuOpenFor === cls.id && (
+                                                    <div className="absolute right-0 top-10 bg-popover rounded-lg shadow-lg border border-border py-1 z-20 min-w-[120px]">
+                                                        <button
+                                                            onClick={() => {
+                                                                onManageClass(cls);
+                                                                setMenuOpenFor(null);
+                                                            }}
+                                                            className="w-full px-4 py-2.5 text-left text-sm text-popover-foreground hover:bg-muted flex items-center gap-2"
+                                                        >
+                                                            <Edit3 className="w-4 h-4" />
+                                                            Edit
+                                                        </button>
+                                                        <button
+                                                            onClick={() => handleDelete(cls.id as number)}
+                                                            className="w-full px-4 py-2.5 text-left text-sm text-destructive hover:bg-destructive/10 flex items-center gap-2"
+                                                        >
+                                                            <Trash2 className="w-4 h-4" />
+                                                            Delete
+                                                        </button>
+                                                    </div>
+                                                )}
+                                            </div>
                                         </div>
                                     </div>
-                                </div>
-                            ))}
-                        </div>
-                    )}
-                </div>
-
-                {/* Events Button */}
-                <button
-                    onClick={() => navigate('/events')}
-                    className="w-full bg-white p-4 rounded-lg shadow-sm mb-3 flex items-center justify-between hover:bg-gray-50 transition-colors"
-                >
-                    <div className="flex items-center gap-3">
-                        <CalendarDays className="w-5 h-5 text-blue-600" />
-                        <div className="text-left">
-                            <h3 className="text-sm font-bold text-gray-900">Events</h3>
-                            <p className="text-xs text-gray-500">Join community events</p>
-                        </div>
+                                ))}
+                            </div>
+                        )}
                     </div>
-                    <span className="text-xs text-gray-400">View →</span>
-                </button>
 
-                {/* Admin Panel Link */}
-                {isAdmin && (
-                    <button
-                        onClick={() => navigate('/admin')}
-                        className="w-full bg-purple-600 text-white p-4 rounded-lg shadow-sm text-xs font-medium hover:bg-purple-700 active:scale-95 transition-all duration-200"
+                    {/* Quick Links */}
+                    <div className="space-y-2">
+                        {/* Favorites */}
+                        <button
+                            onClick={() => navigate('/favorites')}
+                            className="w-full bg-card p-4 rounded-xl border border-border flex items-center justify-between hover:bg-muted/50 transition-colors"
+                        >
+                            <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-full bg-rose-500/10 flex items-center justify-center">
+                                    <Heart className="w-5 h-5 text-rose-500" />
+                                </div>
+                                <div className="text-left">
+                                    <h3 className="text-sm font-semibold text-foreground">Favorites</h3>
+                                    <p className="text-xs text-muted-foreground">Your saved trainers</p>
+                                </div>
+                            </div>
+                            <span className="text-xs text-muted-foreground">View →</span>
+                        </button>
+
+                        {/* Events */}
+                        <button
+                            onClick={() => navigate('/events')}
+                            className="w-full bg-card p-4 rounded-xl border border-border flex items-center justify-between hover:bg-muted/50 transition-colors"
+                        >
+                            <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                                    <CalendarDays className="w-5 h-5 text-primary" />
+                                </div>
+                                <div className="text-left">
+                                    <h3 className="text-sm font-semibold text-foreground">Events</h3>
+                                    <p className="text-xs text-muted-foreground">Join community events</p>
+                                </div>
+                            </div>
+                            <span className="text-xs text-muted-foreground">View →</span>
+                        </button>
+                    </div>
+
+                    {/* Admin Panel Link */}
+                    {isAdmin && (
+                        <button
+                            onClick={() => navigate('/admin')}
+                            className="w-full bg-violet-600 text-white p-4 rounded-xl text-sm font-semibold hover:bg-violet-700 transition-colors flex items-center justify-center gap-2"
+                        >
+                            <Shield className="w-5 h-5" />
+                            Admin Dashboard
+                        </button>
+                    )}
+
+                    {/* Logout */}
+                    <button 
+                        onClick={onLogout}
+                        className="w-full flex items-center justify-center bg-muted text-muted-foreground text-sm font-medium py-3 rounded-xl hover:bg-muted/80 transition-colors"
                     >
-                        Admin Dashboard
+                        <LogOut className="w-5 h-5 mr-2" />
+                        Logout
                     </button>
-                )}
 
-                {/* Logout */}
-                <button 
-                    onClick={onLogout}
-                    className="w-full flex items-center justify-center bg-gray-200 text-gray-700 text-xs font-medium py-3 rounded-lg hover:bg-gray-300 active:scale-95 transition-all duration-200"
-                >
-                    <LogOut className="w-5 h-5 mr-2" />
-                    Logout
-                </button>
-
-                {/* App Version */}
-                <div className="text-center text-xs text-gray-400 mt-4">
-                    {getVersionString()}
+                    {/* App Version */}
+                    <p className="text-center text-xs text-muted-foreground pt-2">
+                        {getVersionString()}
+                    </p>
                 </div>
-            </div>
+            </main>
         </div>
     );
 };
