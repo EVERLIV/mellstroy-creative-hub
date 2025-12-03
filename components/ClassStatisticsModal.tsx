@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Eye, TrendingUp, TrendingDown, Users, Loader2, ChevronDown, ChevronUp } from 'lucide-react';
+import { X, Eye, TrendingUp, TrendingDown, Users, Loader2, Calendar, BarChart3 } from 'lucide-react';
 import { supabase } from '../src/integrations/supabase/client';
 
 interface DayStats {
@@ -27,7 +27,7 @@ const ClassStatisticsModal: React.FC<ClassStatisticsModalProps> = ({
   const [totalViews, setTotalViews] = useState(0);
   const [uniqueViewers, setUniqueViewers] = useState(0);
   const [trend, setTrend] = useState({ percent: 0, direction: 'neutral' as 'up' | 'down' | 'neutral' });
-  const [showBreakdown, setShowBreakdown] = useState(false);
+  const [selectedDay, setSelectedDay] = useState<DayStats | null>(null);
 
   useEffect(() => {
     if (isOpen) {
@@ -37,6 +37,7 @@ const ClassStatisticsModal: React.FC<ClassStatisticsModalProps> = ({
 
   const fetchStats = async () => {
     setLoading(true);
+    setSelectedDay(null);
     try {
       const days = parseInt(period);
       const startDate = new Date();
@@ -115,175 +116,223 @@ const ClassStatisticsModal: React.FC<ClassStatisticsModalProps> = ({
     return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
   };
 
-  const formatShortDate = (dateStr: string) => {
+  const formatWeekday = (dateStr: string) => {
     const date = new Date(dateStr);
-    return date.toLocaleDateString('en-US', { day: 'numeric' });
+    return date.toLocaleDateString('en-US', { weekday: 'short' });
+  };
+
+  const isToday = (dateStr: string) => {
+    const today = new Date().toISOString().split('T')[0];
+    return dateStr === today;
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60" onClick={onClose}>
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm" onClick={onClose}>
       <div 
-        className="bg-card rounded-t-2xl sm:rounded-2xl w-full sm:max-w-md max-h-[85dvh] overflow-hidden flex flex-col animate-slide-in-right sm:animate-scale-in"
+        className="bg-card rounded-t-3xl sm:rounded-2xl w-full sm:max-w-md max-h-[90dvh] overflow-hidden flex flex-col shadow-2xl"
         onClick={e => e.stopPropagation()}
       >
-        {/* Compact Header */}
-        <div className="flex items-center justify-between px-4 py-3 border-b border-border">
+        {/* Header */}
+        <div className="flex items-center justify-between px-5 py-4 border-b border-border/50">
           <div className="flex-1 min-w-0">
-            <h2 className="text-base font-semibold text-foreground">Statistics</h2>
-            <p className="text-xs text-muted-foreground truncate">{className}</p>
+            <div className="flex items-center gap-2">
+              <BarChart3 className="w-5 h-5 text-primary" />
+              <h2 className="text-lg font-semibold text-foreground">Analytics</h2>
+            </div>
+            <p className="text-xs text-muted-foreground truncate mt-0.5">{className}</p>
           </div>
           
-          {/* Inline Period Selector */}
-          <div className="flex items-center gap-1 mr-2">
+          <button onClick={onClose} className="p-2 hover:bg-muted rounded-full transition-colors">
+            <X className="w-5 h-5 text-muted-foreground" />
+          </button>
+        </div>
+
+        {/* Period Tabs */}
+        <div className="px-5 py-3 border-b border-border/30">
+          <div className="flex bg-muted/50 rounded-xl p-1">
             {(['7', '14', '30'] as const).map(p => (
               <button
                 key={p}
                 onClick={() => setPeriod(p)}
-                className={`px-2 py-1 rounded-md text-xs font-medium transition-colors ${
+                className={`flex-1 py-2 rounded-lg text-sm font-medium transition-all ${
                   period === p 
-                    ? 'bg-primary text-primary-foreground' 
+                    ? 'bg-primary text-primary-foreground shadow-sm' 
                     : 'text-muted-foreground hover:text-foreground'
                 }`}
               >
-                {p}d
+                {p} days
               </button>
             ))}
           </div>
-          
-          <button onClick={onClose} className="p-1.5 hover:bg-muted rounded-lg transition-colors">
-            <X className="w-4 h-4 text-muted-foreground" />
-          </button>
         </div>
 
         {/* Content */}
-        <div className="flex-1 overflow-y-auto p-3 space-y-3">
+        <div className="flex-1 overflow-y-auto">
           {loading ? (
-            <div className="flex items-center justify-center py-8">
-              <Loader2 className="w-6 h-6 animate-spin text-primary" />
+            <div className="flex items-center justify-center py-16">
+              <Loader2 className="w-8 h-8 animate-spin text-primary" />
             </div>
           ) : totalViews === 0 ? (
-            <div className="text-center py-6">
-              <Eye className="w-10 h-10 mx-auto mb-2 text-muted-foreground/30" />
-              <p className="text-sm text-muted-foreground">No views yet</p>
-              <p className="text-xs text-muted-foreground/70 mt-0.5">Views appear when students visit</p>
+            <div className="text-center py-16 px-5">
+              <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-muted/50 flex items-center justify-center">
+                <Eye className="w-8 h-8 text-muted-foreground/50" />
+              </div>
+              <p className="text-base font-medium text-foreground">No views yet</p>
+              <p className="text-sm text-muted-foreground mt-1">Views will appear when students visit your class</p>
             </div>
           ) : (
-            <>
-              {/* Compact Stats Row */}
-              <div className="flex gap-2">
-                <div className="flex-1 bg-primary/10 rounded-xl p-2.5 flex items-center gap-2">
-                  <div className="p-1.5 bg-primary/20 rounded-lg">
-                    <Eye className="w-4 h-4 text-primary" />
-                  </div>
-                  <div>
-                    <div className="text-lg font-bold text-foreground leading-none">{totalViews}</div>
-                    <div className="text-[10px] text-muted-foreground">Views</div>
-                  </div>
+            <div className="p-5 space-y-5">
+              {/* Stats Cards */}
+              <div className="grid grid-cols-3 gap-3">
+                <div className="bg-gradient-to-br from-primary/10 to-primary/5 rounded-2xl p-4 text-center">
+                  <Eye className="w-5 h-5 text-primary mx-auto mb-2" />
+                  <div className="text-2xl font-bold text-foreground">{totalViews}</div>
+                  <div className="text-xs text-muted-foreground">Total Views</div>
                 </div>
                 
-                <div className="flex-1 bg-secondary rounded-xl p-2.5 flex items-center gap-2">
-                  <div className="p-1.5 bg-muted rounded-lg">
-                    <Users className="w-4 h-4 text-foreground" />
-                  </div>
-                  <div>
-                    <div className="text-lg font-bold text-foreground leading-none">{uniqueViewers}</div>
-                    <div className="text-[10px] text-muted-foreground">Unique</div>
-                  </div>
+                <div className="bg-gradient-to-br from-blue-500/10 to-blue-500/5 rounded-2xl p-4 text-center">
+                  <Users className="w-5 h-5 text-blue-500 mx-auto mb-2" />
+                  <div className="text-2xl font-bold text-foreground">{uniqueViewers}</div>
+                  <div className="text-xs text-muted-foreground">Unique</div>
                 </div>
                 
-                <div className={`flex-1 rounded-xl p-2.5 flex items-center gap-2 ${
-                  trend.direction === 'up' ? 'bg-green-500/10' : 
-                  trend.direction === 'down' ? 'bg-red-500/10' : 'bg-muted'
+                <div className={`rounded-2xl p-4 text-center ${
+                  trend.direction === 'up' 
+                    ? 'bg-gradient-to-br from-green-500/10 to-green-500/5' 
+                    : trend.direction === 'down' 
+                    ? 'bg-gradient-to-br from-red-500/10 to-red-500/5' 
+                    : 'bg-gradient-to-br from-muted/50 to-muted/30'
                 }`}>
-                  <div className={`p-1.5 rounded-lg ${
-                    trend.direction === 'up' ? 'bg-green-500/20' : 
-                    trend.direction === 'down' ? 'bg-red-500/20' : 'bg-muted'
+                  {trend.direction === 'up' ? (
+                    <TrendingUp className="w-5 h-5 text-green-500 mx-auto mb-2" />
+                  ) : trend.direction === 'down' ? (
+                    <TrendingDown className="w-5 h-5 text-red-500 mx-auto mb-2" />
+                  ) : (
+                    <TrendingUp className="w-5 h-5 text-muted-foreground mx-auto mb-2" />
+                  )}
+                  <div className={`text-2xl font-bold ${
+                    trend.direction === 'up' ? 'text-green-500' : 
+                    trend.direction === 'down' ? 'text-red-500' : 'text-foreground'
                   }`}>
-                    {trend.direction === 'up' ? (
-                      <TrendingUp className="w-4 h-4 text-green-600" />
-                    ) : trend.direction === 'down' ? (
-                      <TrendingDown className="w-4 h-4 text-red-500" />
-                    ) : (
-                      <TrendingUp className="w-4 h-4 text-muted-foreground" />
-                    )}
+                    {trend.direction !== 'neutral' && (trend.direction === 'up' ? '+' : '-')}{trend.percent}%
                   </div>
-                  <div>
-                    <div className={`text-lg font-bold leading-none ${
-                      trend.direction === 'up' ? 'text-green-600' : 
-                      trend.direction === 'down' ? 'text-red-500' : 'text-foreground'
-                    }`}>
-                      {trend.direction !== 'neutral' && (trend.direction === 'up' ? '+' : '-')}{trend.percent}%
-                    </div>
-                    <div className="text-[10px] text-muted-foreground">Trend</div>
-                  </div>
+                  <div className="text-xs text-muted-foreground">Trend</div>
                 </div>
               </div>
 
-              {/* Compact Chart */}
-              <div className="bg-muted/30 rounded-xl p-3">
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-xs font-medium text-foreground">Daily Views</span>
-                  <span className="text-[10px] text-muted-foreground">Last {period} days</span>
+              {/* Interactive Chart */}
+              <div className="bg-muted/30 rounded-2xl p-4">
+                <div className="flex items-center justify-between mb-4">
+                  <span className="text-sm font-medium text-foreground">Daily Views</span>
+                  {selectedDay && (
+                    <span className="text-xs text-primary font-medium">
+                      {formatDate(selectedDay.date)}: {selectedDay.views} views
+                    </span>
+                  )}
                 </div>
                 
-                {/* Mini Bar Chart */}
-                <div className="h-24 flex items-end gap-px">
-                  {stats.map((day, idx) => (
-                    <div key={idx} className="flex-1 flex flex-col items-center group relative">
-                      <div 
-                        className="w-full bg-primary/70 rounded-t-sm transition-all group-hover:bg-primary"
-                        style={{ height: `${Math.max((day.views / maxViews) * 100, 3)}%` }}
-                      />
-                      {/* Tooltip on hover */}
-                      <div className="absolute -top-8 left-1/2 -translate-x-1/2 hidden group-hover:block bg-foreground text-background text-[10px] px-1.5 py-0.5 rounded whitespace-nowrap z-10">
-                        {day.views}
-                      </div>
-                    </div>
-                  ))}
+                {/* Chart Area */}
+                <div className="h-32 flex items-end gap-1">
+                  {stats.map((day, idx) => {
+                    const height = Math.max((day.views / maxViews) * 100, 4);
+                    const isSelected = selectedDay?.date === day.date;
+                    
+                    return (
+                      <button
+                        key={idx}
+                        onClick={() => setSelectedDay(isSelected ? null : day)}
+                        className="flex-1 flex flex-col items-center justify-end group cursor-pointer"
+                      >
+                        <div 
+                          className={`w-full rounded-t-md transition-all duration-200 ${
+                            isSelected 
+                              ? 'bg-primary shadow-lg shadow-primary/30' 
+                              : isToday(day.date)
+                              ? 'bg-primary/80 group-hover:bg-primary'
+                              : 'bg-primary/40 group-hover:bg-primary/70'
+                          }`}
+                          style={{ height: `${height}%` }}
+                        />
+                      </button>
+                    );
+                  })}
                 </div>
                 
-                {/* X-axis */}
-                <div className="flex justify-between mt-1.5 text-[10px] text-muted-foreground">
-                  <span>{formatShortDate(stats[0]?.date || '')}</span>
-                  <span>{formatShortDate(stats[stats.length - 1]?.date || '')}</span>
+                {/* X-axis Labels */}
+                <div className="flex justify-between mt-2 px-1">
+                  <span className="text-[10px] text-muted-foreground">{formatDate(stats[0]?.date || '')}</span>
+                  <span className="text-[10px] text-muted-foreground">{formatDate(stats[stats.length - 1]?.date || '')}</span>
                 </div>
               </div>
 
-              {/* Collapsible Breakdown */}
-              <button 
-                onClick={() => setShowBreakdown(!showBreakdown)}
-                className="w-full flex items-center justify-between px-3 py-2 bg-muted/30 rounded-xl text-xs font-medium text-foreground"
-              >
-                <span>Daily Breakdown</span>
-                {showBreakdown ? (
-                  <ChevronUp className="w-4 h-4 text-muted-foreground" />
-                ) : (
-                  <ChevronDown className="w-4 h-4 text-muted-foreground" />
-                )}
-              </button>
-              
-              {showBreakdown && (
-                <div className="bg-muted/20 rounded-xl p-2 space-y-1 max-h-32 overflow-y-auto">
-                  {[...stats].reverse().slice(0, 7).map((day, idx) => (
-                    <div key={idx} className="flex items-center justify-between px-2 py-1.5 rounded-lg hover:bg-muted/30">
-                      <span className="text-xs text-muted-foreground">{formatDate(day.date)}</span>
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs font-medium text-foreground">{day.views}</span>
-                        <span className="text-[10px] text-muted-foreground">({day.uniqueViewers} unique)</span>
-                      </div>
+              {/* Selected Day Details */}
+              {selectedDay && (
+                <div className="bg-primary/5 border border-primary/20 rounded-2xl p-4 animate-in fade-in slide-in-from-bottom-2 duration-200">
+                  <div className="flex items-center gap-3 mb-3">
+                    <Calendar className="w-5 h-5 text-primary" />
+                    <div>
+                      <div className="font-medium text-foreground">{formatDate(selectedDay.date)}</div>
+                      <div className="text-xs text-muted-foreground">{formatWeekday(selectedDay.date)}</div>
                     </div>
-                  ))}
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="bg-card rounded-xl p-3">
+                      <div className="text-lg font-bold text-foreground">{selectedDay.views}</div>
+                      <div className="text-xs text-muted-foreground">Page Views</div>
+                    </div>
+                    <div className="bg-card rounded-xl p-3">
+                      <div className="text-lg font-bold text-foreground">{selectedDay.uniqueViewers}</div>
+                      <div className="text-xs text-muted-foreground">Unique Visitors</div>
+                    </div>
+                  </div>
                 </div>
               )}
-            </>
+
+              {/* Recent Activity */}
+              <div>
+                <div className="flex items-center justify-between mb-3">
+                  <span className="text-sm font-medium text-foreground">Recent Activity</span>
+                </div>
+                <div className="space-y-2">
+                  {[...stats].reverse().slice(0, 5).map((day, idx) => {
+                    const isSelected = selectedDay?.date === day.date;
+                    return (
+                      <button
+                        key={idx}
+                        onClick={() => setSelectedDay(isSelected ? null : day)}
+                        className={`w-full flex items-center justify-between p-3 rounded-xl transition-all ${
+                          isSelected 
+                            ? 'bg-primary/10 border border-primary/30' 
+                            : 'bg-muted/30 hover:bg-muted/50'
+                        }`}
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className={`w-2 h-2 rounded-full ${
+                            day.views > 0 ? 'bg-primary' : 'bg-muted-foreground/30'
+                          }`} />
+                          <div className="text-left">
+                            <div className="text-sm font-medium text-foreground">{formatDate(day.date)}</div>
+                            <div className="text-xs text-muted-foreground">{formatWeekday(day.date)}</div>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <div className="text-sm font-semibold text-foreground">{day.views}</div>
+                          <div className="text-xs text-muted-foreground">{day.uniqueViewers} unique</div>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
           )}
         </div>
 
-        {/* Compact Footer */}
-        <div className="flex-shrink-0 px-3 pb-3 pt-2">
+        {/* Footer */}
+        <div className="flex-shrink-0 p-5 border-t border-border/30">
           <button
             onClick={onClose}
-            className="w-full py-2.5 bg-secondary text-secondary-foreground text-sm font-medium rounded-xl active:scale-[0.98] transition-transform"
+            className="w-full py-3 bg-primary text-primary-foreground text-sm font-medium rounded-xl active:scale-[0.98] transition-transform"
           >
             Done
           </button>
