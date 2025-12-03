@@ -22,11 +22,12 @@ serve(async (req) => {
       throw new Error("LOVABLE_API_KEY is not configured");
     }
 
-    const durationText = preferences.duration === 'day' ? '1-day' : '1-week';
-    const calorieTarget = preferences.targetCalories || 2000;
-    const age = preferences.age || user.age || 25;
-    const height = preferences.height || user.height || 170;
-    const weight = preferences.weight || user.weight || 70;
+    const durationText = preferences?.duration === 'day' ? '1-day' : '1-week';
+    const calorieTarget = preferences?.targetCalories || 2000;
+    const age = preferences?.age || user?.age || 25;
+    const height = preferences?.height || user?.height || 170;
+    const weight = preferences?.weight || user?.weight || 70;
+    const goals = preferences?.goals || user?.goals || ['general health'];
 
     const prompt = `You are a professional nutritionist designing a meal plan for a client in Vietnam.
 The client's details are:
@@ -35,7 +36,7 @@ The client's details are:
 - Weight: ${weight} kg
 - Gender: ${preferences.gender || 'not specified'}
 - Activity Level: ${preferences.activityLevel || 'moderate'}
-- Primary fitness goals: ${user.goals?.join(', ') || 'general health'}
+- Primary fitness goals: ${Array.isArray(goals) ? goals.join(', ') : goals}
 
 CALORIE TARGET: ${calorieTarget} calories per day
 This is CRITICAL - the meal plan MUST be designed to match this calorie target as closely as possible.
