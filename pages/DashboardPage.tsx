@@ -1,13 +1,15 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, Dumbbell, Calendar, UtensilsCrossed, Sparkles, MapPin, Trophy, Users, TrendingUp, Heart, Crown, Clock, BookOpen, Star, CheckCircle, AlertCircle, XCircle } from 'lucide-react';
+import { Search, Dumbbell, Calendar, UtensilsCrossed, Sparkles, MapPin, Trophy, Users, TrendingUp, Heart, Crown, Clock, BookOpen, Star, CheckCircle, AlertCircle, XCircle, Plus } from 'lucide-react';
 import { supabase } from '../src/integrations/supabase/client';
 import { useAuth } from '../src/hooks/useAuth';
 import VenueSlider from '../components/VenueSlider';
 import VenueDetailPage from './VenueDetailPage';
 import PremiumDetailsModal from '../components/PremiumDetailsModal';
+import TrainerClassCard from '../components/TrainerClassCard';
+import AddEditClassModal from '../components/AddEditClassModal';
 import { mockVenues } from '../data/mockVenues';
-import { Venue, UserRole } from '../types';
+import { Venue, UserRole, Class } from '../types';
 
 interface BookingStats {
   total: number;
@@ -29,6 +31,8 @@ const DashboardPage: React.FC<DashboardPageProps> = () => {
   const [isPremiumModalOpen, setIsPremiumModalOpen] = useState(false);
   const [myClasses, setMyClasses] = useState<any[]>([]);
   const [myEvents, setMyEvents] = useState<any[]>([]);
+  const [editingClass, setEditingClass] = useState<Class | null | undefined>(undefined);
+  const [classBookingCounts, setClassBookingCounts] = useState<Record<string, number>>({});
   const [bookingStats, setBookingStats] = useState<BookingStats>({
     total: 0,
     pending: 0,
@@ -37,7 +41,7 @@ const DashboardPage: React.FC<DashboardPageProps> = () => {
     cancelled: 0
   });
 
-  // Fetch trainer's classes
+  // Fetch trainer's classes with booking counts
   useEffect(() => {
     const fetchMyClasses = async () => {
       if (!user?.id || userRole !== 'trainer') return;
@@ -46,16 +50,116 @@ const DashboardPage: React.FC<DashboardPageProps> = () => {
         .from('classes')
         .select('*')
         .eq('trainer_id', user.id)
-        .order('created_at', { ascending: false })
-        .limit(4);
+        .order('created_at', { ascending: false });
       
       if (!error && data) {
         setMyClasses(data);
+        
+        // Fetch booking counts for each class
+        const classIds = data.map(c => c.id);
+        if (classIds.length > 0) {
+          const { data: bookings } = await supabase
+            .from('bookings')
+            .select('class_id')
+            .in('class_id', classIds)
+            .in('status', ['booked', 'confirmed', 'attended']);
+          
+          if (bookings) {
+            const counts: Record<string, number> = {};
+            bookings.forEach(b => {
+              counts[b.class_id] = (counts[b.class_id] || 0) + 1;
+            });
+            setClassBookingCounts(counts);
+          }
+        }
       }
     };
 
     fetchMyClasses();
   }, [user?.id, userRole]);
+
+  // Handle class save
+  const handleClassSave = async (classData: any) => {
+    if (!user?.id) return;
+    
+    try {
+      if (editingClass?.id) {
+        // Update existing class
+        const { error } = await supabase
+          .from('classes')
+          .update({
+            name: classData.name,
+            description: classData.description,
+            class_type: classData.classType,
+            duration_minutes: classData.duration,
+            price: classData.price,
+            capacity: classData.capacity,
+            schedule_days: classData.schedule?.days,
+            schedule_time: classData.schedule?.time,
+            image_url: classData.imageUrl,
+            image_urls: classData.imageUrls,
+            language: classData.language,
+            level: classData.level,
+            kids_friendly: classData.kids_friendly,
+            disability_friendly: classData.disability_friendly,
+          })
+          .eq('id', editingClass.id);
+        
+        if (error) throw error;
+      } else {
+        // Create new class
+        const { error } = await supabase
+          .from('classes')
+          .insert({
+            trainer_id: user.id,
+            name: classData.name,
+            description: classData.description,
+            class_type: classData.classType,
+            duration_minutes: classData.duration,
+            price: classData.price,
+            capacity: classData.capacity,
+            schedule_days: classData.schedule?.days,
+            schedule_time: classData.schedule?.time,
+            image_url: classData.imageUrl,
+            image_urls: classData.imageUrls,
+            language: classData.language,
+            level: classData.level,
+            kids_friendly: classData.kids_friendly,
+            disability_friendly: classData.disability_friendly,
+          });
+        
+        if (error) throw error;
+      }
+      
+      // Refresh classes
+      const { data } = await supabase
+        .from('classes')
+        .select('*')
+        .eq('trainer_id', user.id)
+        .order('created_at', { ascending: false });
+      
+      if (data) setMyClasses(data);
+      setEditingClass(undefined);
+    } catch (error) {
+      console.error('Error saving class:', error);
+    }
+  };
+
+  // Handle class delete
+  const handleClassDelete = async (classId: string) => {
+    try {
+      const { error } = await supabase
+        .from('classes')
+        .delete()
+        .eq('id', classId);
+      
+      if (error) throw error;
+      
+      setMyClasses(prev => prev.filter(c => c.id !== classId));
+    } catch (error) {
+      console.error('Error deleting class:', error);
+    }
+  };
 
   // Fetch trainer's events
   useEffect(() => {
@@ -417,65 +521,61 @@ const DashboardPage: React.FC<DashboardPageProps> = () => {
         </div>
 
         {/* My Classes Section */}
-        <div className="px-4 -mt-4 mb-6">
-          <div className="bg-card rounded-2xl shadow-lg p-4">
-            <div className="flex justify-between items-center mb-4">
-              <h2 className="font-bold text-foreground text-base flex items-center gap-2">
-                <BookOpen className="w-5 h-5 text-primary" />
-                My Classes
-              </h2>
+        <div className="px-4 mb-6">
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="font-bold text-foreground text-lg flex items-center gap-2">
+              <BookOpen className="w-5 h-5 text-primary" />
+              My Classes ({myClasses.length})
+            </h2>
+            <button
+              onClick={() => setEditingClass(null)}
+              className="flex items-center gap-1.5 px-3 py-2 bg-primary text-primary-foreground rounded-lg text-xs font-semibold hover:bg-primary/90 transition-colors"
+            >
+              <Plus className="w-4 h-4" />
+              Add Class
+            </button>
+          </div>
+          {myClasses.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {myClasses.map((cls) => (
+                <TrainerClassCard
+                  key={cls.id}
+                  cls={cls}
+                  bookingCount={classBookingCounts[cls.id] || 0}
+                  onEdit={() => setEditingClass({
+                    id: cls.id,
+                    name: cls.name,
+                    description: cls.description || '',
+                    duration: cls.duration_minutes,
+                    price: cls.price,
+                    capacity: cls.capacity,
+                    classType: cls.class_type,
+                    imageUrl: cls.image_url || '',
+                    imageUrls: cls.image_urls || [],
+                    schedule: cls.schedule_days ? { days: cls.schedule_days, time: cls.schedule_time || '' } : undefined,
+                    language: cls.language || [],
+                    level: cls.level || '',
+                    kids_friendly: cls.kids_friendly || false,
+                    disability_friendly: cls.disability_friendly || false,
+                    bookings: []
+                  })}
+                  onDelete={() => handleClassDelete(cls.id)}
+                />
+              ))}
+            </div>
+          ) : (
+            <div className="bg-card rounded-2xl shadow-lg p-8 text-center">
+              <BookOpen className="w-12 h-12 text-muted-foreground/50 mx-auto mb-3" />
+              <p className="text-base font-medium text-foreground mb-1">No classes yet</p>
+              <p className="text-sm text-muted-foreground mb-4">Create your first class to start earning</p>
               <button
-                onClick={() => navigate('/profile')}
-                className="text-xs font-semibold text-primary hover:text-primary/80 transition-colors"
+                onClick={() => setEditingClass(null)}
+                className="px-6 py-2.5 bg-primary text-primary-foreground rounded-lg text-sm font-semibold hover:bg-primary/90 transition-colors"
               >
-                Manage All
+                Create Your First Class
               </button>
             </div>
-            {myClasses.length > 0 ? (
-              <div className="space-y-3">
-                {myClasses.map((cls) => (
-                  <div
-                    key={cls.id}
-                    onClick={() => navigate(`/class/${cls.id}`)}
-                    className="flex items-center gap-3 p-3 bg-muted/50 rounded-xl cursor-pointer hover:bg-muted transition-colors"
-                  >
-                    <div className="w-14 h-14 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0 overflow-hidden">
-                      {cls.image_url ? (
-                        <img src={cls.image_url} alt={cls.name} className="w-full h-full object-cover" />
-                      ) : (
-                        <Dumbbell className="w-6 h-6 text-primary" />
-                      )}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <h3 className="font-semibold text-foreground text-sm truncate">{cls.name}</h3>
-                      <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1">
-                        <span>{cls.class_type}</span>
-                        <span>•</span>
-                        <span>{cls.price?.toLocaleString()} VND</span>
-                      </div>
-                    </div>
-                    <div className="text-right flex-shrink-0">
-                      <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                        <Users className="w-3.5 h-3.5" />
-                        <span>{cls.capacity}</span>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-6">
-                <BookOpen className="w-10 h-10 text-muted-foreground/50 mx-auto mb-2" />
-                <p className="text-sm text-muted-foreground">No classes yet</p>
-                <button
-                  onClick={() => navigate('/profile')}
-                  className="mt-3 text-sm font-semibold text-primary hover:text-primary/80"
-                >
-                  Create Your First Class
-                </button>
-              </div>
-            )}
-          </div>
+          )}
         </div>
 
         {/* My Events Section */}
@@ -619,6 +719,15 @@ const DashboardPage: React.FC<DashboardPageProps> = () => {
           isOpen={isPremiumModalOpen}
           onClose={() => setIsPremiumModalOpen(false)}
         />
+
+        {/* Add/Edit Class Modal */}
+        {editingClass !== undefined && (
+          <AddEditClassModal
+            cls={editingClass}
+            onSave={handleClassSave}
+            onCancel={() => setEditingClass(undefined)}
+          />
+        )}
       </div>
     );
   }
