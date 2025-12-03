@@ -150,6 +150,13 @@ export type Database = {
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "bookings_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
         ]
       }
       challenge_participations: {
@@ -184,6 +191,13 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "challenge_participations_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -234,6 +248,13 @@ export type Database = {
             columns: ["author_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "challenges_author_id_fkey"
+            columns: ["author_id"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -307,6 +328,13 @@ export type Database = {
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "classes_trainer_id_fkey"
+            columns: ["trainer_id"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
         ]
       }
       conversations: {
@@ -342,6 +370,13 @@ export type Database = {
             referencedRelation: "bookings"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "conversations_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: false
+            referencedRelation: "secure_bookings"
+            referencedColumns: ["id"]
+          },
         ]
       }
       event_interests: {
@@ -372,10 +407,24 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "event_interests_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "secure_events"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "event_interests_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_interests_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -411,6 +460,13 @@ export type Database = {
             columns: ["event_id"]
             isOneToOne: false
             referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_messages_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "secure_events"
             referencedColumns: ["id"]
           },
           {
@@ -450,10 +506,24 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "event_participants_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "secure_events"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "event_participants_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_participants_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -495,10 +565,24 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "event_photos_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "secure_events"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "event_photos_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_photos_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -534,6 +618,13 @@ export type Database = {
             columns: ["event_id"]
             isOneToOne: false
             referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "event_waitlist_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "secure_events"
             referencedColumns: ["id"]
           },
         ]
@@ -608,6 +699,13 @@ export type Database = {
             columns: ["organizer_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "events_organizer_id_fkey"
+            columns: ["organizer_id"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -908,8 +1006,29 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "reviews_booking_id_fkey"
+            columns: ["booking_id"]
+            isOneToOne: true
+            referencedRelation: "secure_bookings"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "reviews_client_id_fkey"
             columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reviews_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reviews_trainer_id_fkey"
+            columns: ["trainer_id"]
             isOneToOne: false
             referencedRelation: "profiles"
             referencedColumns: ["id"]
@@ -918,7 +1037,7 @@ export type Database = {
             foreignKeyName: "reviews_trainer_id_fkey"
             columns: ["trainer_id"]
             isOneToOne: false
-            referencedRelation: "profiles"
+            referencedRelation: "public_profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -955,6 +1074,13 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "saved_challenges_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -1000,6 +1126,13 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "submissions_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -1152,11 +1285,252 @@ export type Database = {
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "votes_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
         ]
       }
     }
     Views: {
-      [_ in never]: never
+      public_profiles: {
+        Row: {
+          age: number | null
+          avatar_url: string | null
+          bio: string | null
+          created_at: string | null
+          district: string | null
+          event_password: string | null
+          experience_years: number | null
+          goals: string[] | null
+          height: number | null
+          id: string | null
+          interests: string[] | null
+          is_premium: boolean | null
+          is_verified: boolean | null
+          last_seen: string | null
+          location: string | null
+          phone: string | null
+          price_per_hour: number | null
+          rating: number | null
+          reviews_count: number | null
+          short_description: string | null
+          specialty: string[] | null
+          username: string | null
+          weight: number | null
+        }
+        Insert: {
+          age?: never
+          avatar_url?: string | null
+          bio?: string | null
+          created_at?: string | null
+          district?: string | null
+          event_password?: never
+          experience_years?: number | null
+          goals?: string[] | null
+          height?: never
+          id?: string | null
+          interests?: string[] | null
+          is_premium?: boolean | null
+          is_verified?: boolean | null
+          last_seen?: string | null
+          location?: string | null
+          phone?: never
+          price_per_hour?: number | null
+          rating?: number | null
+          reviews_count?: number | null
+          short_description?: string | null
+          specialty?: string[] | null
+          username?: string | null
+          weight?: never
+        }
+        Update: {
+          age?: never
+          avatar_url?: string | null
+          bio?: string | null
+          created_at?: string | null
+          district?: string | null
+          event_password?: never
+          experience_years?: number | null
+          goals?: string[] | null
+          height?: never
+          id?: string | null
+          interests?: string[] | null
+          is_premium?: boolean | null
+          is_verified?: boolean | null
+          last_seen?: string | null
+          location?: string | null
+          phone?: never
+          price_per_hour?: number | null
+          rating?: number | null
+          reviews_count?: number | null
+          short_description?: string | null
+          specialty?: string[] | null
+          username?: string | null
+          weight?: never
+        }
+        Relationships: []
+      }
+      secure_bookings: {
+        Row: {
+          booking_date: string | null
+          booking_time: string | null
+          cancellation_reason: string | null
+          cancelled_at: string | null
+          cancelled_by: string | null
+          class_id: string | null
+          client_id: string | null
+          created_at: string | null
+          has_left_review: boolean | null
+          id: string | null
+          status: string | null
+          updated_at: string | null
+          verification_code: string | null
+          verified_at: string | null
+          verified_by: string | null
+        }
+        Insert: {
+          booking_date?: string | null
+          booking_time?: string | null
+          cancellation_reason?: string | null
+          cancelled_at?: string | null
+          cancelled_by?: string | null
+          class_id?: string | null
+          client_id?: string | null
+          created_at?: string | null
+          has_left_review?: boolean | null
+          id?: string | null
+          status?: string | null
+          updated_at?: string | null
+          verification_code?: never
+          verified_at?: string | null
+          verified_by?: string | null
+        }
+        Update: {
+          booking_date?: string | null
+          booking_time?: string | null
+          cancellation_reason?: string | null
+          cancelled_at?: string | null
+          cancelled_by?: string | null
+          class_id?: string | null
+          client_id?: string | null
+          created_at?: string | null
+          has_left_review?: boolean | null
+          id?: string | null
+          status?: string | null
+          updated_at?: string | null
+          verification_code?: never
+          verified_at?: string | null
+          verified_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "bookings_class_id_fkey"
+            columns: ["class_id"]
+            isOneToOne: false
+            referencedRelation: "classes"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bookings_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "bookings_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      secure_events: {
+        Row: {
+          created_at: string | null
+          date: string | null
+          description: string | null
+          district: string | null
+          event_password: string | null
+          event_type: string | null
+          id: string | null
+          image_url: string | null
+          location: string | null
+          max_participants: number | null
+          organizer_id: string | null
+          participant_count: number | null
+          premium_only: boolean | null
+          price: number | null
+          sport_category: string | null
+          status: string | null
+          time: string | null
+          title: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          date?: string | null
+          description?: string | null
+          district?: string | null
+          event_password?: never
+          event_type?: string | null
+          id?: string | null
+          image_url?: string | null
+          location?: string | null
+          max_participants?: number | null
+          organizer_id?: string | null
+          participant_count?: number | null
+          premium_only?: boolean | null
+          price?: number | null
+          sport_category?: string | null
+          status?: string | null
+          time?: string | null
+          title?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          date?: string | null
+          description?: string | null
+          district?: string | null
+          event_password?: never
+          event_type?: string | null
+          id?: string | null
+          image_url?: string | null
+          location?: string | null
+          max_participants?: number | null
+          organizer_id?: string | null
+          participant_count?: number | null
+          premium_only?: boolean | null
+          price?: number | null
+          sport_category?: string | null
+          status?: string | null
+          time?: string | null
+          title?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "events_organizer_id_fkey"
+            columns: ["organizer_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "events_organizer_id_fkey"
+            columns: ["organizer_id"]
+            isOneToOne: false
+            referencedRelation: "public_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       can_cancel_booking: {

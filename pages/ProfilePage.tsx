@@ -6,6 +6,7 @@ import { isTrainerProfileComplete } from '../utils/profile';
 import CompleteProfilePrompt from '../components/CompleteProfilePrompt';
 import { supabase } from '../src/integrations/supabase/client';
 import MyDocumentsPage from './MyDocumentsPage';
+import { getVersionString } from '../src/config/appVersion';
 
 const formatVND = (amount: number) => {
     return new Intl.NumberFormat('vi-VN', {
@@ -417,6 +418,11 @@ const ProfilePage: React.FC<ProfilePageProps> = ({ trainer, onEdit, onManageClas
                     <LogOut className="w-5 h-5 mr-2" />
                     Logout
                 </button>
+
+                {/* App Version */}
+                <div className="text-center text-xs text-gray-400 mt-4">
+                    {getVersionString()}
+                </div>
             </div>
         </div>
     );
