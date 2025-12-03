@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Edit3, Trash2, Users, Clock, TrendingUp, Eye, MoreVertical, Calendar, DollarSign } from 'lucide-react';
+import { Edit3, Trash2, Users, Clock, TrendingUp, Eye, MoreVertical, Calendar, DollarSign, Loader2 } from 'lucide-react';
+import { supabase } from '../src/integrations/supabase/client';
 
 interface TrainerClassCardProps {
   cls: {
@@ -21,30 +22,28 @@ interface TrainerClassCardProps {
   onDelete: () => void;
 }
 
+interface ViewStats {
+  totalViews: number;
+  weeklyViews: number;
+  lastWeekViews: number;
+  trend: 'up' | 'down' | 'neutral';
+  trendPercent: number;
+}
+
 const formatVND = (amount: number) => {
   return new Intl.NumberFormat('vi-VN', {
     minimumFractionDigits: 0
   }).format(amount);
 };
 
-// Mock view statistics - in production this would come from analytics table
-const getMockViewStats = (classId: string) => {
-  const seed = classId.charCodeAt(0) + classId.charCodeAt(5);
-  return {
-    totalViews: Math.floor(seed * 12 + 50),
-    weeklyViews: Math.floor(seed * 2 + 10),
-    trend: seed % 2 === 0 ? 'up' : 'down',
-    trendPercent: Math.floor(seed % 30) + 5
-  };
-};
-
 const TrainerClassCard: React.FC<TrainerClassCardProps> = ({ cls, bookingCount = 0, onEdit, onDelete }) => {
   const navigate = useNavigate();
-  const [showMenu, setShowMenu] = React.useState(false);
+  const [showMenu, setShowMenu] = useState(false);
+  const [viewStats, setViewStats] = useState<ViewStats | null>(null);
+  const [loadingStats, setLoadingStats] = useState(true);
   const menuRef = React.useRef<HTMLDivElement>(null);
-  const viewStats = getMockViewStats(cls.id);
 
-  React.useEffect(() => {
+  useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
         setShowMenu(false);
@@ -53,6 +52,83 @@ const TrainerClassCard: React.FC<TrainerClassCardProps> = ({ cls, bookingCount =
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  useEffect(() => {
+    fetchViewStats();
+  }, [cls.id]);
+
+  const fetchViewStats = async () => {
+    try {
+      setLoadingStats(true);
+      
+      // Get total views
+      const { data: totalData } = await supabase
+        .from('class_views')
+        .select('view_count')
+        .eq('class_id', cls.id);
+
+      const totalViews = totalData?.reduce((sum, row) => sum + (row.view_count || 0), 0) || 0;
+
+      // Get this week's views (last 7 days)
+      const weekAgo = new Date();
+      weekAgo.setDate(weekAgo.getDate() - 7);
+      const weekAgoStr = weekAgo.toISOString().split('T')[0];
+
+      const { data: weekData } = await supabase
+        .from('class_views')
+        .select('view_count')
+        .eq('class_id', cls.id)
+        .gte('view_date', weekAgoStr);
+
+      const weeklyViews = weekData?.reduce((sum, row) => sum + (row.view_count || 0), 0) || 0;
+
+      // Get last week's views (7-14 days ago) for trend calculation
+      const twoWeeksAgo = new Date();
+      twoWeeksAgo.setDate(twoWeeksAgo.getDate() - 14);
+      const twoWeeksAgoStr = twoWeeksAgo.toISOString().split('T')[0];
+
+      const { data: lastWeekData } = await supabase
+        .from('class_views')
+        .select('view_count')
+        .eq('class_id', cls.id)
+        .gte('view_date', twoWeeksAgoStr)
+        .lt('view_date', weekAgoStr);
+
+      const lastWeekViews = lastWeekData?.reduce((sum, row) => sum + (row.view_count || 0), 0) || 0;
+
+      // Calculate trend
+      let trend: 'up' | 'down' | 'neutral' = 'neutral';
+      let trendPercent = 0;
+
+      if (lastWeekViews > 0) {
+        const change = ((weeklyViews - lastWeekViews) / lastWeekViews) * 100;
+        trendPercent = Math.abs(Math.round(change));
+        trend = change > 0 ? 'up' : change < 0 ? 'down' : 'neutral';
+      } else if (weeklyViews > 0) {
+        trend = 'up';
+        trendPercent = 100;
+      }
+
+      setViewStats({
+        totalViews,
+        weeklyViews,
+        lastWeekViews,
+        trend,
+        trendPercent
+      });
+    } catch (error) {
+      // Silently handle error, show zeros
+      setViewStats({
+        totalViews: 0,
+        weeklyViews: 0,
+        lastWeekViews: 0,
+        trend: 'neutral',
+        trendPercent: 0
+      });
+    } finally {
+      setLoadingStats(false);
+    }
+  };
 
   const handleDelete = () => {
     if (window.confirm('Are you sure you want to delete this class?')) {
@@ -168,22 +244,34 @@ const TrainerClassCard: React.FC<TrainerClassCardProps> = ({ cls, bookingCount =
               <Eye className="w-3.5 h-3.5 text-primary" />
               View Statistics
             </span>
-            <span className={`text-xs font-semibold flex items-center gap-0.5 ${
-              viewStats.trend === 'up' ? 'text-green-600' : 'text-red-500'
-            }`}>
-              <TrendingUp className={`w-3 h-3 ${viewStats.trend === 'down' ? 'rotate-180' : ''}`} />
-              {viewStats.trendPercent}%
-            </span>
+            {loadingStats ? (
+              <Loader2 className="w-3 h-3 animate-spin text-muted-foreground" />
+            ) : viewStats && viewStats.trendPercent > 0 ? (
+              <span className={`text-xs font-semibold flex items-center gap-0.5 ${
+                viewStats.trend === 'up' ? 'text-green-600' : viewStats.trend === 'down' ? 'text-red-500' : 'text-muted-foreground'
+              }`}>
+                <TrendingUp className={`w-3 h-3 ${viewStats.trend === 'down' ? 'rotate-180' : ''}`} />
+                {viewStats.trendPercent}%
+              </span>
+            ) : (
+              <span className="text-xs text-muted-foreground">—</span>
+            )}
           </div>
           <div className="flex justify-between text-xs">
-            <div>
-              <span className="text-muted-foreground">Total: </span>
-              <span className="font-semibold text-foreground">{viewStats.totalViews}</span>
-            </div>
-            <div>
-              <span className="text-muted-foreground">This week: </span>
-              <span className="font-semibold text-foreground">{viewStats.weeklyViews}</span>
-            </div>
+            {loadingStats ? (
+              <span className="text-muted-foreground">Loading...</span>
+            ) : (
+              <>
+                <div>
+                  <span className="text-muted-foreground">Total: </span>
+                  <span className="font-semibold text-foreground">{viewStats?.totalViews || 0}</span>
+                </div>
+                <div>
+                  <span className="text-muted-foreground">This week: </span>
+                  <span className="font-semibold text-foreground">{viewStats?.weeklyViews || 0}</span>
+                </div>
+              </>
+            )}
           </div>
         </div>
 
