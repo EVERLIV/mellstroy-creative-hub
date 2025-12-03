@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Edit3, Trash2, Users, Clock, TrendingUp, Eye, MoreVertical, Calendar, DollarSign, Loader2 } from 'lucide-react';
 import { supabase } from '../src/integrations/supabase/client';
+import TrainerClassPreviewModal from './TrainerClassPreviewModal';
 
 interface TrainerClassCardProps {
   cls: {
@@ -39,6 +40,7 @@ const formatVND = (amount: number) => {
 const TrainerClassCard: React.FC<TrainerClassCardProps> = ({ cls, bookingCount = 0, onEdit, onDelete }) => {
   const navigate = useNavigate();
   const [showMenu, setShowMenu] = useState(false);
+  const [showPreview, setShowPreview] = useState(false);
   const [viewStats, setViewStats] = useState<ViewStats | null>(null);
   const [loadingStats, setLoadingStats] = useState(true);
   const menuRef = React.useRef<HTMLDivElement>(null);
@@ -169,6 +171,13 @@ const TrainerClassCard: React.FC<TrainerClassCardProps> = ({ cls, bookingCount =
           {showMenu && (
             <div className="absolute right-0 top-10 bg-popover rounded-lg shadow-lg border border-border py-1 z-20 min-w-[140px]">
               <button
+                onClick={() => { setShowPreview(true); setShowMenu(false); }}
+                className="w-full px-4 py-2.5 text-left text-sm text-popover-foreground hover:bg-muted flex items-center gap-2"
+              >
+                <Eye className="w-4 h-4" />
+                Preview
+              </button>
+              <button
                 onClick={() => { onEdit(); setShowMenu(false); }}
                 className="w-full px-4 py-2.5 text-left text-sm text-popover-foreground hover:bg-muted flex items-center gap-2"
               >
@@ -286,6 +295,15 @@ const TrainerClassCard: React.FC<TrainerClassCardProps> = ({ cls, bookingCount =
           </button>
         </div>
       </div>
+
+      {/* Preview Modal */}
+      <TrainerClassPreviewModal
+        cls={cls}
+        bookingCount={bookingCount}
+        isOpen={showPreview}
+        onClose={() => setShowPreview(false)}
+        onEdit={onEdit}
+      />
     </div>
   );
 };
