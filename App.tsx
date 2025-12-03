@@ -52,6 +52,8 @@ import { getAICoachResponse } from './utils/ai';
 import PWAInstallPrompt from './components/PWAInstallPrompt';
 import { PWAUpdatePrompt } from './components/PWAUpdatePrompt';
 import { WhatsNewModal } from './components/WhatsNewModal';
+import { NotificationPermissionPrompt } from './src/components/NotificationPermissionPrompt';
+import { useNotificationTriggers, useDailyReminder } from './src/hooks/usePushNotifications';
 // ErrorBoundary temporarily disabled due to React 19 TypeScript compatibility
 // import { ErrorBoundary } from './src/components/ErrorBoundary';
 
@@ -156,6 +158,10 @@ const AppRoutes = () => {
   // AI Coach state
   const [aiCoachMessages, setAiCoachMessages] = useState<Message[]>([]);
   const [isAiCoachLoading, setIsAiCoachLoading] = useState(false);
+
+  // Initialize notification triggers
+  useNotificationTriggers();
+  useDailyReminder();
 
   // Use custom hooks for data fetching
   const { trainers, loading: trainersLoading, refetch: refetchTrainers } = useTrainers();
@@ -316,6 +322,7 @@ const AppRoutes = () => {
       <PWAUpdatePrompt />
       <PWAInstallPrompt />
       <WhatsNewModal />
+      <NotificationPermissionPrompt />
       <Routes>
         <Route path="/auth" element={user ? <Navigate to="/" replace /> : <AuthPage />} />
         <Route 
