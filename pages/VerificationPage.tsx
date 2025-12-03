@@ -87,68 +87,62 @@ const VerificationPage: React.FC<VerificationPageProps> = ({ onBack, onComplete 
 
                 {/* Step 1: Introduction */}
                 <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200/80">
-                    <div className="flex items-start gap-3">
-                         <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 bg-blue-500 text-white">
-                           <CheckCircle className="w-5 h-5"/>
+                    <div className="flex flex-col items-center text-center">
+                        <div className="w-10 h-10 rounded-full flex items-center justify-center bg-blue-500 text-white mb-3">
+                            <CheckCircle className="w-5 h-5"/>
                         </div>
-                        <div>
-                            <h2 className="font-bold text-slate-800">Why Get Verified?</h2>
-                            <p className="text-sm text-slate-500 mt-1">A verified badge builds trust, increases your visibility in search results, and helps you get more bookings.</p>
-                        </div>
+                        <h2 className="font-bold text-slate-800">Why Get Verified?</h2>
+                        <p className="text-sm text-slate-500 mt-1">A verified badge builds trust, increases your visibility in search results, and helps you get more bookings.</p>
                     </div>
                 </div>
 
                 {/* Step 2: ID Upload */}
-                 <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200/80">
-                    <div className="flex items-start gap-3">
-                         <div className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${idFile ? 'bg-blue-500 text-white' : 'bg-slate-200 text-slate-500'}`}>
+                <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200/80">
+                    <div className="flex flex-col items-center text-center">
+                        <div className={`w-10 h-10 rounded-full flex items-center justify-center mb-3 ${idFile ? 'bg-blue-500 text-white' : 'bg-slate-200 text-slate-500'}`}>
                             {idFile ? <CheckCircle className="w-5 h-5"/> : <span className="font-bold">2</span>}
                         </div>
-                        <div>
-                            <h2 className="font-bold text-slate-800">Upload Your ID</h2>
-                            <p className="text-sm text-slate-500 mt-1">Upload a clear photo of your National ID (CCCD), Passport, or Driver's License.</p>
-                             <input type="file" ref={idInputRef} onChange={(e) => handleFileSelect(e, 'id')} className="hidden" accept="image/*,.pdf"/>
-                            <button onClick={() => idInputRef.current?.click()} className="mt-3 w-full flex flex-col items-center justify-center p-4 border-2 border-dashed border-slate-300 rounded-lg hover:bg-slate-50 transition-colors">
-                                {idFile ? (
-                                    <div className="flex items-center text-emerald-600">
-                                        <FileText className="w-5 h-5 mr-2"/>
-                                        <span className="text-sm font-semibold truncate">{idFile.name}</span>
-                                    </div>
-                                ) : (
-                                    <>
-                                        <UploadCloud className="w-8 h-8 text-slate-400"/>
-                                        <span className="text-sm font-semibold text-slate-600 mt-1">Click to upload document</span>
-                                    </>
-                                )}
-                            </button>
-                        </div>
+                        <h2 className="font-bold text-slate-800">Upload Your ID</h2>
+                        <p className="text-sm text-slate-500 mt-1">Upload a clear photo of your National ID (CCCD), Passport, or Driver's License.</p>
+                        <input type="file" ref={idInputRef} onChange={(e) => handleFileSelect(e, 'id')} className="hidden" accept="image/*,.pdf"/>
+                        <button onClick={() => idInputRef.current?.click()} className="mt-3 w-full flex flex-col items-center justify-center p-4 border-2 border-dashed border-slate-300 rounded-lg hover:bg-slate-50 transition-colors">
+                            {idFile ? (
+                                <div className="flex items-center text-emerald-600">
+                                    <FileText className="w-5 h-5 mr-2"/>
+                                    <span className="text-sm font-semibold truncate">{idFile.name}</span>
+                                </div>
+                            ) : (
+                                <>
+                                    <UploadCloud className="w-8 h-8 text-slate-400"/>
+                                    <span className="text-sm font-semibold text-slate-600 mt-1">Click to upload document</span>
+                                </>
+                            )}
+                        </button>
                     </div>
                 </div>
 
-                 {/* Step 3: Certification Upload */}
+                {/* Step 3: Certification Upload */}
                 <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200/80">
-                    <div className="flex items-start gap-3">
-                        <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 bg-slate-200 text-slate-500">
-                             <span className="font-bold">3</span>
+                    <div className="flex flex-col items-center text-center">
+                        <div className={`w-10 h-10 rounded-full flex items-center justify-center mb-3 ${certFile ? 'bg-blue-500 text-white' : 'bg-slate-200 text-slate-500'}`}>
+                            {certFile ? <CheckCircle className="w-5 h-5"/> : <span className="font-bold">3</span>}
                         </div>
-                        <div>
-                            <h2 className="font-bold text-slate-800">Upload Certifications (Optional)</h2>
-                            <p className="text-sm text-slate-500 mt-1">Showcase your qualifications by uploading any relevant fitness certifications.</p>
-                            <input type="file" ref={certInputRef} onChange={(e) => handleFileSelect(e, 'cert')} className="hidden" accept="image/*,.pdf"/>
-                            <button onClick={() => certInputRef.current?.click()} className="mt-3 w-full flex flex-col items-center justify-center p-4 border-2 border-dashed border-slate-300 rounded-lg hover:bg-slate-50 transition-colors">
-                               {certFile ? (
-                                    <div className="flex items-center text-emerald-600">
-                                        <FileText className="w-5 h-5 mr-2"/>
-                                        <span className="text-sm font-semibold truncate">{certFile.name}</span>
-                                    </div>
-                                ) : (
-                                    <>
-                                        <UploadCloud className="w-8 h-8 text-slate-400"/>
-                                        <span className="text-sm font-semibold text-slate-600 mt-1">Click to upload document</span>
-                                    </>
-                                )}
-                            </button>
-                        </div>
+                        <h2 className="font-bold text-slate-800">Upload Certifications (Optional)</h2>
+                        <p className="text-sm text-slate-500 mt-1">Showcase your qualifications by uploading any relevant fitness certifications.</p>
+                        <input type="file" ref={certInputRef} onChange={(e) => handleFileSelect(e, 'cert')} className="hidden" accept="image/*,.pdf"/>
+                        <button onClick={() => certInputRef.current?.click()} className="mt-3 w-full flex flex-col items-center justify-center p-4 border-2 border-dashed border-slate-300 rounded-lg hover:bg-slate-50 transition-colors">
+                            {certFile ? (
+                                <div className="flex items-center text-emerald-600">
+                                    <FileText className="w-5 h-5 mr-2"/>
+                                    <span className="text-sm font-semibold truncate">{certFile.name}</span>
+                                </div>
+                            ) : (
+                                <>
+                                    <UploadCloud className="w-8 h-8 text-slate-400"/>
+                                    <span className="text-sm font-semibold text-slate-600 mt-1">Click to upload document</span>
+                                </>
+                            )}
+                        </button>
                     </div>
                 </div>
             </main>
