@@ -259,6 +259,44 @@ export type Database = {
           },
         ]
       }
+      class_views: {
+        Row: {
+          class_id: string
+          created_at: string
+          id: string
+          updated_at: string
+          view_count: number
+          view_date: string
+          viewer_id: string | null
+        }
+        Insert: {
+          class_id: string
+          created_at?: string
+          id?: string
+          updated_at?: string
+          view_count?: number
+          view_date?: string
+          viewer_id?: string | null
+        }
+        Update: {
+          class_id?: string
+          created_at?: string
+          id?: string
+          updated_at?: string
+          view_count?: number
+          view_date?: string
+          viewer_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "class_views_class_id_fkey"
+            columns: ["class_id"]
+            isOneToOne: false
+            referencedRelation: "classes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       classes: {
         Row: {
           capacity: number
@@ -1546,6 +1584,14 @@ export type Database = {
         Returns: Json
       }
       generate_verification_code: { Args: never; Returns: string }
+      get_class_view_stats: {
+        Args: { _class_id: string; _days?: number }
+        Returns: {
+          total_views: number
+          unique_viewers: number
+          view_date: string
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -1556,6 +1602,10 @@ export type Database = {
       is_event_registration_open: {
         Args: { event_id: string }
         Returns: boolean
+      }
+      record_class_view: {
+        Args: { _class_id: string; _viewer_id?: string }
+        Returns: undefined
       }
       register_for_event: {
         Args: { _event_id: string; _user_id: string }
