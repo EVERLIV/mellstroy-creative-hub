@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Search, Dumbbell, Calendar, UtensilsCrossed, Sparkles, MapPin, Trophy, Users, TrendingUp, Heart, Crown, Clock, BookOpen, Star } from 'lucide-react';
+import { Search, Dumbbell, Calendar, UtensilsCrossed, Sparkles, MapPin, Trophy, Users, TrendingUp, Heart, Crown, Clock, BookOpen, Star, CheckCircle, AlertCircle, XCircle } from 'lucide-react';
 import { supabase } from '../src/integrations/supabase/client';
 import { useAuth } from '../src/hooks/useAuth';
 import VenueSlider from '../components/VenueSlider';
@@ -8,6 +8,14 @@ import VenueDetailPage from './VenueDetailPage';
 import PremiumDetailsModal from '../components/PremiumDetailsModal';
 import { mockVenues } from '../data/mockVenues';
 import { Venue, UserRole } from '../types';
+
+interface BookingStats {
+  total: number;
+  pending: number;
+  confirmed: number;
+  completed: number;
+  cancelled: number;
+}
 
 interface DashboardPageProps {}
 
@@ -22,6 +30,13 @@ const DashboardPage: React.FC<DashboardPageProps> = () => {
   const [userRole, setUserRole] = useState<UserRole>('student');
   const [myClasses, setMyClasses] = useState<any[]>([]);
   const [myEvents, setMyEvents] = useState<any[]>([]);
+  const [bookingStats, setBookingStats] = useState<BookingStats>({
+    total: 0,
+    pending: 0,
+    confirmed: 0,
+    completed: 0,
+    cancelled: 0
+  });
 
   // Fetch user role
   useEffect(() => {
@@ -81,6 +96,45 @@ const DashboardPage: React.FC<DashboardPageProps> = () => {
     };
 
     fetchMyEvents();
+  }, [user?.id, userRole]);
+
+  // Fetch booking statistics for trainer
+  useEffect(() => {
+    const fetchBookingStats = async () => {
+      if (!user?.id || userRole !== 'trainer') return;
+      
+      // First get all class IDs for this trainer
+      const { data: classesData } = await supabase
+        .from('classes')
+        .select('id')
+        .eq('trainer_id', user.id);
+      
+      if (!classesData || classesData.length === 0) {
+        setBookingStats({ total: 0, pending: 0, confirmed: 0, completed: 0, cancelled: 0 });
+        return;
+      }
+      
+      const classIds = classesData.map(c => c.id);
+      
+      // Fetch all bookings for trainer's classes
+      const { data: bookingsData } = await supabase
+        .from('bookings')
+        .select('status')
+        .in('class_id', classIds);
+      
+      if (bookingsData) {
+        const stats: BookingStats = {
+          total: bookingsData.length,
+          pending: bookingsData.filter(b => b.status === 'booked').length,
+          confirmed: bookingsData.filter(b => b.status === 'confirmed').length,
+          completed: bookingsData.filter(b => b.status === 'attended' || b.status === 'completed').length,
+          cancelled: bookingsData.filter(b => b.status === 'cancelled').length
+        };
+        setBookingStats(stats);
+      }
+    };
+
+    fetchBookingStats();
   }, [user?.id, userRole]);
 
   // Mock events data for testing
@@ -273,6 +327,51 @@ const DashboardPage: React.FC<DashboardPageProps> = () => {
             <div className="mb-4">
               <h1 className="text-2xl font-bold text-primary-foreground">Trainer Dashboard</h1>
               <p className="text-primary-foreground/90 text-sm mt-1">Manage your classes and events</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Booking Statistics */}
+        <div className="px-4 -mt-4 mb-6">
+          <div className="bg-card rounded-2xl shadow-lg p-4">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="font-bold text-foreground text-base flex items-center gap-2">
+                <Calendar className="w-5 h-5 text-primary" />
+                Booking Statistics
+              </h2>
+              <button
+                onClick={() => navigate('/bookings')}
+                className="text-xs font-semibold text-primary hover:text-primary/80 transition-colors"
+              >
+                View All
+              </button>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="bg-muted/50 rounded-xl p-3 text-center">
+                <div className="text-2xl font-bold text-foreground">{bookingStats.total}</div>
+                <div className="text-xs text-muted-foreground">Total Bookings</div>
+              </div>
+              <div className="bg-yellow-100 dark:bg-yellow-900/30 rounded-xl p-3 text-center">
+                <div className="flex items-center justify-center gap-1">
+                  <AlertCircle className="w-4 h-4 text-yellow-600 dark:text-yellow-400" />
+                  <span className="text-2xl font-bold text-yellow-600 dark:text-yellow-400">{bookingStats.pending}</span>
+                </div>
+                <div className="text-xs text-yellow-700 dark:text-yellow-300">Pending</div>
+              </div>
+              <div className="bg-green-100 dark:bg-green-900/30 rounded-xl p-3 text-center">
+                <div className="flex items-center justify-center gap-1">
+                  <CheckCircle className="w-4 h-4 text-green-600 dark:text-green-400" />
+                  <span className="text-2xl font-bold text-green-600 dark:text-green-400">{bookingStats.completed}</span>
+                </div>
+                <div className="text-xs text-green-700 dark:text-green-300">Completed</div>
+              </div>
+              <div className="bg-red-100 dark:bg-red-900/30 rounded-xl p-3 text-center">
+                <div className="flex items-center justify-center gap-1">
+                  <XCircle className="w-4 h-4 text-red-600 dark:text-red-400" />
+                  <span className="text-2xl font-bold text-red-600 dark:text-red-400">{bookingStats.cancelled}</span>
+                </div>
+                <div className="text-xs text-red-700 dark:text-red-300">Cancelled</div>
+              </div>
             </div>
           </div>
         </div>
