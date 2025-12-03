@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { Trainer, Class, UserRole, ClassType } from '../types';
 import { HCMC_DISTRICTS, FITNESS_ACTIVITIES, FITNESS_GOALS, CLASS_TYPES } from '../constants';
-import { User, Briefcase, ArrowRight, Save, Building, Sun, Home } from 'lucide-react';
+import { User, Briefcase, ArrowRight, Save, Building, Sun, Home, Camera, X } from 'lucide-react';
 import rhinoLogo from '../src/assets/rhino-logo.png';
+import { supabase } from '../src/integrations/supabase/client';
 
 
 interface OnboardingPageProps {
@@ -15,6 +16,9 @@ const dayOptions = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 const OnboardingPage: React.FC<OnboardingPageProps> = ({ currentUser, onComplete }) => {
     const [step, setStep] = useState<'role' | 'student-form' | 'trainer-profile' | 'trainer-class'>('role');
     const [formData, setFormData] = useState<Trainer>(currentUser);
+    const [classImage, setClassImage] = useState<File | null>(null);
+    const [classImagePreview, setClassImagePreview] = useState<string | null>(null);
+    const [uploading, setUploading] = useState(false);
     const [classData, setClassData] = useState({
         name: '', description: '', duration: 60, price: 150000, capacity: 10, classType: 'Indoor' as ClassType,
         schedule: { days: [] as string[], time: '09:00' }
@@ -90,20 +94,72 @@ const OnboardingPage: React.FC<OnboardingPageProps> = ({ currentUser, onComplete
         setStep('trainer-class');
     };
 
-    const handleTrainerClassSubmit = () => {
+    const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            if (file.size > 3 * 1024 * 1024) {
+                alert('Image must be less than 3MB');
+                return;
+            }
+            setClassImage(file);
+            setClassImagePreview(URL.createObjectURL(file));
+        }
+    };
+
+    const removeImage = () => {
+        setClassImage(null);
+        setClassImagePreview(null);
+    };
+
+    const uploadClassImage = async (): Promise<string | null> => {
+        if (!classImage) return null;
+        
+        const fileExt = classImage.name.split('.').pop();
+        const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+        
+        const { error } = await supabase.storage
+            .from('class-images')
+            .upload(fileName, classImage);
+        
+        if (error) {
+            console.error('Upload error:', error);
+            return null;
+        }
+        
+        const { data: urlData } = supabase.storage
+            .from('class-images')
+            .getPublicUrl(fileName);
+        
+        return urlData.publicUrl;
+    };
+
+    const handleTrainerClassSubmit = async () => {
+        setUploading(true);
+        let imageUrl = 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=800';
+        
+        if (classImage) {
+            const uploadedUrl = await uploadClassImage();
+            if (uploadedUrl) imageUrl = uploadedUrl;
+        }
+        
         const newClass: Class = {
             id: Date.now(),
             name: classData.name,
             description: classData.description,
             duration: classData.duration,
             price: classData.price,
-            imageUrl: 'https://picsum.photos/id/119/800/600',
+            imageUrl,
             capacity: classData.capacity,
             schedule: classData.schedule,
             classType: classData.classType,
             bookings: [],
         };
+        setUploading(false);
         onComplete({ ...formData, classes: [newClass], onboardingCompleted: true });
+    };
+
+    const handleSkipClass = () => {
+        onComplete({ ...formData, classes: [], onboardingCompleted: true });
     };
     
     const renderRoleSelection = () => (
@@ -183,6 +239,29 @@ const OnboardingPage: React.FC<OnboardingPageProps> = ({ currentUser, onComplete
             <p className="text-slate-500 mt-1 text-center">You can add more later from your profile.</p>
             <form onSubmit={(e) => { e.preventDefault(); handleTrainerClassSubmit(); }} className="mt-6 space-y-4">
                 <div className="bg-white p-4 rounded-xl shadow-sm space-y-4">
+                    {/* Class Photo Upload */}
+                    <div>
+                        <label className="block text-sm font-medium text-slate-600 mb-2">Class Photo</label>
+                        {classImagePreview ? (
+                            <div className="relative">
+                                <img src={classImagePreview} alt="Class preview" className="w-full h-40 object-cover rounded-lg" />
+                                <button 
+                                    type="button" 
+                                    onClick={removeImage}
+                                    className="absolute top-2 right-2 bg-red-500 text-white p-1 rounded-full hover:bg-red-600"
+                                >
+                                    <X className="w-4 h-4" />
+                                </button>
+                            </div>
+                        ) : (
+                            <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-slate-300 rounded-lg cursor-pointer hover:border-blue-400 hover:bg-blue-50 transition-colors">
+                                <Camera className="w-8 h-8 text-slate-400 mb-2" />
+                                <span className="text-sm text-slate-500">Add class photo</span>
+                                <span className="text-xs text-slate-400 mt-1">Max 3MB</span>
+                                <input type="file" accept="image/*" onChange={handleImageChange} className="hidden" />
+                            </label>
+                        )}
+                    </div>
                     <div><label htmlFor="className" className="block text-sm font-medium text-slate-600 mb-1">Class Name</label><input type="text" id="className" name="name" value={classData.name} onChange={handleClassFormChange} required className="w-full px-3 py-2 border border-slate-300 rounded-lg"/></div>
                     <div><label htmlFor="classDesc" className="block text-sm font-medium text-slate-600 mb-1">Description</label><textarea id="classDesc" name="description" value={classData.description} onChange={handleClassFormChange} required rows={3} className="w-full px-3 py-2 border border-slate-300 rounded-lg"/></div>
                     <div className="grid grid-cols-3 gap-3">
@@ -198,9 +277,20 @@ const OnboardingPage: React.FC<OnboardingPageProps> = ({ currentUser, onComplete
                         </div>
                     </div>
                 </div>
-                 <button type="submit" className="w-full flex items-center justify-center bg-blue-600 text-white font-bold py-3.5 rounded-xl">
-                    Complete Setup & View Profile <ArrowRight className="w-5 h-5 ml-2" />
-                </button>
+                 <button 
+                    type="submit" 
+                    disabled={uploading}
+                    className="w-full flex items-center justify-center bg-blue-600 text-white font-bold py-3.5 rounded-xl disabled:opacity-50"
+                 >
+                    {uploading ? 'Creating...' : 'Complete Setup & View Profile'} <ArrowRight className="w-5 h-5 ml-2" />
+                 </button>
+                 <button 
+                    type="button"
+                    onClick={handleSkipClass}
+                    className="w-full text-center text-slate-500 font-medium py-2 hover:text-slate-700 transition-colors"
+                 >
+                    Skip for now
+                 </button>
             </form>
         </div>
     );
