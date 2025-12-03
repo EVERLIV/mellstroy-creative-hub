@@ -18,7 +18,10 @@ const OnboardingPage: React.FC<OnboardingPageProps> = ({ currentUser, onComplete
     const [formData, setFormData] = useState<Trainer>(currentUser);
     const [classImage, setClassImage] = useState<File | null>(null);
     const [classImagePreview, setClassImagePreview] = useState<string | null>(null);
+    const [trainerAvatar, setTrainerAvatar] = useState<File | null>(null);
+    const [trainerAvatarPreview, setTrainerAvatarPreview] = useState<string | null>(null);
     const [uploading, setUploading] = useState(false);
+    const [photoError, setPhotoError] = useState<string | null>(null);
     const [classData, setClassData] = useState({
         name: '', description: '', duration: 60, price: 150000, capacity: 10, classType: 'Indoor' as ClassType,
         schedule: { days: [] as string[], time: '09:00' }
@@ -90,10 +93,6 @@ const OnboardingPage: React.FC<OnboardingPageProps> = ({ currentUser, onComplete
         onComplete({ ...formData, onboardingCompleted: true });
     };
 
-    const handleTrainerProfileSubmit = () => {
-        setStep('trainer-class');
-    };
-
     const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
         if (file) {
@@ -103,12 +102,52 @@ const OnboardingPage: React.FC<OnboardingPageProps> = ({ currentUser, onComplete
             }
             setClassImage(file);
             setClassImagePreview(URL.createObjectURL(file));
+            setPhotoError(null);
+        }
+    };
+
+    const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (file) {
+            if (file.size > 3 * 1024 * 1024) {
+                alert('Image must be less than 3MB');
+                return;
+            }
+            setTrainerAvatar(file);
+            setTrainerAvatarPreview(URL.createObjectURL(file));
         }
     };
 
     const removeImage = () => {
         setClassImage(null);
         setClassImagePreview(null);
+    };
+
+    const removeAvatar = () => {
+        setTrainerAvatar(null);
+        setTrainerAvatarPreview(null);
+    };
+
+    const uploadTrainerAvatar = async (): Promise<string | null> => {
+        if (!trainerAvatar) return null;
+        
+        const fileExt = trainerAvatar.name.split('.').pop();
+        const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+        
+        const { error } = await supabase.storage
+            .from('avatars')
+            .upload(fileName, trainerAvatar);
+        
+        if (error) {
+            console.error('Avatar upload error:', error);
+            return null;
+        }
+        
+        const { data: urlData } = supabase.storage
+            .from('avatars')
+            .getPublicUrl(fileName);
+        
+        return urlData.publicUrl;
     };
 
     const uploadClassImage = async (): Promise<string | null> => {
@@ -133,13 +172,33 @@ const OnboardingPage: React.FC<OnboardingPageProps> = ({ currentUser, onComplete
         return urlData.publicUrl;
     };
 
-    const handleTrainerClassSubmit = async () => {
+    const handleTrainerProfileSubmit = async () => {
+        if (!trainerAvatar) {
+            alert('Please upload your profile photo');
+            return;
+        }
         setUploading(true);
-        let imageUrl = 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=800';
+        const avatarUrl = await uploadTrainerAvatar();
+        if (avatarUrl) {
+            setFormData(prev => ({ ...prev, imageUrl: avatarUrl }));
+        }
+        setUploading(false);
+        setStep('trainer-class');
+    };
+
+    const handleTrainerClassSubmit = async () => {
+        if (!classImage) {
+            setPhotoError('Class photo is required');
+            return;
+        }
         
-        if (classImage) {
-            const uploadedUrl = await uploadClassImage();
-            if (uploadedUrl) imageUrl = uploadedUrl;
+        setUploading(true);
+        const imageUrl = await uploadClassImage();
+        
+        if (!imageUrl) {
+            setPhotoError('Failed to upload image. Please try again.');
+            setUploading(false);
+            return;
         }
         
         const newClass: Class = {
@@ -218,6 +277,34 @@ const OnboardingPage: React.FC<OnboardingPageProps> = ({ currentUser, onComplete
             <p className="text-slate-500 mt-1 text-center">This is how students will see you.</p>
              <form onSubmit={(e) => { e.preventDefault(); handleTrainerProfileSubmit(); }} className="mt-6 space-y-4">
                  <div className="bg-white p-4 rounded-xl shadow-sm space-y-4">
+                    {/* Profile Photo Upload - Required */}
+                    <div>
+                        <label className="block text-sm font-medium text-slate-600 mb-2">Profile Photo <span className="text-red-500">*</span></label>
+                        <div className="flex items-center gap-4">
+                            {trainerAvatarPreview ? (
+                                <div className="relative">
+                                    <img src={trainerAvatarPreview} alt="Profile preview" className="w-24 h-24 rounded-full object-cover border-2 border-slate-200" />
+                                    <button 
+                                        type="button" 
+                                        onClick={removeAvatar}
+                                        className="absolute -top-1 -right-1 bg-red-500 text-white p-1 rounded-full hover:bg-red-600"
+                                    >
+                                        <X className="w-3 h-3" />
+                                    </button>
+                                </div>
+                            ) : (
+                                <label className="flex flex-col items-center justify-center w-24 h-24 border-2 border-dashed border-slate-300 rounded-full cursor-pointer hover:border-blue-400 hover:bg-blue-50 transition-colors">
+                                    <Camera className="w-6 h-6 text-slate-400" />
+                                    <span className="text-xs text-slate-500 mt-1">Add photo</span>
+                                    <input type="file" accept="image/*" onChange={handleAvatarChange} className="hidden" />
+                                </label>
+                            )}
+                            <div className="flex-1">
+                                <p className="text-xs text-slate-500">Upload a professional photo that shows your face clearly.</p>
+                                <p className="text-xs text-slate-400 mt-1">Max 3MB, JPG or PNG</p>
+                            </div>
+                        </div>
+                    </div>
                     <div><label htmlFor="name" className="block text-sm font-medium text-slate-600 mb-1">Full Name</label><input type="text" id="name" name="name" value={formData.name} onChange={handleFormChange} required className="w-full px-3 py-2 border border-slate-300 rounded-lg"/></div>
                     <div><label htmlFor="bio" className="block text-sm font-medium text-slate-600 mb-1">About Me</label><textarea id="bio" name="bio" value={formData.bio} onChange={handleFormChange} rows={4} placeholder="Your experience, qualifications, teaching style..." className="w-full px-3 py-2 border border-slate-300 rounded-lg"/></div>
                     <div><label htmlFor="location" className="block text-sm font-medium text-slate-600 mb-1">Location</label><select id="location" name="location" value={formData.location} onChange={handleFormChange} className="w-full px-3 py-2 border border-slate-300 rounded-lg bg-white">{HCMC_DISTRICTS.map(d=><option key={d} value={d}>{d}</option>)}</select></div>
@@ -228,7 +315,13 @@ const OnboardingPage: React.FC<OnboardingPageProps> = ({ currentUser, onComplete
                         {FITNESS_ACTIVITIES.map(activity => <button type="button" key={activity} onClick={() => handleToggle('specialty', activity)} className={`px-3 py-1.5 text-sm font-semibold rounded-full border ${(formData.specialty || []).includes(activity) ? 'bg-blue-500 text-white border-blue-500' : 'bg-white text-slate-700 border-slate-300'}`}>{activity}</button>)}
                     </div>
                  </div>
-                 <button type="submit" className="w-full flex items-center justify-center bg-[#FF6B35] text-white font-bold py-3.5 rounded-xl">Next: Create First Class <ArrowRight className="w-5 h-5 ml-2" /></button>
+                 <button 
+                    type="submit" 
+                    disabled={uploading}
+                    className="w-full flex items-center justify-center bg-[#FF6B35] text-white font-bold py-3.5 rounded-xl disabled:opacity-50"
+                 >
+                    {uploading ? 'Uploading...' : 'Next: Create First Class'} <ArrowRight className="w-5 h-5 ml-2" />
+                 </button>
             </form>
          </div>
     );
@@ -239,9 +332,11 @@ const OnboardingPage: React.FC<OnboardingPageProps> = ({ currentUser, onComplete
             <p className="text-slate-500 mt-1 text-center">You can add more later from your profile.</p>
             <form onSubmit={(e) => { e.preventDefault(); handleTrainerClassSubmit(); }} className="mt-6 space-y-4">
                 <div className="bg-white p-4 rounded-xl shadow-sm space-y-4">
-                    {/* Class Photo Upload */}
+                    {/* Class Photo Upload - Required */}
                     <div>
-                        <label className="block text-sm font-medium text-slate-600 mb-2">Class Photo</label>
+                        <label className="block text-sm font-medium text-slate-600 mb-2">
+                            Class Photo <span className="text-red-500">*</span>
+                        </label>
                         {classImagePreview ? (
                             <div className="relative">
                                 <img src={classImagePreview} alt="Class preview" className="w-full h-40 object-cover rounded-lg" />
@@ -254,9 +349,11 @@ const OnboardingPage: React.FC<OnboardingPageProps> = ({ currentUser, onComplete
                                 </button>
                             </div>
                         ) : (
-                            <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-slate-300 rounded-lg cursor-pointer hover:border-blue-400 hover:bg-blue-50 transition-colors">
-                                <Camera className="w-8 h-8 text-slate-400 mb-2" />
-                                <span className="text-sm text-slate-500">Add class photo</span>
+                            <label className={`flex flex-col items-center justify-center w-full h-32 border-2 border-dashed rounded-lg cursor-pointer transition-colors ${photoError ? 'border-red-400 bg-red-50' : 'border-slate-300 hover:border-blue-400 hover:bg-blue-50'}`}>
+                                <Camera className={`w-8 h-8 mb-2 ${photoError ? 'text-red-400' : 'text-slate-400'}`} />
+                                <span className={`text-sm ${photoError ? 'text-red-500' : 'text-slate-500'}`}>
+                                    {photoError || 'Add class photo (required)'}
+                                </span>
                                 <span className="text-xs text-slate-400 mt-1">Max 3MB</span>
                                 <input type="file" accept="image/*" onChange={handleImageChange} className="hidden" />
                             </label>
