@@ -531,32 +531,6 @@ const TrainerDetailPage: React.FC<TrainerDetailPageProps> = ({
                 </div>
             </div>
 
-
-            {/* Floating Action Button for Quick Booking */}
-            {userRole !== 'trainer' && displayClasses.length > 0 && (
-                <button
-                    onClick={() => {
-                        // Book the first available class or the first class if none are full
-                        const availableClass = displayClasses.find(cls => {
-                            const classId = (cls as any)._dbId || cls.id;
-                            return true; // We'll check capacity in the booking modal
-                        });
-                        if (availableClass) {
-                            onInitiateBooking({ trainer, cls: availableClass });
-                        }
-                    }}
-                    className="fixed bottom-[calc(5rem+env(safe-area-inset-bottom))] right-6 z-30 bg-gradient-to-r from-primary to-orange-600 text-white rounded-full shadow-2xl hover:shadow-3xl active:scale-95 transition-all duration-300 animate-fade-in group"
-                    aria-label="Quick book class"
-                >
-                    <div className="flex items-center gap-2 px-5 py-4">
-                        <Calendar className="w-5 h-5 group-hover:scale-110 transition-transform" />
-                        <span className="font-bold text-sm">Quick Book</span>
-                    </div>
-                    {/* Pulse ring animation */}
-                    <span className="absolute inset-0 rounded-full bg-primary opacity-75 animate-ping" style={{ animationDuration: '2s' }}></span>
-                </button>
-            )}
-
             {isGalleryOpen && trainer.galleryImages && (
                 <ImageGalleryModal
                     images={trainer.galleryImages}
