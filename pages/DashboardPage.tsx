@@ -286,11 +286,62 @@ const DashboardPage: React.FC<DashboardPageProps> = () => {
     navigate(`/category/${categoryId}`);
   }, [navigate]);
 
-  // Show loading state while auth is loading to prevent UI flash
+  // Show loading skeleton while auth is loading to prevent UI flash
   if (authLoading || !userRole) {
     return (
-      <div className="bg-background min-h-screen flex items-center justify-center">
-        <div className="animate-pulse text-muted-foreground">Loading...</div>
+      <div className="bg-background min-h-screen pb-24 animate-pulse">
+        {/* Header skeleton */}
+        <div className="bg-gradient-to-br from-primary/50 to-accent/50 pt-6 pb-8 px-4">
+          <div className="max-w-2xl mx-auto">
+            <div className="h-7 w-48 bg-primary-foreground/20 rounded mb-2" />
+            <div className="h-4 w-64 bg-primary-foreground/20 rounded" />
+          </div>
+        </div>
+
+        {/* Stats skeleton */}
+        <div className="px-4 -mt-4 mb-6">
+          <div className="bg-card rounded-2xl shadow-lg p-4">
+            <div className="h-5 w-40 bg-muted rounded mb-4" />
+            <div className="grid grid-cols-4 gap-3">
+              {[...Array(4)].map((_, i) => (
+                <div key={i} className="bg-muted/50 rounded-xl p-3">
+                  <div className="h-6 w-8 bg-muted rounded mb-2 mx-auto" />
+                  <div className="h-3 w-12 bg-muted rounded mx-auto" />
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Content skeleton */}
+        <div className="px-4 space-y-6">
+          <div className="bg-card rounded-2xl p-4">
+            <div className="h-5 w-32 bg-muted rounded mb-4" />
+            <div className="space-y-3">
+              {[...Array(3)].map((_, i) => (
+                <div key={i} className="flex gap-3">
+                  <div className="h-16 w-16 bg-muted rounded-lg" />
+                  <div className="flex-1">
+                    <div className="h-4 w-3/4 bg-muted rounded mb-2" />
+                    <div className="h-3 w-1/2 bg-muted rounded" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div className="bg-card rounded-2xl p-4">
+            <div className="h-5 w-40 bg-muted rounded mb-4" />
+            <div className="grid grid-cols-4 gap-3">
+              {[...Array(8)].map((_, i) => (
+                <div key={i} className="flex flex-col items-center">
+                  <div className="h-14 w-14 bg-muted rounded-xl mb-2" />
+                  <div className="h-3 w-10 bg-muted rounded" />
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
       </div>
     );
   }
