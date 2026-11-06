@@ -1,13 +1,39 @@
-import React, { useState, useRef, useEffect } from 'react';
-import ReactDOM from 'react-dom';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Menu, X, Calendar, Settings, HelpCircle, Shield } from 'lucide-react';
+import { Menu, Calendar, Settings, HelpCircle, Shield, type LucideIcon } from 'lucide-react';
 import { supabase } from '../src/integrations/supabase/client';
+import { cn } from '../src/lib/utils';
+import { Button } from '../src/components/ui/button';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '../src/components/ui/sheet';
+
+interface MenuItemProps {
+    icon: LucideIcon;
+    label: string;
+    onClick: () => void;
+    highlighted?: boolean;
+}
+
+function MenuItem({ icon: Icon, label, onClick, highlighted = false }: MenuItemProps) {
+    return (
+        <li>
+            <button
+                type="button"
+                onClick={onClick}
+                className={cn(
+                    'flex w-full items-center gap-4 rounded-lg p-3 text-left font-semibold transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+                    highlighted ? 'border border-primary/20 bg-primary/10 text-primary' : 'text-foreground'
+                )}
+            >
+                <Icon className={cn('h-5 w-5', highlighted ? 'text-primary' : 'text-muted-foreground')} />
+                {label}
+            </button>
+        </li>
+    );
+}
 
 const HamburgerMenu: React.FC = () => {
     const [isOpen, setIsOpen] = useState(false);
     const [isAdmin, setIsAdmin] = useState(false);
-    const menuRef = useRef<HTMLDivElement>(null);
     const navigate = useNavigate();
 
     useEffect(() => {
@@ -33,78 +59,29 @@ const HamburgerMenu: React.FC = () => {
         setIsOpen(false);
     };
 
-    // Close menu on outside click
-    useEffect(() => {
-        const handleClickOutside = (event: MouseEvent) => {
-            if (isOpen && menuRef.current && !menuRef.current.contains(event.target as Node)) {
-                setIsOpen(false);
-            }
-        };
-        document.addEventListener('mousedown', handleClickOutside);
-        return () => document.removeEventListener('mousedown', handleClickOutside);
-    }, [isOpen]);
-
-    const MenuContent = (
-        <>
-            <div 
-                className={`fixed inset-0 bg-black/50 z-40 transition-opacity duration-300 ${isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'}`}
-                onClick={() => setIsOpen(false)}
-            />
-            <div
-                ref={menuRef}
-                className={`fixed top-0 left-0 h-full w-72 bg-background shadow-2xl z-50 transform transition-transform duration-300 ease-in-out border-r border-border ${isOpen ? 'translate-x-0' : '-translate-x-full'}`}
-            >
-                <div className="p-4 border-b border-border flex justify-between items-center">
-                    <h2 className="font-bold text-lg text-primary">Menu</h2>
-                    <button onClick={() => setIsOpen(false)} className="p-2 rounded-full hover:bg-muted transition-colors">
-                        <X className="w-6 h-6 text-foreground" />
-                    </button>
-                </div>
-                <nav className="p-4">
+    return (
+        <Sheet open={isOpen} onOpenChange={setIsOpen}>
+            <SheetTrigger asChild>
+                <Button variant="ghost" size="icon" aria-label="Open menu" className="-ml-2 rounded-full [&_svg]:size-6">
+                    <Menu className="text-muted-foreground" />
+                </Button>
+            </SheetTrigger>
+            <SheetContent side="left" className="w-72 p-0 sm:max-w-xs">
+                <SheetHeader className="border-b border-border p-4 text-left">
+                    <SheetTitle className="text-lg font-bold text-primary">Menu</SheetTitle>
+                </SheetHeader>
+                <nav className="p-4" aria-label="Account">
                     <ul className="space-y-2">
                         {isAdmin && (
-                            <li>
-                                <button onClick={() => handleNavigation('/admin')} className="w-full flex items-center p-3 text-left rounded-lg font-semibold hover:bg-muted transition-colors bg-primary/10 border border-primary/20">
-                                    <Shield className="w-5 h-5 mr-4 text-primary" />
-                                    <span className="text-primary">Admin Dashboard</span>
-                                </button>
-                            </li>
+                            <MenuItem icon={Shield} label="Admin Dashboard" onClick={() => handleNavigation('/admin')} highlighted />
                         )}
-                        <li>
-                            <button onClick={() => handleNavigation('/bookings')} className="w-full flex items-center p-3 text-left rounded-lg text-foreground font-semibold hover:bg-muted transition-colors">
-                                <Calendar className="w-5 h-5 mr-4 text-muted-foreground" />
-                                My Bookings
-                            </button>
-                        </li>
-                        <li>
-                             <button onClick={() => handleNavigation('/profile')} className="w-full flex items-center p-3 text-left rounded-lg text-foreground font-semibold hover:bg-muted transition-colors">
-                                <Settings className="w-5 h-5 mr-4 text-muted-foreground" />
-                                Settings
-                            </button>
-                        </li>
-                         <li>
-                             <button onClick={() => alert('Help & Support coming soon!')} className="w-full flex items-center p-3 text-left rounded-lg text-foreground font-semibold hover:bg-muted transition-colors">
-                                <HelpCircle className="w-5 h-5 mr-4 text-muted-foreground" />
-                                Help & Support
-                            </button>
-                        </li>
+                        <MenuItem icon={Calendar} label="My Bookings" onClick={() => handleNavigation('/bookings')} />
+                        <MenuItem icon={Settings} label="Settings" onClick={() => handleNavigation('/profile')} />
+                        <MenuItem icon={HelpCircle} label="Help & Support" onClick={() => alert('Help & Support coming soon!')} />
                     </ul>
                 </nav>
-            </div>
-        </>
-    );
-
-    return (
-        <>
-            <button 
-                onClick={() => setIsOpen(true)}
-                className="flex items-center justify-center w-10 h-10 -ml-2 rounded-full hover:bg-gray-100 transition-colors"
-                aria-label="Open menu"
-            >
-                <Menu className="h-6 w-6 text-gray-700" />
-            </button>
-            {ReactDOM.createPortal(MenuContent, document.body)}
-        </>
+            </SheetContent>
+        </Sheet>
     );
 };
 

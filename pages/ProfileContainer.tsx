@@ -9,6 +9,8 @@ import StudentProfilePage from './StudentProfilePage';
 import EditAboutMePage from './EditAboutMePage';
 import EditTrainerProfilePage from './EditTrainerProfilePage';
 import AddEditClassModal from '../components/AddEditClassModal';
+import { AppScreen } from '@/src/components/layout/screen';
+import { PageLoader } from '@/src/components/layout/states';
 
 const ProfileContainer: React.FC = () => {
   const { user, signOut } = useAuth();
@@ -407,12 +409,9 @@ const ProfileContainer: React.FC = () => {
 
   if (isLoading || !currentUser) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-muted-foreground">Loading profile...</p>
-        </div>
-      </div>
+      <AppScreen>
+        <PageLoader title="Loading profile…" className="min-h-svh" />
+      </AppScreen>
     );
   }
 

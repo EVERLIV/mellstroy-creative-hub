@@ -1,5 +1,8 @@
 import React from 'react';
-import { Calendar, MapPin, Clock, MessageCircle, X, QrCode, Star, CheckCircle } from 'lucide-react';
+import { Calendar, MapPin, Clock, MessageCircle, X, QrCode, CheckCircle } from 'lucide-react';
+import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription } from '../src/components/ui/card';
+import { Button } from '../src/components/ui/button';
+import { StatusBadge } from '../src/components/ui/status-badge';
 
 interface BookingCardProps {
   booking: any;
@@ -12,76 +15,66 @@ const BookingCard: React.FC<BookingCardProps> = ({ booking, onCancel, onShowQR, 
   const trainer = booking.trainer || {};
   const cls = booking.cls || {};
   const bookingData = booking.booking || {};
+  const isBooked = bookingData.status === 'booked';
 
   return (
-    <div className="bg-card rounded-lg shadow-sm border border-border overflow-hidden transition-all duration-300 hover:shadow-md hover:-translate-y-0.5">
-      <div className="p-3">
-        {/* Status Badge */}
+    <Card className="overflow-hidden rounded-2xl border-border/80 shadow-none">
+      <CardHeader className="flex flex-row items-start justify-between gap-3 space-y-0 p-4 pb-2">
+        <div className="min-w-0">
+          <CardTitle className="truncate text-base">{cls.name || 'Class'}</CardTitle>
+          <CardDescription className="mt-0.5">with {trainer.name || 'Trainer'}</CardDescription>
+        </div>
         {bookingData.status === 'attended' && (
-          <div className="mb-3 inline-flex items-center bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 text-xs font-bold px-2.5 py-1 rounded-full">
-            <CheckCircle className="w-3.5 h-3.5 mr-1" />
+          <StatusBadge status="attended" className="shrink-0 gap-1">
+            <CheckCircle className="size-3.5" />
             Verified
-          </div>
+          </StatusBadge>
         )}
+      </CardHeader>
 
-        {/* Class Name & Trainer */}
-        <div className="mb-3">
-          <h3 className="text-sm font-bold text-foreground">{cls.name || 'Class'}</h3>
-          <p className="text-xs text-muted-foreground mt-1">with {trainer.name || 'Trainer'}</p>
-        </div>
-
-        {/* Date & Time */}
-        <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 mb-3">
-          <div className="flex items-center">
-            <Calendar className="w-3.5 h-3.5 text-muted-foreground" />
-            <span className="ml-1 text-xs text-foreground">{bookingData.date}</span>
-          </div>
-          <div className="flex items-center">
-            <Clock className="w-3.5 h-3.5 text-muted-foreground" />
-            <span className="ml-1 text-xs text-foreground">{bookingData.time}</span>
-          </div>
-        </div>
-
-        {/* Location */}
+      <CardContent className="flex flex-wrap items-center gap-x-4 gap-y-2 px-4 pb-3 text-sm text-foreground">
+        <span className="inline-flex items-center gap-1.5">
+          <Calendar className="size-3.5 text-muted-foreground" />
+          {bookingData.date}
+        </span>
+        <span className="inline-flex items-center gap-1.5">
+          <Clock className="size-3.5 text-muted-foreground" />
+          {bookingData.time}
+        </span>
         {trainer.location && (
-          <div className="flex items-center mb-3 pb-3 border-b border-border">
-            <MapPin className="w-3.5 h-3.5 text-muted-foreground" />
-            <span className="ml-1 text-xs text-foreground">{trainer.location}</span>
-          </div>
+          <span className="inline-flex min-w-0 items-center gap-1.5">
+            <MapPin className="size-3.5 shrink-0 text-muted-foreground" />
+            <span className="truncate">{trainer.location}</span>
+          </span>
         )}
+      </CardContent>
 
-        {/* Action Buttons */}
-        <div className="flex gap-2">
-          <button 
-            onClick={() => onChat?.(booking)}
-            className="flex-1 bg-primary text-primary-foreground text-xs font-semibold py-2.5 px-3 rounded-lg hover:bg-primary/90 active:scale-95 transition-all duration-200 flex items-center justify-center gap-1.5"
-          >
-            <MessageCircle className="w-3.5 h-3.5" />
-            Chat
-          </button>
-          
-          {bookingData.status === 'booked' && (
-            <>
-              <button 
-                onClick={() => onCancel(bookingData.id)}
-                className="flex-1 bg-secondary text-secondary-foreground text-xs font-semibold py-2.5 px-3 rounded-lg hover:bg-secondary/80 active:scale-95 transition-all duration-200 flex items-center justify-center gap-1.5"
+      <CardFooter className="flex gap-2 border-t border-border/70 p-4">
+        <Button size="sm" className="flex-1" onClick={() => onChat?.(booking)}>
+          <MessageCircle />
+          Chat
+        </Button>
+
+        {isBooked && (
+          <>
+            <Button size="sm" variant="secondary" className="flex-1" onClick={() => onCancel(bookingData.id)}>
+              <X />
+              Cancel
+            </Button>
+            {bookingData.verificationCode && (
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => onShowQR?.(booking)}
+                aria-label="Show attendance QR code"
               >
-                <X className="w-3.5 h-3.5" />
-                Cancel
-              </button>
-              {bookingData.verificationCode && (
-                <button 
-                  onClick={() => onShowQR?.(booking)}
-                  className="bg-accent/10 text-accent-foreground text-xs font-semibold py-2.5 px-3 rounded-lg hover:bg-accent/20 active:scale-95 transition-all duration-200 flex items-center justify-center"
-                >
-                  <QrCode className="w-4 h-4" />
-                </button>
-              )}
-            </>
-          )}
-        </div>
-      </div>
-    </div>
+                <QrCode />
+              </Button>
+            )}
+          </>
+        )}
+      </CardFooter>
+    </Card>
   );
 };
 

@@ -1,27 +1,26 @@
 import React from 'react';
+import { Skeleton } from '../src/components/ui/skeleton';
+import { cn } from '../src/lib/utils';
 
 interface MessageBubbleSkeletonProps {
   isOwn?: boolean;
 }
 
+/** Placeholder matching chat bubbles in ChatConversationPage. */
 const MessageBubbleSkeleton: React.FC<MessageBubbleSkeletonProps> = React.memo(({ isOwn = false }) => {
   return (
-    <div className={`flex ${isOwn ? 'justify-end' : 'justify-start'} mb-3 animate-pulse`}>
-      <div className={`flex gap-2 max-w-[75%] ${isOwn ? 'flex-row-reverse' : 'flex-row'}`}>
-        {/* Avatar skeleton (only for other person's messages) */}
-        {!isOwn && (
-          <div className="w-8 h-8 rounded-full bg-gray-200 flex-shrink-0"></div>
-        )}
-        
-        {/* Message bubble skeleton */}
-        <div className={`rounded-lg p-3 ${
-          isOwn 
-            ? 'bg-[#FF6B35] rounded-tr-none' 
-            : 'bg-white border border-gray-200 rounded-tl-none'
-        }`}>
+    <div className={cn('mb-3 flex', isOwn ? 'justify-end' : 'justify-start')} aria-hidden="true">
+      <div className={cn('flex max-w-[75%] gap-2', isOwn ? 'flex-row-reverse' : 'flex-row')}>
+        {!isOwn && <Skeleton className="h-8 w-8 shrink-0 rounded-full" />}
+        <div
+          className={cn(
+            'animate-pulse rounded-2xl p-3',
+            isOwn ? 'rounded-br-md bg-primary/80' : 'rounded-bl-md border border-border bg-card'
+          )}
+        >
           <div className="space-y-2">
-            <div className={`h-3 rounded w-32 ${isOwn ? 'bg-white/30' : 'bg-gray-200'}`}></div>
-            <div className={`h-3 rounded w-24 ${isOwn ? 'bg-white/30' : 'bg-gray-200'}`}></div>
+            <div className={cn('h-3 w-32 rounded', isOwn ? 'bg-primary-foreground/30' : 'bg-muted')} />
+            <div className={cn('h-3 w-24 rounded', isOwn ? 'bg-primary-foreground/30' : 'bg-muted')} />
           </div>
         </div>
       </div>
@@ -32,4 +31,3 @@ const MessageBubbleSkeleton: React.FC<MessageBubbleSkeletonProps> = React.memo((
 MessageBubbleSkeleton.displayName = 'MessageBubbleSkeleton';
 
 export default MessageBubbleSkeleton;
-

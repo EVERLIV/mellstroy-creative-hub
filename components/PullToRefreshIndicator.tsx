@@ -1,5 +1,6 @@
 import React from 'react';
 import { RefreshCw } from 'lucide-react';
+import { cn } from '@/src/lib/utils';
 
 interface PullToRefreshIndicatorProps {
   pullDistance: number;
@@ -22,9 +23,13 @@ const PullToRefreshIndicator: React.FC<PullToRefreshIndicatorProps> = ({
         opacity: pullProgress 
       }}
     >
-      <div className="flex items-center gap-2 text-muted-foreground">
-        <RefreshCw 
-          className={`w-5 h-5 ${isRefreshing ? 'animate-spin' : ''}`}
+      <div
+        role="status"
+        aria-live="polite"
+        className="flex items-center gap-2 rounded-full border border-border bg-card px-3 py-1.5 text-muted-foreground shadow-sm"
+      >
+        <RefreshCw
+          className={cn('h-4 w-4 text-primary', isRefreshing && 'animate-spin')}
           style={{ 
             transform: !isRefreshing ? `rotate(${pullProgress * 360}deg)` : undefined 
           }}

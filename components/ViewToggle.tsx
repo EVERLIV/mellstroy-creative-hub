@@ -1,35 +1,45 @@
 import React from 'react';
 import { LayoutGrid, List } from 'lucide-react';
+import { cn } from '@/src/lib/utils';
 
 interface ViewToggleProps {
   viewMode: 'grid' | 'list';
   setViewMode: (mode: 'grid' | 'list') => void;
 }
 
-const ViewToggle: React.FC<ViewToggleProps> = React.memo(({ viewMode, setViewMode }) => {
-  return (
-    <div className="flex items-center gap-1 bg-gray-100 p-1 rounded-lg border border-gray-200">
-      <button
-        onClick={() => setViewMode('grid')}
-        className={`p-1.5 rounded-md transition-all duration-200 ${
-          viewMode === 'grid' ? 'bg-white shadow-sm text-blue-600' : 'text-gray-500 hover:text-gray-700'
-        }`}
-        aria-label="Grid view"
-      >
-        <LayoutGrid className="w-4 h-4" />
-      </button>
-      <button
-        onClick={() => setViewMode('list')}
-        className={`p-1.5 rounded-md transition-all duration-200 ${
-          viewMode === 'list' ? 'bg-white shadow-sm text-blue-600' : 'text-gray-500 hover:text-gray-700'
-        }`}
-        aria-label="List view"
-      >
-        <List className="w-4 h-4" />
-      </button>
-    </div>
-  );
-});
+const OPTIONS = [
+  { mode: 'grid', label: 'Grid view', icon: LayoutGrid },
+  { mode: 'list', label: 'List view', icon: List },
+] as const;
+
+const ViewToggle: React.FC<ViewToggleProps> = React.memo(({ viewMode, setViewMode }) => (
+  <div
+    role="group"
+    aria-label="View mode"
+    className="inline-flex rounded-lg border border-border bg-card p-0.5 shadow-sm"
+  >
+    {OPTIONS.map(({ mode, label, icon: Icon }) => {
+      const isActive = viewMode === mode;
+      return (
+        <button
+          key={mode}
+          type="button"
+          onClick={() => setViewMode(mode)}
+          aria-label={label}
+          aria-pressed={isActive}
+          className={cn(
+            'grid size-8 place-items-center rounded-md transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+            isActive
+              ? 'bg-[#e9edff] text-primary'
+              : 'text-muted-foreground hover:text-foreground'
+          )}
+        >
+          <Icon className="size-4" />
+        </button>
+      );
+    })}
+  </div>
+));
 
 ViewToggle.displayName = 'ViewToggle';
 

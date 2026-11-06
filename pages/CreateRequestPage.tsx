@@ -1,29 +1,207 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Loader, Clock, MapPin } from 'lucide-react';
+import { Home, Dumbbell, Trees, type LucideIcon } from 'lucide-react';
 import { supabase } from '../src/integrations/supabase/client';
 import { useAuth } from '../src/hooks/useAuth';
 import { CATEGORIES } from '../constants';
 import { HCMC_DISTRICTS } from '../constants';
 import { RequestLevel } from '../types';
 import { useToast } from '../src/hooks/use-toast';
+import { AppScreen, ScreenHeader, ScreenBody, ScreenSection, ScreenStickyBar } from '../src/components/layout/screen';
+import { Field, FieldDescription, FieldGroup, FieldLabel } from '../src/components/ui/field';
+import { Input } from '../src/components/ui/input';
+import { Textarea } from '../src/components/ui/textarea';
+import { NativeSelect } from '../src/components/ui/native-select';
+import { Button } from '../src/components/ui/button';
+import ParticleButton from '../src/components/kokonutui/particle-button';
+import { formatVND } from '../src/lib/format';
+import { cn } from '../src/lib/utils';
 
 const LEVELS: RequestLevel[] = ['Beginner', 'Intermediate', 'Advanced', 'Beginner to Intermediate'];
 
-const formatVND = (amount: number) => {
-  return new Intl.NumberFormat('vi-VN', {
-    style: 'currency',
-    currency: 'VND',
-    minimumFractionDigits: 0
-  }).format(amount).replace(/\s/g, '');
-};
+export type RequestLocationType = 'home' | 'gym' | 'outdoor';
+
+export interface RequestFormValues {
+  category: string;
+  district: string;
+  description: string;
+  desired_price: string;
+  level: RequestLevel;
+  preferred_time: string;
+  location_type: RequestLocationType | '';
+}
+
+const LOCATION_OPTIONS: ReadonlyArray<{ value: RequestLocationType; label: string; icon: LucideIcon }> = [
+  { value: 'home', label: 'At Home', icon: Home },
+  { value: 'gym', label: 'At Gym', icon: Dumbbell },
+  { value: 'outdoor', label: 'Outdoor', icon: Trees },
+];
+
+const Required = () => (
+  <span className="text-destructive" aria-hidden="true">
+    *
+  </span>
+);
+
+interface RequestFormFieldsProps {
+  values: RequestFormValues;
+  onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => void;
+  onLocationTypeChange: (value: RequestLocationType) => void;
+}
+
+/** Shared fields of the training-request form (create + edit). */
+export function RequestFormFields({ values, onChange, onLocationTypeChange }: RequestFormFieldsProps) {
+  const price = parseFloat(values.desired_price);
+  const priceHint = values.desired_price && !isNaN(price) ? `${formatVND(price)} per hour` : 'Per hour, in VND';
+
+  return (
+    <>
+      <ScreenSection title="What you need" variant="panel">
+        <FieldGroup className="md:grid md:grid-cols-2 md:gap-6">
+          <Field>
+            <FieldLabel htmlFor="category">
+              Category <Required />
+            </FieldLabel>
+            <NativeSelect id="category" name="category" value={values.category} onChange={onChange} required aria-required>
+              <option value="">Select a category</option>
+              {CATEGORIES.map((cat) => (
+                <option key={cat.id} value={cat.id}>
+                  {cat.name}
+                </option>
+              ))}
+            </NativeSelect>
+          </Field>
+
+          <Field>
+            <FieldLabel htmlFor="level">
+              Your level <Required />
+            </FieldLabel>
+            <NativeSelect id="level" name="level" value={values.level} onChange={onChange} required aria-required>
+              {LEVELS.map((level) => (
+                <option key={level} value={level}>
+                  {level}
+                </option>
+              ))}
+            </NativeSelect>
+          </Field>
+
+          <Field className="md:col-span-2">
+            <FieldLabel id="location_type-label">
+              Preferred location <Required />
+            </FieldLabel>
+            <div role="radiogroup" aria-labelledby="location_type-label" className="grid grid-cols-3 gap-2 md:gap-3">
+              {LOCATION_OPTIONS.map(({ value, label, icon: Icon }) => {
+                const isSelected = values.location_type === value;
+                return (
+                  <button
+                    key={value}
+                    type="button"
+                    role="radio"
+                    aria-checked={isSelected}
+                    onClick={() => onLocationTypeChange(value)}
+                    className={cn(
+                      'flex flex-col items-center gap-1.5 rounded-xl border-2 px-3 py-3 text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+                      isSelected
+                        ? 'border-primary bg-primary/10 text-primary'
+                        : 'border-border bg-card text-muted-foreground hover:border-primary/50 hover:bg-primary/5'
+                    )}
+                  >
+                    <Icon className="size-5" aria-hidden="true" />
+                    {label}
+                  </button>
+                );
+              })}
+            </div>
+          </Field>
+        </FieldGroup>
+      </ScreenSection>
+
+      <ScreenSection title="When and where" variant="panel">
+        <FieldGroup className="md:grid md:grid-cols-2 md:gap-6">
+          <Field>
+            <FieldLabel htmlFor="district">
+              District <Required />
+            </FieldLabel>
+            <NativeSelect id="district" name="district" value={values.district} onChange={onChange} required aria-required>
+              <option value="">Select a district</option>
+              {HCMC_DISTRICTS.map((district) => (
+                <option key={district} value={district}>
+                  {district}
+                </option>
+              ))}
+            </NativeSelect>
+          </Field>
+
+          <Field>
+            <FieldLabel htmlFor="preferred_time">
+              Preferred time <Required />
+            </FieldLabel>
+            <Input
+              id="preferred_time"
+              type="text"
+              name="preferred_time"
+              value={values.preferred_time}
+              onChange={onChange}
+              required
+              aria-describedby="preferred_time-hint"
+              placeholder="e.g., Morning 7-9 AM, Evening 6-8 PM, Flexible"
+            />
+            <FieldDescription id="preferred_time-hint">Any format, e.g. weekday evenings</FieldDescription>
+          </Field>
+        </FieldGroup>
+      </ScreenSection>
+
+      <ScreenSection title="Budget and details" variant="panel">
+        <FieldGroup className="md:grid md:grid-cols-2 md:gap-6">
+          <Field>
+            <FieldLabel htmlFor="desired_price">
+              Desired price <Required />
+            </FieldLabel>
+            <Input
+              id="desired_price"
+              type="number"
+              inputMode="numeric"
+              name="desired_price"
+              value={values.desired_price}
+              onChange={onChange}
+              required
+              min="0"
+              step="1000"
+              aria-describedby="desired_price-hint"
+              placeholder="e.g., 200000"
+            />
+            <FieldDescription id="desired_price-hint">{priceHint}</FieldDescription>
+          </Field>
+
+          <Field className="md:col-span-2">
+            <FieldLabel htmlFor="description">
+              Description <Required />
+            </FieldLabel>
+            <Textarea
+              id="description"
+              name="description"
+              value={values.description}
+              onChange={onChange}
+              required
+              rows={6}
+              aria-describedby="description-hint"
+              placeholder="Describe what kind of training you're looking for, your goals, preferred schedule, etc."
+              className="resize-none"
+            />
+            <FieldDescription id="description-hint">{`${values.description.length} characters`}</FieldDescription>
+          </Field>
+        </FieldGroup>
+      </ScreenSection>
+    </>
+  );
+}
 
 const CreateRequestPage: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
-  
+
   const [formData, setFormData] = useState({
     category: '',
     district: '',
@@ -44,7 +222,7 @@ const CreateRequestPage: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!user) {
       toast({
         title: 'Error',
@@ -114,206 +292,40 @@ const CreateRequestPage: React.FC = () => {
   };
 
   return (
-    <div className="bg-gray-50 h-screen flex flex-col overflow-hidden">
-      {/* Header */}
-      <div className="bg-white border-b border-gray-100 shadow-sm z-20 flex-shrink-0">
-        <div className="flex items-center justify-between px-4 py-3">
-          <button 
-            onClick={() => navigate(-1)} 
-            className="p-2 -ml-2 rounded-lg hover:bg-gray-100 transition-colors"
-          >
-            <ArrowLeft className="w-5 h-5 text-gray-800" />
-          </button>
-          <h1 className="text-base font-bold text-gray-900">Create Training Request</h1>
-          <div className="w-9"></div>
-        </div>
-      </div>
+    <AppScreen>
+      <ScreenHeader
+        title="Create Training Request"
+        description="Tell trainers what you're looking for and they'll send you offers."
+        onBack={() => navigate(-1)}
+        width="form"
+        breadcrumbs={[{ label: 'Requests', href: '/requests' }, { label: 'Create' }]}
+      />
+      <ScreenBody width="form">
+        <form onSubmit={handleSubmit} className="flex flex-col gap-6 md:gap-8">
+          <RequestFormFields
+            values={formData}
+            onChange={handleChange}
+            onLocationTypeChange={(value) => setFormData(prev => ({ ...prev, location_type: value }))}
+          />
 
-      {/* Form */}
-      <div className="flex-1 overflow-y-auto">
-        <div className="px-4 py-3 pb-safe-nav">
-          <form onSubmit={handleSubmit} className="space-y-4">
-            {/* Category */}
-            <div>
-              <label htmlFor="category" className="block text-sm font-bold text-gray-900 mb-2">
-                Category *
-              </label>
-              <select
-                id="category"
-                name="category"
-                value={formData.category}
-                onChange={handleChange}
-                required
-                className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#FF6B35] focus:border-[#FF6B35]"
-              >
-                <option value="">Select a category</option>
-                {CATEGORIES.map((cat) => (
-                  <option key={cat.id} value={cat.id}>
-                    {cat.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {/* District */}
-            <div>
-              <label htmlFor="district" className="block text-sm font-bold text-gray-900 mb-2">
-                District *
-              </label>
-              <select
-                id="district"
-                name="district"
-                value={formData.district}
-                onChange={handleChange}
-                required
-                className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#FF6B35] focus:border-[#FF6B35]"
-              >
-                <option value="">Select a district</option>
-                {HCMC_DISTRICTS.map((district) => (
-                  <option key={district} value={district}>
-                    {district}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {/* Level */}
-            <div>
-              <label htmlFor="level" className="block text-sm font-bold text-gray-900 mb-2">
-                Your Level *
-              </label>
-              <select
-                id="level"
-                name="level"
-                value={formData.level}
-                onChange={handleChange}
-                required
-                className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#FF6B35] focus:border-[#FF6B35]"
-              >
-                {LEVELS.map((level) => (
-                  <option key={level} value={level}>
-                    {level}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {/* Preferred Time */}
-            <div>
-              <label htmlFor="preferred_time" className="block text-sm font-bold text-gray-900 mb-2">
-                <Clock className="w-4 h-4 inline mr-1 text-[#FF6B35]" />
-                Preferred Time *
-              </label>
-              <input
-                type="text"
-                id="preferred_time"
-                name="preferred_time"
-                value={formData.preferred_time}
-                onChange={handleChange}
-                required
-                placeholder="e.g., Morning 7-9 AM, Evening 6-8 PM, Flexible"
-                className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#FF6B35] focus:border-[#FF6B35]"
-              />
-            </div>
-
-            {/* Location Type */}
-            <div>
-              <label htmlFor="location_type" className="block text-sm font-bold text-gray-900 mb-2">
-                <MapPin className="w-4 h-4 inline mr-1 text-[#FF6B35]" />
-                Preferred Location *
-              </label>
-              <div className="grid grid-cols-3 gap-2">
-                {[
-                  { value: 'home', label: 'At Home', icon: '🏠' },
-                  { value: 'gym', label: 'At Gym', icon: '🏋️' },
-                  { value: 'outdoor', label: 'Outdoor', icon: '🌳' }
-                ].map((option) => (
-                  <button
-                    key={option.value}
-                    type="button"
-                    onClick={() => setFormData(prev => ({ ...prev, location_type: option.value as 'home' | 'gym' | 'outdoor' }))}
-                    className={`px-3 py-3 rounded-lg border-2 transition-all duration-200 text-sm font-semibold ${
-                      formData.location_type === option.value
-                        ? 'bg-[#FF6B35] text-white border-[#FF6B35] shadow-md'
-                        : 'bg-white text-gray-700 border-gray-200 hover:border-[#FF6B35]/50 hover:bg-orange-50'
-                    }`}
-                  >
-                    <div className="text-lg mb-1">{option.icon}</div>
-                    <div>{option.label}</div>
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Desired Price */}
-            <div>
-              <label htmlFor="desired_price" className="block text-sm font-bold text-gray-900 mb-2">
-                Desired Price (VND per hour) *
-              </label>
-              <div className="relative">
-                <input
-                  type="number"
-                  id="desired_price"
-                  name="desired_price"
-                  value={formData.desired_price}
-                  onChange={handleChange}
-                  required
-                  min="0"
-                  step="1000"
-                  placeholder="e.g., 200000"
-                  className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#FF6B35] focus:border-[#FF6B35]"
-                />
-                {formData.desired_price && !isNaN(parseFloat(formData.desired_price)) && (
-                  <div className="mt-1 text-xs text-gray-600">
-                    {formatVND(parseFloat(formData.desired_price))} per hour
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Description */}
-            <div>
-              <label htmlFor="description" className="block text-sm font-bold text-gray-900 mb-2">
-                Description *
-              </label>
-              <textarea
-                id="description"
-                name="description"
-                value={formData.description}
-                onChange={handleChange}
-                required
-                rows={6}
-                placeholder="Describe what kind of training you're looking for, your goals, preferred schedule, etc."
-                  className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-[#FF6B35] focus:border-[#FF6B35] resize-none"
-              />
-              <div className="mt-1 text-xs text-gray-500">
-                {formData.description.length} characters
-              </div>
-            </div>
-
-            {/* Submit Button */}
-            <div className="pt-4">
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full bg-[#FF6B35] text-white font-bold py-3.5 px-4 rounded-xl hover:bg-orange-600 active:scale-95 shadow-lg hover:shadow-xl transition-all duration-200 text-sm disabled:bg-gray-300 disabled:text-gray-500 disabled:cursor-not-allowed disabled:shadow-none"
-              >
-                {loading ? (
-                  <span className="flex items-center justify-center gap-2">
-                    <Loader className="w-4 h-4 animate-spin" />
-                    Creating...
-                  </span>
-                ) : (
-                  'Create Request'
-                )}
-              </button>
-            </div>
-          </form>
-        </div>
-      </div>
-    </div>
+          <ScreenStickyBar width="form">
+            <Button type="button" variant="outline" size="lg" onClick={() => navigate(-1)} disabled={loading}>
+              Cancel
+            </Button>
+            <ParticleButton
+              type="submit"
+              size="lg"
+              disabled={loading}
+              status={loading ? 'pending' : 'idle'}
+              pendingLabel="Creating..."
+            >
+              Create Request
+            </ParticleButton>
+          </ScreenStickyBar>
+        </form>
+      </ScreenBody>
+    </AppScreen>
   );
 };
 
 export default CreateRequestPage;
-

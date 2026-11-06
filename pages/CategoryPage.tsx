@@ -47,21 +47,21 @@ const CategoryPage: React.FC<CategoryPageProps> = ({
   };
 
   return (
-    <div className="bg-slate-50 h-full relative">
+    <div className="bg-muted/50 h-full relative">
       <div className="flex flex-col h-full">
         {/* Header */}
-        <div className="sticky top-0 bg-white z-10 shadow-sm p-4 flex items-center flex-shrink-0">
-            <button onClick={onBack} className="p-2 rounded-full hover:bg-slate-100 mr-2">
-                <ArrowLeft className="w-6 h-6 text-slate-700" />
+        <div className="sticky top-0 bg-card z-10 shadow-sm p-4 flex items-center flex-shrink-0">
+            <button onClick={onBack} className="p-2 rounded-full hover:bg-muted mr-2">
+                <ArrowLeft className="w-6 h-6 text-muted-foreground" />
             </button>
-            <h1 className="text-xl font-bold text-slate-800">{category.name} Trainers</h1>
+            <h1 className="text-xl font-bold text-foreground">{category.name} Trainers</h1>
         </div>
         
         {/* Content */}
         <div className="flex-1 overflow-y-auto">
           <div className="p-4 pb-safe-nav">
               <div className="flex justify-between items-center mb-4">
-                  <h2 className="text-base font-semibold text-gray-700">{trainers.length} trainers found</h2>
+                  <h2 className="text-base font-semibold text-muted-foreground">{trainers.length} trainers found</h2>
                   <ViewToggle viewMode={viewMode} setViewMode={setViewMode} />
               </div>
               <TrainerGrid
@@ -78,7 +78,7 @@ const CategoryPage: React.FC<CategoryPageProps> = ({
 
       {/* Trainer Detail Overlay */}
       {selectedTrainer && (
-        <div className={`absolute inset-0 z-20 bg-white ${isExitingDetail ? 'animate-slide-out-to-right' : 'animate-slide-in-from-right'}`}>
+        <div className={`absolute inset-0 z-20 bg-card ${isExitingDetail ? 'animate-slide-out-to-right' : 'animate-slide-in-from-right'}`}>
           <TrainerDetailPage 
               trainer={selectedTrainer} 
               onBack={handleBackFromDetail}

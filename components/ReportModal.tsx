@@ -1,5 +1,9 @@
 import React, { useState } from 'react';
-import { X } from 'lucide-react';
+import { cn } from '../src/lib/utils';
+import { Button } from '../src/components/ui/button';
+import { Textarea } from '../src/components/ui/textarea';
+import { FormField } from '../src/components/form/form-field';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '../src/components/ui/dialog';
 
 const REPORT_REASONS = [
     "Scam or Fraud",
@@ -9,6 +13,8 @@ const REPORT_REASONS = [
     "Sharing personal contact info",
     "Other",
 ];
+
+const RESET_DELAY_MS = 300;
 
 interface ReportModalProps {
     isOpen: boolean;
@@ -26,7 +32,7 @@ const ReportModal: React.FC<ReportModalProps> = ({ isOpen, onClose, onSubmit, tr
         onSubmit(selectedReason, otherDetails);
         setIsSubmitted(true);
     };
-    
+
     const handleClose = () => {
         onClose();
         // Reset state after a delay to allow for exit animation
@@ -34,62 +40,77 @@ const ReportModal: React.FC<ReportModalProps> = ({ isOpen, onClose, onSubmit, tr
             setIsSubmitted(false);
             setSelectedReason(REPORT_REASONS[0]);
             setOtherDetails('');
-        }, 300);
-    }
-
-    if (!isOpen) return null;
+        }, RESET_DELAY_MS);
+    };
 
     return (
-        <div className="fixed inset-0 bg-gray-600 flex items-center justify-center z-50 p-4 pb-20 animate-fade-in" onClick={handleClose}>
-            <div className="bg-gray-100 rounded-lg w-full max-w-sm overflow-hidden transform animate-slide-up shadow-2xl border border-gray-300" onClick={e => e.stopPropagation()}>
-                <div className="p-4 bg-white border-b border-gray-200 relative">
-                    <h2 className="text-base font-semibold text-gray-900 text-center">{isSubmitted ? 'Report Submitted' : `Report ${trainerName}`}</h2>
-                    <button onClick={handleClose} className="absolute top-3 right-3 p-1.5 rounded-md hover:bg-gray-200 transition-colors">
-                        <X className="w-4 h-4 text-gray-600" />
-                    </button>
-                </div>
-                
+        <Dialog open={isOpen} onOpenChange={(open) => { if (!open) handleClose(); }}>
+            <DialogContent className="sm:max-w-sm">
+                <DialogHeader>
+                    <DialogTitle>{isSubmitted ? 'Report Submitted' : `Report ${trainerName}`}</DialogTitle>
+                    {isSubmitted ? (
+                        <DialogDescription>
+                            Thank you for helping keep our community safe. Our team will review your report shortly.
+                        </DialogDescription>
+                    ) : (
+                        <DialogDescription>Please select a reason:</DialogDescription>
+                    )}
+                </DialogHeader>
+
                 {isSubmitted ? (
-                    <div className="p-5 bg-white text-center">
-                        <p className="text-gray-600 text-sm">Thank you for helping keep our community safe. Our team will review your report shortly.</p>
-                        <button onClick={handleClose} className="mt-4 w-full bg-[#FF6B35] text-white font-medium py-2.5 rounded-md transition-colors hover:bg-orange-600 text-sm shadow-sm">
-                            Close
-                        </button>
-                    </div>
+                    <Button onClick={handleClose} className="w-full">
+                        Close
+                    </Button>
                 ) : (
                     <>
-                        <div className="p-4 bg-white max-h-[60vh] overflow-y-auto">
-                            <p className="text-sm font-semibold text-gray-700 mb-3">Please select a reason:</p>
-                            <div className="space-y-2">
-                                {REPORT_REASONS.map(reason => (
-                                    <label key={reason} className="flex items-center p-2.5 rounded-md border border-gray-200 has-[:checked]:bg-orange-50 has-[:checked]:border-orange-400 transition-colors">
-                                        <input type="radio" name="report-reason" value={reason} checked={selectedReason === reason} onChange={() => setSelectedReason(reason)} className="h-4 w-4 text-orange-600 focus:ring-orange-500 border-gray-300" />
-                                        <span className="ml-3 text-sm font-medium text-gray-700">{reason}</span>
-                                    </label>
-                                ))}
-                            </div>
+                        <div className="max-h-[60vh] space-y-2 overflow-y-auto" role="radiogroup" aria-label="Report reason">
+                            {REPORT_REASONS.map(reason => (
+                                <label
+                                    key={reason}
+                                    className={cn(
+                                        'flex cursor-pointer items-center gap-3 rounded-lg border border-border p-3 transition-colors hover:bg-muted/50',
+                                        'has-[:checked]:border-primary has-[:checked]:bg-primary/10',
+                                        'has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-ring'
+                                    )}
+                                >
+                                    <input
+                                        type="radio"
+                                        name="report-reason"
+                                        value={reason}
+                                        checked={selectedReason === reason}
+                                        onChange={() => setSelectedReason(reason)}
+                                        className="h-4 w-4 accent-primary"
+                                    />
+                                    <span className="text-sm font-medium text-foreground">{reason}</span>
+                                </label>
+                            ))}
                             {selectedReason === "Other" && (
-                                <textarea
-                                    value={otherDetails}
-                                    onChange={(e) => setOtherDetails(e.target.value)}
-                                    placeholder="Please provide more details..."
-                                    className="mt-3 w-full p-2 text-sm border border-gray-300 rounded-md focus:ring-orange-500 focus:border-orange-500"
-                                    rows={3}
-                                />
+                                <FormField label="Details" htmlFor="report-details" required className="pt-2">
+                                    <Textarea
+                                        value={otherDetails}
+                                        onChange={(e) => setOtherDetails(e.target.value)}
+                                        placeholder="Please provide more details..."
+                                        rows={3}
+                                    />
+                                </FormField>
                             )}
                         </div>
-                        <div className="p-4 bg-gray-50 border-t border-gray-200 grid grid-cols-2 gap-2">
-                             <button onClick={handleClose} className="w-full bg-white border border-gray-300 text-gray-700 font-medium py-2 rounded-md transition-colors hover:bg-gray-100 text-sm">
+                        <DialogFooter className="grid grid-cols-2 gap-2 sm:space-x-0">
+                            <Button variant="outline" onClick={handleClose}>
                                 Cancel
-                            </button>
-                            <button onClick={handleSubmit} disabled={selectedReason === 'Other' && !otherDetails.trim()} className="w-full bg-red-500 text-white font-medium py-2 rounded-md transition-colors hover:bg-red-600 disabled:bg-gray-300 disabled:cursor-not-allowed text-sm shadow-sm">
+                            </Button>
+                            <Button
+                                variant="destructive"
+                                onClick={handleSubmit}
+                                disabled={selectedReason === 'Other' && !otherDetails.trim()}
+                            >
                                 Submit Report
-                            </button>
-                        </div>
+                            </Button>
+                        </DialogFooter>
                     </>
                 )}
-            </div>
-        </div>
+            </DialogContent>
+        </Dialog>
     );
 };
 

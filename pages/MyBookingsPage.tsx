@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { Trainer, Class, Booking, UserRole } from '../types';
-import { X, Calendar, MapPin, QrCode, CheckCircle, Clock, MessageCircle, Star, FileText, Edit, Eye, Plus, Loader } from 'lucide-react';
+import { X, Calendar, MapPin, QrCode, CheckCircle, Clock, MessageCircle, Star, FileText, Edit, Eye, Plus } from 'lucide-react';
 import { supabase } from '../src/integrations/supabase/client';
 import { useAuth } from '../src/hooks/useAuth';
+import { useEffectiveRole } from '../src/hooks/useViewMode';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useToast } from '../src/hooks/use-toast';
 import BookingVerificationDisplay from '../components/BookingVerificationDisplay';
@@ -13,6 +14,21 @@ import PullToRefreshIndicator from '../components/PullToRefreshIndicator';
 import EmptyBookingsState from '../components/EmptyBookingsState';
 import RequestCard from '../components/RequestCard';
 import { TrainingRequest } from '../types';
+import { AppScreen } from '@/src/components/layout/screen';
+import { DetailContextStrip } from '@/src/components/layout/detail-context-strip';
+import { StitchCanvas, StitchPageHeader } from '@/src/components/layout/stitch-page';
+import { cn } from '@/src/lib/utils';
+import { PageLoader, EmptyState } from '../src/components/layout/states';
+import { Button } from '../src/components/ui/button';
+import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription } from '../src/components/ui/card';
+import { Skeleton } from '../src/components/ui/skeleton';
+import { StatusBadge } from '../src/components/ui/status-badge';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '../src/components/ui/dialog';
+import SmoothTab from '../src/components/kokonutui/smooth-tab';
+import HoldButton from '../src/components/kokonutui/hold-button';
+import { formatVND } from '../src/lib/format';
+
+const BOOKING_SKELETONS = 4;
 
 // Extended interfaces for this page
 interface BookingData {
@@ -62,39 +78,34 @@ const CancelBookingModal: React.FC<CancelBookingModalProps> = ({ bookingInfo, on
     };
 
     return (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 pb-20" onClick={onClose}>
-            <div className="bg-white rounded-lg w-full max-w-sm overflow-hidden shadow-lg" onClick={e => e.stopPropagation()}>
-                <div className="px-4 py-3 border-b border-gray-200 flex items-center justify-between">
-                    <div className="flex-1">
-                        <h2 className="text-base font-bold text-gray-900 text-center">Cancel Booking</h2>
-                        <p className="text-xs text-gray-600 text-center mt-1">{cls.name}</p>
-                        <p className="text-xs text-gray-600 text-center">{booking.date} at {booking.time}</p>
-                    </div>
-                    <button onClick={onClose} className="p-2 -mr-2 rounded-lg hover:bg-gray-100 transition-colors">
-                        <X className="w-5 h-5 text-gray-800" />
-                    </button>
-                </div>
-                <div className="p-4">
-                    <p className="text-sm text-gray-900 text-center">
-                        Are you sure you want to cancel this booking? This action cannot be undone.
-                    </p>
-                </div>
-                <div className="px-4 py-3 bg-gray-50 border-t border-gray-200 flex gap-2">
-                    <button 
-                        onClick={onClose} 
-                        className="flex-1 bg-white border border-gray-200 text-gray-900 text-xs font-semibold py-2.5 rounded-lg hover:bg-gray-50 active:scale-95 transition-all duration-200"
+        <Dialog open onOpenChange={(open) => { if (!open) onClose(); }}>
+            <DialogContent className="max-w-sm">
+                <DialogHeader className="text-center sm:text-center">
+                    <DialogTitle>Cancel Booking</DialogTitle>
+                    <DialogDescription>
+                        {cls.name} · {booking.date} at {booking.time}
+                    </DialogDescription>
+                </DialogHeader>
+                <p className="text-center text-sm text-foreground">
+                    Are you sure you want to cancel this booking? This action cannot be undone.
+                </p>
+                <DialogFooter className="flex-col gap-2 sm:flex-col sm:space-x-0">
+                    {/* Irreversible: press and hold to confirm (Kokonut UI hold-button) */}
+                    <HoldButton
+                        variant="red"
+                        className="w-full"
+                        holdingLabel="Keep holding…"
+                        completeLabel="Cancelled"
+                        onHoldComplete={handleConfirm}
                     >
+                        Hold to cancel booking
+                    </HoldButton>
+                    <Button variant="outline" className="w-full" onClick={onClose}>
                         Keep Booking
-                    </button>
-                    <button 
-                        onClick={handleConfirm} 
-                        className="flex-1 bg-red-600 text-white text-xs font-semibold py-2.5 rounded-lg hover:bg-red-700 active:scale-95 transition-all duration-200"
-                    >
-                        Cancel Booking
-                    </button>
-                </div>
-            </div>
-        </div>
+                    </Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
     );
 };
 
@@ -108,14 +119,16 @@ interface BookedClassCardProps {
     onVerifyAttendance?: () => void;
 }
 
-const BookedClassCard: React.FC<BookedClassCardProps> = ({ 
-    bookingInfo, 
-    onOpenChat, 
-    onStartCancellation, 
-    onOpenReviewModal, 
+const DEFAULT_AVATAR = 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=200';
+
+const BookedClassCard: React.FC<BookedClassCardProps> = ({
+    bookingInfo,
+    onOpenChat,
+    onStartCancellation,
+    onOpenReviewModal,
     userRole,
     onShowVerificationCode,
-    onVerifyAttendance 
+    onVerifyAttendance
 }) => {
     const { trainer, cls, booking, student } = bookingInfo;
     const isStudentView = userRole === 'student';
@@ -125,204 +138,179 @@ const BookedClassCard: React.FC<BookedClassCardProps> = ({
 
     const handleChatClick = () => {
         if (isStudentView && trainer) {
-            onOpenChat(trainer, { 
-                classId: cls.id, 
-                className: cls.name, 
-                bookingDate: booking.date, 
+            onOpenChat(trainer, {
+                classId: cls.id,
+                className: cls.name,
+                bookingDate: booking.date,
                 studentId: booking.userId,
                 bookingId: booking.id
             });
         } else if (!isStudentView && student) {
-            onOpenChat(student, { 
-                classId: cls.id, 
-                className: cls.name, 
-                bookingDate: booking.date, 
+            onOpenChat(student, {
+                classId: cls.id,
+                className: cls.name,
+                bookingDate: booking.date,
                 studentId: student.id,
                 bookingId: booking.id
             });
         }
     };
-    
+
+    const shortBookingId = (booking.id.slice(0, 2) + booking.id.slice(9, 11) + booking.id.slice(14, 15)).toUpperCase();
+
     return (
         <>
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden transition-all duration-300 hover:shadow-md hover:-translate-y-0.5">
-                <div className="p-3">
-                    {/* Status Badge */}
-                    {booking.status === 'attended' && (
-                        <div className="mb-3 inline-flex items-center bg-green-100 text-green-700 text-xs font-bold px-2.5 py-1 rounded-full">
-                            <CheckCircle className="w-3.5 h-3.5 mr-1" />
-                            Verified
-                        </div>
-                    )}
-
-                    {/* Class Name & Person */}
-                    <div className="mb-3">
-                        <h3 className="text-sm font-bold text-gray-900">{cls.name}</h3>
-                        <button 
-                            onClick={() => setShowProfileModal(true)}
-                            className="text-xs text-[#FF6B35] hover:underline mt-1 text-left"
-                        >
-                            {isStudentView ? `Trainer: ${trainer?.name || 'N/A'}` : `Student: ${student?.name || 'N/A'}`}
-                        </button>
-                    </div>
-
-                {/* Date & Time & Location */}
-                <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 mb-3">
-                    <div className="flex items-center">
-                        <Calendar className="w-3.5 h-3.5 text-[#FF6B35]" />
-                        <span className="ml-1 text-xs text-gray-900">{booking.date}</span>
-                    </div>
-                    <div className="flex items-center">
-                        <Clock className="w-3.5 h-3.5 text-[#FF6B35]" />
-                        <span className="ml-1 text-xs text-gray-900">{booking.time}</span>
-                    </div>
-                    {displayPerson?.location && (
-                        <div className="flex items-center">
-                            <MapPin className="w-3.5 h-3.5 text-[#FF6B35]" />
-                            <span className="ml-1 text-xs text-gray-900">{displayPerson.location}</span>
-                        </div>
-                    )}
-                </div>
-
-                {/* Booking Details */}
-                <div className="mb-3 p-2 bg-gray-50 rounded-lg space-y-1.5">
-                    <div className="flex items-center justify-between text-xs">
-                        <span className="text-gray-600">Booking ID:</span>
-                        <span className="text-gray-900 font-mono font-semibold">{(booking.id.slice(0, 2) + booking.id.slice(9, 11) + booking.id.slice(14, 15)).toUpperCase()}</span>
-                    </div>
-                    {booking.createdAt && (
-                        <div className="flex items-center justify-between text-xs">
-                            <span className="text-gray-600">Booked on:</span>
-                            <span className="text-gray-900">{booking.createdAt}</span>
-                        </div>
-                    )}
-                    <div className="flex items-center justify-between text-xs">
-                        <span className="text-gray-600">Duration:</span>
-                        <span className="text-gray-900">{cls.duration} minutes</span>
-                    </div>
-                    <div className="flex items-center justify-between text-xs font-semibold">
-                        <span className="text-gray-600">Price:</span>
-                        <span className="text-[#FF6B35]">{new Intl.NumberFormat('vi-VN', { style: 'currency', currency: 'VND', minimumFractionDigits: 0 }).format(cls.price).replace(/\s/g, '')}</span>
-                    </div>
-                </div>
-
-                {/* Action Buttons */}
-                <div className="flex gap-2 pt-2 border-t border-gray-200">
-                    <button 
-                        onClick={handleChatClick}
-                        className="flex-1 bg-gray-100 text-gray-900 text-xs font-semibold py-2.5 px-3 rounded-lg hover:bg-gray-200 active:scale-95 transition-all duration-200 flex items-center justify-center gap-1.5"
-                    >
-                        <MessageCircle className="w-3.5 h-3.5" />
-                        Chat
-                    </button>
-                    
-                    {isStudentView ? (
-                        <>
-                            {booking.status === 'booked' && (
-                                <>
-                                    <button 
-                                        onClick={() => onStartCancellation(bookingInfo)}
-                                        className="flex-1 bg-gray-100 text-gray-900 text-xs font-semibold py-2.5 px-3 rounded-lg hover:bg-gray-200 active:scale-95 transition-all duration-200 flex items-center justify-center gap-1.5"
-                                    >
-                                        <X className="w-3.5 h-3.5" />
-                                        Cancel
-                                    </button>
-                                    {booking.verificationCode && (
-                                        <button 
-                                            onClick={() => onShowVerificationCode?.(booking.verificationCode!, booking.id)}
-                                            className="bg-[#FF6B35]/10 text-[#FF6B35] text-xs font-semibold py-2.5 px-3 rounded-lg hover:bg-[#FF6B35]/20 active:scale-95 transition-all duration-200 flex items-center justify-center"
-                                        >
-                                            <QrCode className="w-4 h-4" />
-                                        </button>
-                                    )}
-                                </>
-                            )}
-                            {booking.status === 'attended' && !booking.hasReview && (
-                                <button 
-                                    onClick={() => onOpenReviewModal(trainer, cls, booking)}
-                                    className="flex-1 bg-[#FF6B35] text-white text-xs font-semibold py-2.5 px-3 rounded-lg hover:bg-orange-600 active:scale-95 transition-all duration-200"
-                                >
-                                    Leave Review
-                                </button>
-                            )}
-                        </>
-                    ) : (
-                        booking.status === 'booked' && onVerifyAttendance && (
-                            <button 
-                                onClick={onVerifyAttendance}
-                                className="flex-1 bg-[#FF6B35] text-white text-xs font-semibold py-2.5 px-3 rounded-lg hover:bg-orange-600 active:scale-95 transition-all duration-200"
+            <Card className="flex flex-col overflow-hidden rounded-xl border border-border bg-card shadow-sm transition-colors hover:border-primary/40">
+                <CardHeader className="flex-row items-start justify-between gap-3 space-y-0 p-4 pb-3">
+                    <div className="flex min-w-0 flex-col gap-1">
+                        <CardTitle className="truncate text-sm md:text-base">{cls.name}</CardTitle>
+                        <CardDescription>
+                            <button
+                                type="button"
+                                onClick={() => setShowProfileModal(true)}
+                                className="text-left text-xs text-primary hover:underline focus-visible:outline-none focus-visible:underline md:text-sm"
                             >
-                                Verify
+                                {isStudentView ? `Trainer: ${trainer?.name || 'N/A'}` : `Student: ${student?.name || 'N/A'}`}
                             </button>
-                        )
-                    )}
-                </div>
-            </div>
-        </div>
-
-        {/* Profile Modal */}
-        {showProfileModal && displayPerson && (
-            <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 pb-20" onClick={() => setShowProfileModal(false)}>
-                <div className="bg-white rounded-lg w-full max-w-md overflow-hidden shadow-lg" onClick={e => e.stopPropagation()}>
-                    <div className="px-4 py-3 border-b border-gray-200 flex items-center justify-between">
-                        <h2 className="text-base font-bold text-gray-900">Profile</h2>
-                        <button onClick={() => setShowProfileModal(false)} className="p-2 -mr-2 rounded-lg hover:bg-gray-100 transition-colors">
-                            <X className="w-5 h-5 text-gray-800" />
-                        </button>
+                        </CardDescription>
                     </div>
-                    <div className="p-4">
-                        {/* Profile Image */}
-                        <div className="flex flex-col items-center mb-4">
-                            <img 
-                                src={displayPerson.avatarUrl || 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=200'} 
-                                alt={displayPerson.name}
-                                className="w-24 h-24 rounded-full object-cover border-4 border-gray-200 mb-3"
-                            />
-                            <h3 className="text-lg font-bold text-gray-900">{displayPerson.name}</h3>
-                        </div>
+                    {booking.status === 'attended' && (
+                        <StatusBadge status="attended" className="shrink-0">
+                            <CheckCircle className="size-3.5" />
+                            Verified
+                        </StatusBadge>
+                    )}
+                </CardHeader>
 
-                        {/* Profile Info */}
-                        <div className="space-y-3">
+                <CardContent className="flex flex-1 flex-col gap-3 p-4 pt-0">
+                    <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs text-foreground">
+                        <span className="flex items-center gap-1">
+                            <Calendar className="size-3.5 text-primary" />
+                            {booking.date}
+                        </span>
+                        <span className="flex items-center gap-1">
+                            <Clock className="size-3.5 text-primary" />
+                            {booking.time}
+                        </span>
+                        {displayPerson?.location && (
+                            <span className="flex min-w-0 items-center gap-1">
+                                <MapPin className="size-3.5 shrink-0 text-primary" />
+                                <span className="truncate">{displayPerson.location}</span>
+                            </span>
+                        )}
+                    </div>
+
+                    <dl className="flex flex-col gap-1.5 rounded-lg bg-muted/50 p-3 text-xs">
+                        <DetailRow label="Booking ID" value={<span className="font-mono font-semibold">{shortBookingId}</span>} />
+                        {booking.createdAt && <DetailRow label="Booked on" value={booking.createdAt} />}
+                        <DetailRow label="Duration" value={`${cls.duration} minutes`} />
+                        <DetailRow label="Price" value={<span className="font-semibold text-primary">{formatVND(cls.price)}</span>} />
+                    </dl>
+                </CardContent>
+
+                <CardFooter className="gap-2 border-t border-border p-4">
+                        <Button size="sm" variant="secondary" className="flex-1" onClick={handleChatClick}>
+                            <MessageCircle />
+                            Chat
+                        </Button>
+
+                        {isStudentView ? (
+                            <>
+                                {booking.status === 'booked' && (
+                                    <>
+                                        <Button size="sm" variant="secondary" className="flex-1" onClick={() => onStartCancellation(bookingInfo)}>
+                                            <X />
+                                            Cancel
+                                        </Button>
+                                        {booking.verificationCode && (
+                                            <Button
+                                                size="sm"
+                                                variant="outline"
+                                                className="text-primary"
+                                                onClick={() => onShowVerificationCode?.(booking.verificationCode!, booking.id)}
+                                                aria-label="Show attendance QR code"
+                                            >
+                                                <QrCode />
+                                            </Button>
+                                        )}
+                                    </>
+                                )}
+                                {booking.status === 'attended' && !booking.hasReview && (
+                                    <Button size="sm" className="flex-1" onClick={() => onOpenReviewModal(trainer, cls, booking)}>
+                                        Leave Review
+                                    </Button>
+                                )}
+                            </>
+                        ) : (
+                            booking.status === 'booked' && onVerifyAttendance && (
+                                <Button size="sm" className="flex-1" onClick={onVerifyAttendance}>
+                                    Verify
+                                </Button>
+                            )
+                        )}
+                </CardFooter>
+            </Card>
+
+            {showProfileModal && displayPerson && (
+                <Dialog open onOpenChange={(open) => { if (!open) setShowProfileModal(false); }}>
+                    <DialogContent className="max-w-md">
+                        <DialogHeader>
+                            <DialogTitle>Profile</DialogTitle>
+                        </DialogHeader>
+                        <div className="flex flex-col items-center">
+                            <img
+                                src={displayPerson.avatarUrl || DEFAULT_AVATAR}
+                                alt={displayPerson.name}
+                                className="mb-3 h-24 w-24 rounded-full border-4 border-border object-cover"
+                            />
+                            <h3 className="text-lg font-bold text-foreground">{displayPerson.name}</h3>
+                        </div>
+                        <div className="flex flex-col gap-3">
                             {displayPerson.location && (
-                                <div className="flex items-center gap-2">
-                                    <MapPin className="w-4 h-4 text-[#FF6B35]" />
-                                    <span className="text-sm text-gray-900">{displayPerson.location}</span>
+                                <div className="flex items-center gap-2 text-sm text-foreground">
+                                    <MapPin className="h-4 w-4 text-primary" />
+                                    {displayPerson.location}
                                 </div>
                             )}
                             {displayPerson.rating && (
-                                <div className="flex items-center gap-2">
-                                    <Star className="w-4 h-4 text-[#FF6B35] fill-[#FF6B35]" />
-                                    <span className="text-sm text-gray-900">Rating: {displayPerson.rating.toFixed(1)}</span>
+                                <div className="flex items-center gap-2 text-sm text-foreground">
+                                    <Star className="h-4 w-4 fill-primary text-primary" />
+                                    Rating: {displayPerson.rating.toFixed(1)}
                                 </div>
                             )}
                         </div>
-                    </div>
-                    <div className="px-4 py-3 bg-gray-50 border-t border-gray-200 space-y-2">
-                        <button 
-                            onClick={() => {
-                                setShowProfileModal(false);
-                                if (isStudentView && trainer) {
-                                    navigate(`/trainer/${trainer.id}`);
-                                }
-                            }}
-                            className="w-full bg-[#FF6B35] text-white text-sm font-semibold py-2.5 rounded-lg hover:bg-orange-600 active:scale-95 transition-all duration-200"
-                        >
-                            View Full Profile
-                        </button>
-                        <button 
-                            onClick={handleChatClick}
-                            className="w-full bg-white border border-gray-200 text-gray-900 text-sm font-semibold py-2.5 rounded-lg hover:bg-gray-50 active:scale-95 transition-all duration-200 flex items-center justify-center gap-2"
-                        >
-                            <MessageCircle className="w-4 h-4" />
-                            Send Message
-                        </button>
-                    </div>
-                </div>
-            </div>
-        )}
+                        <DialogFooter className="flex-col gap-2 sm:flex-col sm:space-x-0">
+                            <Button
+                                className="w-full"
+                                onClick={() => {
+                                    setShowProfileModal(false);
+                                    if (isStudentView && trainer) {
+                                        navigate(`/trainer/${trainer.id}`);
+                                    }
+                                }}
+                            >
+                                View Full Profile
+                            </Button>
+                            <Button variant="outline" className="w-full" onClick={handleChatClick}>
+                                <MessageCircle />
+                                Send Message
+                            </Button>
+                        </DialogFooter>
+                    </DialogContent>
+                </Dialog>
+            )}
         </>
     );
 };
+
+function DetailRow({ label, value }: { label: string; value: React.ReactNode }) {
+    return (
+        <div className="flex items-center justify-between gap-3">
+            <dt className="text-muted-foreground">{label}:</dt>
+            <dd className="text-right text-foreground">{value}</dd>
+        </div>
+    );
+}
 
 const monthMap: { [key: string]: number } = {
     Jan: 0, Feb: 1, Mar: 2, Apr: 3, May: 4, Jun: 5,
@@ -341,8 +329,10 @@ function parseBookingDateTime(dateStr: string, timeStr: string): Date {
 }
 
 const MyBookingsPage: React.FC = () => {
-    const { user, userRole, loading } = useAuth();
+    const { user, loading } = useAuth();
+    const userRole = useEffectiveRole();
     const navigate = useNavigate();
+    const location = useLocation();
     const { toast } = useToast();
     const [activeMainTab, setActiveMainTab] = useState<'bookings' | 'requests'>('bookings');
     const [activeBookingTab, setActiveBookingTab] = useState<'upcoming' | 'past'>('upcoming');
@@ -402,8 +392,7 @@ const MyBookingsPage: React.FC = () => {
                                 location,
                                 rating
                             )
-                        )
-                    `)
+                        )`)
                     .eq('client_id', user.id)
                     .order('booking_date', { ascending: false });
             } else {
@@ -434,8 +423,7 @@ const MyBookingsPage: React.FC = () => {
                             id,
                             username,
                             avatar_url
-                        )
-                    `)
+                        )`)
                     .eq('classes.trainer_id', user.id)
                     .order('booking_date', { ascending: false });
             }
@@ -537,8 +525,7 @@ const MyBookingsPage: React.FC = () => {
                 .from('requests')
                 .select(`
                     *,
-                    student:profiles!requests_student_id_fkey(username, avatar_url)
-                `)
+                    student:profiles!requests_student_id_fkey(username, avatar_url)`)
                 .eq('student_id', user.id)
                 .order('created_at', { ascending: false });
 
@@ -592,9 +579,13 @@ const MyBookingsPage: React.FC = () => {
     };
 
     useEffect(() => {
-        // Handle navigation state for tab switching
+        // Trainers cannot create/manage training requests — keep them on bookings only.
+        if (userRole !== 'student') {
+            setActiveMainTab('bookings');
+            return;
+        }
         const state = location.state as { activeTab?: string } | null;
-        if (state?.activeTab === 'requests' && userRole === 'student') {
+        if (state?.activeTab === 'requests') {
             setActiveMainTab('requests');
         }
     }, [location.state, userRole]);
@@ -672,242 +663,242 @@ const MyBookingsPage: React.FC = () => {
 
     if (loading) {
         return (
-            <div className="bg-gray-50 h-full flex items-center justify-center">
-                <Loader className="w-6 h-6 text-[#FF6B35] animate-spin" />
-            </div>
+            <AppScreen>
+                <PageLoader title="Loading bookings…" />
+            </AppScreen>
         );
     }
 
     if (!user) {
         return (
-            <div className="bg-gray-50 h-full flex flex-col items-center justify-center gap-4 px-4">
-                <p className="text-sm text-gray-600 text-center">Please log in to view your bookings</p>
-                <button
-                    onClick={() => navigate('/auth')}
-                    className="px-4 py-2 bg-[#FF6B35] text-white text-xs font-semibold rounded-lg hover:bg-orange-600 active:scale-95 transition-all duration-200"
-                >
-                    Go to Login
-                </button>
-            </div>
+            <AppScreen>
+                <StitchCanvas>
+                    <EmptyState
+                        icon={Calendar}
+                        title="Sign in to see your bookings"
+                        description="Please log in to view your bookings"
+                        action={<Button onClick={() => navigate('/auth')}>Go to Login</Button>}
+                    />
+                </StitchCanvas>
+            </AppScreen>
         );
     }
 
-    return (
-        <div className="bg-gray-50 h-full flex flex-col overflow-hidden">
-            {/* Header */}
-            <div className="bg-white border-b border-gray-100 shadow-sm z-20 flex-shrink-0">
-                <div className="flex items-center justify-between px-4 py-3">
-                    <div className="w-9"></div>
-                    <h1 className="text-lg font-bold text-gray-900">My Bookings</h1>
-                    {userRole === 'student' && activeMainTab === 'requests' && (
-                        <button
-                            onClick={() => navigate('/requests/create')}
-                            className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
-                        >
-                            <Plus className="w-5 h-5 text-[#FF6B35]" />
-                        </button>
-                    )}
-                    {userRole === 'student' && activeMainTab === 'bookings' && (
-                        <div className="w-9"></div>
-                    )}
-                </div>
+    const isStudent = userRole === 'student';
 
-                {/* Main Tabs */}
-                {userRole === 'student' && (
-                    <div className="flex gap-2 px-4 pb-2">
-                        <button 
-                            onClick={() => setActiveMainTab('bookings')} 
-                            className={`flex-1 py-2 rounded-lg font-semibold text-xs transition-all duration-200 ${
-                                activeMainTab === 'bookings' 
-                                    ? 'bg-[#FF6B35] text-white shadow-md' 
-                                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                            }`}
-                        >
-                            <Calendar className="w-4 h-4 inline mr-1.5" />
-                            Bookings
-                        </button>
-                        <button 
-                            onClick={() => setActiveMainTab('requests')} 
-                            className={`flex-1 py-2 rounded-lg font-semibold text-xs transition-all duration-200 ${
-                                activeMainTab === 'requests' 
-                                    ? 'bg-[#FF6B35] text-white shadow-md' 
-                                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                            }`}
-                        >
-                            <FileText className="w-4 h-4 inline mr-1.5" />
-                            My Requests
-                        </button>
-                    </div>
-                )}
+    const renderBookingList = (items: BookingInfo[], type: 'upcoming' | 'past') =>
+        items.length > 0 ? (
+            <div className="grid gap-3 lg:grid-cols-2">
+                {items.map((bookingInfo) => (
+                    <BookedClassCard
+                        key={bookingInfo.booking.id}
+                        bookingInfo={bookingInfo}
+                        onOpenChat={handleOpenChat}
+                        onStartCancellation={handleStartCancellation}
+                        onOpenReviewModal={handleOpenReviewModal}
+                        userRole={userRole!}
+                        {...(type === 'upcoming' && {
+                            onShowVerificationCode: handleShowVerificationCode,
+                            onVerifyAttendance: () => setShowVerifyModal(bookingInfo),
+                        })}
+                    />
+                ))}
+            </div>
+        ) : (
+            <EmptyBookingsState type={type} />
+        );
+
+    return (
+        // Fixed-height column so the list is the scroll container pull-to-refresh measures.
+        <AppScreen className="flex min-h-[calc(100dvh-3.5rem)] min-w-0 flex-col overflow-x-hidden bg-[#f9fafb] dark:bg-background lg:min-h-[calc(100dvh-4rem)]">
+            <div className="shrink-0 border-b border-border bg-card/95 backdrop-blur">
+                <StitchCanvas className="!space-y-0 flex flex-col gap-3 !py-4">
+                    <DetailContextStrip
+                        backLabel="Back to Home"
+                        onBack={() => navigate('/')}
+                        crumbs={[
+                            { label: 'Home', href: '/' },
+                            {
+                                label: isStudent && activeMainTab === 'requests' ? 'My Requests' : 'My Bookings',
+                                href: '/bookings',
+                            },
+                        ]}
+                        actions={
+                            isStudent && activeMainTab === 'requests' ? (
+                                <Button
+                                    size="sm"
+                                    onClick={() => navigate('/requests/create')}
+                                    aria-label="Create request"
+                                >
+                                    <Plus data-icon="inline-start" />
+                                    Create Request
+                                </Button>
+                            ) : undefined
+                        }
+                    />
+                    <StitchPageHeader
+                        title={
+                            isStudent && activeMainTab === 'requests' ? 'My Requests' : 'My Bookings'
+                        }
+                        description={
+                            isStudent
+                                ? activeMainTab === 'requests'
+                                    ? 'Training requests you’ve posted for coaches'
+                                    : 'Your upcoming and past classes'
+                                : 'Classes your students booked with you'
+                        }
+                    >
+                        {isStudent ? (
+                            <div
+                                className="inline-flex items-center rounded-lg border border-border bg-muted/60 p-1"
+                                role="tablist"
+                                aria-label="My bookings sections"
+                            >
+                                {(
+                                    [
+                                        { id: 'bookings', label: 'Bookings', icon: Calendar },
+                                        { id: 'requests', label: 'My Requests', icon: FileText },
+                                    ] as const
+                                ).map(({ id, label, icon: Icon }) => {
+                                    const active = activeMainTab === id;
+                                    return (
+                                        <button
+                                            key={id}
+                                            type="button"
+                                            role="tab"
+                                            aria-selected={active}
+                                            onClick={() => setActiveMainTab(id)}
+                                            className={cn(
+                                                'inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-semibold transition-colors',
+                                                active && 'bg-card text-foreground shadow-sm',
+                                                !active && 'text-muted-foreground hover:text-foreground'
+                                            )}
+                                        >
+                                            <Icon className="size-4" />
+                                            {label}
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                        ) : null}
+                    </StitchPageHeader>
+                </StitchCanvas>
             </div>
 
-            {/* Booking Tabs (only for bookings tab) */}
-            {activeMainTab === 'bookings' && (
-                <div className="flex gap-2 px-4 py-2 bg-white border-b border-gray-100">
-                    <button 
-                        onClick={() => setActiveBookingTab('upcoming')} 
-                        className={`flex-1 py-2 rounded-lg font-semibold text-xs transition-all duration-200 ${
-                            activeBookingTab === 'upcoming' 
-                                ? 'bg-[#FF6B35] text-white shadow-sm' 
-                                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                        }`}
-                    >
-                        Upcoming
-                    </button>
-                    <button 
-                        onClick={() => setActiveBookingTab('past')} 
-                        className={`flex-1 py-2 rounded-lg font-semibold text-xs transition-all duration-200 ${
-                            activeBookingTab === 'past' 
-                                ? 'bg-[#FF6B35] text-white shadow-sm' 
-                                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                        }`}
-                    >
-                        Past
-                    </button>
-                </div>
-            )}
-
-            {/* Scrollable Content */}
             <div ref={containerRef} className="flex-1 overflow-y-auto">
-                <div className="px-4 py-3 pb-safe-nav">
-                    <PullToRefreshIndicator 
+                <StitchCanvas className="!pt-4">
+                    <PullToRefreshIndicator
                         pullDistance={pullDistance}
                         isRefreshing={isRefreshing}
                         pullProgress={pullProgress}
                     />
-                    
+
                     {activeMainTab === 'bookings' ? (
                         isLoadingBookings ? (
-                            <div className="space-y-3">
-                                {[...Array(3)].map((_, idx) => (
+                            <div className="grid gap-3 lg:grid-cols-2">
+                                {Array.from({ length: BOOKING_SKELETONS }, (_, idx) => (
                                     <BookingCardSkeleton key={idx} />
                                 ))}
                             </div>
                         ) : (
-                            <div className="space-y-3">
-                                {activeBookingTab === 'upcoming' ? (
-                                    upcomingClasses.length > 0 ? (
-                                        upcomingClasses.map((bookingInfo, idx) => (
-                                            <BookedClassCard 
-                                                key={idx} 
-                                                bookingInfo={bookingInfo} 
-                                                onOpenChat={handleOpenChat} 
-                                                onStartCancellation={handleStartCancellation}
-                                                onOpenReviewModal={handleOpenReviewModal}
-                                                userRole={userRole!}
-                                                onShowVerificationCode={handleShowVerificationCode}
-                                                onVerifyAttendance={() => setShowVerifyModal(bookingInfo)}
-                                            />
-                                        ))
-                                    ) : (
-                                        <EmptyBookingsState type="upcoming" />
-                                    )
-                                ) : (
-                                    pastClasses.length > 0 ? (
-                                        pastClasses.map((bookingInfo, idx) => (
-                                            <BookedClassCard 
-                                                key={idx} 
-                                                bookingInfo={bookingInfo} 
-                                                onOpenChat={handleOpenChat} 
-                                                onStartCancellation={handleStartCancellation}
-                                                onOpenReviewModal={handleOpenReviewModal}
-                                                userRole={userRole!}
-                                            />
-                                        ))
-                                    ) : (
-                                        <EmptyBookingsState type="past" />
-                                    )
-                                )}
-                            </div>
+                            // Kokonut UI smooth-tab: swipe between Upcoming and Past on touch screens
+                            <SmoothTab
+                                label="Booking period"
+                                value={activeBookingTab}
+                                onChange={(id) => setActiveBookingTab(id as 'upcoming' | 'past')}
+                                items={[
+                                    {
+                                        id: 'upcoming',
+                                        title: `Upcoming (${upcomingClasses.length})`,
+                                        content: renderBookingList(upcomingClasses, 'upcoming'),
+                                    },
+                                    {
+                                        id: 'past',
+                                        title: `Past (${pastClasses.length})`,
+                                        content: renderBookingList(pastClasses, 'past'),
+                                    },
+                                ]}
+                            />
                         )
-                    ) : (
-                        // Requests Tab (only for students)
-                        isLoadingRequests ? (
-                            <div className="space-y-3">
-                                {[...Array(3)].map((_, idx) => (
-                                    <div key={idx} className="bg-white rounded-lg p-3 shadow-sm animate-pulse">
-                                        <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
-                                        <div className="h-3 bg-gray-200 rounded w-1/2"></div>
-                                    </div>
-                                ))}
-                            </div>
-                        ) : requestsData.length === 0 ? (
-                            <div className="text-center mt-12">
-                                <FileText className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-                                <p className="text-sm font-bold text-gray-900 mb-1">No Requests Yet</p>
-                                <p className="text-xs text-gray-600 mb-4">Create your first training request to find trainers</p>
-                                <button
-                                    onClick={() => navigate('/requests/create')}
-                                    className="px-4 py-2 bg-[#FF6B35] text-white rounded-lg text-xs font-semibold hover:bg-orange-600 active:scale-95 shadow-sm transition-all duration-200 flex items-center gap-2 mx-auto"
-                                >
-                                    <Plus className="w-4 h-4" />
+                    ) : isLoadingRequests ? (
+                        <div className="grid gap-3 lg:grid-cols-2">
+                            {Array.from({ length: BOOKING_SKELETONS }, (_, idx) => (
+                                <Skeleton key={idx} className="h-28 rounded-xl" />
+                            ))}
+                        </div>
+                    ) : requestsData.length === 0 ? (
+                        <EmptyState
+                            icon={FileText}
+                            title="No Requests Yet"
+                            description="Create your first training request to find trainers"
+                            action={
+                                <Button className="bg-[#fd651e] text-white hover:bg-[#a73a00]" onClick={() => navigate('/requests/create')}>
+                                    <Plus />
                                     Create Request
-                                </button>
-                            </div>
-                        ) : (
-                            <div className="space-y-3">
-                                {requestsData.map((request) => (
-                                    <div key={request.id} className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-                                        <div className="p-3">
-                                            <RequestCard
-                                                request={request}
-                                                userRole="student"
-                                                currentUserId={user.id}
-                                                onViewResponses={(req) => navigate(`/requests/${req.id}/responses`, { state: { request: req } })}
+                                </Button>
+                            }
+                        />
+                    ) : (
+                        <div className="grid gap-3 lg:grid-cols-2">
+                            {requestsData.map((request) => (
+                                <div key={request.id} className="flex flex-col gap-2">
+                                        <RequestCard
+                                            request={request}
+                                            userRole="student"
+                                            currentUserId={user.id}
+                                            onViewResponses={(req) => navigate(`/requests/${req.id}/responses`, { state: { request: req } })}
+                                            onClick={() => navigate(`/requests/${request.id}/responses`, { state: { request } })}
+                                        />
+                                        <div className="flex gap-2">
+                                            <Button
+                                                size="sm"
+                                                variant="secondary"
+                                                className="flex-1"
                                                 onClick={() => navigate(`/requests/${request.id}/responses`, { state: { request } })}
-                                            />
-                                            <div className="mt-3 pt-3 border-t border-gray-200 flex gap-2">
-                                                <button
-                                                    onClick={() => navigate(`/requests/${request.id}/responses`, { state: { request } })}
-                                                    className="flex-1 bg-gray-100 text-gray-900 text-xs font-semibold py-2 px-3 rounded-lg hover:bg-gray-200 active:scale-95 transition-all duration-200 flex items-center justify-center gap-1.5"
+                                            >
+                                                <Eye />
+                                                View Responses ({request.responses_count || 0})
+                                            </Button>
+                                            {request.status === 'open' && (
+                                                <Button
+                                                    size="sm"
+                                                    variant="outline"
+                                                    className="text-primary"
+                                                    onClick={() => navigate(`/requests/${request.id}/edit`, { state: { request } })}
+                                                    aria-label="Edit request"
                                                 >
-                                                    <Eye className="w-3.5 h-3.5" />
-                                                    View Responses ({request.responses_count || 0})
-                                                </button>
-                                                {request.status === 'open' && (
-                                                    <button
-                                                        onClick={() => navigate(`/requests/${request.id}/edit`, { state: { request } })}
-                                                        className="px-3 py-2 bg-[#FF6B35]/10 text-[#FF6B35] text-xs font-semibold rounded-lg hover:bg-[#FF6B35]/20 active:scale-95 transition-all duration-200 flex items-center justify-center"
-                                                    >
-                                                        <Edit className="w-3.5 h-3.5" />
-                                                    </button>
-                                                )}
-                                            </div>
+                                                    <Edit />
+                                                </Button>
+                                            )}
                                         </div>
-                                    </div>
-                                ))}
-                            </div>
-                        )
+                                </div>
+                            ))}
+                        </div>
                     )}
-                </div>
+                </StitchCanvas>
             </div>
 
             {cancelBookingTarget && (
-                <CancelBookingModal 
-                    bookingInfo={cancelBookingTarget} 
-                    onConfirm={handleCancelBooking} 
-                    onClose={() => setCancelBookingTarget(null)} 
+                <CancelBookingModal
+                    bookingInfo={cancelBookingTarget}
+                    onConfirm={handleCancelBooking}
+                    onClose={() => setCancelBookingTarget(null)}
                 />
             )}
 
             {verificationCode && (
-                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 pb-20" onClick={() => setVerificationCode(null)}>
-                    <div className="bg-white rounded-lg w-full max-w-sm overflow-hidden shadow-lg" onClick={e => e.stopPropagation()}>
-                        <div className="px-4 py-3 border-b border-gray-200 flex items-center justify-between">
-                            <h2 className="text-base font-bold text-gray-900">Verification Code</h2>
-                            <button onClick={() => setVerificationCode(null)} className="p-2 -mr-2 rounded-lg hover:bg-gray-100 transition-colors">
-                                <X className="w-5 h-5 text-gray-800" />
-                            </button>
-                        </div>
-                        <div className="p-4">
-                            <BookingVerificationDisplay 
-                                verificationCode={verificationCode} 
-                                bookingId={verificationBookingId!}
-                                className="w-full"
-                            />
-                        </div>
-                    </div>
-                </div>
+                <Dialog open onOpenChange={(open) => { if (!open) setVerificationCode(null); }}>
+                    <DialogContent className="max-h-[90vh] max-w-sm overflow-y-auto">
+                        <DialogHeader>
+                            <DialogTitle>Verification Code</DialogTitle>
+                        </DialogHeader>
+                        <BookingVerificationDisplay
+                            verificationCode={verificationCode}
+                            bookingId={verificationBookingId!}
+                            className="w-full border-0 p-0 shadow-none"
+                        />
+                    </DialogContent>
+                </Dialog>
             )}
 
             {showVerifyModal && (
@@ -925,7 +916,7 @@ const MyBookingsPage: React.FC = () => {
                     }}
                 />
             )}
-        </div>
+        </AppScreen>
     );
 };
 

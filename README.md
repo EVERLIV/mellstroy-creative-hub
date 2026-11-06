@@ -10,11 +10,15 @@ View your app in AI Studio: https://ai.studio/apps/drive/1rr8EF1YcMoJgaSzLh6RBpP
 
 ## Run Locally
 
-**Prerequisites:**  Node.js
+**Prerequisites:** Node.js
 
+1. Install dependencies: `npm install`
+2. Set `GEMINI_API_KEY` / Supabase keys in `.env` (or `.env.local`)
+3. Run a frontend:
+   - Students (port **8080**): `npm run dev` or `npm run dev:student`
+   - Trainers (port **8081**): `npm run dev:trainer`
+4. Build both: `npm run build` → `dist/student` and `dist/trainer`
 
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+### Admin preview
+
+Promote an account with `scripts/make_hoaandrey_admin.sql` in the Supabase SQL editor. Admins get a Student / Trainer / Admin switcher in the shell to preview each experience.

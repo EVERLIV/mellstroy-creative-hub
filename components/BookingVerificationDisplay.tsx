@@ -1,6 +1,8 @@
 import React, { useEffect, useRef } from 'react';
 import QRCode from 'qrcode';
 import { QrCode, Download } from 'lucide-react';
+import { cn } from '../src/lib/utils';
+import { Button } from '../src/components/ui/button';
 
 interface BookingVerificationDisplayProps {
   verificationCode: string;
@@ -8,27 +10,20 @@ interface BookingVerificationDisplayProps {
   bookingId?: string;
 }
 
-const BookingVerificationDisplay: React.FC<BookingVerificationDisplayProps> = ({ 
-  verificationCode, 
+/** QR colors stay dark-on-white in both themes: scanners need the contrast. */
+const QR_COLORS = { dark: '#1F2937', light: '#FFFFFF' };
+const QR_SIZE = 200;
+
+const BookingVerificationDisplay: React.FC<BookingVerificationDisplayProps> = ({
+  verificationCode,
   className = '',
-  bookingId 
+  bookingId,
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
     if (canvasRef.current && verificationCode) {
-      QRCode.toCanvas(
-        canvasRef.current,
-        verificationCode,
-        {
-          width: 200,
-          margin: 2,
-          color: {
-            dark: '#1F2937',
-            light: '#FFFFFF'
-          }
-        }
-      );
+      QRCode.toCanvas(canvasRef.current, verificationCode, { width: QR_SIZE, margin: 2, color: QR_COLORS });
     }
   }, [verificationCode]);
 
@@ -43,41 +38,30 @@ const BookingVerificationDisplay: React.FC<BookingVerificationDisplayProps> = ({
   };
 
   return (
-    <div className={`bg-white rounded-xl p-6 shadow-sm border border-gray-200 ${className}`}>
-      <div className="text-center space-y-4">
-        <div className="flex items-center justify-center gap-2 mb-4">
-          <QrCode className="w-5 h-5 text-orange-600" />
-          <h3 className="text-lg font-bold text-gray-900">Your Attendance Code</h3>
+    <div className={cn('rounded-xl border border-border bg-card p-6 shadow-sm', className)}>
+      <div className="space-y-4 text-center">
+        <div className="flex items-center justify-center gap-2">
+          <QrCode className="h-5 w-5 text-primary" />
+          <h3 className="text-lg font-bold text-foreground">Your Attendance Code</h3>
         </div>
-        
-        <p className="text-sm text-gray-600 mb-4">
-          Show this code to your trainer to verify attendance
-        </p>
 
-        {/* QR Code */}
-        <div className="bg-gray-50 rounded-xl p-4 inline-block">
+        <p className="text-sm text-muted-foreground">Show this code to your trainer to verify attendance</p>
+
+        <div className="inline-block rounded-xl p-4 ring-1 ring-border" style={{ backgroundColor: QR_COLORS.light }}>
           <canvas ref={canvasRef} className="mx-auto" />
         </div>
 
-        {/* Verification Code Display */}
-        <div className="bg-gradient-to-r from-orange-50 to-amber-50 rounded-lg p-4 border-2 border-orange-200">
-          <p className="text-xs text-gray-600 mb-2 font-medium">Verification Code</p>
-          <p className="text-3xl font-bold text-orange-600 tracking-wider font-mono">
-            {verificationCode}
-          </p>
+        <div className="rounded-lg border-2 border-primary/30 bg-primary/10 p-4">
+          <p className="mb-2 text-xs font-medium text-muted-foreground">Verification Code</p>
+          <p className="font-mono text-3xl font-bold tracking-wider text-primary">{verificationCode}</p>
         </div>
 
-        <button
-          onClick={downloadQR}
-          className="flex items-center justify-center gap-2 w-full bg-gray-100 text-gray-700 py-2.5 px-4 rounded-lg hover:bg-gray-200 transition-colors text-sm font-medium"
-        >
-          <Download className="w-4 h-4" />
+        <Button variant="secondary" className="w-full" onClick={downloadQR}>
+          <Download />
           Download QR Code
-        </button>
+        </Button>
 
-        <p className="text-xs text-gray-500 mt-4">
-          💡 Tip: Screenshot or download this QR code for easy access
-        </p>
+        <p className="text-xs text-muted-foreground">💡 Tip: Screenshot or download this QR code for easy access</p>
       </div>
     </div>
   );

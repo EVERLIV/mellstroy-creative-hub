@@ -10,58 +10,62 @@ type ThemeProviderProps = {
 
 type ThemeProviderState = {
   theme: Theme;
+  resolvedTheme: "light" | "dark";
   setTheme: (theme: Theme) => void;
 };
 
-const initialState: ThemeProviderState = {
-  theme: "system",
-  setTheme: () => null,
-};
+const ThemeProviderContext = createContext<ThemeProviderState | undefined>(undefined);
 
-const ThemeProviderContext = createContext<ThemeProviderState>(initialState);
+function resolveSystem(): "light" | "dark" {
+  if (typeof window === "undefined") return "light";
+  return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+}
 
 export function ThemeProvider({
   children,
-  defaultTheme = "light",
+  defaultTheme = "system",
   storageKey = "rhinofit-theme",
-  ...props
 }: ThemeProviderProps) {
-  // Force light theme - ignore localStorage
-  const [theme] = useState<Theme>("light");
+  const [theme, setThemeState] = useState<Theme>(() => {
+    if (typeof window === "undefined") return defaultTheme;
+    return (localStorage.getItem(storageKey) as Theme) || defaultTheme;
+  });
+  const [resolvedTheme, setResolvedTheme] = useState<"light" | "dark">("light");
 
   useEffect(() => {
     const root = window.document.documentElement;
-
-    // Clear any existing theme classes
+    const applied = theme === "system" ? resolveSystem() : theme;
     root.classList.remove("light", "dark");
-    
-    // Force light theme always
-    root.classList.add("light");
-    
-    // Clear localStorage to remove any dark theme preference
-    localStorage.removeItem(storageKey);
-    localStorage.setItem(storageKey, "light");
-  }, [storageKey]);
+    root.classList.add(applied);
+    setResolvedTheme(applied);
+    localStorage.setItem(storageKey, theme);
+  }, [theme, storageKey]);
 
-  const value = {
-    theme: "light" as Theme,
-    setTheme: () => {
-      // Theme switching disabled - do nothing
-    },
+  useEffect(() => {
+    if (theme !== "system") return;
+    const mq = window.matchMedia("(prefers-color-scheme: dark)");
+    const onChange = () => {
+      const applied = resolveSystem();
+      const root = window.document.documentElement;
+      root.classList.remove("light", "dark");
+      root.classList.add(applied);
+      setResolvedTheme(applied);
+    };
+    mq.addEventListener("change", onChange);
+    return () => mq.removeEventListener("change", onChange);
+  }, [theme]);
+
+  const value: ThemeProviderState = {
+    theme,
+    resolvedTheme,
+    setTheme: setThemeState,
   };
 
-  return (
-    <ThemeProviderContext.Provider {...props} value={value}>
-      {children}
-    </ThemeProviderContext.Provider>
-  );
+  return <ThemeProviderContext.Provider value={value}>{children}</ThemeProviderContext.Provider>;
 }
 
 export const useTheme = () => {
-  const context = useContext(ThemeProviderContext);
-
-  if (context === undefined)
-    throw new Error("useTheme must be used within a ThemeProvider");
-
-  return context;
+  const ctx = useContext(ThemeProviderContext);
+  if (!ctx) throw new Error("useTheme must be used within ThemeProvider");
+  return ctx;
 };

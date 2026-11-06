@@ -62,34 +62,34 @@ const AdminPage: React.FC<AdminPageProps> = ({ trainers, onCreateTrainer, onCrea
     };
 
     return (
-        <div className="bg-slate-100 h-full overflow-y-auto">
+        <div className="bg-muted h-full overflow-y-auto">
             <div className="p-4 pt-6 pb-safe-nav">
-                <h1 className="text-2xl font-bold text-slate-800 text-center mb-4">Admin Dashboard</h1>
-                <div className="bg-slate-200 p-1 rounded-xl grid grid-cols-2 gap-1 mb-4">
-                    <button onClick={() => setActiveTab('users')} className={`px-4 py-2 text-sm font-bold rounded-lg transition-colors flex items-center justify-center gap-2 ${activeTab === 'users' ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-500'}`}>
+                <h1 className="text-2xl font-bold text-foreground text-center mb-4">Admin Dashboard</h1>
+                <div className="bg-muted p-1 rounded-xl grid grid-cols-2 gap-1 mb-4">
+                    <button onClick={() => setActiveTab('users')} className={`px-4 py-2 text-sm font-bold rounded-lg transition-colors flex items-center justify-center gap-2 ${activeTab === 'users' ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground'}`}>
                         <Users className="w-4 h-4" /> Manage Trainers
                     </button>
-                    <button onClick={() => setActiveTab('courses')} className={`px-4 py-2 text-sm font-bold rounded-lg transition-colors flex items-center justify-center gap-2 ${activeTab === 'courses' ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-500'}`}>
+                    <button onClick={() => setActiveTab('courses')} className={`px-4 py-2 text-sm font-bold rounded-lg transition-colors flex items-center justify-center gap-2 ${activeTab === 'courses' ? 'bg-card text-foreground shadow-sm' : 'text-muted-foreground'}`}>
                        <BookOpen className="w-4 h-4" /> Manage Courses
                     </button>
                 </div>
 
                 {activeTab === 'users' && (
                     <div className="space-y-4 animate-fade-in">
-                        <form onSubmit={handleCreateTrainer} className="bg-white p-4 rounded-xl shadow-sm border border-slate-200/80 space-y-3">
-                            <h2 className="font-bold text-slate-800 flex items-center"><UserPlus className="w-5 h-5 mr-2 text-blue-500"/>Create New Trainer</h2>
-                            <input name="name" value={newTrainer.name} onChange={handleTrainerChange} placeholder="Full Name" required className="w-full px-3 py-2 border border-slate-300 rounded-lg"/>
-                            <input name="specialty" value={newTrainer.specialty} onChange={handleTrainerChange} placeholder="Specialties (comma-separated)" required className="w-full px-3 py-2 border border-slate-300 rounded-lg"/>
-                            <select name="location" value={newTrainer.location} onChange={handleTrainerChange} className="w-full px-3 py-2 border border-slate-300 rounded-lg bg-white">
+                        <form onSubmit={handleCreateTrainer} className="bg-card p-4 rounded-xl shadow-sm border border-border/80 space-y-3">
+                            <h2 className="font-bold text-foreground flex items-center"><UserPlus className="w-5 h-5 mr-2 text-primary"/>Create New Trainer</h2>
+                            <input name="name" value={newTrainer.name} onChange={handleTrainerChange} placeholder="Full Name" required className="w-full px-3 py-2 border border-border rounded-lg"/>
+                            <input name="specialty" value={newTrainer.specialty} onChange={handleTrainerChange} placeholder="Specialties (comma-separated)" required className="w-full px-3 py-2 border border-border rounded-lg"/>
+                            <select name="location" value={newTrainer.location} onChange={handleTrainerChange} className="w-full px-3 py-2 border border-border rounded-lg bg-card">
                                 {HCMC_DISTRICTS.map(d => <option key={d} value={d}>{d}</option>)}
                             </select>
-                            <input type="number" name="price" value={newTrainer.price} onChange={handleTrainerChange} placeholder="Starting Price" required className="w-full px-3 py-2 border border-slate-300 rounded-lg"/>
-                            <button type="submit" className="w-full bg-blue-500 text-white font-bold py-2.5 rounded-xl">Add Trainer</button>
+                            <input type="number" name="price" value={newTrainer.price} onChange={handleTrainerChange} placeholder="Starting Price" required className="w-full px-3 py-2 border border-border rounded-lg"/>
+                            <button type="submit" className="w-full bg-primary text-white font-bold py-2.5 rounded-xl">Add Trainer</button>
                         </form>
-                        <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200/80">
-                             <h2 className="font-bold text-slate-800 mb-2">Existing Trainers ({trainers.length})</h2>
+                        <div className="bg-card p-4 rounded-xl shadow-sm border border-border/80">
+                             <h2 className="font-bold text-foreground mb-2">Existing Trainers ({trainers.length})</h2>
                              <ul className="space-y-2 max-h-60 overflow-y-auto">
-                                {trainers.map(t => <li key={t.id} className="flex justify-between items-center p-2 bg-slate-50 rounded-md text-sm"><span className="font-semibold">{t.name}</span> <span className="text-slate-500">{t.location}</span></li>)}
+                                {trainers.map(t => <li key={t.id} className="flex justify-between items-center p-2 bg-muted/50 rounded-md text-sm"><span className="font-semibold">{t.name}</span> <span className="text-muted-foreground">{t.location}</span></li>)}
                              </ul>
                         </div>
                     </div>
@@ -97,32 +97,32 @@ const AdminPage: React.FC<AdminPageProps> = ({ trainers, onCreateTrainer, onCrea
 
                 {activeTab === 'courses' && (
                      <div className="space-y-4 animate-fade-in">
-                        <form onSubmit={handleCreateCourse} className="bg-white p-4 rounded-xl shadow-sm border border-slate-200/80 space-y-3">
-                            <h2 className="font-bold text-slate-800 flex items-center"><PlusCircle className="w-5 h-5 mr-2 text-emerald-500"/>Create New Course</h2>
-                            <select name="trainerId" value={newCourse.trainerId} onChange={handleCourseChange} required className="w-full px-3 py-2 border border-slate-300 rounded-lg bg-white">
+                        <form onSubmit={handleCreateCourse} className="bg-card p-4 rounded-xl shadow-sm border border-border/80 space-y-3">
+                            <h2 className="font-bold text-foreground flex items-center"><PlusCircle className="w-5 h-5 mr-2 text-emerald-500"/>Create New Course</h2>
+                            <select name="trainerId" value={newCourse.trainerId} onChange={handleCourseChange} required className="w-full px-3 py-2 border border-border rounded-lg bg-card">
                                 <option value="" disabled>Select a Trainer</option>
                                 {trainers.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
                             </select>
-                            <input name="name" value={newCourse.name} onChange={handleCourseChange} placeholder="Course Name" required className="w-full px-3 py-2 border border-slate-300 rounded-lg"/>
-                            <textarea name="description" value={newCourse.description} onChange={handleCourseChange} placeholder="Description" required className="w-full px-3 py-2 border border-slate-300 rounded-lg"/>
+                            <input name="name" value={newCourse.name} onChange={handleCourseChange} placeholder="Course Name" required className="w-full px-3 py-2 border border-border rounded-lg"/>
+                            <textarea name="description" value={newCourse.description} onChange={handleCourseChange} placeholder="Description" required className="w-full px-3 py-2 border border-border rounded-lg"/>
                             <div className="grid grid-cols-2 gap-2">
-                                <input type="number" name="duration" value={newCourse.duration} onChange={handleCourseChange} placeholder="Duration (min)" required className="w-full px-3 py-2 border border-slate-300 rounded-lg"/>
-                                <input type="number" name="capacity" value={newCourse.capacity} onChange={handleCourseChange} placeholder="Capacity" required className="w-full px-3 py-2 border border-slate-300 rounded-lg"/>
+                                <input type="number" name="duration" value={newCourse.duration} onChange={handleCourseChange} placeholder="Duration (min)" required className="w-full px-3 py-2 border border-border rounded-lg"/>
+                                <input type="number" name="capacity" value={newCourse.capacity} onChange={handleCourseChange} placeholder="Capacity" required className="w-full px-3 py-2 border border-border rounded-lg"/>
                             </div>
-                            <input type="number" name="price" value={newCourse.price} onChange={handleCourseChange} placeholder="Price (VND)" required className="w-full px-3 py-2 border border-slate-300 rounded-lg"/>
-                             <select name="classType" value={newCourse.classType} onChange={handleCourseChange} className="w-full px-3 py-2 border border-slate-300 rounded-lg bg-white">
+                            <input type="number" name="price" value={newCourse.price} onChange={handleCourseChange} placeholder="Price (VND)" required className="w-full px-3 py-2 border border-border rounded-lg"/>
+                             <select name="classType" value={newCourse.classType} onChange={handleCourseChange} className="w-full px-3 py-2 border border-border rounded-lg bg-card">
                                 {CLASS_TYPES.map(ct => <option key={ct} value={ct}>{ct}</option>)}
                             </select>
                             <button type="submit" className="w-full bg-emerald-500 text-white font-bold py-2.5 rounded-xl">Add Course</button>
                         </form>
-                         <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200/80">
-                             <h2 className="font-bold text-slate-800 mb-2">Existing Courses</h2>
+                         <div className="bg-card p-4 rounded-xl shadow-sm border border-border/80">
+                             <h2 className="font-bold text-foreground mb-2">Existing Courses</h2>
                              <div className="space-y-3 max-h-60 overflow-y-auto">
                                 {trainers.map(t => t.classes.length > 0 && (
                                     <div key={t.id}>
-                                        <h3 className="font-semibold text-sm text-slate-600 border-b pb-1 mb-1">{t.name}</h3>
+                                        <h3 className="font-semibold text-sm text-muted-foreground border-b pb-1 mb-1">{t.name}</h3>
                                         <ul className="space-y-1">
-                                            {t.classes.map(c => <li key={c.id} className="text-sm p-1 bg-slate-50 rounded">{c.name}</li>)}
+                                            {t.classes.map(c => <li key={c.id} className="text-sm p-1 bg-muted/50 rounded">{c.name}</li>)}
                                         </ul>
                                     </div>
                                 ))}

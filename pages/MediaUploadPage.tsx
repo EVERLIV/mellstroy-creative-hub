@@ -1,14 +1,23 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Upload, Image, Loader, CheckCircle, XCircle } from 'lucide-react';
+import { CheckCircle, XCircle, Check, FolderOpen, Image, UserRound, Trophy, Info, type LucideIcon } from 'lucide-react';
+import { AppScreen, ScreenHeader, ScreenBody, ScreenSection, ScreenSplit } from '@/src/components/layout/screen';
+import { cn } from '@/src/lib/utils';
 import { supabase } from '../src/integrations/supabase/client';
 import { useToast } from '../src/hooks/use-toast';
+import FileUpload, { type UploadHelpers } from '@/src/components/kokonutui/file-upload';
+
+const BUCKET_ICONS: Record<string, LucideIcon> = {
+  'category-icons': FolderOpen,
+  'class-images': Image,
+  avatars: UserRound,
+  'challenge-covers': Trophy,
+};
 
 const MediaUploadPage: React.FC = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const [selectedBucket, setSelectedBucket] = useState('category-icons');
-  const [uploading, setUploading] = useState(false);
   const [uploadedFiles, setUploadedFiles] = useState<string[]>([]);
   const [failedFiles, setFailedFiles] = useState<string[]>([]);
 
@@ -19,173 +28,174 @@ const MediaUploadPage: React.FC = () => {
     { id: 'challenge-covers', name: 'Challenge Covers', description: 'Cover images for challenges' },
   ];
 
-  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (!files || files.length === 0) return;
+  const selectedBucketName = buckets.find((b) => b.id === selectedBucket)?.name;
 
-    setUploading(true);
-    setUploadedFiles([]);
-    setFailedFiles([]);
+  const handleUpload = async (file: File, helpers: UploadHelpers) => {
+    helpers.onProgress(15);
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
 
-    const uploadPromises = Array.from(files).map(async (file: File) => {
-      try {
-        const fileExt = file.name.split('.').pop();
-        const fileName = `${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
-        const filePath = fileName;
-
-        const { error: uploadError } = await supabase.storage
-          .from(selectedBucket)
-          .upload(filePath, file, {
-            cacheControl: '3600',
-            upsert: false
-          });
-
-        if (uploadError) throw uploadError;
-
-        setUploadedFiles(prev => [...prev, file.name]);
-        return { success: true, fileName: file.name };
-      } catch (error: any) {
-        console.error(`Error uploading ${file.name}:`, error);
-        setFailedFiles(prev => [...prev, file.name]);
-        return { success: false, fileName: file.name, error: error.message };
-      }
+    const { error } = await supabase.storage.from(selectedBucket).upload(fileName, file, {
+      cacheControl: '3600',
+      upsert: false,
     });
 
-    await Promise.all(uploadPromises);
+    if (helpers.signal.aborted) {
+      throw new Error('Upload cancelled');
+    }
 
-    setUploading(false);
+    if (error) {
+      setFailedFiles((prev) => (prev.includes(file.name) ? prev : [...prev, file.name]));
+      throw error;
+    }
 
-    toast({
-      title: 'Upload Complete',
-      description: `Successfully uploaded ${uploadedFiles.length} file(s)${failedFiles.length > 0 ? `, ${failedFiles.length} failed` : ''}`,
-    });
-
-    // Reset file input
-    e.target.value = '';
+    helpers.onProgress(100);
+    setUploadedFiles((prev) => (prev.includes(file.name) ? prev : [...prev, file.name]));
   };
 
   return (
-    <div className="min-h-screen bg-background pb-24">
-      {/* Header */}
-      <div className="bg-gradient-to-br from-orange-500 to-pink-500 px-4 py-4">
-        <button
-          onClick={() => navigate('/admin')}
-          className="mb-4 p-2 rounded-full bg-white/20 hover:bg-white/30 transition-colors"
-        >
-          <ArrowLeft className="w-5 h-5 text-white" />
-        </button>
-        <h1 className="text-lg font-semibold text-white text-center">Media Upload</h1>
-      </div>
+    <AppScreen>
+      <ScreenHeader
+        title="Media upload"
+        description="Upload images to Supabase storage buckets"
+        onBack={() => navigate('/admin')}
+        width="detail"
+        breadcrumbs={[{ label: 'Admin', href: '/admin' }, { label: 'Media upload' }]}
+      />
 
-      <div className="max-w-4xl mx-auto px-4 py-6 space-y-6">
-        {/* Bucket Selection */}
-        <div className="bg-card rounded-2xl p-6 border border-border">
-          <h2 className="text-lg font-semibold text-foreground mb-4">Select Storage Bucket</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            {buckets.map((bucket) => (
-              <button
-                key={bucket.id}
-                onClick={() => setSelectedBucket(bucket.id)}
-                className={`p-4 rounded-lg border-2 transition-all text-left ${
-                  selectedBucket === bucket.id
-                    ? 'border-primary bg-primary/10'
-                    : 'border-border hover:border-primary/50'
-                }`}
-              >
-                <p className="font-semibold text-foreground mb-1">{bucket.name}</p>
-                <p className="text-sm text-muted-foreground">{bucket.description}</p>
-              </button>
-            ))}
-          </div>
-        </div>
+      <ScreenBody width="detail">
+        <ScreenSplit
+          main={
+            <>
+              <ScreenSection title="1. Choose a bucket" description="Where the files will be stored">
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2" role="radiogroup" aria-label="Storage bucket">
+                  {buckets.map((bucket) => {
+                    const isSelected = selectedBucket === bucket.id;
+                    const Icon = BUCKET_ICONS[bucket.id] ?? FolderOpen;
+                    return (
+                      <button
+                        key={bucket.id}
+                        type="button"
+                        role="radio"
+                        aria-checked={isSelected}
+                        onClick={() => setSelectedBucket(bucket.id)}
+                        className={cn(
+                          'flex items-start gap-3 rounded-2xl border p-4 text-left transition-colors',
+                          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+                          isSelected ? 'border-primary bg-primary/5' : 'border-border bg-card hover:border-primary/40'
+                        )}
+                      >
+                        <span
+                          className={cn(
+                            'grid size-10 shrink-0 place-items-center rounded-full',
+                            isSelected ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'
+                          )}
+                        >
+                          {isSelected ? <Check className="size-5" aria-hidden="true" /> : <Icon className="size-5" aria-hidden="true" />}
+                        </span>
+                        <span className="flex min-w-0 flex-col gap-0.5">
+                          <span className="font-semibold text-foreground">{bucket.name}</span>
+                          <span className="text-sm text-muted-foreground">{bucket.description}</span>
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </ScreenSection>
 
-        {/* Upload Area */}
-        <div className="bg-card rounded-2xl p-6 border border-border">
-          <h2 className="text-lg font-semibold text-foreground mb-4">Upload Files</h2>
-          
-          <label className="block">
-            <div className="border-2 border-dashed border-border rounded-lg p-8 text-center hover:border-primary transition-colors cursor-pointer">
-              <Upload className="w-12 h-12 text-muted-foreground mx-auto mb-3" />
-              <p className="text-foreground font-medium mb-1">Click to upload files</p>
-              <p className="text-sm text-muted-foreground mb-4">
-                or drag and drop images here
-              </p>
-              <p className="text-xs text-muted-foreground">
-                Uploading to: <span className="font-semibold text-primary">{buckets.find(b => b.id === selectedBucket)?.name}</span>
-              </p>
-            </div>
-            <input
-              type="file"
-              multiple
-              accept="image/*"
-              onChange={handleFileSelect}
-              className="hidden"
-              disabled={uploading}
-            />
-          </label>
+              <ScreenSection title="2. Upload files" description={`Uploading to ${selectedBucketName}`} variant="panel">
+                <FileUpload
+                  key={selectedBucket}
+                  acceptedFileTypes={['image/*', '.jpg', '.jpeg', '.png', '.webp', '.gif']}
+                  maxFileSize={5 * 1024 * 1024}
+                  maxFiles={20}
+                  multiple
+                  onUpload={handleUpload}
+                  onUploadSuccess={(file) => {
+                    toast({
+                      title: 'Uploaded',
+                      description: `${file.name} saved to ${selectedBucketName}`,
+                    });
+                  }}
+                  onUploadError={(error, file) => {
+                    toast({
+                      title: 'Upload failed',
+                      description: `${file.name}: ${error.message}`,
+                      variant: 'destructive',
+                    });
+                  }}
+                  onComplete={(files) => {
+                    if (files.length > 0) {
+                      toast({
+                        title: 'Upload complete',
+                        description: `Successfully uploaded ${files.length} file(s)`,
+                      });
+                    }
+                  }}
+                />
+              </ScreenSection>
 
-          {uploading && (
-            <div className="mt-4 flex items-center justify-center gap-2 text-muted-foreground">
-              <Loader className="w-5 h-5 animate-spin" />
-              <span>Uploading files...</span>
-            </div>
-          )}
-        </div>
+              {(uploadedFiles.length > 0 || failedFiles.length > 0) && (
+                <ScreenSection title="Session results" variant="panel">
+                  <div className="flex flex-col gap-5">
+                    {uploadedFiles.length > 0 && (
+                      <div className="flex flex-col gap-2">
+                        <h3 className="flex items-center gap-2 text-sm font-medium text-foreground">
+                          <CheckCircle className="size-4 text-primary" aria-hidden="true" />
+                          Uploaded ({uploadedFiles.length})
+                        </h3>
+                        <ul className="flex flex-col gap-1">
+                          {uploadedFiles.map((file) => (
+                            <li key={file} className="truncate text-sm text-muted-foreground">
+                              {file}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
 
-        {/* Upload Results */}
-        {(uploadedFiles.length > 0 || failedFiles.length > 0) && (
-          <div className="bg-card rounded-2xl p-6 border border-border space-y-4">
-            <h2 className="text-lg font-semibold text-foreground">Upload Results</h2>
-            
-            {uploadedFiles.length > 0 && (
-              <div>
-                <h3 className="text-sm font-medium text-green-600 mb-2 flex items-center gap-2">
-                  <CheckCircle className="w-4 h-4" />
-                  Successfully Uploaded ({uploadedFiles.length})
-                </h3>
-                <ul className="space-y-1">
-                  {uploadedFiles.map((file, index) => (
-                    <li key={index} className="text-sm text-muted-foreground flex items-center gap-2">
-                      <CheckCircle className="w-3 h-3 text-green-600" />
-                      {file}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-
-            {failedFiles.length > 0 && (
-              <div>
-                <h3 className="text-sm font-medium text-red-600 mb-2 flex items-center gap-2">
-                  <XCircle className="w-4 h-4" />
-                  Failed Uploads ({failedFiles.length})
-                </h3>
-                <ul className="space-y-1">
-                  {failedFiles.map((file, index) => (
-                    <li key={index} className="text-sm text-muted-foreground flex items-center gap-2">
-                      <XCircle className="w-3 h-3 text-red-600" />
-                      {file}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Instructions */}
-        <div className="bg-muted/50 rounded-2xl p-6">
-          <h3 className="font-semibold text-foreground mb-3">Upload Instructions</h3>
-          <ul className="space-y-2 text-sm text-muted-foreground">
-            <li>• Select the appropriate storage bucket for your media type</li>
-            <li>• You can upload multiple files at once</li>
-            <li>• Supported formats: JPG, PNG, WEBP, GIF</li>
-            <li>• Maximum file size: 5MB per file</li>
-            <li>• Files are automatically renamed to prevent conflicts</li>
-          </ul>
-        </div>
-      </div>
-    </div>
+                    {failedFiles.length > 0 && (
+                      <div className="flex flex-col gap-2">
+                        <h3 className="flex items-center gap-2 text-sm font-medium text-destructive">
+                          <XCircle className="size-4" aria-hidden="true" />
+                          Failed ({failedFiles.length})
+                        </h3>
+                        <ul className="flex flex-col gap-1">
+                          {failedFiles.map((file) => (
+                            <li key={file} className="truncate text-sm text-muted-foreground">
+                              {file}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                  </div>
+                </ScreenSection>
+              )}
+            </>
+          }
+          aside={
+            <ScreenSection
+              title={
+                <span className="flex items-center gap-2">
+                  <Info className="size-4 text-primary" aria-hidden="true" />
+                  Tips
+                </span>
+              }
+              variant="panel"
+            >
+              <ul className="flex list-disc flex-col gap-2 pl-4 text-sm text-muted-foreground marker:text-primary">
+                <li>Select the bucket that matches your media type</li>
+                <li>You can upload multiple files at once</li>
+                <li>Supported formats: JPG, PNG, WEBP, GIF</li>
+                <li>Maximum file size: 5MB per file</li>
+                <li>Files are automatically renamed to prevent conflicts</li>
+              </ul>
+            </ScreenSection>
+          }
+        />
+      </ScreenBody>
+    </AppScreen>
   );
 };
 

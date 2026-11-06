@@ -1,9 +1,19 @@
 import React, { useState, useRef } from 'react';
 import { Trainer } from '../types';
 import { HCMC_DISTRICTS, FITNESS_ACTIVITIES, FITNESS_GOALS } from '../constants';
-import { ArrowLeft, Camera, Loader } from 'lucide-react';
+import { Camera, Loader, Save } from 'lucide-react';
+import { AppScreen, ScreenHeader, ScreenBody, ScreenSection, ScreenStickyBar } from '@/src/components/layout/screen';
+import { Field, FieldDescription, FieldGroup, FieldLabel } from '@/src/components/ui/field';
+import { ChipGroup } from '@/src/components/form/chip-group';
+import { Button } from '@/src/components/ui/button';
+import { Input } from '@/src/components/ui/input';
+import { Textarea } from '@/src/components/ui/textarea';
+import { NativeSelect } from '@/src/components/ui/native-select';
+import { Avatar, AvatarFallback, AvatarImage } from '@/src/components/ui/avatar';
 import { supabase } from '../src/integrations/supabase/client';
 import { useToast } from '../src/hooks/use-toast';
+
+const MAX_SELECTIONS = 5;
 
 interface EditAboutMePageProps {
     user: Trainer;
@@ -67,7 +77,7 @@ const EditAboutMePage: React.FC<EditAboutMePageProps> = ({ user, onSave, onCance
         try {
             const fileExt = file.name.split('.').pop();
             const fileName = `${user.id}/${Date.now()}.${fileExt}`;
-            
+
             const { error: uploadError } = await supabase.storage
                 .from('avatars')
                 .upload(fileName, file);
@@ -79,7 +89,7 @@ const EditAboutMePage: React.FC<EditAboutMePageProps> = ({ user, onSave, onCance
                 .getPublicUrl(fileName);
 
             setFormData(prev => ({ ...prev, imageUrl: publicUrl }));
-            
+
             toast({
                 title: "Success",
                 description: "Profile picture updated!",
@@ -102,235 +112,139 @@ const EditAboutMePage: React.FC<EditAboutMePageProps> = ({ user, onSave, onCance
     };
 
     return (
-        <div className="bg-white h-screen flex flex-col overflow-hidden">
-            {/* Header */}
-            <div className="flex items-center justify-between px-4 py-3 bg-white shadow-sm z-20">
-                <button 
-                    type="button"
-                    onClick={onCancel} 
-                    className="p-2 -ml-2"
-                >
-                    <ArrowLeft className="w-5 h-5 text-gray-800" />
-                </button>
-                <h1 className="text-base font-bold text-gray-900">Edit Profile</h1>
-                <button 
-                    type="submit"
-                    form="edit-form"
-                    className="text-sm font-semibold text-blue-600 px-2 py-1 hover:text-blue-700"
-                >
-                    Save
-                </button>
-            </div>
+        <AppScreen>
+            <ScreenHeader
+                title="Edit profile"
+                description="Tell trainers about yourself and your goals"
+                onBack={onCancel}
+                width="form"
+                breadcrumbs={[{ label: 'Profile' }, { label: 'Edit' }]}
+            />
 
-            {/* Scrollable Content */}
-            <div className="flex-1 overflow-y-auto">
-                <div className="px-4 py-3 bg-gray-50">
-                    <form id="edit-form" onSubmit={handleSave} className="space-y-3">
-                        {/* Avatar Upload Card */}
-                        <div className="bg-white rounded-lg p-3 mb-3 shadow-sm">
-                            <div className="flex flex-col items-center gap-2">
-                                <input
-                                    type="file"
-                                    ref={fileInputRef}
-                                    onChange={handleImageChange}
-                                    className="hidden"
-                                    accept="image/png, image/jpeg, image/jpg, image/webp"
+            <ScreenBody width="form">
+                <form id="edit-form" onSubmit={handleSave} className="flex flex-col gap-6 md:gap-8">
+                    {/* Photo */}
+                    <section className="flex items-center gap-4 rounded-2xl border border-border bg-card p-4 md:p-6">
+                        <input
+                            type="file"
+                            ref={fileInputRef}
+                            onChange={handleImageChange}
+                            className="hidden"
+                            accept="image/png, image/jpeg, image/jpg, image/webp"
+                        />
+                        <div className="relative shrink-0">
+                            <Avatar className="size-20 border-2 border-border md:size-24">
+                                <AvatarImage src={formData.imageUrl} alt={formData.name} className="object-cover" />
+                                <AvatarFallback className="text-xl font-semibold">
+                                    {formData.name?.charAt(0).toUpperCase() || 'U'}
+                                </AvatarFallback>
+                            </Avatar>
+                            <Button
+                                type="button"
+                                size="icon"
+                                onClick={() => fileInputRef.current?.click()}
+                                disabled={isUploading}
+                                aria-label="Change profile photo"
+                                className="absolute -bottom-1 -right-1 size-8 rounded-full"
+                            >
+                                {isUploading ? <Loader className="animate-spin" /> : <Camera />}
+                            </Button>
+                        </div>
+                        <div className="flex min-w-0 flex-col gap-1">
+                            <h2 className="text-base font-semibold text-foreground">Profile photo</h2>
+                            <p className="text-sm text-muted-foreground">JPG, PNG or WEBP up to 3MB.</p>
+                        </div>
+                    </section>
+
+                    <ScreenSection title="Basics" variant="panel">
+                        <FieldGroup>
+                            <Field>
+                                <FieldLabel htmlFor="name">Full name</FieldLabel>
+                                <Input id="name" type="text" name="name" value={formData.name} onChange={handleChange} placeholder="Enter your name" />
+                            </Field>
+                            <Field>
+                                <FieldLabel htmlFor="location">District</FieldLabel>
+                                <NativeSelect id="location" name="location" value={formData.location || ''} onChange={handleChange} required aria-required="true">
+                                    <option value="">Select district</option>
+                                    {HCMC_DISTRICTS.map(district => (
+                                        <option key={district} value={district}>{district}</option>
+                                    ))}
+                                </NativeSelect>
+                            </Field>
+                            <Field>
+                                <FieldLabel htmlFor="bio">About me</FieldLabel>
+                                <Textarea
+                                    id="bio"
+                                    name="bio"
+                                    value={formData.bio}
+                                    onChange={handleChange}
+                                    rows={4}
+                                    placeholder="Tell others about yourself..."
+                                    className="resize-none"
                                 />
-                                <div className="relative">
-                                    <img 
-                                        src={formData.imageUrl} 
-                                        alt={formData.name} 
-                                        className="w-20 h-20 rounded-full object-cover"
-                                    />
-                                    <button 
-                                        type="button"
-                                        onClick={() => fileInputRef.current?.click()} 
-                                        disabled={isUploading}
-                                        className="absolute bottom-0 right-0 w-7 h-7 rounded-full bg-blue-600 text-white flex items-center justify-center shadow-sm hover:bg-blue-700 transition-colors disabled:opacity-50"
-                                    >
-                                        {isUploading ? <Loader className="w-3.5 h-3.5 animate-spin"/> : <Camera className="w-3.5 h-3.5" />}
-                                    </button>
-                                </div>
-                                <p className="text-xs text-gray-600">Tap to change photo</p>
-                            </div>
-                        </div>
+                            </Field>
+                        </FieldGroup>
+                    </ScreenSection>
 
-                        {/* Basic Information Card */}
-                        <div className="bg-white rounded-lg p-3 mb-3 shadow-sm">
-                            <h3 className="text-sm font-bold text-gray-900 mb-2">Basic Information</h3>
-                            <div className="space-y-2.5">
-                                <div>
-                                    <label htmlFor="name" className="block text-xs text-gray-500 mb-1">
-                                        Full Name
-                                    </label>
-                                    <input 
-                                        type="text" 
-                                        id="name" 
-                                        name="name" 
-                                        value={formData.name} 
-                                        onChange={handleChange}
-                                        className="w-full px-3 py-2 border border-gray-200 rounded-lg bg-white text-xs text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                        placeholder="Enter your name"
-                                    />
-                                </div>
-                                
-                                <div>
-                                    <label htmlFor="bio" className="block text-xs text-gray-500 mb-1">
-                                        About Me
-                                    </label>
-                                    <textarea 
-                                        id="bio" 
-                                        name="bio" 
-                                        value={formData.bio} 
-                                        onChange={handleChange} 
-                                        rows={3}
-                                        placeholder="Tell others about yourself..."
-                                        className="w-full px-3 py-2 border border-gray-200 rounded-lg bg-white text-xs text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none"
-                                    />
-                                </div>
-                                
-                                <div>
-                                    <label htmlFor="location" className="block text-xs text-gray-500 mb-1">
-                                        District <span className="text-red-500">*</span>
-                                    </label>
-                                    <select 
-                                        id="location" 
-                                        name="location" 
-                                        value={formData.location || ''} 
-                                        onChange={handleChange}
-                                        required
-                                        className="w-full px-3 py-2 border border-gray-200 rounded-lg bg-white text-xs text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 appearance-none cursor-pointer"
-                                    >
-                                        <option value="">Select district</option>
-                                        {HCMC_DISTRICTS.map(district => (
-                                            <option key={district} value={district}>{district}</option>
-                                        ))}
-                                    </select>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        {/* Fitness Stats Card */}
-                        <div className="bg-white rounded-lg p-3 mb-3 shadow-sm">
-                            <h3 className="text-sm font-bold text-gray-900 mb-2">Fitness Stats</h3>
-                            <div className="grid grid-cols-3 gap-2">
-                                <div>
-                                    <label htmlFor="age" className="block text-xs text-gray-500 mb-1 text-center">
-                                        Age
-                                    </label>
-                                    <input 
-                                        type="number" 
-                                        id="age" 
-                                        name="age" 
-                                        value={formData.age || ''} 
-                                        onChange={handleChange}
-                                        placeholder="--"
-                                        className="w-full text-center px-2 py-2 border border-gray-200 rounded-lg bg-white text-xs text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                    />
-                                </div>
-                                <div>
-                                    <label htmlFor="height" className="block text-xs text-gray-500 mb-1 text-center">
-                                        Height
-                                    </label>
-                                    <input 
-                                        type="number" 
-                                        id="height" 
-                                        name="height" 
-                                        value={formData.height || ''} 
-                                        onChange={handleChange}
-                                        placeholder="cm"
-                                        className="w-full text-center px-2 py-2 border border-gray-200 rounded-lg bg-white text-xs text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                    />
-                                </div>
-                                <div>
-                                    <label htmlFor="weight" className="block text-xs text-gray-500 mb-1 text-center">
-                                        Weight
-                                    </label>
-                                    <input 
-                                        type="number" 
-                                        id="weight" 
-                                        name="weight" 
-                                        value={formData.weight || ''} 
-                                        onChange={handleChange}
-                                        placeholder="kg"
-                                        className="w-full text-center px-2 py-2 border border-gray-200 rounded-lg bg-white text-xs text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                    />
-                                </div>
-                            </div>
-                        </div>
+                    <ScreenSection title="Body stats" description="Helps trainers tailor sessions" variant="panel">
+                        <FieldGroup className="grid grid-cols-3 gap-3 md:gap-4">
+                            <Field>
+                                <FieldLabel htmlFor="age">Age</FieldLabel>
+                                <Input id="age" type="number" name="age" value={formData.age || ''} onChange={handleChange} placeholder="--" className="text-center" />
+                            </Field>
+                            <Field>
+                                <FieldLabel htmlFor="height">Height</FieldLabel>
+                                <Input id="height" type="number" name="height" value={formData.height || ''} onChange={handleChange} placeholder="cm" className="text-center" />
+                                <FieldDescription>cm</FieldDescription>
+                            </Field>
+                            <Field>
+                                <FieldLabel htmlFor="weight">Weight</FieldLabel>
+                                <Input id="weight" type="number" name="weight" value={formData.weight || ''} onChange={handleChange} placeholder="kg" className="text-center" />
+                                <FieldDescription>kg</FieldDescription>
+                            </Field>
+                        </FieldGroup>
+                    </ScreenSection>
 
-                        {/* Goals Card */}
-                        <div className="bg-white rounded-lg p-3 mb-3 shadow-sm">
-                            <div className="flex justify-between items-center mb-2">
-                                <h3 className="text-sm font-bold text-gray-900">Fitness Goals</h3>
-                                <span className="text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">
-                                    Max 5
-                                </span>
-                            </div>
-                            <div className="flex flex-wrap gap-1.5">
-                                {FITNESS_GOALS.map(goal => {
-                                    const isSelected = formData.goals?.includes(goal);
-                                    return (
-                                        <button 
-                                            type="button" 
-                                            key={goal} 
-                                            onClick={() => handleToggle('goals', goal)}
-                                            className={`px-2.5 py-1 text-xs font-medium rounded-full transition-colors ${
-                                                isSelected 
-                                                    ? 'bg-blue-600 text-white' 
-                                                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                                            }`}
-                                        >
-                                            {goal}
-                                        </button>
-                                    );
-                                })}
-                            </div>
-                        </div>
-                        
-                        {/* Interests Card */}
-                        <div className="bg-white rounded-lg p-3 mb-3 shadow-sm">
-                            <div className="flex justify-between items-center mb-2">
-                                <h3 className="text-sm font-bold text-gray-900">Sport Interests</h3>
-                                <span className="text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full">
-                                    Max 5
-                                </span>
-                            </div>
-                            <div className="flex flex-wrap gap-1.5">
-                                {FITNESS_ACTIVITIES.map(interest => {
-                                    const isSelected = formData.interests?.includes(interest);
-                                    return (
-                                        <button 
-                                            type="button" 
-                                            key={interest} 
-                                            onClick={() => handleToggle('interests', interest)}
-                                            className={`px-2.5 py-1 text-xs font-medium rounded-full transition-colors ${
-                                                isSelected 
-                                                    ? 'bg-blue-600 text-white' 
-                                                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                                            }`}
-                                        >
-                                            {interest}
-                                        </button>
-                                    );
-                                })}
-                            </div>
-                        </div>
-                    </form>
-                </div>
-            </div>
+                    <ScreenSection
+                        title="Fitness goals"
+                        description={`${formData.goals?.length ?? 0} of ${MAX_SELECTIONS} selected`}
+                        variant="panel"
+                    >
+                        <ChipGroup
+                            label="Fitness goals"
+                            options={FITNESS_GOALS}
+                            selected={formData.goals}
+                            max={MAX_SELECTIONS}
+                            onToggle={(goal) => handleToggle('goals', goal)}
+                        />
+                    </ScreenSection>
 
-            {/* Fixed Bottom Button */}
-            <div className="px-4 py-3 bg-white shadow-lg">
-                <button
-                    type="submit"
-                    form="edit-form"
-                    className="w-full font-bold py-3 px-4 rounded-lg transition-all duration-200 text-sm shadow-sm bg-blue-600 text-white hover:bg-blue-700 active:scale-95"
-                >
-                    Save Changes
-                </button>
-            </div>
-        </div>
+                    <ScreenSection
+                        title="Sport interests"
+                        description={`${formData.interests?.length ?? 0} of ${MAX_SELECTIONS} selected`}
+                        variant="panel"
+                    >
+                        <ChipGroup
+                            label="Sport interests"
+                            options={FITNESS_ACTIVITIES}
+                            selected={formData.interests}
+                            max={MAX_SELECTIONS}
+                            onToggle={(interest) => handleToggle('interests', interest)}
+                        />
+                    </ScreenSection>
+
+                    <ScreenStickyBar width="form">
+                        <Button type="button" variant="outline" size="lg" onClick={onCancel} className="hidden md:inline-flex">
+                            Cancel
+                        </Button>
+                        <Button type="submit" size="lg" className="w-full md:w-auto">
+                            <Save />
+                            Save changes
+                        </Button>
+                    </ScreenStickyBar>
+                </form>
+            </ScreenBody>
+        </AppScreen>
     );
 };
 

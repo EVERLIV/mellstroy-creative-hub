@@ -1,12 +1,55 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
-import { ArrowLeft, Send, Loader, MoreVertical, Flag, AlertTriangle, Calendar } from 'lucide-react';
+import {
+  Send,
+  MoreVertical,
+  Flag,
+  AlertTriangle,
+  Calendar,
+  Clock,
+  MessageCircle,
+  ArrowLeft,
+} from 'lucide-react';
+import { AppScreen } from '../src/components/layout/screen';
+import { EmptyState } from '../src/components/layout/states';
+import { APP_CONTENT } from '../src/components/layout/shell';
+import MessageBubble from '../components/chat/MessageBubble';
+import { Alert, AlertDescription, AlertTitle } from '../src/components/ui/alert';
+import { Avatar, AvatarFallback, AvatarImage } from '../src/components/ui/avatar';
+import { Badge } from '../src/components/ui/badge';
+import { Button } from '../src/components/ui/button';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '../src/components/ui/dropdown-menu';
+import {
+  InputGroup,
+  InputGroupAddon,
+  InputGroupButton,
+  InputGroupTextarea,
+} from '../src/components/ui/input-group';
+import { ScrollArea } from '../src/components/ui/scroll-area';
+import { Separator } from '../src/components/ui/separator';
+import { Skeleton } from '../src/components/ui/skeleton';
+import { Spinner } from '../src/components/ui/spinner';
+import { cn } from '../src/lib/utils';
 import { supabase } from '../src/integrations/supabase/client';
 import { useAuth } from '../src/hooks/useAuth';
 import { useToast } from '../src/hooks/use-toast';
-import { formatDistanceToNow } from 'date-fns';
+import { format, isSameDay, isToday, isYesterday } from 'date-fns';
 import ReportModal from '../components/ReportModal';
 import MessageBubbleSkeleton from '../components/MessageBubbleSkeleton';
+
+function formatDayLabel(date: Date) {
+  if (isToday(date)) return 'Today';
+  if (isYesterday(date)) return 'Yesterday';
+  return format(date, 'EEE, MMM d');
+}
+
+const FALLBACK_AVATAR = 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=100';
 
 interface Message {
   id: string;
@@ -37,14 +80,13 @@ const ChatConversationPage: React.FC = () => {
   const [recipient, setRecipient] = useState<Participant | null>(null);
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
-  const [showMenu, setShowMenu] = useState(false);
   const [showReportModal, setShowReportModal] = useState(false);
   const [isNewConversation, setIsNewConversation] = useState(false);
   const [conversationBookingDetails, setConversationBookingDetails] = useState<any>(null);
-  
+  const [liveConnected, setLiveConnected] = useState(false);
+
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
-  const menuRef = useRef<HTMLDivElement>(null);
 
   // Get booking details from location state or conversation
   const bookingDetails = location.state?.bookingDetails || conversationBookingDetails;
@@ -226,6 +268,7 @@ const ChatConversationPage: React.FC = () => {
   useEffect(() => {
     if (!conversationId) return;
 
+    setLiveConnected(false);
     const channel = supabase
       .channel(`conversation-${conversationId}`)
       .on(
@@ -234,24 +277,25 @@ const ChatConversationPage: React.FC = () => {
           event: 'INSERT',
           schema: 'public',
           table: 'messages',
-          filter: `conversation_id=eq.${conversationId}`
+          filter: `conversation_id=eq.${conversationId}`,
         },
         (payload) => {
-          const newMessage = payload.new as Message;
-          setMessages(prev => [...prev, newMessage]);
+          const incoming = payload.new as Message;
+          setMessages((prev) =>
+            prev.some((m) => m.id === incoming.id) ? prev : [...prev, incoming]
+          );
 
-          // Mark as read if I'm the recipient
-          if (user && newMessage.recipient_id === user.id) {
-            supabase
-              .from('messages')
-              .update({ is_read: true })
-              .eq('id', newMessage.id);
+          if (user && incoming.recipient_id === user.id) {
+            supabase.from('messages').update({ is_read: true }).eq('id', incoming.id);
           }
         }
       )
-      .subscribe();
+      .subscribe((status) => {
+        setLiveConnected(status === 'SUBSCRIBED');
+      });
 
     return () => {
+      setLiveConnected(false);
       supabase.removeChannel(channel);
     };
   }, [conversationId, user]);
@@ -328,25 +372,13 @@ const ChatConversationPage: React.FC = () => {
     }
   };
 
-  const handleReport = (reason: string, details: string) => {
+  const handleReport = (_reason: string, _details: string) => {
     toast({
       title: 'Report Submitted',
       description: 'Thank you for helping keep our community safe. We will review your report.'
     });
     setShowReportModal(false);
-    setShowMenu(false);
   };
-
-  // Close menu when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
-        setShowMenu(false);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -362,191 +394,247 @@ const ChatConversationPage: React.FC = () => {
     textarea.style.height = `${Math.min(textarea.scrollHeight, 120)}px`;
   };
 
+  const messageDays = useMemo(() => {
+    const groups: Array<{ label: string; items: Message[] }> = [];
+    for (const message of messages) {
+      const created = new Date(message.created_at);
+      const last = groups[groups.length - 1];
+      if (last && isSameDay(new Date(last.items[0].created_at), created)) {
+        last.items.push(message);
+      } else {
+        groups.push({ label: formatDayLabel(created), items: [message] });
+      }
+    }
+    return groups;
+  }, [messages]);
+
   return (
-    <div className="bg-background h-screen flex flex-col overflow-hidden">
-      {/* Header */}
-      <div className="bg-card border-b border-border shadow-sm flex-shrink-0 z-10">
-        <div className="flex items-center gap-3 px-4 py-3">
-          <button onClick={() => navigate('/messages')} className="p-2 -ml-2 rounded-lg hover:bg-gray-100 transition-colors">
-            <ArrowLeft className="w-5 h-5 text-gray-800" />
-          </button>
-          
-          {recipient && (
-            <>
-              <img
-                src={recipient.avatar_url || 'https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=100'}
-                alt={recipient.username}
-                className="w-10 h-10 rounded-full object-cover"
-              />
-              <div className="flex-1 min-w-0">
-                <h2 className="text-sm font-bold text-gray-900 truncate">{recipient.username}</h2>
+    <AppScreen className="flex h-[100dvh] min-w-0 flex-col overflow-hidden bg-[#f9fafb] dark:bg-background">
+      <header className="shrink-0 border-b border-border bg-card/95 backdrop-blur">
+        <div className={cn(APP_CONTENT, 'py-3')}>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => navigate('/messages')}
+              aria-label="Back to messages"
+            >
+              <ArrowLeft />
+            </Button>
+
+            {recipient ? (
+              <div className="flex min-w-0 flex-1 items-center gap-3">
+                <Avatar className="size-10 shrink-0">
+                  <AvatarImage
+                    src={recipient.avatar_url || FALLBACK_AVATAR}
+                    alt={recipient.username}
+                    className="object-cover"
+                  />
+                  <AvatarFallback>{recipient.username.charAt(0).toUpperCase()}</AvatarFallback>
+                </Avatar>
+                <div className="min-w-0">
+                  <h1 className="truncate text-base font-semibold text-foreground">
+                    {recipient.username}
+                  </h1>
+                  <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                    <span
+                      className={cn(
+                        'size-1.5 rounded-full',
+                        liveConnected ? 'bg-primary' : 'bg-muted-foreground/40'
+                      )}
+                      aria-hidden
+                    />
+                    {liveConnected ? 'Live · realtime' : 'Connecting…'}
+                  </p>
+                </div>
               </div>
-              
-              {/* Menu Button */}
-              <div className="relative" ref={menuRef}>
-                <button 
-                  onClick={() => setShowMenu(!showMenu)}
-                  className="p-2 -mr-2 rounded-lg hover:bg-gray-100 transition-colors"
-                >
-                  <MoreVertical className="w-5 h-5 text-gray-800" />
-                </button>
-                
-                {showMenu && (
-                  <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-lg shadow-xl z-20 border border-gray-200">
-                    <button 
-                      onClick={() => {
-                        setShowReportModal(true);
-                        setShowMenu(false);
-                      }}
-                      className="w-full text-left flex items-center px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-100 rounded-lg"
+            ) : (
+              <div className="flex flex-1 items-center gap-3">
+                <Skeleton className="size-10 rounded-full" />
+                <div className="flex flex-col gap-1.5">
+                  <Skeleton className="h-4 w-36" />
+                  <Skeleton className="h-3 w-24" />
+                </div>
+              </div>
+            )}
+
+            {recipient ? (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="ghost" size="icon" aria-label="Conversation options">
+                    <MoreVertical />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-48">
+                  <DropdownMenuGroup>
+                    <DropdownMenuItem
+                      className="text-destructive focus:text-destructive"
+                      onClick={() => setShowReportModal(true)}
                     >
-                      <Flag className="w-4 h-4 mr-3 text-red-500" />
-                      Report Chat
-                    </button>
+                      <Flag data-icon="inline-start" />
+                      Report chat
+                    </DropdownMenuItem>
+                  </DropdownMenuGroup>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            ) : null}
+          </div>
+        </div>
+
+        {bookingDetails ? (
+          <>
+            <Separator />
+            <div className={cn(APP_CONTENT, 'bg-muted/40 py-2.5')}>
+              <div className="flex items-center justify-between gap-3">
+                <div className="min-w-0 flex-1">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <p className="truncate text-sm font-semibold text-foreground">
+                      {bookingDetails.class_name}
+                    </p>
+                    <Badge variant="secondary">Booking</Badge>
                   </div>
-                )}
+                  <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
+                    <span className="inline-flex items-center gap-1">
+                      <Calendar aria-hidden />
+                      {new Date(bookingDetails.booking_date).toLocaleDateString('en-US', {
+                        month: 'short',
+                        day: 'numeric',
+                        year: 'numeric',
+                      })}
+                    </span>
+                    <span className="inline-flex items-center gap-1">
+                      <Clock aria-hidden />
+                      {bookingDetails.booking_time}
+                    </span>
+                    <span>ID: {bookingDetails.verification_code}</span>
+                  </div>
+                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  disabled={sending}
+                  onClick={handleSendBookingDetails}
+                >
+                  <Send data-icon="inline-start" />
+                  Share details
+                </Button>
               </div>
-            </>
+            </div>
+          </>
+        ) : null}
+      </header>
+
+      <ScrollArea className="min-h-0 flex-1">
+        <div className={cn(APP_CONTENT, 'py-4 pb-6')}>
+          {loading ? (
+            <div className="mx-auto flex w-full max-w-2xl flex-col gap-3" aria-busy="true">
+              <MessageBubbleSkeleton isOwn={false} />
+              <MessageBubbleSkeleton isOwn />
+              <MessageBubbleSkeleton isOwn={false} />
+              <MessageBubbleSkeleton isOwn />
+            </div>
+          ) : messages.length === 0 ? (
+            <EmptyState
+              icon={MessageCircle}
+              title="No messages yet"
+              description="Say hello to start the conversation."
+              className="mt-8"
+            />
+          ) : (
+            <div className="mx-auto flex w-full max-w-2xl flex-col gap-4">
+              {messageDays.map((day) => (
+                <div key={day.label + day.items[0].id} className="flex flex-col gap-3">
+                  <div className="flex items-center justify-center">
+                    <Badge variant="secondary">{day.label}</Badge>
+                  </div>
+                  {day.items.map((message) => {
+                    const isMyMessage = message.sender_id === user?.id;
+                    const isSafetyMessage = message.content.includes('⚠️ Safety Reminder');
+
+                    if (isSafetyMessage) {
+                      return (
+                        <Alert key={message.id} className="mx-auto max-w-md">
+                          <AlertTriangle />
+                          <AlertTitle>Safety Reminder</AlertTitle>
+                          <AlertDescription>
+                            Never transfer money in advance. Use RhinoFit’s secure booking payment
+                            and report anything suspicious.
+                          </AlertDescription>
+                        </Alert>
+                      );
+                    }
+
+                    return (
+                      <MessageBubble
+                        key={message.id}
+                        isOwn={isMyMessage}
+                        body={
+                          <span className="whitespace-pre-wrap break-words">{message.content}</span>
+                        }
+                        timestamp={format(new Date(message.created_at), 'h:mm a')}
+                        status={
+                          isMyMessage
+                            ? message.is_read
+                              ? 'Read'
+                              : 'Sent'
+                            : undefined
+                        }
+                      />
+                    );
+                  })}
+                </div>
+              ))}
+              <div ref={messagesEndRef} />
+            </div>
           )}
         </div>
-      </div>
+      </ScrollArea>
 
-      {/* Booking details banner if provided */}
-      {bookingDetails && (
-        <div className="bg-orange-50 border-b border-orange-100 p-3 flex-shrink-0">
-          <p className="text-sm font-semibold text-gray-900 mb-1">{bookingDetails.class_name}</p>
-          <div className="flex items-center gap-4 text-xs text-gray-600">
-            <span>📅 {new Date(bookingDetails.booking_date).toLocaleDateString()}</span>
-            <span>🕐 {bookingDetails.booking_time}</span>
-            <span>ID: {bookingDetails.verification_code}</span>
-          </div>
-        </div>
-      )}
-
-      {/* Messages - Scrollable area with padding for fixed input */}
-      <div 
-        className="flex-1 overflow-y-auto px-4 py-3 bg-gray-50"
-        style={{ paddingBottom: 'calc(5rem + env(safe-area-inset-bottom))' }}
-      >
-        {loading ? (
-          <div className="space-y-4">
-            <MessageBubbleSkeleton isOwn={false} />
-            <MessageBubbleSkeleton isOwn={true} />
-            <MessageBubbleSkeleton isOwn={false} />
-            <MessageBubbleSkeleton isOwn={true} />
-            <MessageBubbleSkeleton isOwn={false} />
-          </div>
-        ) : messages.length === 0 ? (
-          <div className="flex items-center justify-center h-full">
-            <p className="text-sm text-gray-500">No messages yet. Start the conversation!</p>
-          </div>
-        ) : (
-          <div className="space-y-3">
-            {messages.map((message) => {
-              const isMyMessage = message.sender_id === user?.id;
-              const isSafetyMessage = message.content.includes('⚠️ Safety Reminder');
-              
-              return (
-                <div key={message.id} className={`flex ${isSafetyMessage ? 'justify-center' : isMyMessage ? 'justify-end' : 'justify-start'}`}>
-                  <div className={`${isSafetyMessage ? 'w-full max-w-[90%]' : `max-w-[85%] ${isMyMessage ? 'order-2' : 'order-1'}`}`}>
-                    {isSafetyMessage ? (
-                      <div className="bg-yellow-50 border-2 border-yellow-300 rounded-xl p-4">
-                        <div className="flex items-start gap-2 mb-2">
-                          <AlertTriangle className="w-5 h-5 text-yellow-600 flex-shrink-0 mt-0.5" />
-                          <p className="text-sm font-bold text-yellow-900">Safety Reminder</p>
-                        </div>
-                        <div className="space-y-1.5 text-xs text-yellow-800 leading-relaxed">
-                          <p className="font-semibold mb-2">Important safety guidelines:</p>
-                          <p>• Never transfer money in advance</p>
-                          <p>• Do not pay deposits before meeting</p>
-                          <p>• Report any suspicious behavior or fraud attempts</p>
-                          <p>• Use the platform's secure payment system</p>
-                          <p className="mt-2 font-semibold">Stay safe! If you have concerns about fraud, please report it immediately.</p>
-                        </div>
-                      </div>
-                    ) : (
-                      <>
-                        <div
-                          className={`px-4 py-2 rounded-2xl ${
-                            isMyMessage
-                              ? 'bg-[#FF6B35] text-white rounded-br-none'
-                              : 'bg-white text-gray-900 rounded-bl-none border border-gray-200'
-                          }`}
-                        >
-                          <p className="text-sm whitespace-pre-wrap break-words">{message.content}</p>
-                        </div>
-                        <p className={`text-xs text-gray-500 mt-1 ${isMyMessage ? 'text-right' : 'text-left'}`}>
-                          {formatDistanceToNow(new Date(message.created_at), { addSuffix: true })}
-                        </p>
-                      </>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
-            <div ref={messagesEndRef} />
-          </div>
-        )}
-      </div>
-
-      {/* Input Area - Fixed at bottom */}
-      <div 
-        className="fixed left-0 right-0 bg-white border-t border-gray-200 shadow-[0_-2px_8px_rgba(0,0,0,0.1)] z-20"
-        style={{ bottom: 'calc(3.5rem + env(safe-area-inset-bottom))' }}
-      >
-        <div className="px-4 py-3">
-          <div className="flex items-end gap-2 bg-gray-100 rounded-2xl p-2.5 focus-within:bg-gray-50 focus-within:ring-2 focus-within:ring-[#FF6B35]/20 transition-all">
-            {bookingDetails && (
-              <button
-                onClick={handleSendBookingDetails}
+      <div className="shrink-0 border-t border-border bg-card/95 pb-[calc(4.75rem_+_env(safe-area-inset-bottom))] backdrop-blur md:pb-0">
+        <div className={cn(APP_CONTENT, 'py-3')}>
+          <div className="mx-auto flex w-full max-w-2xl flex-col gap-2">
+            <InputGroup className="bg-background">
+              <InputGroupTextarea
+                ref={inputRef}
+                value={newMessage}
+                onChange={handleInput}
+                onKeyDown={handleKeyPress}
+                placeholder={
+                  recipient?.username ? `Message ${recipient.username}…` : 'Type a message…'
+                }
+                aria-label="Message"
+                rows={1}
                 disabled={sending}
-                className="flex-shrink-0 w-10 h-10 flex items-center justify-center rounded-full bg-[#FF6B35] text-white hover:bg-orange-600 shadow-sm active:scale-95 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-                title="Send booking details"
-              >
-                <Calendar className="w-5 h-5" />
-              </button>
-            )}
-            <textarea
-              ref={inputRef}
-              value={newMessage}
-              onChange={handleInput}
-              onKeyPress={handleKeyPress}
-              placeholder="Type a message..."
-              rows={1}
-              className="flex-1 resize-none bg-transparent border-none focus:outline-none focus:ring-0 text-sm max-h-[120px] overflow-y-auto text-gray-900 placeholder-gray-500"
-              style={{ minHeight: '40px' }}
-              disabled={sending}
-            />
-            <button
-              onClick={handleSend}
-              disabled={!newMessage.trim() || sending}
-              className={`flex-shrink-0 w-10 h-10 flex items-center justify-center rounded-full transition-all duration-200 ${
-                newMessage.trim()
-                  ? 'bg-[#FF6B35] text-white hover:bg-orange-600 shadow-sm active:scale-95'
-                  : 'text-gray-400 hover:bg-gray-200'
-              } disabled:opacity-50 disabled:cursor-not-allowed`}
-            >
-              {sending ? (
-                <div className="relative w-5 h-5">
-                  <div className="absolute inset-0 border-2 border-white/30 rounded-full"></div>
-                  <div className="absolute inset-0 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                </div>
-              ) : (
-                <Send className="w-5 h-5" />
-              )}
-            </button>
+                className="max-h-[120px] min-h-10"
+              />
+              <InputGroupAddon align="inline-end">
+                <InputGroupButton
+                  type="button"
+                  variant="default"
+                  size="icon-sm"
+                  onClick={handleSend}
+                  disabled={!newMessage.trim() || sending}
+                  aria-label="Send message"
+                >
+                  {sending ? <Spinner /> : <Send />}
+                </InputGroupButton>
+              </InputGroupAddon>
+            </InputGroup>
+            <p className="px-1 text-[11px] text-muted-foreground">
+              Enter to send · Shift+Enter for new line
+            </p>
           </div>
         </div>
       </div>
 
-      {/* Report Modal */}
       <ReportModal
         isOpen={showReportModal}
         onClose={() => setShowReportModal(false)}
         onSubmit={handleReport}
         trainerName={recipient?.username || 'User'}
       />
-    </div>
+    </AppScreen>
   );
 };
 

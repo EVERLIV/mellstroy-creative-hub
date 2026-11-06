@@ -5,6 +5,7 @@ import { supabase } from '../src/integrations/supabase/client';
 import { Trainer, Class } from '../types';
 import OnboardingPage from './OnboardingPage';
 import { useToast } from '../src/hooks/use-toast';
+import { PageLoader } from '../src/components/layout/states';
 
 const OnboardingPageContainer: React.FC = () => {
   const { user, checkOnboardingStatus } = useAuth();
@@ -140,8 +141,8 @@ const OnboardingPageContainer: React.FC = () => {
 
   if (isLoading || !currentUser) {
     return (
-      <div className="min-h-screen bg-slate-100 flex items-center justify-center">
-        <div className="text-slate-600">Loading...</div>
+      <div className="min-h-screen bg-background">
+        <PageLoader title="Preparing your profile…" className="min-h-screen" />
       </div>
     );
   }

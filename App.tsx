@@ -1,8 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
-import { User, X } from 'lucide-react';
+import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom';
+import { User } from 'lucide-react';
+import { Button } from './src/components/ui/button';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from './src/components/ui/dialog';
 import { AuthProvider, useAuth } from './src/hooks/useAuth';
 import { ThemeProvider } from './src/hooks/useTheme';
+import { CartQuantitiesProvider } from './src/hooks/useCartQuantities';
+import { ViewModeProvider, useEffectiveRole } from './src/hooks/useViewMode';
 import { supabase } from './src/integrations/supabase/client';
 import { Toaster } from './src/components/ui/toaster';
 import { useToast } from './src/hooks/use-toast';
@@ -22,8 +26,7 @@ import SearchPage from './pages/SearchPage';
 import FavoritesPage from './pages/FavoritesPage';
 import MyBookingsPage from './pages/MyBookingsPage';
 import ChatPage from './pages/ChatPage';
-import MessageListPage from './pages/MessageListPage';
-import ChatConversationPage from './pages/ChatConversationPage';
+import MessagesHubPage from './pages/MessagesHubPage';
 import OnboardingPageContainer from './pages/OnboardingPageContainer';
 import ProfileContainer from './pages/ProfileContainer';
 import VerificationPage from './pages/VerificationPage';
@@ -36,18 +39,19 @@ import AdminDashboardPage from './pages/AdminDashboardPage';
 import ClassDetailPage from './pages/ClassDetailPage';
 import TrainerProfileViewPage from './pages/TrainerProfileViewPage';
 import VenuesPage from './pages/VenuesPage';
+import DesignSystemCardsPage from './pages/DesignSystemCardsPage';
 import SubscriptionManagementPage from './pages/SubscriptionManagementPage';
 import RequestsPage from './pages/RequestsPage';
 import CreateRequestPage from './pages/CreateRequestPage';
 import EditRequestPage from './pages/EditRequestPage';
 import RespondToRequestPage from './pages/RespondToRequestPage';
 import RequestResponsesPage from './pages/RequestResponsesPage';
-import BottomNav from './components/BottomNav';
+import AppShell from './components/AppShell';
 import BookingModal from './components/BookingModal';
 import ReviewModal from './components/ReviewModal';
 import ReviewsModal from './components/ReviewsModal';
 import BookingVerificationDisplay from './components/BookingVerificationDisplay';
-import { Trainer, Class, Booking, UserRole, Event, Message, MealPlan, Venue } from './types';
+import { Trainer, Class, Booking, Message, MealPlan } from './types';
 import { mockVenues } from './data/mockVenues';
 import { getAICoachResponse } from './utils/ai';
 // ErrorBoundary temporarily disabled due to React 19 TypeScript compatibility
@@ -80,10 +84,10 @@ const VenuesPageWrapper = () => {
 };
 
 const AppRoutes = () => {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
+  const userRole = useEffectiveRole();
   const { toast } = useToast();
   const navigate = useNavigate();
-  const [userRole, setUserRole] = useState<UserRole>('student');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [bookingModalData, setBookingModalData] = useState<{ trainer: Trainer; cls: Class } | null>(null);
   const [reviewModalData, setReviewModalData] = useState<{ booking: Booking; trainer: Trainer } | null>(null);
@@ -101,33 +105,7 @@ const AppRoutes = () => {
   const { events } = useEvents();
 
   const currentUserId = user?.id || 'current-user-id';
-
-  // Fetch user role from database
-  const [roleLoading, setRoleLoading] = useState(true);
-  
-  useEffect(() => {
-    const fetchUserRole = async () => {
-      if (!user?.id) {
-        setRoleLoading(false);
-        return;
-      }
-      
-      const { data, error } = await supabase
-        .from('user_roles')
-        .select('role')
-        .eq('user_id', user.id)
-        .maybeSingle();
-      
-      if (!error && data) {
-        // Map 'client' to 'student' for compatibility
-        const role = data.role === 'client' ? 'student' : data.role;
-        setUserRole(role as UserRole);
-      }
-      setRoleLoading(false);
-    };
-
-    fetchUserRole();
-  }, [user?.id]);
+  const roleLoading = authLoading;
 
   // Validate environment variables on mount
   useEffect(() => {
@@ -257,8 +235,19 @@ const AppRoutes = () => {
     }
   };
 
-  return (
-    <div className="min-h-screen bg-background">
+  const closeVerificationAndGoToBookings = () => {
+    setVerificationCode(null);
+    navigate('/bookings');
+  };
+
+  const { pathname } = useLocation();
+  const bareChrome =
+    !user ||
+    pathname === '/auth' ||
+    pathname === '/welcome' ||
+    pathname.startsWith('/onboarding');
+
+  const routes = (
       <Routes>
         <Route path="/auth" element={user ? <Navigate to="/" replace /> : <AuthPage />} />
         <Route 
@@ -371,6 +360,22 @@ const AppRoutes = () => {
           element={
             <ProtectedRoute>
               <EventsFlowPage onBack={() => navigate('/')} />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/events/create"
+          element={
+            <ProtectedRoute>
+              <EventsFlowPage onBack={() => navigate('/events')} />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/events/:eventId"
+          element={
+            <ProtectedRoute>
+              <EventsFlowPage onBack={() => navigate('/events')} />
             </ProtectedRoute>
           }
         />
@@ -501,7 +506,7 @@ const AppRoutes = () => {
           path="/messages"
           element={
             <ProtectedRoute>
-              <MessageListPage />
+              <MessagesHubPage />
             </ProtectedRoute>
           }
         />
@@ -509,7 +514,7 @@ const AppRoutes = () => {
           path="/messages/:recipientId"
           element={
             <ProtectedRoute>
-              <ChatConversationPage />
+              <MessagesHubPage />
             </ProtectedRoute>
           }
         />
@@ -526,6 +531,14 @@ const AppRoutes = () => {
           element={
             <ProtectedRoute>
               <VenuesPageWrapper />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/design-system/cards"
+          element={
+            <ProtectedRoute>
+              <DesignSystemCardsPage />
             </ProtectedRoute>
           }
         />
@@ -570,7 +583,11 @@ const AppRoutes = () => {
           }
         />
       </Routes>
-      {user && <BottomNav />}
+  );
+
+  return (
+    <div className="min-h-screen bg-background">
+      {bareChrome ? routes : <AppShell>{routes}</AppShell>}
       {bookingModalData && (
         <BookingModal
           bookingTarget={bookingModalData}
@@ -659,39 +676,28 @@ const AppRoutes = () => {
           onClose={() => setReviewsModalTrainer(null)}
         />
       )}
-      {verificationCode && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70">
-          <div className="bg-white rounded-xl shadow-xl w-full max-w-md animate-in fade-in slide-in-from-bottom-4 duration-300">
-            <div className="flex items-center justify-between p-4 border-b border-gray-200">
-              <h2 className="text-lg font-bold text-gray-900">Booking Confirmed!</h2>
-              <button
-                onClick={() => {
-                  setVerificationCode(null);
-                  navigate('/bookings');
-                }}
-                className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-              >
-                <X className="w-5 h-5 text-gray-600" />
-              </button>
-            </div>
-            <div className="p-6">
-              <BookingVerificationDisplay 
-                verificationCode={verificationCode.code}
-                bookingId={verificationCode.bookingId}
-              />
-              <button
-                onClick={() => {
-                  setVerificationCode(null);
-                  navigate('/bookings');
-                }}
-                className="w-full mt-4 bg-[#FF6B35] text-white py-3 px-4 rounded-xl font-semibold hover:bg-orange-600 transition-all active:scale-95"
-              >
-                Go to My Bookings
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      <Dialog
+        open={verificationCode !== null}
+        onOpenChange={(open) => {
+          if (!open) closeVerificationAndGoToBookings();
+        }}
+      >
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Booking Confirmed!</DialogTitle>
+            <DialogDescription>Show this code to your trainer when you arrive.</DialogDescription>
+          </DialogHeader>
+          {verificationCode && (
+            <BookingVerificationDisplay
+              verificationCode={verificationCode.code}
+              bookingId={verificationCode.bookingId}
+            />
+          )}
+          <Button size="lg" className="w-full" onClick={closeVerificationAndGoToBookings}>
+            Go to My Bookings
+          </Button>
+        </DialogContent>
+      </Dialog>
       <Toaster />
     </div>
   );
@@ -702,7 +708,11 @@ const App = () => {
     <ThemeProvider defaultTheme="light" storageKey="rhinofit-theme">
       <Router>
         <AuthProvider>
-          <AppRoutes />
+          <ViewModeProvider>
+            <CartQuantitiesProvider>
+              <AppRoutes />
+            </CartQuantitiesProvider>
+          </ViewModeProvider>
         </AuthProvider>
       </Router>
     </ThemeProvider>

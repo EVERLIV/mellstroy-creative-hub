@@ -1,46 +1,44 @@
 import React from 'react';
 import { UserRole } from '../types';
 import { UserCheck, ArrowRight } from 'lucide-react';
+import { Button } from '../src/components/ui/button';
 
 interface CompleteProfilePromptProps {
     role: UserRole;
     onComplete: () => void;
 }
 
-const CompleteProfilePrompt: React.FC<CompleteProfilePromptProps> = ({ role, onComplete }) => {
-    const messages = {
-        student: {
-            title: "Complete Your Profile!",
-            description: "Add your fitness stats and goals to get better trainer recommendations.",
-            button: "Complete Now"
-        },
-        trainer: {
-            title: "Strengthen Your Profile!",
-            description: "A detailed bio and specialties help you attract more clients.",
-            button: "Edit Profile"
-        }
-    };
+const MESSAGES = {
+    student: {
+        title: "Complete Your Profile!",
+        description: "Add your fitness stats and goals to get better trainer recommendations.",
+        button: "Complete Now"
+    },
+    trainer: {
+        title: "Strengthen Your Profile!",
+        description: "A detailed bio and specialties help you attract more clients.",
+        button: "Edit Profile"
+    }
+} as const;
 
-    const content = messages[role];
+const CompleteProfilePrompt: React.FC<CompleteProfilePromptProps> = ({ role, onComplete }) => {
+    const content = MESSAGES[role];
 
     return (
-        <div className="bg-gradient-to-br from-primary/10 to-primary/5 p-3 rounded-xl shadow-sm border border-border">
-            <div className="flex items-start gap-3 mb-3">
-                <div className="flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center bg-card shadow-inner">
-                    <UserCheck className="w-6 h-6 text-primary" />
+        <div className="flex flex-col gap-3 rounded-xl border border-primary/20 bg-gradient-to-br from-primary/10 to-primary/5 p-4 shadow-sm sm:flex-row sm:items-center sm:gap-4 md:p-5">
+            <div className="flex flex-1 items-start gap-3 sm:items-center">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-card shadow-inner">
+                    <UserCheck className="h-6 w-6 text-primary" />
                 </div>
-                <div className="flex-1 min-w-0">
-                    <h3 className="font-bold text-foreground text-sm">{content.title}</h3>
-                    <p className="text-xs text-muted-foreground mt-0.5">{content.description}</p>
+                <div className="min-w-0 flex-1">
+                    <h3 className="text-sm font-bold text-foreground">{content.title}</h3>
+                    <p className="mt-0.5 text-xs text-muted-foreground">{content.description}</p>
                 </div>
             </div>
-            <button 
-                onClick={onComplete} 
-                className="w-full flex items-center justify-center gap-2 bg-primary text-primary-foreground font-semibold py-2 px-4 rounded-lg hover:bg-primary/90 transition-all duration-200 text-sm shadow-md"
-            >
-                <span>{content.button}</span>
-                <ArrowRight className="w-4 h-4" />
-            </button>
+            <Button onClick={onComplete} className="w-full font-semibold sm:w-auto">
+                {content.button}
+                <ArrowRight />
+            </Button>
         </div>
     );
 };

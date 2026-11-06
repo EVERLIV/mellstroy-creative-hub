@@ -1,15 +1,12 @@
 import React from 'react';
-import { MapPin, DollarSign, User, MessageCircle, Clock, Home, Building2, Trees } from 'lucide-react';
+import { MapPin, Wallet, User, MessageCircle, Clock, Home, Building2, Trees } from 'lucide-react';
 import { TrainingRequest } from '../types';
 import { formatDistanceToNow } from 'date-fns';
-
-const formatVND = (amount: number) => {
-  return new Intl.NumberFormat('vi-VN', {
-    style: 'currency',
-    currency: 'VND',
-    minimumFractionDigits: 0
-  }).format(amount).replace(/\s/g, '');
-};
+import { formatVND } from '../src/lib/format';
+import { Card, CardContent, CardFooter, CardHeader } from '../src/components/ui/card';
+import { Badge } from '../src/components/ui/badge';
+import { Button } from '../src/components/ui/button';
+import { StatusBadge } from '../src/components/ui/status-badge';
 
 interface RequestCardProps {
   request: TrainingRequest;
@@ -20,163 +17,113 @@ interface RequestCardProps {
   onClick?: () => void;
 }
 
+const LOCATION_META: Record<string, { label: string; icon: typeof Home }> = {
+  home: { label: 'At Home', icon: Home },
+  gym: { label: 'At Gym', icon: Building2 },
+  outdoor: { label: 'Outdoor', icon: Trees },
+};
+
+function DetailRow({ icon: Icon, children }: { icon: typeof Home; children: React.ReactNode }) {
+  return (
+    <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+      <Icon className="size-3.5 shrink-0 text-primary" aria-hidden="true" />
+      <span className="min-w-0 truncate">{children}</span>
+    </div>
+  );
+}
+
 const RequestCard: React.FC<RequestCardProps> = ({
   request,
   userRole,
   currentUserId,
   onRespond,
   onViewResponses,
-  onClick
+  onClick,
 }) => {
   const isOwner = request.student_id === currentUserId;
   const canRespond = userRole === 'trainer' && !isOwner && request.status === 'open';
   const hasResponses = (request.responses_count || 0) > 0;
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'open':
-        return 'bg-green-100 text-green-700';
-      case 'accepted':
-        return 'bg-[#FF6B35] text-white';
-      case 'closed':
-        return 'bg-gray-100 text-gray-700';
-      case 'completed':
-        return 'bg-purple-100 text-purple-700';
-      default:
-        return 'bg-gray-100 text-gray-700';
-    }
-  };
-
-  const getLocationIcon = (locationType?: string) => {
-    switch (locationType) {
-      case 'home':
-        return <Home className="w-3.5 h-3.5 text-[#FF6B35]" />;
-      case 'gym':
-        return <Building2 className="w-3.5 h-3.5 text-[#FF6B35]" />;
-      case 'outdoor':
-        return <Trees className="w-3.5 h-3.5 text-[#FF6B35]" />;
-      default:
-        return <MapPin className="w-3.5 h-3.5 text-[#FF6B35]" />;
-    }
-  };
-
-  const getLocationLabel = (locationType?: string) => {
-    switch (locationType) {
-      case 'home':
-        return 'At Home';
-      case 'gym':
-        return 'At Gym';
-      case 'outdoor':
-        return 'Outdoor';
-      default:
-        return 'Not specified';
-    }
-  };
+  const location = request.location_type ? LOCATION_META[request.location_type] : undefined;
 
   return (
-    <div 
+    <Card
       onClick={onClick}
-      className="bg-white rounded-lg p-3 mb-3 shadow-sm hover:bg-gray-100 transition-colors cursor-pointer"
+      className="flex h-full cursor-pointer flex-col rounded-2xl border-border/80 shadow-none transition-colors hover:border-primary/40"
     >
-      {/* Header */}
-      <div className="flex items-start justify-between mb-2">
-        <div className="flex-1">
-          <div className="flex items-center gap-2 mb-1">
-            <span className="px-2.5 py-1 bg-orange-100 text-orange-700 text-xs font-medium rounded-full">
-              {request.category}
-            </span>
-            <span className={`px-2 py-0.5 text-xs font-semibold rounded-full ${getStatusColor(request.status)}`}>
-              {request.status.charAt(0).toUpperCase() + request.status.slice(1)}
-            </span>
+      <CardHeader className="flex flex-row items-start justify-between gap-2 space-y-0 p-4 pb-2">
+        <div className="flex min-w-0 flex-wrap items-center gap-1.5">
+          <Badge variant="secondary">{request.category}</Badge>
+          <StatusBadge status={request.status} />
+        </div>
+        <span className="inline-flex shrink-0 items-center gap-1 text-xs text-muted-foreground">
+          <Clock className="size-3.5" aria-hidden="true" />
+          {formatDistanceToNow(new Date(request.created_at), { addSuffix: true })}
+        </span>
+      </CardHeader>
+
+      <CardContent className="flex flex-1 flex-col gap-3 p-4 pt-0">
+        {isOwner && (
+          <div className="inline-flex items-center gap-1 text-xs text-muted-foreground">
+            <User className="size-3.5" aria-hidden="true" />
+            Your request
           </div>
-          {isOwner && (
-            <div className="flex items-center gap-1 text-xs text-gray-600 mb-1">
-              <User className="w-3.5 h-3.5" />
-              <span>Your request</span>
-            </div>
+        )}
+
+        <p className="line-clamp-3 text-sm leading-relaxed text-foreground">{request.description}</p>
+
+        <div className="grid gap-1.5 sm:grid-cols-2">
+          <DetailRow icon={MapPin}>{request.district}</DetailRow>
+          {request.preferred_time && <DetailRow icon={Clock}>{request.preferred_time}</DetailRow>}
+          {request.location_type && (
+            <DetailRow icon={location?.icon ?? MapPin}>{location?.label ?? 'Not specified'}</DetailRow>
           )}
+          <DetailRow icon={Wallet}>Desired: {formatVND(request.desired_price)}/hour</DetailRow>
         </div>
-        <div className="flex items-center gap-1 text-xs text-gray-500">
-          <Clock className="w-3.5 h-3.5" />
-          <span>{formatDistanceToNow(new Date(request.created_at), { addSuffix: true })}</span>
-        </div>
-      </div>
 
-      {/* Description */}
-      <p className="text-xs text-gray-900 mb-3 line-clamp-3 leading-relaxed">
-        {request.description}
-      </p>
+        <div className="flex items-center gap-1.5 text-xs">
+          <span className="font-semibold text-muted-foreground">Level:</span>
+          <Badge variant="outline">{request.level}</Badge>
+        </div>
 
-      {/* Details */}
-      <div className="space-y-1.5 mb-3">
-        <div className="flex items-center gap-1.5 text-xs">
-          <MapPin className="w-3.5 h-3.5 text-[#FF6B35]" />
-          <span className="text-gray-600">{request.district}</span>
-        </div>
-        {request.preferred_time && (
-          <div className="flex items-center gap-1.5 text-xs">
-            <Clock className="w-3.5 h-3.5 text-[#FF6B35]" />
-            <span className="text-gray-600">{request.preferred_time}</span>
-          </div>
-        )}
-        {request.location_type && (
-          <div className="flex items-center gap-1.5 text-xs">
-            {getLocationIcon(request.location_type)}
-            <span className="text-gray-600">{getLocationLabel(request.location_type)}</span>
-          </div>
-        )}
-        <div className="flex items-center gap-1.5 text-xs">
-          <DollarSign className="w-3.5 h-3.5 text-[#FF6B35]" />
-          <span className="text-gray-600">Desired: {formatVND(request.desired_price)}/hour</span>
-        </div>
-        <div className="flex items-center gap-1.5 text-xs">
-          <span className="text-gray-600 font-semibold">Level:</span>
-          <span className="px-2 py-0.5 bg-orange-100 text-orange-700 rounded text-xs font-medium">
-            {request.level}
-          </span>
-        </div>
-      </div>
-
-      {/* Responses count */}
-      {hasResponses && (
-        <div className="mb-3 p-2 bg-gray-50 rounded-lg">
-          <div className="flex items-center gap-2">
-            <MessageCircle className="w-4 h-4 text-[#FF6B35]" />
-            <span className="text-xs font-semibold text-gray-900">
+        {hasResponses && (
+          <div className="flex items-center gap-2 rounded-xl bg-muted/50 p-2.5">
+            <MessageCircle className="size-4 text-primary" aria-hidden="true" />
+            <span className="text-xs font-semibold text-foreground">
               {request.responses_count} {request.responses_count === 1 ? 'response' : 'responses'}
             </span>
           </div>
-        </div>
-      )}
+        )}
+      </CardContent>
 
-      {/* Actions */}
-      <div className="flex gap-2">
-        {canRespond && (
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              onRespond?.(request);
-            }}
-            className="flex-1 bg-[#FF6B35] text-white text-xs font-semibold py-2 px-3 rounded-lg hover:bg-orange-600 active:scale-95 shadow-sm transition-all duration-200"
-          >
-            Respond
-          </button>
-        )}
-        {isOwner && hasResponses && (
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              onViewResponses?.(request);
-            }}
-            className="flex-1 bg-white border border-gray-200 text-gray-900 text-xs font-semibold py-2 px-3 rounded-lg hover:bg-gray-50 active:scale-95 transition-all duration-200"
-          >
-            View Responses
-          </button>
-        )}
-      </div>
-    </div>
+      {(canRespond || (isOwner && hasResponses)) && (
+        <CardFooter className="mt-auto flex gap-2 border-t border-border/70 p-4">
+          {canRespond && (
+            <Button
+              className="flex-1"
+              onClick={(e) => {
+                e.stopPropagation();
+                onRespond?.(request);
+              }}
+            >
+              Respond
+            </Button>
+          )}
+          {isOwner && hasResponses && (
+            <Button
+              variant="outline"
+              className="flex-1"
+              onClick={(e) => {
+                e.stopPropagation();
+                onViewResponses?.(request);
+              }}
+            >
+              View Responses
+            </Button>
+          )}
+        </CardFooter>
+      )}
+    </Card>
   );
 };
 
 export default RequestCard;
-

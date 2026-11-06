@@ -1,140 +1,132 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Trainer, Class, UserRole } from '../types';
-import { ArrowLeft, Heart } from 'lucide-react';
+import { Heart } from 'lucide-react';
+import { AppScreen } from '@/src/components/layout/screen';
+import { StitchCanvas, StitchPageHeader, StitchPanel } from '@/src/components/layout/stitch-page';
+import { EmptyState } from '../src/components/layout/states';
+import { Button } from '../src/components/ui/button';
+import { cn } from '../src/lib/utils';
 import TrainerGrid from '../components/TrainerGrid';
 import ViewToggle from '../components/ViewToggle';
 import TrainerDetailPage from '../components/TrainerDetailPage';
 
 interface FavoritesPageProps {
-    trainers: Trainer[];
-    favoriteTrainerIds: string[];
-    onToggleFavorite: (trainerId: string) => void;
-    onInitiateBooking: (target: { trainer: Trainer; cls: Class }) => void;
-    onOpenChat: (trainer: Trainer) => void;
-    onBack: () => void;
-    userRole: UserRole;
-    currentUserId: string;
-    onOpenReviewsModal: (trainer: Trainer) => void;
+  trainers: Trainer[];
+  favoriteTrainerIds: string[];
+  onToggleFavorite: (trainerId: string) => void;
+  onInitiateBooking: (target: { trainer: Trainer; cls: Class }) => void;
+  onOpenChat: (trainer: Trainer) => void;
+  onBack?: () => void;
+  userRole: UserRole;
+  currentUserId: string;
+  onOpenReviewsModal: (trainer: Trainer) => void;
 }
 
-// Mock trainers removed - using real data from database only
-
 const FavoritesPage: React.FC<FavoritesPageProps> = ({
-    trainers,
-    favoriteTrainerIds,
-    onToggleFavorite,
-    onInitiateBooking,
-    onOpenChat,
-    onBack,
-    userRole,
-    currentUserId,
-    onOpenReviewsModal
+  trainers,
+  favoriteTrainerIds,
+  onToggleFavorite,
+  onInitiateBooking,
+  onOpenChat,
+  onBack,
+  userRole,
+  currentUserId,
+  onOpenReviewsModal,
 }) => {
-    const [selectedTrainer, setSelectedTrainer] = useState<Trainer | null>(null);
-    const [isExitingDetail, setIsExitingDetail] = useState(false);
-    const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const navigate = useNavigate();
+  const [selectedTrainer, setSelectedTrainer] = useState<Trainer | null>(null);
+  const [isExitingDetail, setIsExitingDetail] = useState(false);
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
 
-    // Use only real trainers from database
-    const favoriteTrainers = trainers.filter(t => favoriteTrainerIds.includes(t.id));
+  const favoriteTrainers = trainers.filter((t) => favoriteTrainerIds.includes(t.id));
+  const goExplore = () => (onBack ? onBack() : navigate('/explore'));
 
-    const handleSelectTrainer = (trainer: Trainer) => {
-        setIsExitingDetail(false);
-        setSelectedTrainer(trainer);
-        window.scrollTo(0, 0);
-    };
+  const handleSelectTrainer = (trainer: Trainer) => {
+    setIsExitingDetail(false);
+    setSelectedTrainer(trainer);
+    window.scrollTo(0, 0);
+  };
 
-    const handleBackFromDetail = () => {
-        setIsExitingDetail(true);
-        setTimeout(() => {
-            setSelectedTrainer(null);
-            setIsExitingDetail(false);
-        }, 300);
-    };
+  const handleBackFromDetail = () => {
+    setIsExitingDetail(true);
+    setTimeout(() => {
+      setSelectedTrainer(null);
+      setIsExitingDetail(false);
+    }, 300);
+  };
 
-    if (selectedTrainer) {
-        return (
-            <div className={`absolute inset-0 z-20 bg-white transition-all duration-300 ${
-                isExitingDetail 
-                    ? 'translate-x-full opacity-0' 
-                    : 'translate-x-0 opacity-100'
-            }`}>
-                <TrainerDetailPage 
-                    trainer={selectedTrainer} 
-                    onBack={handleBackFromDetail}
-                    onInitiateBooking={onInitiateBooking}
-                    userRole={userRole}
-                    currentUserId={currentUserId}
-                    isFavorite={favoriteTrainerIds.includes(selectedTrainer.id)}
-                    onToggleFavorite={onToggleFavorite}
-                    onOpenReviewsModal={onOpenReviewsModal}
-                />
-            </div>
-        );
-    }
-
+  if (selectedTrainer) {
     return (
-        <div className="bg-white h-full flex flex-col overflow-hidden">
-            {/* Header */}
-            <div className="flex items-center justify-between px-4 py-3 bg-white shadow-sm z-20 flex-shrink-0">
-                <button onClick={onBack} className="p-2 -ml-2">
-                    <ArrowLeft className="w-5 h-5 text-gray-800" />
-                </button>
-                <h1 className="text-base font-bold text-gray-900">My Favorites</h1>
-                <div className="w-9"></div> {/* Spacer for centering */}
-            </div>
-
-            {/* Scrollable Content */}
-            <div className="flex-1 overflow-y-auto">
-                <div className="px-4 py-3 bg-gray-50 pb-safe-nav">
-                    {/* Info Card */}
-                    <div className="bg-white rounded-lg p-3 mb-3 shadow-sm">
-                        <div className="flex items-center gap-2 mb-2">
-                            <Heart className="w-5 h-5 text-red-500 fill-red-500" />
-                            <h2 className="text-sm font-bold text-gray-900">Favorite Trainers</h2>
-                        </div>
-                        <p className="text-xs text-gray-600">
-                            {favoriteTrainers.length > 0 
-                                ? `You have ${favoriteTrainers.length} ${favoriteTrainers.length === 1 ? 'trainer' : 'trainers'} in your favorites`
-                                : 'No trainers in your favorites yet'}
-                        </p>
-                    </div>
-
-                    {/* View Toggle */}
-                    {favoriteTrainers.length > 0 && (
-                        <div className="flex justify-end items-center mb-3">
-                            <ViewToggle viewMode={viewMode} setViewMode={setViewMode} />
-                        </div>
-                    )}
-
-                    {/* Trainers Grid/List */}
-                    {favoriteTrainers.length > 0 ? (
-                        <TrainerGrid 
-                            trainers={favoriteTrainers}
-                            viewMode={viewMode}
-                            onSelectTrainer={handleSelectTrainer}
-                            isLoading={false}
-                            favoriteTrainerIds={favoriteTrainerIds}
-                            onToggleFavorite={onToggleFavorite}
-                        />
-                    ) : (
-                        <div className="bg-white rounded-lg p-6 text-center shadow-sm">
-                            <Heart className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-                            <h3 className="text-sm font-bold text-gray-900 mb-2">No Favorites Yet</h3>
-                            <p className="text-xs text-gray-600 mb-4">
-                                Tap the heart icon on a trainer's profile to add them to your favorites.
-                            </p>
-                            <button
-                                onClick={onBack}
-                                className="px-4 py-2 bg-blue-600 text-white text-xs font-semibold rounded-lg hover:bg-blue-700 active:scale-95 transition-all duration-200 shadow-sm"
-                            >
-                                Explore Trainers
-                            </button>
-                        </div>
-                    )}
-                </div>
-            </div>
-        </div>
+      <div
+        className={cn(
+          'absolute inset-0 z-20 bg-background transition-all duration-300',
+          isExitingDetail ? 'translate-x-full opacity-0' : 'translate-x-0 opacity-100'
+        )}
+      >
+        <TrainerDetailPage
+          trainer={selectedTrainer}
+          onBack={handleBackFromDetail}
+          onInitiateBooking={onInitiateBooking}
+          userRole={userRole}
+          currentUserId={currentUserId}
+          isFavorite={favoriteTrainerIds.includes(selectedTrainer.id)}
+          onToggleFavorite={onToggleFavorite}
+          onOpenReviewsModal={onOpenReviewsModal}
+        />
+      </div>
     );
+  }
+
+  const count = favoriteTrainers.length;
+
+  return (
+    <AppScreen className="relative min-w-0 bg-[#f9fafb] dark:bg-background">
+      <StitchCanvas>
+        <StitchPageHeader
+          title="My favorites"
+          description={
+            count > 0
+              ? `${count} ${count === 1 ? 'trainer' : 'trainers'} saved for later`
+              : "Trainers you've saved for later"
+          }
+          actions={
+            count > 0 ? <ViewToggle viewMode={viewMode} setViewMode={setViewMode} /> : undefined
+          }
+        />
+
+        {count > 0 ? (
+          <StitchPanel className="p-4 sm:p-5">
+            <div className="mb-4 flex items-center gap-2">
+              <Heart className="size-4 fill-[#fd651e] text-[#fd651e]" aria-hidden />
+              <h2 className="text-sm font-semibold text-foreground">Favorite trainers</h2>
+            </div>
+            <TrainerGrid
+              trainers={favoriteTrainers}
+              viewMode={viewMode}
+              onSelectTrainer={handleSelectTrainer}
+              isLoading={false}
+              favoriteTrainerIds={favoriteTrainerIds}
+              onToggleFavorite={onToggleFavorite}
+            />
+          </StitchPanel>
+        ) : (
+          <StitchPanel className="p-6">
+            <EmptyState
+              icon={Heart}
+              title="No favorites yet"
+              description="Tap the heart icon on a trainer's profile to add them to your favorites."
+              action={
+                <Button className="bg-[#fd651e] text-white hover:bg-[#a73a00]" onClick={goExplore}>
+                  Explore trainers
+                </Button>
+              }
+            />
+          </StitchPanel>
+        )}
+      </StitchCanvas>
+    </AppScreen>
+  );
 };
 
 export default FavoritesPage;

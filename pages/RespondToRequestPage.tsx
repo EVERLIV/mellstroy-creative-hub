@@ -1,18 +1,35 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { ArrowLeft, Loader, Clock, MapPin, Home, Building2, Trees } from 'lucide-react';
+import { Clock, MapPin, Home, Building2, Trees, Send } from 'lucide-react';
 import { supabase } from '../src/integrations/supabase/client';
 import { useAuth } from '../src/hooks/useAuth';
 import { TrainingRequest } from '../types';
 import { useToast } from '../src/hooks/use-toast';
+import { AppScreen, ScreenHeader, ScreenBody, ScreenSection, ScreenSplit, ScreenStickyBar } from '../src/components/layout/screen';
+import { PageLoader } from '../src/components/layout/states';
+import { Field, FieldDescription, FieldGroup, FieldLabel } from '../src/components/ui/field';
+import { Card, CardContent, CardHeader, CardTitle } from '../src/components/ui/card';
+import ParticleButton from '../src/components/kokonutui/particle-button';
+import { Input } from '../src/components/ui/input';
+import { Textarea } from '../src/components/ui/textarea';
+import { Badge } from '../src/components/ui/badge';
+import { Button } from '../src/components/ui/button';
+import { formatVND } from '../src/lib/format';
 
-const formatVND = (amount: number) => {
-  return new Intl.NumberFormat('vi-VN', {
-    style: 'currency',
-    currency: 'VND',
-    minimumFractionDigits: 0
-  }).format(amount).replace(/\s/g, '');
-};
+const LOCATION_META = {
+  home: { label: 'At Home', icon: Home },
+  gym: { label: 'At Gym', icon: Building2 },
+  outdoor: { label: 'Outdoor', icon: Trees },
+} as const;
+
+function DetailItem({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div className="flex items-baseline justify-between gap-3 border-b border-border py-2 text-sm first:pt-0 last:border-0 last:pb-0">
+      <dt className="text-muted-foreground">{label}</dt>
+      <dd className="text-right font-medium text-foreground">{children}</dd>
+    </div>
+  );
+}
 
 const RespondToRequestPage: React.FC = () => {
   const navigate = useNavigate();
@@ -46,8 +63,7 @@ const RespondToRequestPage: React.FC = () => {
         .from('requests')
         .select(`
           *,
-          student:profiles!requests_student_id_fkey(username, avatar_url)
-        `)
+          student:profiles!requests_student_id_fkey(username, avatar_url)`)
         .eq('id', id)
         .single();
 
@@ -190,138 +206,139 @@ const RespondToRequestPage: React.FC = () => {
 
   if (!request) {
     return (
-      <div className="bg-white h-screen flex items-center justify-center">
-        <Loader className="w-6 h-6 text-gray-800 animate-spin" />
-      </div>
+      <AppScreen>
+        <PageLoader title="Loading request..." />
+      </AppScreen>
     );
   }
 
-  return (
-    <div className="bg-white h-screen flex flex-col overflow-hidden">
-      {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 bg-white shadow-sm z-20 flex-shrink-0">
-        <button 
-          onClick={() => navigate(-1)} 
-          className="p-2 -ml-2"
-        >
-          <ArrowLeft className="w-5 h-5 text-gray-800" />
-        </button>
-        <h1 className="text-base font-bold text-gray-900">Respond to Request</h1>
-        <div className="w-9"></div>
-      </div>
+  const proposedPrice = parseFloat(formData.proposed_price);
+  const location_ = request.location_type ? LOCATION_META[request.location_type as keyof typeof LOCATION_META] : undefined;
 
-      {/* Content */}
-      <div className="flex-1 overflow-y-auto">
-        <div className="px-4 py-3 bg-gray-50 pb-safe-nav">
-          {/* Request Details */}
-          <div className="bg-white rounded-lg p-3 mb-3 shadow-sm">
-            <div className="mb-2">
-              <span className="px-2.5 py-1 bg-orange-100 text-orange-700 text-xs font-medium rounded-full">
-                {request.category}
+  const requestDetails = (className?: string) => (
+    <Card className={className}>
+      <CardHeader className="gap-3 pb-3">
+        <CardTitle className="text-base">Request details</CardTitle>
+        <div className="flex flex-wrap gap-1.5">
+          <Badge variant="secondary" className="rounded-full border-transparent bg-primary/10 font-medium text-primary hover:bg-primary/15">
+            {request.category}
+          </Badge>
+          <Badge variant="outline">{request.level}</Badge>
+        </div>
+      </CardHeader>
+      <CardContent className="flex flex-col gap-4">
+        <p className="whitespace-pre-line text-sm leading-relaxed text-foreground">{request.description}</p>
+        <dl className="flex flex-col">
+          <DetailItem label="District">
+            <span className="inline-flex items-center gap-1.5">
+              <MapPin className="size-3.5 text-primary" aria-hidden="true" />
+              {request.district}
+            </span>
+          </DetailItem>
+          {request.preferred_time && (
+            <DetailItem label="Preferred time">
+              <span className="inline-flex items-center gap-1.5">
+                <Clock className="size-3.5 text-primary" aria-hidden="true" />
+                {request.preferred_time}
               </span>
-            </div>
-            <h2 className="text-sm font-bold text-gray-900 mb-2">Request Details</h2>
-            <p className="text-xs text-gray-600 mb-3">{request.description}</p>
-            <div className="space-y-1.5 text-xs">
-              <div className="flex items-center gap-1.5">
-                <MapPin className="w-3.5 h-3.5 text-[#FF6B35]" />
-                <span className="text-gray-600 font-semibold">District:</span>
-                <span className="text-gray-900">{request.district}</span>
-              </div>
-              {request.preferred_time && (
-                <div className="flex items-center gap-1.5">
-                  <Clock className="w-3.5 h-3.5 text-[#FF6B35]" />
-                  <span className="text-gray-600 font-semibold">Preferred Time:</span>
-                  <span className="text-gray-900">{request.preferred_time}</span>
-                </div>
-              )}
-              {request.location_type && (
-                <div className="flex items-center gap-1.5">
-                  {request.location_type === 'home' && <Home className="w-3.5 h-3.5 text-[#FF6B35]" />}
-                  {request.location_type === 'gym' && <Building2 className="w-3.5 h-3.5 text-[#FF6B35]" />}
-                  {request.location_type === 'outdoor' && <Trees className="w-3.5 h-3.5 text-[#FF6B35]" />}
-                  <span className="text-gray-600 font-semibold">Location:</span>
-                  <span className="text-gray-900">
-                    {request.location_type === 'home' ? 'At Home' : request.location_type === 'gym' ? 'At Gym' : 'Outdoor'}
-                  </span>
-                </div>
-              )}
-              <div className="flex items-center gap-1.5">
-                <span className="text-gray-600 font-semibold">Level:</span>
-                <span className="px-2 py-0.5 bg-orange-100 text-orange-700 rounded text-xs font-medium">
-                  {request.level}
-                </span>
-              </div>
-              <div className="flex items-center gap-1.5">
-                <span className="text-gray-600 font-semibold">Desired Price:</span>
-                <span className="text-gray-900">{formatVND(request.desired_price)}/hour</span>
-              </div>
-            </div>
-          </div>
+            </DetailItem>
+          )}
+          {location_ && (
+            <DetailItem label="Location">
+              <span className="inline-flex items-center gap-1.5">
+                <location_.icon className="size-3.5 text-primary" aria-hidden="true" />
+                {location_.label}
+              </span>
+            </DetailItem>
+          )}
+          <DetailItem label="Desired price">{formatVND(request.desired_price)}/hour</DetailItem>
+        </dl>
+      </CardContent>
+    </Card>
+  );
 
-          {/* Response Form */}
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label htmlFor="proposed_price" className="block text-sm font-bold text-gray-900 mb-2">
-                Your Proposed Price (VND per hour) *
-              </label>
-              <input
-                type="number"
+  const main = (
+    <>
+      {requestDetails('lg:hidden')}
+
+      <form onSubmit={handleSubmit} className="flex flex-col gap-6">
+        <ScreenSection title="Your offer" description="Send the student your offer and a short introduction." variant="panel">
+          <FieldGroup className="md:grid md:grid-cols-2 md:gap-6">
+            <Field>
+              <FieldLabel htmlFor="proposed_price">
+                Proposed price <span className="text-destructive" aria-hidden="true">*</span>
+              </FieldLabel>
+              <Input
                 id="proposed_price"
+                type="number"
+                inputMode="numeric"
                 name="proposed_price"
                 value={formData.proposed_price}
                 onChange={handleChange}
                 required
                 min="0"
                 step="1000"
-                className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                aria-describedby="proposed_price-hint"
               />
-              {formData.proposed_price && !isNaN(parseFloat(formData.proposed_price)) && (
-                <div className="mt-1 text-xs text-gray-600">
-                  {formatVND(parseFloat(formData.proposed_price))} per hour
-                </div>
-              )}
-            </div>
+              <FieldDescription id="proposed_price-hint">
+                {formData.proposed_price && !isNaN(proposedPrice)
+                  ? `${formatVND(proposedPrice)} per hour`
+                  : 'Per hour, in VND'}
+              </FieldDescription>
+            </Field>
 
-            <div>
-              <label htmlFor="message" className="block text-sm font-bold text-gray-900 mb-2">
-                Your Message *
-              </label>
-              <textarea
+            <Field className="md:col-span-2">
+              <FieldLabel htmlFor="message">
+                Your message <span className="text-destructive" aria-hidden="true">*</span>
+              </FieldLabel>
+              <Textarea
                 id="message"
                 name="message"
                 value={formData.message}
                 onChange={handleChange}
                 required
                 rows={6}
+                aria-describedby="message-hint"
                 placeholder="Introduce yourself, explain your experience, and why you're a good fit for this request..."
-                className="w-full px-3 py-2 bg-white border border-gray-200 rounded-lg text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none"
+                className="resize-none"
               />
-              <div className="mt-1 text-xs text-gray-500">
-                {formData.message.length} characters
-              </div>
-            </div>
+              <FieldDescription id="message-hint">{`${formData.message.length} characters`}</FieldDescription>
+            </Field>
+          </FieldGroup>
+        </ScreenSection>
 
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full bg-blue-600 text-white font-bold py-3 px-4 rounded-lg hover:bg-blue-700 active:scale-95 shadow-sm transition-all duration-200 text-sm disabled:bg-gray-200 disabled:text-gray-500 disabled:cursor-not-allowed"
-            >
-              {loading ? (
-                <span className="flex items-center justify-center gap-2">
-                  <Loader className="w-4 h-4 animate-spin" />
-                  Sending...
-                </span>
-              ) : (
-                'Send Response'
-              )}
-            </button>
-          </form>
-        </div>
-      </div>
-    </div>
+        <ScreenStickyBar width="detail" className="md:px-0">
+          <Button type="button" variant="outline" size="lg" onClick={() => navigate(-1)} disabled={loading}>
+            Cancel
+          </Button>
+          <ParticleButton
+            type="submit"
+            size="lg"
+            disabled={loading}
+            status={loading ? 'pending' : 'idle'}
+            pendingLabel="Sending..."
+            icon={<Send />}
+          >
+            Send Response
+          </ParticleButton>
+        </ScreenStickyBar>
+      </form>
+    </>
+  );
+
+  return (
+    <AppScreen>
+      <ScreenHeader
+        title="Respond to Request"
+        description="Send the student your offer and a short introduction."
+        onBack={() => navigate(-1)}
+        width="detail"
+      />
+      <ScreenBody width="detail">
+        <ScreenSplit main={main} aside={requestDetails('hidden lg:block lg:sticky lg:top-24')} />
+      </ScreenBody>
+    </AppScreen>
   );
 };
 
 export default RespondToRequestPage;
-

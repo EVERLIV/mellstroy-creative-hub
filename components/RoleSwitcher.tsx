@@ -25,10 +25,10 @@ const RoleSwitcher: React.FC<RoleSwitcherProps> = ({ currentRole, onRoleChange }
     const isStudent = currentRole === 'student';
 
     return (
-        <div className="relative bg-gray-100 p-1.5 rounded-xl shadow-inner border border-gray-200/50 overflow-hidden">
+        <div role="group" aria-label="Account role" className="relative bg-muted p-1.5 rounded-xl shadow-inner border border-border/50 overflow-hidden">
             {/* Animated background slider */}
             <div
-                className={`absolute top-1.5 bottom-1.5 w-[calc(50%-6px)] bg-white rounded-lg shadow-md transition-all duration-400 ease-out ${
+                className={`absolute top-1.5 bottom-1.5 w-[calc(50%-6px)] bg-card rounded-lg shadow-md transition-all duration-400 ease-out ${
                     isStudent 
                         ? 'left-1.5 translate-x-0' 
                         : 'left-1.5 translate-x-[calc(100%+6px)]'
@@ -45,20 +45,21 @@ const RoleSwitcher: React.FC<RoleSwitcherProps> = ({ currentRole, onRoleChange }
                 {/* Student Button */}
                 <button 
                     onClick={() => onRoleChange('student')}
-                    className={`relative z-10 px-4 py-3 rounded-lg transition-all duration-300 flex items-center justify-center gap-2 min-w-0 ${
+                    aria-pressed={isStudent}
+                    className={`relative z-10 px-4 py-3 rounded-lg transition-all duration-300 flex items-center justify-center gap-2 min-w-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
                         isStudent 
-                            ? 'text-blue-600' 
-                            : 'text-gray-600 hover:text-gray-800'
+                            ? 'text-primary' 
+                            : 'text-muted-foreground hover:text-foreground'
                     } ${isAnimating && isStudent ? 'scale-[1.02]' : ''}`}
                     type="button"
                 >
                     <User className={`w-4 h-4 transition-all duration-300 ${
                         isStudent 
-                            ? 'text-blue-600 scale-110' 
-                            : 'text-gray-600 scale-100'
+                            ? 'text-primary scale-110' 
+                            : 'text-muted-foreground scale-100'
                     }`} />
                     <span className={`text-sm font-semibold whitespace-nowrap transition-all duration-300 ${
-                        isStudent ? 'text-blue-600' : 'text-gray-600'
+                        isStudent ? 'text-primary' : 'text-muted-foreground'
                     }`}>
                         Student
                     </span>
@@ -67,20 +68,21 @@ const RoleSwitcher: React.FC<RoleSwitcherProps> = ({ currentRole, onRoleChange }
                 {/* Trainer Button */}
                 <button 
                     onClick={() => onRoleChange('trainer')}
-                    className={`relative z-10 px-4 py-3 rounded-lg transition-all duration-300 flex items-center justify-center gap-2 min-w-0 ${
+                    aria-pressed={!isStudent}
+                    className={`relative z-10 px-4 py-3 rounded-lg transition-all duration-300 flex items-center justify-center gap-2 min-w-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
                         !isStudent 
-                            ? 'text-blue-600' 
-                            : 'text-gray-600 hover:text-gray-800'
+                            ? 'text-primary' 
+                            : 'text-muted-foreground hover:text-foreground'
                     } ${isAnimating && !isStudent ? 'scale-[1.02]' : ''}`}
                     type="button"
                 >
                     <Briefcase className={`w-4 h-4 transition-all duration-300 ${
                         !isStudent 
-                            ? 'text-blue-600 scale-110' 
-                            : 'text-gray-600 scale-100'
+                            ? 'text-primary scale-110' 
+                            : 'text-muted-foreground scale-100'
                     }`} />
                     <span className={`text-sm font-semibold whitespace-nowrap transition-all duration-300 ${
-                        !isStudent ? 'text-blue-600' : 'text-gray-600'
+                        !isStudent ? 'text-primary' : 'text-muted-foreground'
                     }`}>
                         Trainer
                     </span>

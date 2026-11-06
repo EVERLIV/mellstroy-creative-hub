@@ -3,6 +3,10 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '../src/integrations/supabase/client';
 import TrainerDetailPage from '../components/TrainerDetailPage';
 import { Trainer, Class, UserRole } from '../types';
+import { UserX } from 'lucide-react';
+import { Button } from '@/src/components/ui/button';
+import { Page, PageContent } from '@/src/components/layout/page';
+import { PageLoader, EmptyState } from '@/src/components/layout/states';
 
 interface TrainerProfileViewPageProps {
   userRole?: UserRole;
@@ -58,8 +62,7 @@ const TrainerProfileViewPage: React.FC<TrainerProfileViewPageProps> = ({
           .from('reviews')
           .select(`
             *,
-            client:profiles!reviews_client_id_fkey(username)
-          `)
+            client:profiles!reviews_client_id_fkey(username)`)
           .eq('trainer_id', trainerId);
 
         if (reviewsError) throw reviewsError;
@@ -120,22 +123,23 @@ const TrainerProfileViewPage: React.FC<TrainerProfileViewPageProps> = ({
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-16 h-16 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-muted-foreground">Loading trainer profile...</p>
-        </div>
-      </div>
+      <Page>
+        <PageLoader title="Loading trainer profile…" />
+      </Page>
     );
   }
 
   if (!trainer) {
     return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center">
-          <p className="text-muted-foreground">Trainer not found</p>
-        </div>
-      </div>
+      <Page>
+        <PageContent>
+          <EmptyState
+            icon={UserX}
+            title="Trainer not found"
+            action={<Button variant="outline" onClick={() => navigate('/explore')}>Back to Explore</Button>}
+          />
+        </PageContent>
+      </Page>
     );
   }
 

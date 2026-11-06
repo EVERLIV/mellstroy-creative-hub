@@ -1,32 +1,23 @@
 import React from 'react';
+import { Skeleton } from '../src/components/ui/skeleton';
 
 const BookingCardSkeleton: React.FC = () => {
   return (
-    <div className="bg-card rounded-2xl shadow-sm border border-border flex overflow-hidden animate-pulse">
-      <div className="flex-1 p-4">
-        <div className="flex items-start justify-between mb-2">
-          <div className="flex-1">
-            <div className="h-5 bg-muted rounded w-3/4 mb-2"></div>
-            <div className="h-4 bg-muted rounded w-1/2"></div>
-          </div>
-          <div className="h-6 w-16 bg-muted rounded-full"></div>
+    <div className="rounded-xl border border-border bg-card p-4 shadow-sm" aria-hidden="true">
+      <div className="mb-3 flex items-start justify-between gap-3">
+        <div className="flex-1 space-y-2">
+          <Skeleton className="h-5 w-3/4" />
+          <Skeleton className="h-4 w-1/2" />
         </div>
-        
-        <div className="flex items-center gap-3 mt-3">
-          <div className="flex items-center gap-1.5">
-            <div className="w-4 h-4 bg-muted rounded"></div>
-            <div className="h-4 bg-muted rounded w-20"></div>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <div className="w-4 h-4 bg-muted rounded"></div>
-            <div className="h-4 bg-muted rounded w-16"></div>
-          </div>
-        </div>
-        
-        <div className="flex gap-2 mt-4">
-          <div className="flex-1 h-9 bg-muted rounded-xl"></div>
-          <div className="flex-1 h-9 bg-muted rounded-xl"></div>
-        </div>
+        <Skeleton className="h-6 w-16 rounded-full" />
+      </div>
+      <div className="flex items-center gap-4">
+        <Skeleton className="h-4 w-24" />
+        <Skeleton className="h-4 w-16" />
+      </div>
+      <div className="mt-4 flex gap-2 border-t border-border pt-3">
+        <Skeleton className="h-8 flex-1" />
+        <Skeleton className="h-8 flex-1" />
       </div>
     </div>
   );

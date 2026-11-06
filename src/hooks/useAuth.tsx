@@ -7,7 +7,10 @@ import { UserRole } from '@/types';
 interface AuthContextType {
   user: User | null;
   session: Session | null;
+  /** Account UI role: student | trainer. Null when admin or unset. */
   userRole: UserRole | null;
+  /** True when user_roles.role === 'admin'. */
+  isAdmin: boolean;
   loading: boolean;
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (email: string, password: string, username: string) => Promise<void>;
@@ -19,14 +22,22 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
+function mapDbRole(role: string | null | undefined): { userRole: UserRole | null; isAdmin: boolean } {
+  if (!role) return { userRole: null, isAdmin: false };
+  if (role === 'admin') return { userRole: null, isAdmin: true };
+  if (role === 'client' || role === 'student') return { userRole: 'student', isAdmin: false };
+  if (role === 'trainer') return { userRole: 'trainer', isAdmin: false };
+  return { userRole: null, isAdmin: false };
+}
+
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [userRole, setUserRole] = useState<UserRole | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
-  // Fetch user role from database
   const fetchUserRole = async (userId: string) => {
     try {
       const { data, error } = await supabase
@@ -38,63 +49,55 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       if (error) {
         console.error('Error fetching user role:', error);
         setUserRole(null);
+        setIsAdmin(false);
         return;
       }
-      
-      if (data) {
-        // Map database role to UI role
-        const uiRole = data.role === 'client' ? 'student' : data.role as UserRole;
-        setUserRole(uiRole);
-      } else {
-        setUserRole(null);
-      }
+
+      const mapped = mapDbRole(data?.role);
+      setUserRole(mapped.userRole);
+      setIsAdmin(mapped.isAdmin);
     } catch (error) {
       console.error('Error fetching user role:', error);
       setUserRole(null);
+      setIsAdmin(false);
     }
   };
 
   useEffect(() => {
     let mounted = true;
 
-    // Set up auth state listener first
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
+      (_event, nextSession) => {
         if (!mounted) return;
-        
-        setSession(session);
-        setUser(session?.user ?? null);
-        
-        // Fetch user role when user is authenticated
-        if (session?.user) {
+
+        setSession(nextSession);
+        setUser(nextSession?.user ?? null);
+
+        if (nextSession?.user) {
           setTimeout(() => {
-            if (mounted) {
-              fetchUserRole(session.user.id);
-            }
+            if (mounted) fetchUserRole(nextSession.user.id);
           }, 0);
         } else {
           setUserRole(null);
+          setIsAdmin(false);
         }
-        
+
         setLoading(false);
       }
     );
 
-    // Then check for existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then(({ data: { session: existing } }) => {
       if (!mounted) return;
-      
-      setSession(session);
-      setUser(session?.user ?? null);
-      
-      if (session?.user) {
+
+      setSession(existing);
+      setUser(existing?.user ?? null);
+
+      if (existing?.user) {
         setTimeout(() => {
-          if (mounted) {
-            fetchUserRole(session.user.id);
-          }
+          if (mounted) fetchUserRole(existing.user.id);
         }, 0);
       }
-      
+
       setLoading(false);
     });
 
@@ -127,7 +130,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const signUp = async (email: string, password: string, username: string) => {
     const redirectUrl = `${window.location.origin}/`;
-    
+
     const { error } = await supabase.auth.signUp({
       email,
       password,
@@ -214,12 +217,26 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       .select('onboarding_completed')
       .eq('id', userId)
       .maybeSingle();
-    
+
     return data?.onboarding_completed ?? false;
   };
 
   return (
-    <AuthContext.Provider value={{ user, session, userRole, loading, signIn, signUp, signOut, signInWithGoogle, signInWithFacebook, checkOnboardingStatus }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        session,
+        userRole,
+        isAdmin,
+        loading,
+        signIn,
+        signUp,
+        signOut,
+        signInWithGoogle,
+        signInWithFacebook,
+        checkOnboardingStatus,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );

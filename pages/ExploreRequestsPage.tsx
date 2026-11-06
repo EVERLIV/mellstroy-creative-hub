@@ -6,7 +6,13 @@ import { TrainingRequest } from '../types';
 import { CATEGORIES } from '../constants';
 import RequestCard from '../components/RequestCard';
 import FilterModal from '../components/FilterModal';
-import { Search, SlidersHorizontal, Loader } from 'lucide-react';
+import { Search, SlidersHorizontal, Loader2, FileSearch } from 'lucide-react';
+import { AppScreen } from '@/src/components/layout/screen';
+import { StitchCanvas, StitchPageHeader, StitchPanel } from '@/src/components/layout/stitch-page';
+import { PageLoader, EmptyState } from '../src/components/layout/states';
+import { Input } from '../src/components/ui/input';
+import { Button } from '../src/components/ui/button';
+import { cn } from '../src/lib/utils';
 
 const REQUESTS_PER_PAGE = 15;
 
@@ -63,8 +69,7 @@ const ExploreRequestsPage: React.FC = () => {
         .from('requests')
         .select(`
           *,
-          student:profiles!requests_student_id_fkey(username, avatar_url)
-        `)
+          student:profiles!requests_student_id_fkey(username, avatar_url)`)
         .eq('status', 'open')
         .order('created_at', { ascending: false });
 
@@ -237,110 +242,99 @@ const ExploreRequestsPage: React.FC = () => {
     (activeFilters.level ? 1 : 0) +
     (activeFilters.priceRange !== 'any' ? 1 : 0);
 
+  const categoryChips: ReadonlyArray<{ id: string | null; name: string }> = [
+    { id: null, name: 'All' },
+    ...CATEGORIES.map((cat) => ({ id: cat.id, name: cat.name })),
+  ];
+
   return (
-    <div className="bg-gray-50 h-full overflow-y-auto">
-      {/* Header */}
-      <div className="bg-white border-b border-gray-100 shadow-sm sticky top-0 z-20">
-        <div className="px-4 py-3">
-          {/* Page Title */}
-          <h1 className="text-base font-bold text-gray-900 mb-3">Explore Requests</h1>
-          
-          {/* Search Bar */}
-          <div className="relative mb-3">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
-            <input
-              type="text"
-              placeholder="Search requests..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full h-10 pl-10 pr-4 bg-gray-100 border border-transparent rounded-xl focus:outline-none focus:ring-2 focus:ring-[#FF6B35] focus:border-transparent text-sm text-gray-900"
-            />
-          </div>
-
-          {/* Category Filters */}
-          <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-hide">
-            <button
-              onClick={() => setSelectedCategory(null)}
-              className={`px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-colors ${
-                selectedCategory === null
-                  ? 'bg-[#FF6B35] text-white'
-                  : 'bg-white text-gray-700 border border-gray-200'
-              }`}
-            >
-              All
-            </button>
-            {CATEGORIES.map((cat) => (
-              <button
-                key={cat.id}
-                onClick={() => setSelectedCategory(cat.id)}
-                className={`px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-colors ${
-                  selectedCategory === cat.id
-                    ? 'bg-[#FF6B35] text-white'
-                    : 'bg-white text-gray-700 border border-gray-200'
-                }`}
-              >
-                {cat.name}
-              </button>
-            ))}
-          </div>
-
-          {/* Filter Button */}
-          <div className="flex items-center justify-between mt-3">
-            <button
-              onClick={() => setIsFilterModalOpen(true)}
-              className="flex items-center gap-2 px-3 py-2 bg-white border border-gray-200 rounded-lg text-xs font-semibold text-gray-700 hover:bg-gray-50 transition-colors"
-            >
-              <SlidersHorizontal className="w-4 h-4" />
-              Filters
+    <AppScreen className="min-w-0 bg-[#f9fafb] dark:bg-background">
+      <StitchCanvas>
+        <StitchPageHeader title="Explore requests" description="Students looking for a trainer right now.">
+          <div className="flex items-center gap-2">
+            <div className="relative flex-1 md:max-w-xl">
+              <Search
+                className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
+                aria-hidden="true"
+              />
+              <Input
+                type="search"
+                placeholder="Search requests..."
+                aria-label="Search requests"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="h-11 rounded-xl bg-card pl-9"
+              />
+            </div>
+            <Button variant="outline" onClick={() => setIsFilterModalOpen(true)} className="h-11 shrink-0 gap-2 rounded-xl">
+              <SlidersHorizontal />
+              <span className="hidden sm:inline">Filters</span>
               {activeFilterCount > 0 && (
-                <span className="bg-[#FF6B35] text-white text-xs font-bold px-1.5 py-0.5 rounded-full min-w-[18px] text-center">
+                <span className="grid h-5 min-w-5 place-items-center rounded-full bg-[#fd651e] px-1 text-[11px] font-semibold text-white">
                   {activeFilterCount}
                 </span>
               )}
-            </button>
+            </Button>
             {activeFilterCount > 0 && (
-              <button
-                onClick={handleResetFilters}
-                className="text-xs font-semibold text-[#FF6B35] hover:text-orange-600"
-              >
+              <Button variant="ghost" onClick={handleResetFilters} className="h-11 shrink-0 text-[#fd651e] hover:text-[#a73a00]">
                 Reset
-              </button>
+              </Button>
             )}
           </div>
-        </div>
-      </div>
 
-      {/* Content */}
-      <div className="px-4 py-3 pb-safe-nav">
+          <div className="no-scrollbar -mx-1 flex items-center gap-2 overflow-x-auto px-1 pb-1">
+            {categoryChips.map((chip) => {
+              const isActive = selectedCategory === chip.id;
+              return (
+                <button
+                  key={chip.id ?? 'all'}
+                  type="button"
+                  aria-pressed={isActive}
+                  onClick={() => setSelectedCategory(chip.id)}
+                  className={cn(
+                    'h-9 shrink-0 whitespace-nowrap rounded-full px-3.5 text-xs font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring md:text-sm',
+                    isActive
+                      ? 'bg-[#fd651e] text-white shadow-sm hover:bg-[#a73a00]'
+                      : 'border border-border bg-card text-muted-foreground hover:bg-muted hover:text-foreground'
+                  )}
+                >
+                  {chip.name}
+                </button>
+              );
+            })}
+          </div>
+        </StitchPageHeader>
+
         {loading ? (
-          <div className="flex items-center justify-center py-12">
-            <Loader className="w-6 h-6 text-gray-800 animate-spin" />
-          </div>
+          <PageLoader title="Loading requests..." className="min-h-[40vh]" />
         ) : displayedRequests.length === 0 ? (
-          <div className="text-center py-12">
-            <p className="text-sm font-bold text-gray-900 mb-2">No requests found</p>
-            <p className="text-xs text-gray-600 mb-4">
-              {activeFilterCount > 0 || searchQuery
-                ? 'Try adjusting your filters or search query'
-                : 'No open training requests available'}
-            </p>
-            {activeFilterCount > 0 && (
-              <button
-                onClick={handleResetFilters}
-                className="px-4 py-2 bg-[#FF6B35] text-white text-xs font-semibold rounded-lg hover:bg-orange-600 active:scale-95 transition-all duration-200"
-              >
-                Reset Filters
-              </button>
-            )}
-          </div>
+          <StitchPanel className="p-4 md:p-6">
+            <EmptyState
+              icon={FileSearch}
+              title="No requests found"
+              description={
+                activeFilterCount > 0 || searchQuery
+                  ? 'Try adjusting your filters or search query'
+                  : 'No open training requests available'
+              }
+              action={
+                activeFilterCount > 0 && (
+                  <Button onClick={handleResetFilters} className="bg-[#fd651e] text-white hover:bg-[#a73a00]">
+                    Reset Filters
+                  </Button>
+                )
+              }
+            />
+          </StitchPanel>
         ) : (
-          <>
-            <div className="mb-3">
-              <p className="text-xs text-gray-600">
-                {filteredRequests.length} {filteredRequests.length === 1 ? 'request' : 'requests'} found
+          <StitchPanel className="p-4 md:p-6">
+            <div className="mb-4">
+              <h2 className="text-base font-semibold text-foreground md:text-lg">Open requests</h2>
+              <p className="mt-0.5 text-sm text-muted-foreground">
+                {`${filteredRequests.length} ${filteredRequests.length === 1 ? 'request' : 'requests'} found`}
               </p>
             </div>
-            <div className="space-y-3">
+            <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
               {displayedRequests.map((request) => (
                 <RequestCard
                   key={request.id}
@@ -354,14 +348,12 @@ const ExploreRequestsPage: React.FC = () => {
             </div>
             {hasMore && (
               <div ref={observerTarget} className="flex items-center justify-center py-4">
-                {loadingMore && <Loader className="w-5 h-5 text-gray-800 animate-spin" />}
+                {loadingMore && <Loader2 className="size-5 animate-spin text-[#fd651e]" aria-label="Loading more" />}
               </div>
             )}
-          </>
+          </StitchPanel>
         )}
-      </div>
-
-      {/* Filter Modal */}
+      </StitchCanvas>      {/* Filter Modal */}
       {isFilterModalOpen && (
         <FilterModal
           isOpen={isFilterModalOpen}
@@ -380,7 +372,7 @@ const ExploreRequestsPage: React.FC = () => {
           }}
         />
       )}
-    </div>
+    </AppScreen>
   );
 };
 

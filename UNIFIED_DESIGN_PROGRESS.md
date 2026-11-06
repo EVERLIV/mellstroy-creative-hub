@@ -1,90 +1,49 @@
 # Unified Design System Progress
 
-## Completed Components ✅
+Stack: **shadcn/ui** (fields, buttons, menus) + **Kokonut UI** (interactive / animated) + theme tokens.
+Rules: `DESIGN_SYSTEM.md` · `.claude/rules/design-system.md` · `.claude/rules/kokonut-ui.md`
 
-### 1. **BookingModal** - DONE
-- Replaced all `bg-[#FF6B35]` → `bg-primary`
-- Replaced `text-white` → `text-primary-foreground`
-- Replaced `bg-white` → `bg-card`
-- Replaced `text-gray-*` → `text-foreground` / `text-muted-foreground`
-- Replaced `border-gray-*` → `border-border`
+## Foundation ✅
 
-### 2. **FilterModal** - DONE
-- Unified all color tokens across filters
-- Updated specialty, location, time, class type filters
-- Updated toggle switches to use semantic colors
-- Apply button uses `bg-primary`
+- Page shell: `Page` / `PageHeader` / `PageContent` / `PageSection` / `PageActions`
+- Forms: `FormField` / `FormGrid` + `Input` / `Textarea` / `NativeSelect` / `Checkbox` / `Switch` / `Button`
+- States: `PageLoader` / `EmptyState` / `ErrorState` / `StatusBadge`
+- Nav: `BottomNav` · `SideNav` (+ ⌘K `CommandPalette`) · `HamburgerMenu` · `UnifiedHeader`
+- Kokonut installed: `carousel-cards`, `smooth-tab`, `hold-button`, `particle-button`, `loader`, `action-search-bar`, `ai-prompt`, `file-upload`
 
-### 3. **CompleteProfilePrompt** - DONE
-- Gradient background uses `from-primary/10 to-primary/5`
-- Button uses `bg-primary text-primary-foreground`
-- Text uses semantic tokens
+## Migrated screens ✅
 
-### 4. **TrainerCard** - DONE
-- Premium border uses `border-primary`
-- Categories use `bg-primary/10 text-primary`
-- Rating, location use `text-foreground` / `text-muted-foreground`
-- Certificates use `text-primary bg-primary/10`
-- View button uses `bg-primary text-primary-foreground`
-- Online status uses `text-primary` instead of green
+Explore, Search, Favorites, MyBookings, ClassDetail, Dashboard/Home, Profile / Student / Trainer edit,
+Bookings, Messages list, Chat / ChatConversation, Auth, Welcome/Onboarding, Events/Venues,
+MealPlanner / MyMealPlans, Verification, MediaUpload, **AdminDashboard**, **AICoach**, Subscription,
+Documents, Requests flow, etc.
 
-### 5. **MyBookingsPage** - DONE (already using semantic tokens)
+## Kokonut wiring (this pass) ✅
 
-## Still Need Updating ❌
+| Component | Where |
+|---|---|
+| `ai-prompt` | AICoachPage composer |
+| `file-upload` | MediaUploadPage |
+| `action-search-bar` | SideNav `CommandPalette` (⌘K / Ctrl+K) |
+| `smooth-tab` | MyBookings + AdminDashboard |
+| `hold-button` / `particle-button` / carousels | Bookings, MealPlanner, Verification, rails |
 
-### High Priority Components
-- [ ] AddEditClassModal (~50 instances)
-- [ ] VenueCard
-- [ ] TrainerListItem
-- [ ] Header/UnifiedHeader
-- [ ] BottomNav
+## Token cleanup (this pass) ✅
 
-### High Priority Pages
-- [ ] AuthPage (background, buttons)
-- [ ] HomePage/DashboardPage
-- [ ] ClassDetailPage
-- [ ] Explore (search bar, headers)
+- Dashboard / PromoBanner → `text-primary-foreground` on brand gradients
+- ClassDetail gallery overlays → theme-safe scrims
+- StudentProfile premium CTA → card/secondary tokens
+- Auth brand glass → `primary-foreground` borders
+- Welcome category labels → `primary-foreground`
+- Chat menus → shadcn `DropdownMenu`
 
-### Medium Priority
-- [ ] AdminPage
-- [ ] AdminDashboardPage
-- [ ] AICoachPage
-- [ ] MealPlannerPage
-- [ ] ProfilePage
-- [ ] EditTrainerProfilePage
+## Cleanup ✅
 
-### Low Priority
-- [ ] AboutMePage
-- [ ] EventsPage
-- [ ] VenuesPage
+- Removed empty `components/Header.tsx`
+- Removed dead duplicate `pages/AuthPage.tsx` (routed auth is `src/pages/AuthPage.tsx`)
 
-## Design Token Reference
+## Remaining optional polish
 
-### Background Colors
-- `bg-card` → White/dark card backgrounds
-- `bg-background` → Page backgrounds
-- `bg-muted` → Subtle backgrounds
-- `bg-primary` → Brand color backgrounds
-- `bg-primary/10` → Light tint backgrounds
-
-### Text Colors
-- `text-foreground` → Primary text
-- `text-muted-foreground` → Secondary text
-- `text-primary` → Brand colored text
-- `text-primary-foreground` → Text on primary backgrounds
-
-### Border Colors
-- `border-border` → Standard borders
-- `border-input` → Input field borders
-- `border-primary` → Brand colored borders
-
-### Interactive States
-- `hover:bg-primary/90` → Primary hover state
-- `hover:bg-muted` → Subtle hover state
-- `active:scale-95` → Press animation
-
-## Impact
-- ✅ Dark mode compatibility
-- ✅ Consistent theming
-- ✅ Easier maintenance
-- ✅ Better accessibility
+- Unrouted stubs: `AdminPage`, `CategoryPage`, `CreateProfilePage`, `Create.tsx`, `Index.tsx`, `Profile.tsx`
+- Pre-existing App/Supabase typing mismatches (requests tables, ChatPage prop names) — not design-system blockers
+- Photo overlays may keep high-contrast light text by design; prefer `primary-foreground` over raw `text-white` when on brand surfaces

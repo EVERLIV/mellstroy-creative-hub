@@ -19,9 +19,9 @@ export const ThemeToggle: React.FC = () => {
       className="rounded-full"
     >
       {theme === 'dark' ? (
-        <Sun className="h-5 w-5 text-foreground" />
+        <Sun className="text-foreground" />
       ) : (
-        <Moon className="h-5 w-5 text-foreground" />
+        <Moon className="text-foreground" />
       )}
     </Button>
   );

@@ -1,6 +1,10 @@
 import React, { useState } from 'react';
 import { Trainer } from '../types';
-import { ArrowLeft, Star } from 'lucide-react';
+import { Star, MessageSquare } from 'lucide-react';
+import { cn } from '@/src/lib/utils';
+import { Button } from '@/src/components/ui/button';
+import { PageHeader, PageContent } from '@/src/components/layout/page';
+import { EmptyState } from '@/src/components/layout/states';
 
 interface ReviewsModalProps {
     trainer: Trainer;
@@ -12,10 +16,12 @@ const StarRating: React.FC<{ rating: number; starSize?: string }> = ({ rating, s
       <div className="flex items-center">
         {[...Array(5)].map((_, index) => {
           const starValue = index + 1;
-          if (rating >= starValue) {
-            return <Star key={index} className={`${starSize} text-yellow-400 fill-yellow-400`} />;
-          }
-          return <Star key={index} className={`${starSize} text-gray-300 fill-gray-300`} />;
+          return (
+            <Star
+              key={index}
+              className={cn(starSize, rating >= starValue ? 'fill-yellow-400 text-yellow-400' : 'fill-muted text-muted')}
+            />
+          );
         })}
       </div>
     );
@@ -32,40 +38,44 @@ const ReviewsModal: React.FC<ReviewsModalProps> = ({ trainer, onClose }) => {
     };
 
     return (
-        <div className="fixed inset-0 bg-gray-50 z-40 animate-slide-up-full flex flex-col">
-            {/* Header */}
-            <header className="sticky top-0 bg-white z-10 shadow-sm p-4 flex items-center flex-shrink-0 border-b border-gray-200">
-                <button onClick={onClose} className="p-2 rounded-md hover:bg-gray-100 mr-2 transition-colors">
-                    <ArrowLeft className="w-5 h-5 text-gray-700" />
-                </button>
-                <div className="text-center flex-1">
-                    <h1 className="text-base font-semibold text-gray-900">Reviews for</h1>
-                    <p className="text-sm text-gray-600 -mt-1">{trainer.name}</p>
-                </div>
-                <div className="w-10"></div> {/* Spacer */}
-            </header>
+        <div
+            className="fixed inset-0 z-50 flex animate-slide-up-full flex-col overflow-y-auto bg-background"
+            role="dialog"
+            aria-modal="true"
+            aria-label={`Reviews for ${trainer.name}`}
+        >
+            <PageHeader
+                title={`Reviews for ${trainer.name}`}
+                description={`${trainer.reviewsData.length} reviews`}
+                onBack={onClose}
+                backLabel="Close reviews"
+            />
 
-            {/* Content */}
-            <main className="flex-1 overflow-y-auto p-4 space-y-4">
-                {trainer.reviewsData.slice(0, visibleCount).map((review, index) => (
-                    <div key={index} className="bg-white p-4 rounded-xl shadow-sm border border-slate-200/80">
-                        <div className="flex items-center justify-between">
-                            <p className="font-bold text-gray-800">{review.reviewerName}</p>
-                            <StarRating rating={review.rating} />
-                        </div>
-                        <p className="text-sm text-gray-600 mt-2 italic">"{review.comment}"</p>
+            <PageContent className="space-y-4 md:space-y-4">
+                {trainer.reviewsData.length === 0 ? (
+                    <EmptyState icon={MessageSquare} title="No reviews yet" />
+                ) : (
+                    <div className="grid gap-3 md:grid-cols-2 md:gap-4">
+                        {trainer.reviewsData.slice(0, visibleCount).map((review, index) => (
+                            <div key={index} className="rounded-xl border border-border bg-card p-4 shadow-sm">
+                                <div className="flex items-center justify-between gap-2">
+                                    <p className="truncate font-semibold text-foreground">{review.reviewerName}</p>
+                                    <StarRating rating={review.rating} />
+                                </div>
+                                <p className="mt-2 text-sm italic text-muted-foreground">"{review.comment}"</p>
+                            </div>
+                        ))}
                     </div>
-                ))}
-                
-                {visibleCount < trainer.reviewsData.length && (
-                    <button 
-                        onClick={handleLoadMore}
-                        className="w-full mt-4 text-center bg-white border border-slate-300 text-slate-700 text-sm font-bold py-3 px-3 rounded-lg hover:bg-slate-100 transition-colors duration-200"
-                    >
-                        Load More Reviews
-                    </button>
                 )}
-            </main>
+
+                {visibleCount < trainer.reviewsData.length && (
+                    <div className="flex justify-center">
+                        <Button variant="outline" onClick={handleLoadMore} className="w-full md:w-auto">
+                            Load More Reviews
+                        </Button>
+                    </div>
+                )}
+            </PageContent>
         </div>
     );
 };

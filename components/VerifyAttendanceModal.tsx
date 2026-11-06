@@ -3,6 +3,11 @@ import { X, CheckCircle, AlertCircle, Camera } from 'lucide-react';
 import { supabase } from '../src/integrations/supabase/client';
 import { useToast } from '../src/hooks/use-toast';
 import { BarcodeScanner } from '@capacitor-community/barcode-scanner';
+import { cn } from '../src/lib/utils';
+import { Button } from '../src/components/ui/button';
+import { Input } from '../src/components/ui/input';
+import { Separator } from '../src/components/ui/separator';
+import { FormField } from '../src/components/form/form-field';
 
 interface VerifyAttendanceModalProps {
   isOpen: boolean;
@@ -150,9 +155,7 @@ const VerifyAttendanceModal: React.FC<VerifyAttendanceModalProps> = ({
 
   const handleVerify = () => handleVerifyWithCode(code);
 
-  if (!isOpen) return null;
-
-  // Add scanner styles
+  // Scanner styles. Must run before any early return (rules of hooks).
   React.useEffect(() => {
     if (isScanning) {
       const style = document.createElement('style');
@@ -172,102 +175,84 @@ const VerifyAttendanceModal: React.FC<VerifyAttendanceModalProps> = ({
     }
   }, [isScanning]);
 
+  if (!isOpen) return null;
+
   return (
-    <div className={`fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 ${isScanning ? 'scanner-ui' : ''}`}>
-      <div className="bg-white rounded-xl shadow-xl w-full max-w-md animate-in fade-in slide-in-from-bottom-4 duration-300">
-        {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-gray-200">
-          <h2 className="text-lg font-bold text-gray-900">Verify Attendance</h2>
-          <button
-            onClick={onClose}
-            className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-            disabled={loading}
-          >
-            <X className="w-5 h-5 text-gray-600" />
-          </button>
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="verify-attendance-title"
+      className={cn(
+        'fixed inset-0 z-50 flex items-end justify-center bg-black/70 p-0 sm:items-center sm:p-4',
+        isScanning && 'scanner-ui'
+      )}
+    >
+      <div className="w-full max-w-md rounded-t-2xl border border-border bg-card shadow-xl animate-in fade-in slide-in-from-bottom-4 duration-300 sm:rounded-xl">
+        <div className="flex items-center justify-between border-b border-border px-4 py-3">
+          <h2 id="verify-attendance-title" className="text-lg font-bold text-foreground">
+            Verify Attendance
+          </h2>
+          <Button variant="ghost" size="icon" onClick={onClose} disabled={loading} aria-label="Close">
+            <X />
+          </Button>
         </div>
 
-        {/* Content */}
-        <div className="p-6 space-y-4">
+        <div className="space-y-4 p-5 pb-[calc(1.25rem+env(safe-area-inset-bottom))] sm:p-6">
           {!isScanning ? (
             <>
-              <div className="text-center space-y-2 mb-6">
-                <div className="w-16 h-16 bg-orange-100 rounded-full flex items-center justify-center mx-auto">
-                  <CheckCircle className="w-8 h-8 text-orange-600" />
+              <div className="space-y-2 text-center">
+                <div className="mx-auto grid h-16 w-16 place-items-center rounded-full bg-primary/10">
+                  <CheckCircle className="h-8 w-8 text-primary" />
                 </div>
-                <p className="text-sm text-gray-600">
-                  Scan QR code or enter the 6-digit verification code
-                </p>
+                <p className="text-sm text-muted-foreground">Scan QR code or enter the 6-digit verification code</p>
               </div>
 
-              {/* Scan QR Button */}
-              <button
-                onClick={startScanning}
-                disabled={loading}
-                className="w-full bg-gradient-to-r from-blue-500 to-blue-600 text-white py-3 px-4 rounded-xl font-semibold hover:from-blue-600 hover:to-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-all active:scale-95 flex items-center justify-center gap-2"
-              >
-                <Camera className="w-5 h-5" />
+              <Button size="lg" className="w-full" onClick={startScanning} disabled={loading}>
+                <Camera />
                 Scan QR Code
-              </button>
+              </Button>
 
               <div className="flex items-center gap-3">
-                <div className="flex-1 h-px bg-gray-300"></div>
-                <span className="text-xs text-gray-500 font-medium">OR</span>
-                <div className="flex-1 h-px bg-gray-300"></div>
+                <Separator className="flex-1" />
+                <span className="text-xs font-medium text-muted-foreground">OR</span>
+                <Separator className="flex-1" />
               </div>
+
+              <FormField label="Verification Code" htmlFor="verification-code" error={error || undefined}>
+                <Input
+                  type="text"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                  autoComplete="one-time-code"
+                  value={code}
+                  onChange={handleCodeChange}
+                  placeholder="000000"
+                  maxLength={6}
+                  disabled={loading}
+                  className="h-16 text-center font-mono text-3xl font-bold tracking-widest md:h-16 md:text-3xl"
+                />
+              </FormField>
+
+              <Button size="lg" className="w-full" onClick={handleVerify} disabled={loading || code.length !== 6}>
+                {loading ? 'Verifying...' : 'Verify Attendance'}
+              </Button>
             </>
           ) : (
-            <div className="text-center space-y-4 py-8">
-              <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto animate-pulse">
-                <Camera className="w-8 h-8 text-blue-600" />
+            <div className="space-y-4 py-8 text-center">
+              <div className="mx-auto grid h-16 w-16 animate-pulse place-items-center rounded-full bg-primary/10">
+                <Camera className="h-8 w-8 text-primary" />
               </div>
-              <p className="text-sm text-gray-700 font-medium">Point camera at QR code</p>
-              <button
-                onClick={stopScanning}
-                className="text-sm text-red-600 font-semibold hover:text-red-700"
-              >
+              <p className="text-sm font-medium text-muted-foreground">Point camera at QR code</p>
+              <Button variant="ghost" className="text-destructive hover:text-destructive" onClick={stopScanning}>
                 Cancel Scanning
-              </button>
+              </Button>
+              {error && (
+                <p role="alert" className="flex items-center justify-center gap-2 text-sm text-destructive">
+                  <AlertCircle className="h-4 w-4 shrink-0" />
+                  {error}
+                </p>
+              )}
             </div>
-          )}
-
-          {/* Code Input - Only show when not scanning */}
-          {!isScanning && (
-            <div className="space-y-2">
-            <label className="block text-sm font-medium text-gray-700">
-              Verification Code
-            </label>
-            <input
-              type="text"
-              inputMode="numeric"
-              pattern="[0-9]*"
-              value={code}
-              onChange={handleCodeChange}
-              placeholder="000000"
-              maxLength={6}
-              className="w-full text-center text-3xl font-bold tracking-widest font-mono py-4 px-4 border-2 border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
-              disabled={loading}
-            />
-          </div>
-          )}
-
-          {/* Error Message */}
-          {error && (
-            <div className="flex items-center gap-2 p-3 bg-red-50 text-red-700 rounded-lg border border-red-200">
-              <AlertCircle className="w-4 h-4 flex-shrink-0" />
-              <p className="text-sm">{error}</p>
-            </div>
-          )}
-
-          {/* Verify Button - Only show when not scanning */}
-          {!isScanning && (
-            <button
-              onClick={handleVerify}
-              disabled={loading || code.length !== 6}
-              className="w-full bg-[#FF6B35] text-white py-3 px-4 rounded-xl font-semibold hover:bg-orange-600 disabled:bg-gray-300 disabled:cursor-not-allowed transition-all active:scale-95"
-            >
-              {loading ? 'Verifying...' : 'Verify Attendance'}
-            </button>
           )}
         </div>
       </div>

@@ -1,19 +1,26 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { ArrowLeft, Loader, Star, User, CheckCircle, XCircle, Clock, MapPin, Home, Building2, Trees } from 'lucide-react';
+import { Star, User, Check, Clock, MapPin, Home, Building2, Trees, MessageSquare } from 'lucide-react';
 import { supabase } from '../src/integrations/supabase/client';
 import { useAuth } from '../src/hooks/useAuth';
 import { TrainingRequest, TrainerResponse } from '../types';
 import { formatDistanceToNow } from 'date-fns';
 import { useToast } from '../src/hooks/use-toast';
+import { AppScreen, ScreenHeader, ScreenBody, ScreenSection, ScreenSplit } from '../src/components/layout/screen';
+import { PageLoader, EmptyState } from '../src/components/layout/states';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '../src/components/ui/card';
+import { Avatar, AvatarFallback, AvatarImage } from '../src/components/ui/avatar';
+import ParticleButton from '../src/components/kokonutui/particle-button';
+import { Badge } from '../src/components/ui/badge';
+import { StatusBadge } from '../src/components/ui/status-badge';
+import { formatVND } from '../src/lib/format';
+import { cn } from '../src/lib/utils';
 
-const formatVND = (amount: number) => {
-  return new Intl.NumberFormat('vi-VN', {
-    style: 'currency',
-    currency: 'VND',
-    minimumFractionDigits: 0
-  }).format(amount).replace(/\s/g, '');
-};
+const LOCATION_META = {
+  home: { label: 'At Home', icon: Home },
+  gym: { label: 'At Gym', icon: Building2 },
+  outdoor: { label: 'Outdoor', icon: Trees },
+} as const;
 
 const RequestResponsesPage: React.FC = () => {
   const navigate = useNavigate();
@@ -48,8 +55,7 @@ const RequestResponsesPage: React.FC = () => {
         .from('requests')
         .select(`
           *,
-          student:profiles!requests_student_id_fkey(username, avatar_url)
-        `)
+          student:profiles!requests_student_id_fkey(username, avatar_url)`)
         .eq('id', id)
         .single();
 
@@ -90,8 +96,7 @@ const RequestResponsesPage: React.FC = () => {
             avatar_url,
             rating,
             reviews_count
-          )
-        `)
+          )`)
         .eq('request_id', id)
         .order('created_at', { ascending: false });
 
@@ -171,162 +176,147 @@ const RequestResponsesPage: React.FC = () => {
 
   if (!request) {
     return (
-      <div className="bg-white h-screen flex items-center justify-center">
-        <Loader className="w-6 h-6 text-gray-800 animate-spin" />
-      </div>
+      <AppScreen>
+        <PageLoader title="Loading request..." />
+      </AppScreen>
     );
   }
 
   const isOwner = request.student_id === user?.id;
+  const requestLocation = request.location_type
+    ? LOCATION_META[request.location_type as keyof typeof LOCATION_META]
+    : undefined;
+  const responsesSummary = loading
+    ? undefined
+    : `${responses.length} ${responses.length === 1 ? 'response' : 'responses'}`;
 
-  return (
-    <div className="bg-white h-screen flex flex-col overflow-hidden">
-      {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 bg-white shadow-sm z-20 flex-shrink-0">
-        <button 
-          onClick={() => navigate(-1)} 
-          className="p-2 -ml-2"
-        >
-          <ArrowLeft className="w-5 h-5 text-gray-800" />
-        </button>
-        <h1 className="text-base font-bold text-gray-900">Responses</h1>
-        <div className="w-9"></div>
-      </div>
-
-      {/* Content */}
-      <div className="flex-1 overflow-y-auto">
-        <div className="px-4 py-3 bg-gray-50 pb-safe-nav">
-          {/* Request Summary */}
-          <div className="bg-white rounded-lg p-3 mb-3 shadow-sm">
-            <div className="mb-2">
-              <span className="px-2.5 py-1 bg-orange-100 text-orange-700 text-xs font-medium rounded-full">
-                {request.category}
-              </span>
-            </div>
-            <p className="text-xs text-gray-900 mb-2">{request.description}</p>
-            <div className="space-y-1 text-xs text-gray-600">
-              <div className="flex items-center gap-1.5">
-                <MapPin className="w-3 h-3 text-[#FF6B35]" />
-                <span>{request.district}</span>
-              </div>
-              {request.preferred_time && (
-                <div className="flex items-center gap-1.5">
-                  <Clock className="w-3 h-3 text-[#FF6B35]" />
-                  <span>{request.preferred_time}</span>
-                </div>
+  const main = (
+    <ScreenSection title="Trainer offers" description={responsesSummary}>
+      {loading ? (
+        <PageLoader title="Loading responses..." className="min-h-[30vh]" />
+      ) : responses.length === 0 ? (
+        <EmptyState
+          icon={MessageSquare}
+          title="No responses yet"
+          description="Trainers will see your request and can respond"
+        />
+      ) : (
+        <div className="grid gap-3 xl:grid-cols-2">
+          {responses.map((response) => (
+            <Card
+              key={response.id}
+              className={cn(
+                'flex flex-col rounded-2xl shadow-none',
+                response.status === 'accepted' && 'border-2 border-primary'
               )}
-              {request.location_type && (
-                <div className="flex items-center gap-1.5">
-                  {request.location_type === 'home' && <Home className="w-3 h-3 text-[#FF6B35]" />}
-                  {request.location_type === 'gym' && <Building2 className="w-3 h-3 text-[#FF6B35]" />}
-                  {request.location_type === 'outdoor' && <Trees className="w-3 h-3 text-[#FF6B35]" />}
-                  <span>
-                    {request.location_type === 'home' ? 'At Home' : request.location_type === 'gym' ? 'At Gym' : 'Outdoor'}
-                  </span>
-                </div>
-              )}
-              <div className="flex items-center gap-1.5">
-                <span>Desired: {formatVND(request.desired_price)}/hour</span>
-              </div>
-            </div>
-          </div>
-
-          {/* Responses */}
-          {loading ? (
-            <div className="flex items-center justify-center py-12">
-              <Loader className="w-6 h-6 text-gray-800 animate-spin" />
-            </div>
-          ) : responses.length === 0 ? (
-            <div className="text-center py-12">
-              <p className="text-sm font-bold text-gray-900">No responses yet</p>
-              <p className="text-xs text-gray-600 mt-2">
-                Trainers will see your request and can respond
-              </p>
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {responses.map((response) => (
-                <div
-                  key={response.id}
-                  className={`bg-white rounded-lg p-3 shadow-sm ${
-                    response.status === 'accepted' ? 'border-2 border-green-500' : ''
-                  }`}
-                >
-                  {/* Trainer Info */}
-                  <div className="flex items-start gap-3 mb-2">
-                    <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center flex-shrink-0 overflow-hidden">
-                      {response.trainer_avatar ? (
-                        <img 
-                          src={response.trainer_avatar} 
-                          alt={response.trainer_name}
-                          className="w-full h-full object-cover"
-                        />
-                      ) : (
-                        <User className="w-5 h-5 text-gray-500" />
-                      )}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between mb-1">
-                        <span className="text-sm font-bold text-gray-900">
-                          {response.trainer_name || 'Unknown Trainer'}
-                        </span>
-                        {response.status === 'accepted' && (
-                          <CheckCircle className="w-4 h-4 text-green-500" />
-                        )}
-                        {response.status === 'rejected' && (
-                          <XCircle className="w-4 h-4 text-gray-400" />
-                        )}
-                      </div>
-                      {response.trainer_rating > 0 && (
-                        <div className="flex items-center gap-1 text-xs text-gray-600">
-                          <Star className="w-3 h-3 text-yellow-400 fill-yellow-400" />
-                          <span>{response.trainer_rating.toFixed(1)}</span>
-                          <span>({response.trainer_reviews} reviews)</span>
-                        </div>
-                      )}
-                    </div>
+            >
+              <CardHeader className="flex-row items-start gap-3 space-y-0 p-4 pb-3">
+                <Avatar className="size-10 shrink-0">
+                  {response.trainer_avatar ? (
+                    <AvatarImage src={response.trainer_avatar} alt={response.trainer_name} />
+                  ) : null}
+                  <AvatarFallback>
+                    <User className="size-5 text-muted-foreground" aria-hidden="true" />
+                  </AvatarFallback>
+                </Avatar>
+                <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+                  <div className="flex items-center justify-between gap-2">
+                    <CardTitle className="truncate text-sm">
+                      {response.trainer_name || 'Unknown Trainer'}
+                    </CardTitle>
+                    <StatusBadge status={response.status} />
                   </div>
-
-                  {/* Message */}
-                  <p className="text-xs text-gray-900 mb-2 leading-relaxed">
-                    {response.message}
-                  </p>
-
-                  {/* Price */}
-                  <div className="mb-2 p-2 bg-gray-50 rounded-lg">
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs font-semibold text-gray-900">Proposed Price:</span>
-                      <span className="text-sm font-bold text-blue-600">
-                        {formatVND(response.proposed_price)}/hour
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Time */}
-                  <div className="text-xs text-gray-500 mb-2">
-                    {formatDistanceToNow(new Date(response.created_at), { addSuffix: true })}
-                  </div>
-
-                  {/* Actions */}
-                  {isOwner && request.status === 'open' && response.status === 'pending' && (
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => handleAcceptResponse(response.id)}
-                        className="flex-1 bg-green-600 text-white text-xs font-semibold py-2 px-3 rounded-lg hover:bg-green-700 active:scale-95 shadow-sm transition-all duration-200"
-                      >
-                        Accept
-                      </button>
-                    </div>
+                  {response.trainer_rating > 0 && (
+                    <CardDescription className="flex items-center gap-1 text-xs">
+                      <Star className="size-3 fill-primary text-primary" aria-hidden="true" />
+                      <span>{response.trainer_rating.toFixed(1)}</span>
+                      <span>({response.trainer_reviews} reviews)</span>
+                    </CardDescription>
                   )}
                 </div>
-              ))}
+              </CardHeader>
+
+              <CardContent className="flex flex-1 flex-col gap-3 p-4 pt-0">
+                <p className="whitespace-pre-line text-sm leading-relaxed text-foreground">{response.message}</p>
+                <div className="flex items-center justify-between rounded-lg bg-muted/50 p-2.5">
+                  <span className="text-xs font-semibold text-foreground">Proposed price</span>
+                  <span className="text-sm font-bold text-primary">{formatVND(response.proposed_price)}/hour</span>
+                </div>
+              </CardContent>
+
+              <CardFooter className="mt-auto items-center justify-between gap-2 p-4 pt-0">
+                <span className="text-xs text-muted-foreground">
+                  {formatDistanceToNow(new Date(response.created_at), { addSuffix: true })}
+                </span>
+                {isOwner && request.status === 'open' && response.status === 'pending' && (
+                  <ParticleButton
+                    onClick={() => handleAcceptResponse(response.id)}
+                    icon={<Check />}
+                    pendingLabel="Accepting"
+                    successLabel="Accepted"
+                  >
+                    Accept
+                  </ParticleButton>
+                )}
+              </CardFooter>
+            </Card>
+          ))}
+        </div>
+      )}
+    </ScreenSection>
+  );
+
+  const aside = (
+    <Card className="lg:sticky lg:top-24">
+      <CardHeader className="gap-3 pb-3">
+        <CardTitle className="text-base">Your request</CardTitle>
+        <div className="flex flex-wrap gap-1.5">
+          <Badge variant="secondary" className="rounded-full border-transparent bg-primary/10 font-medium text-primary hover:bg-primary/15">
+            {request.category}
+          </Badge>
+          <StatusBadge status={request.status} />
+        </div>
+      </CardHeader>
+      <CardContent className="flex flex-col gap-3">
+        <p className="whitespace-pre-line text-sm leading-relaxed text-foreground">{request.description}</p>
+        <div className="flex flex-col gap-1.5 text-xs text-muted-foreground">
+          <div className="flex items-center gap-1.5">
+            <MapPin className="size-3.5 text-primary" aria-hidden="true" />
+            {request.district}
+          </div>
+          {request.preferred_time && (
+            <div className="flex items-center gap-1.5">
+              <Clock className="size-3.5 text-primary" aria-hidden="true" />
+              {request.preferred_time}
+            </div>
+          )}
+          {requestLocation && (
+            <div className="flex items-center gap-1.5">
+              <requestLocation.icon className="size-3.5 text-primary" aria-hidden="true" />
+              {requestLocation.label}
             </div>
           )}
         </div>
-      </div>
-    </div>
+      </CardContent>
+      <CardFooter className="text-sm font-medium text-foreground">
+        Desired: {formatVND(request.desired_price)}/hour
+      </CardFooter>
+    </Card>
+  );
+
+  return (
+    <AppScreen>
+      <ScreenHeader
+        title="Responses"
+        description="Offers from trainers for your request."
+        onBack={() => navigate(-1)}
+        width="detail"
+      />
+      <ScreenBody width="detail">
+        <ScreenSplit main={main} aside={aside} />
+      </ScreenBody>
+    </AppScreen>
   );
 };
 
 export default RequestResponsesPage;
-

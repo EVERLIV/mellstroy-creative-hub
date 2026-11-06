@@ -9,10 +9,18 @@ import { Trainer, Class, UserRole, Venue, TrainingRequest } from '../types';
 import { CATEGORIES } from '../constants';
 import { mockVenues } from '../data/mockVenues';
 import DistrictFilterModal from '../components/DistrictFilterModal';
-import UnifiedHeader from '../components/UnifiedHeader';
 import { supabase } from '../src/integrations/supabase/client';
 import { useAuth } from '../src/hooks/useAuth';
-import { Calendar, MessageCircle, Building, FileText, ArrowRight } from 'lucide-react';
+import { Calendar, MessageCircle, Building, FileText, ArrowRight, MapPin, ChevronDown, Search, type LucideIcon } from 'lucide-react';
+import TrainerCarousel from '../components/TrainerCarousel';
+import ClassCarousel, { type ClassWithTrainer } from '../components/ClassCarousel';
+import { AppScreen, ScreenHeader, ScreenBody, ScreenSection, ScreenSplit } from '@/src/components/layout/screen';
+import { EmptyState } from '../src/components/layout/states';
+import CategoryFilters from '../components/CategoryFilters';
+import { Button } from '../src/components/ui/button';
+import { Input } from '../src/components/ui/input';
+import { Skeleton } from '../src/components/ui/skeleton';
+import { cn } from '../src/lib/utils';
 
 interface HomePageProps {
     trainers: Trainer[];
@@ -28,6 +36,11 @@ interface HomePageProps {
 }
 
 const allCategories = [{ id: 'all', name: 'All', icon: 'grid' }, ...CATEGORIES];
+
+const MAX_DISTRICT_TRAINERS = 10;
+const MAX_FEATURED_CLASSES = 12;
+const REQUEST_SKELETONS = 4;
+const VENUES_PREVIEW = 3;
 
 const HomePage: React.FC<HomePageProps> = ({ trainers, onInitiateBooking, onOpenChat, selectedCategory, onSelectCategory, userRole, currentUserId, favoriteTrainerIds, onToggleFavorite, onOpenReviewsModal }) => {
   const navigate = useNavigate();
@@ -103,8 +116,7 @@ const HomePage: React.FC<HomePageProps> = ({ trainers, onInitiateBooking, onOpen
         .from('requests')
         .select(`
           *,
-          student:profiles!requests_student_id_fkey(username, avatar_url)
-        `)
+          student:profiles!requests_student_id_fkey(username, avatar_url)`)
         .eq('status', 'open')
         .order('created_at', { ascending: false })
         .limit(10);
@@ -203,204 +215,247 @@ const HomePage: React.FC<HomePageProps> = ({ trainers, onInitiateBooking, onOpen
     setIsDistrictModalOpen(false);
   };
 
+  const districtTrainers = useMemo(
+    () =>
+      userDistrict
+        ? trainers.filter(
+            (trainer) =>
+              trainer.isPremium && (trainer.location === userDistrict || trainer.location?.includes(userDistrict))
+          )
+        : [],
+    [trainers, userDistrict]
+  );
+
+  const featuredClasses = useMemo<ClassWithTrainer[]>(
+    () =>
+      filteredTrainers
+        .flatMap((trainer) => (trainer.classes ?? []).map((cls) => ({ cls, trainer })))
+        .slice(0, MAX_FEATURED_CLASSES),
+    [filteredTrainers]
+  );
+
   // Trainer Home Page
   if (userRole === 'trainer') {
     return (
-      <div className="bg-gray-50 h-full overflow-y-auto">
-        {/* Simple Header for Trainers */}
-        <div className="bg-white border-b border-gray-100 shadow-sm sticky top-0 z-10 px-4 py-3">
-          <h1 className="text-base font-bold text-gray-900">Dashboard</h1>
-        </div>
-        
-        <div className="px-4 py-3 pb-safe-nav">
-          {/* Quick Actions */}
-          <div className="grid grid-cols-2 gap-3 mb-4 mt-4">
-            <button
-              onClick={() => navigate('/bookings')}
-              className="bg-white rounded-lg p-4 shadow-sm hover:bg-gray-100 transition-colors text-left"
-            >
-              <Calendar className="w-6 h-6 text-[#FF6B35] mb-2" />
-              <div className="text-xs font-bold text-gray-900">My Bookings</div>
-              <div className="text-xs text-gray-600 mt-1">View all bookings</div>
-            </button>
-            <button
-              onClick={() => navigate('/messages')}
-              className="bg-white rounded-lg p-4 shadow-sm hover:bg-gray-100 transition-colors text-left"
-            >
-              <MessageCircle className="w-6 h-6 text-[#FF6B35] mb-2" />
-              <div className="text-xs font-bold text-gray-900">Messages</div>
-              <div className="text-xs text-gray-600 mt-1">Chat with clients</div>
-            </button>
+      <AppScreen>
+        <ScreenHeader title="Dashboard" description="Requests, bookings and venues at a glance" width="feed" />
+        <ScreenBody width="feed">
+          <div className="grid grid-cols-2 gap-3 md:gap-4 lg:grid-cols-4">
+            <QuickAction icon={Calendar} title="My Bookings" description="View all bookings" onClick={() => navigate('/bookings')} />
+            <QuickAction icon={MessageCircle} title="Messages" description="Chat with clients" onClick={() => navigate('/messages')} />
+            <QuickAction icon={FileText} title="Requests" description="Find new students" onClick={() => navigate('/requests/explore')} />
+            <QuickAction icon={Building} title="Venues" description="Rent a space" onClick={() => navigate('/venues')} />
           </div>
 
-          {/* Recent Training Requests Section */}
-          <div className="mb-6">
-            <div className="flex items-center justify-between mb-3">
-              <h2 className="text-lg font-bold text-gray-900">Recent Requests</h2>
-              <button
-                onClick={() => navigate('/requests/explore')}
-                className="text-xs font-semibold text-[#FF6B35] flex items-center gap-1"
+          <ScreenSplit
+            main={
+              <ScreenSection
+                title="Recent requests"
+                action={
+                  <Button variant="ghost" size="sm" onClick={() => navigate('/requests/explore')} className="text-primary">
+                    Explore all
+                    <ArrowRight />
+                  </Button>
+                }
               >
-                Explore All
-                <ArrowRight className="w-3 h-3" />
-              </button>
-            </div>
-            {requestsLoading ? (
-              <div className="space-y-3">
-                {[1, 2, 3].map((i) => (
-                  <div key={i} className="bg-white rounded-lg p-3 shadow-sm animate-pulse">
-                    <div className="h-4 bg-gray-200 rounded w-3/4 mb-2"></div>
-                    <div className="h-3 bg-gray-200 rounded w-1/2"></div>
+                {requestsLoading ? (
+                  <div className="grid gap-3 xl:grid-cols-2">
+                    {Array.from({ length: REQUEST_SKELETONS }, (_, i) => (
+                      <Skeleton key={i} className="h-24 rounded-xl" />
+                    ))}
                   </div>
-                ))}
-              </div>
-            ) : requests.length === 0 ? (
-              <div className="bg-white rounded-lg p-4 shadow-sm text-center">
-                <FileText className="w-8 h-8 text-gray-300 mx-auto mb-2" />
-                <p className="text-xs text-gray-600 mb-2">No open requests</p>
-                <button
-                  onClick={() => navigate('/requests/explore')}
-                  className="text-xs font-semibold text-[#FF6B35] hover:text-orange-600"
-                >
-                  Explore Requests
-                </button>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {requests.map((request) => (
-                  <RequestCard
-                    key={request.id}
-                    request={request}
-                    userRole="trainer"
-                    currentUserId={currentUserId}
-                    onRespond={(req) => navigate(`/requests/${req.id}/respond`, { state: { request: req } })}
-                    onClick={() => navigate(`/requests/${request.id}/respond`, { state: { request } })}
+                ) : requests.length === 0 ? (
+                  <EmptyState
+                    icon={FileText}
+                    title="No open requests"
+                    description="New requests from students will appear here."
+                    action={
+                      <Button variant="outline" onClick={() => navigate('/requests/explore')}>
+                        Explore requests
+                      </Button>
+                    }
                   />
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* Venues Section */}
-          <div className="mb-6">
-            <div className="flex items-center justify-between mb-3">
-              <h2 className="text-lg font-bold text-gray-900">Venues for Rent</h2>
-              <button
-                onClick={() => navigate('/venues')}
-                className="text-xs font-semibold text-[#FF6B35] flex items-center gap-1"
+                ) : (
+                  <div className="grid gap-3 xl:grid-cols-2">
+                    {requests.map((request) => (
+                      <RequestCard
+                        key={request.id}
+                        request={request}
+                        userRole="trainer"
+                        currentUserId={currentUserId}
+                        onRespond={(req) => navigate(`/requests/${req.id}/respond`, { state: { request: req } })}
+                        onClick={() => navigate(`/requests/${request.id}/respond`, { state: { request } })}
+                      />
+                    ))}
+                  </div>
+                )}
+              </ScreenSection>
+            }
+            aside={
+              <ScreenSection
+                title="Venues for rent"
+                variant="panel"
+                action={
+                  <Button variant="ghost" size="sm" onClick={() => navigate('/venues')} className="text-primary">
+                    View all
+                    <ArrowRight />
+                  </Button>
+                }
               >
-                View All
-                <ArrowRight className="w-3 h-3" />
-              </button>
-            </div>
-            <div className="space-y-3">
-              {mockVenues.slice(0, 3).map((venue) => (
-                <VenueCard
-                  key={venue.id}
-                  venue={venue}
-                  onSelect={() => navigate('/venues')}
-                />
-              ))}
-            </div>
-          </div>
-        </div>
-      </div>
+                <div className="flex flex-col gap-3">
+                  {mockVenues.slice(0, VENUES_PREVIEW).map((venue) => (
+                    <VenueCard key={venue.id} venue={venue} onSelect={() => navigate('/venues')} />
+                  ))}
+                </div>
+              </ScreenSection>
+            }
+          />
+        </ScreenBody>
+      </AppScreen>
     );
   }
 
-  // Student Home Page (existing code)
+  // Student Home Page
   return (
-    <div className="bg-slate-50 h-full overflow-y-auto">
-      <div className="relative">
-        {selectedTrainer && (
-          <div key={selectedTrainer.id} className={`absolute w-full top-0 bottom-0 z-30 ${isExitingDetail ? 'animate-slide-out-to-right' : 'animate-slide-in-from-right'}`}>
-            <TrainerDetailPage 
-              trainer={selectedTrainer} 
-              onBack={handleBackToList}
-              onInitiateBooking={onInitiateBooking}
-              userRole={userRole}
-              currentUserId={currentUserId}
-              isFavorite={favoriteTrainerIds.includes(selectedTrainer.id)}
-              onToggleFavorite={onToggleFavorite}
-              onOpenReviewsModal={onOpenReviewsModal}
+    <AppScreen className="relative">
+      {selectedTrainer && (
+        <div
+          key={selectedTrainer.id}
+          className={cn(
+            'absolute inset-x-0 top-0 bottom-0 z-30 bg-background',
+            isExitingDetail ? 'animate-slide-out-to-right' : 'animate-slide-in-from-right'
+          )}
+        >
+          <TrainerDetailPage
+            trainer={selectedTrainer}
+            onBack={handleBackToList}
+            onInitiateBooking={onInitiateBooking}
+            userRole={userRole}
+            currentUserId={currentUserId}
+            isFavorite={favoriteTrainerIds.includes(selectedTrainer.id)}
+            onToggleFavorite={onToggleFavorite}
+            onOpenReviewsModal={onOpenReviewsModal}
+          />
+        </div>
+      )}
+
+      <div className={cn('transition-opacity duration-300', selectedTrainer ? 'pointer-events-none opacity-0' : 'opacity-100')}>
+        <ScreenHeader
+          title="Home"
+          description="Trainers, classes and requests near you"
+          width="feed"
+          actions={
+            <Button
+              variant="outline"
+              onClick={() => setIsDistrictModalOpen(true)}
+              aria-label={`District: ${selectedDistrict}. Change district`}
+              className="h-10 gap-1 rounded-full px-3"
+            >
+              <MapPin className="text-muted-foreground" />
+              <span className="max-w-[120px] truncate">{selectedDistrict}</span>
+              <ChevronDown className="text-muted-foreground" />
+            </Button>
+          }
+        >
+          <div className="relative md:max-w-xl">
+            <Search
+              className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground"
+              aria-hidden="true"
+            />
+            <Input
+              type="search"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search trainers or specialties..."
+              aria-label="Search trainers or specialties"
+              className="h-11 rounded-xl bg-muted pl-9"
             />
           </div>
-        )}
-        
-        <div className={`transition-opacity duration-300 ${selectedTrainer ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
-           <UnifiedHeader
-              selectedDistrict={selectedDistrict}
-              onOpenDistrictModal={() => setIsDistrictModalOpen(true)}
-              searchQuery={searchQuery}
-              onSearchChange={setSearchQuery}
-              categories={allCategories}
-              selectedCategory={selectedCategory}
-              onSelectCategory={onSelectCategory}
-            />
+          <CategoryFilters
+            categories={allCategories}
+            selectedCategory={selectedCategory}
+            onSelectCategory={onSelectCategory}
+          />
+        </ScreenHeader>
 
-           <div className="px-4 pb-safe-nav">
-              {/* Trainers in Your District Section */}
-              {userRole === 'student' && userDistrict && (
-                <div className="mt-6 mb-6">
-                  <div className="flex items-center justify-between mb-3">
-                    <h2 className="text-lg font-bold text-gray-900">Trainers in Your District</h2>
-                    <span className="text-xs text-gray-600 bg-gray-100 px-2 py-1 rounded-full">{userDistrict}</span>
-                  </div>
-                  {(() => {
-                    const districtTrainers = trainers.filter(trainer => 
-                      trainer.isPremium && 
-                      (trainer.location === userDistrict || trainer.location?.includes(userDistrict))
-                    );
-                    
-                    if (districtTrainers.length === 0) {
-                      return (
-                        <div className="bg-white rounded-lg p-4 shadow-sm text-center">
-                          <p className="text-xs text-gray-600">No premium trainers in your district yet.</p>
-                        </div>
-                      );
-                    }
-                    
-                    return (
-                      <TrainerGrid 
-                        trainers={districtTrainers.slice(0, 6)} 
-                        viewMode="grid" 
-                        onSelectTrainer={handleSelectTrainer} 
-                        isLoading={false}
-                        favoriteTrainerIds={favoriteTrainerIds}
-                        onToggleFavorite={onToggleFavorite}
-                      />
-                    );
-                  })()}
-                </div>
-              )}
-
-              {/* Trainers Section */}
-              <div className="mt-8 mb-6 flex justify-between items-center">
-                <h2 className="text-xl font-bold text-gray-800">Nearby Trainers</h2>
-                <ViewToggle viewMode={viewMode} setViewMode={setViewMode} />
-              </div>
-              <TrainerGrid 
-                trainers={filteredTrainers} 
-                viewMode={viewMode} 
-                onSelectTrainer={handleSelectTrainer} 
-                isLoading={isLoading}
+        <ScreenBody width="feed">
+          {userRole === 'student' && userDistrict && (
+            districtTrainers.length > 0 ? (
+              <TrainerCarousel
+                title="Trainers in your district"
+                eyebrow={userDistrict}
+                trainers={districtTrainers.slice(0, MAX_DISTRICT_TRAINERS)}
                 favoriteTrainerIds={favoriteTrainerIds}
                 onToggleFavorite={onToggleFavorite}
+                onSelectTrainer={handleSelectTrainer}
               />
-          </div>
-        </div>
+            ) : (
+              <ScreenSection title="Trainers in your district">
+                <EmptyState
+                  icon={MapPin}
+                  title="No premium trainers here yet"
+                  description={`Premium trainers from ${userDistrict} will show up here as soon as they join.`}
+                />
+              </ScreenSection>
+            )
+          )}
+
+          {!isLoading && (
+            <ClassCarousel
+              title="Classes to book"
+              eyebrow="Popular right now"
+              classes={featuredClasses}
+              onSelectClass={({ cls }) => navigate(`/class/${cls.id}`)}
+            />
+          )}
+
+          <ScreenSection
+            title="Nearby trainers"
+            description={isLoading ? undefined : `${filteredTrainers.length} trainers`}
+            action={<ViewToggle viewMode={viewMode} setViewMode={setViewMode} />}
+          >
+            <TrainerGrid
+              trainers={filteredTrainers}
+              viewMode={viewMode}
+              onSelectTrainer={handleSelectTrainer}
+              isLoading={isLoading}
+              favoriteTrainerIds={favoriteTrainerIds}
+              onToggleFavorite={onToggleFavorite}
+            />
+          </ScreenSection>
+        </ScreenBody>
       </div>
-      
+
       {isDistrictModalOpen && (
-          <DistrictFilterModal
-              isOpen={isDistrictModalOpen}
-              onClose={() => setIsDistrictModalOpen(false)}
-              onSelectDistrict={handleSelectDistrict}
-              currentDistrict={selectedDistrict}
-          />
+        <DistrictFilterModal
+          isOpen={isDistrictModalOpen}
+          onClose={() => setIsDistrictModalOpen(false)}
+          onSelectDistrict={handleSelectDistrict}
+          currentDistrict={selectedDistrict}
+        />
       )}
-    </div>
+    </AppScreen>
   );
 };
+interface QuickActionProps {
+  icon: LucideIcon;
+  title: string;
+  description: string;
+  onClick: () => void;
+}
+
+function QuickAction({ icon: Icon, title, description, onClick }: QuickActionProps) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="rounded-xl border border-border bg-card p-4 text-left shadow-sm transition-all hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring active:scale-[0.98] md:p-5"
+    >
+      <Icon className="mb-3 h-6 w-6 text-primary" aria-hidden="true" />
+      <div className="text-sm font-semibold text-foreground">{title}</div>
+      <div className="mt-0.5 text-xs text-muted-foreground">{description}</div>
+    </button>
+  );
+}
 
 export default HomePage;

@@ -1,10 +1,26 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { MessageCircle } from 'lucide-react';
+import { MessageCircle, Search } from 'lucide-react';
 import { supabase } from '../src/integrations/supabase/client';
 import { useAuth } from '../src/hooks/useAuth';
 import { formatDistanceToNow } from 'date-fns';
 import ConversationCardSkeleton from '../components/ConversationCardSkeleton';
+import { AppScreen } from '../src/components/layout/screen';
+import { DetailContextStrip } from '../src/components/layout/detail-context-strip';
+import { StitchCanvas, StitchPageHeader } from '../src/components/layout/stitch-page';
+import { EmptyState } from '../src/components/layout/states';
+import { Button } from '../src/components/ui/button';
+import {
+  InputGroup,
+  InputGroupAddon,
+  InputGroupInput,
+} from '../src/components/ui/input-group';
+import { ToggleGroup, ToggleGroupItem } from '../src/components/ui/toggle-group';
+import ConversationRow from '../components/chat/ConversationRow';
+
+const SKELETON_COUNT = 5;
+
+type InboxFilter = 'all' | 'unread' | 'bookings';
 
 interface Conversation {
   id: string;
@@ -39,8 +55,9 @@ const MessageListPage: React.FC = () => {
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [loading, setLoading] = useState(true);
   const [openingChat, setOpeningChat] = useState(false);
+  const [query, setQuery] = useState('');
+  const [filter, setFilter] = useState<InboxFilter>('all');
 
-  // Load conversations
   useEffect(() => {
     const loadConversations = async () => {
       if (!user) return;
@@ -48,7 +65,6 @@ const MessageListPage: React.FC = () => {
       try {
         setLoading(true);
 
-        // Get all conversations for this user
         const { data: convData, error: convError } = await supabase
           .from('conversations')
           .select('*')
@@ -63,21 +79,17 @@ const MessageListPage: React.FC = () => {
           return;
         }
 
-        // Get last message and other participant info for each conversation
         const conversationsWithDetails = await Promise.all(
           convData.map(async (conv) => {
-            const otherParticipantId = conv.participant_1_id === user.id 
-              ? conv.participant_2_id 
-              : conv.participant_1_id;
+            const otherParticipantId =
+              conv.participant_1_id === user.id ? conv.participant_2_id : conv.participant_1_id;
 
-            // Get other participant profile
             const { data: profileData } = await supabase
               .from('profiles')
               .select('id, username, avatar_url')
               .eq('id', otherParticipantId)
               .single();
 
-            // Get last message
             const { data: lastMessageData } = await supabase
               .from('messages')
               .select('content, sender_id, created_at')
@@ -86,7 +98,6 @@ const MessageListPage: React.FC = () => {
               .limit(1)
               .maybeSingle();
 
-            // Get unread count
             const { count: unreadCount } = await supabase
               .from('messages')
               .select('*', { count: 'exact', head: true })
@@ -94,7 +105,6 @@ const MessageListPage: React.FC = () => {
               .eq('recipient_id', user.id)
               .eq('is_read', false);
 
-            // Get booking details if booking_id exists
             let bookingDetails = null;
             if (conv.booking_id) {
               try {
@@ -105,7 +115,6 @@ const MessageListPage: React.FC = () => {
                   .single();
 
                 if (bookingData && !bookingError) {
-                  // Get class name separately
                   const { data: classData } = await supabase
                     .from('classes')
                     .select('name')
@@ -117,20 +126,24 @@ const MessageListPage: React.FC = () => {
                     booking_date: bookingData.booking_date,
                     booking_time: bookingData.booking_time,
                     class_name: classData?.name || 'Unknown Class',
-                    verification_code: bookingData.verification_code || ''
+                    verification_code: bookingData.verification_code || '',
                   };
                 }
-              } catch (err) {
-                // Silently fail for booking details - conversation should still show
+              } catch {
+                /* conversation still shows */
               }
             }
 
             return {
               ...conv,
-              other_participant: profileData || { id: otherParticipantId, username: 'Unknown', avatar_url: null },
+              other_participant: profileData || {
+                id: otherParticipantId,
+                username: 'Unknown',
+                avatar_url: null,
+              },
               last_message: lastMessageData || undefined,
               booking_details: bookingDetails,
-              unread_count: unreadCount || 0
+              unread_count: unreadCount || 0,
             };
           })
         );
@@ -146,31 +159,30 @@ const MessageListPage: React.FC = () => {
     loadConversations();
   }, [user]);
 
-  // Handle automatic chat opening from navigation state
   useEffect(() => {
     const handleAutoOpenChat = async () => {
-      const state = location.state as { recipientId?: string; recipientName?: string; context?: any } | null;
-      
+      const state = location.state as
+        | { recipientId?: string; recipientName?: string; context?: any }
+        | null;
+
       if (!state?.recipientId || !user || openingChat) return;
 
       setOpeningChat(true);
 
       try {
-        // Check if conversation already exists
         const { data: existingConv } = await supabase
           .from('conversations')
           .select('id')
-          .or(`and(participant_1_id.eq.${user.id},participant_2_id.eq.${state.recipientId}),and(participant_1_id.eq.${state.recipientId},participant_2_id.eq.${user.id})`)
+          .or(
+            `and(participant_1_id.eq.${user.id},participant_2_id.eq.${state.recipientId}),and(participant_1_id.eq.${state.recipientId},participant_2_id.eq.${user.id})`
+          )
           .maybeSingle();
 
         let conversationId = existingConv?.id;
 
-        // Create conversation if it doesn't exist
         if (!conversationId) {
-          // Get booking_id from context if available
           let bookingId = state.context?.bookingId || null;
-          
-          // If bookingId not in context, try to find it by classId
+
           if (!bookingId && state.context?.classId) {
             const { data: bookingData } = await supabase
               .from('bookings')
@@ -180,7 +192,7 @@ const MessageListPage: React.FC = () => {
               .order('created_at', { ascending: false })
               .limit(1)
               .maybeSingle();
-            
+
             bookingId = bookingData?.id || null;
           }
 
@@ -190,7 +202,7 @@ const MessageListPage: React.FC = () => {
               participant_1_id: user.id,
               participant_2_id: state.recipientId,
               last_message_at: new Date().toISOString(),
-              booking_id: bookingId
+              booking_id: bookingId,
             })
             .select('id')
             .single();
@@ -204,12 +216,11 @@ const MessageListPage: React.FC = () => {
           conversationId = newConv.id;
         }
 
-        // Navigate to chat
         navigate(`/messages/${state.recipientId}`, {
           state: {
-            bookingDetails: state.context?.bookingDetails || null
+            bookingDetails: state.context?.bookingDetails || null,
           },
-          replace: true
+          replace: true,
         });
       } catch (error) {
         console.error('Error opening chat:', error);
@@ -221,7 +232,6 @@ const MessageListPage: React.FC = () => {
     handleAutoOpenChat();
   }, [location.state, user, navigate, openingChat]);
 
-  // Subscribe to real-time updates
   useEffect(() => {
     if (!user) return;
 
@@ -232,10 +242,9 @@ const MessageListPage: React.FC = () => {
         {
           event: 'INSERT',
           schema: 'public',
-          table: 'messages'
+          table: 'messages',
         },
-        (payload) => {
-          // Reload conversations when new message arrives
+        () => {
           loadConversationsQuick();
         }
       )
@@ -258,9 +267,8 @@ const MessageListPage: React.FC = () => {
     if (convData) {
       const conversationsWithDetails = await Promise.all(
         convData.map(async (conv) => {
-          const otherParticipantId = conv.participant_1_id === user.id 
-            ? conv.participant_2_id 
-            : conv.participant_1_id;
+          const otherParticipantId =
+            conv.participant_1_id === user.id ? conv.participant_2_id : conv.participant_1_id;
 
           const { data: profileData } = await supabase
             .from('profiles')
@@ -283,20 +291,20 @@ const MessageListPage: React.FC = () => {
             .eq('recipient_id', user.id)
             .eq('is_read', false);
 
-          // Get booking details if booking_id exists
           let bookingDetails = null;
           if (conv.booking_id) {
             const { data: bookingData } = await supabase
               .from('bookings')
-              .select(`
+              .select(
+                `
                 id,
                 booking_date,
                 booking_time,
                 verification_code,
                 classes:class_id (
                   name
-                )
-              `)
+                )`
+              )
               .eq('id', conv.booking_id)
               .single();
 
@@ -306,17 +314,21 @@ const MessageListPage: React.FC = () => {
                 booking_date: bookingData.booking_date,
                 booking_time: bookingData.booking_time,
                 class_name: (bookingData.classes as any)?.name || 'Unknown Class',
-                verification_code: bookingData.verification_code
+                verification_code: bookingData.verification_code,
               };
             }
           }
 
           return {
             ...conv,
-            other_participant: profileData || { id: otherParticipantId, username: 'Unknown', avatar_url: null },
+            other_participant: profileData || {
+              id: otherParticipantId,
+              username: 'Unknown',
+              avatar_url: null,
+            },
             last_message: lastMessageData || undefined,
             booking_details: bookingDetails,
-            unread_count: unreadCount || 0
+            unread_count: unreadCount || 0,
           };
         })
       );
@@ -325,126 +337,165 @@ const MessageListPage: React.FC = () => {
     }
   };
 
+  const unreadTotal = conversations.reduce((sum, c) => sum + (c.unread_count || 0), 0);
+  const bookingsCount = conversations.filter((c) => !!c.booking_details).length;
+
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    return conversations.filter((c) => {
+      if (filter === 'unread' && !(c.unread_count > 0)) return false;
+      if (filter === 'bookings' && !c.booking_details) return false;
+      if (q && !c.other_participant.username.toLowerCase().includes(q)) return false;
+      return true;
+    });
+  }, [conversations, filter, query]);
+
   return (
-    <div className="bg-background h-screen flex flex-col overflow-hidden">
-      {/* Header */}
-      <div className="flex items-center justify-between px-4 py-3 bg-card border-b border-border shadow-sm z-20 flex-shrink-0">
-        <div className="w-9"></div>
-        <h1 className="text-base font-bold text-foreground">Messages</h1>
-        <div className="w-9"></div>
+    <AppScreen className="flex h-[100dvh] min-w-0 flex-col overflow-hidden bg-[#f9fafb] dark:bg-background">
+      <div className="shrink-0 border-b border-border bg-card/95 backdrop-blur">
+        <StitchCanvas className="!space-y-0 flex flex-col gap-3 !py-4">
+          <DetailContextStrip
+            backLabel="Back to Home"
+            onBack={() => navigate('/')}
+            crumbs={[
+              { label: 'Home', href: '/' },
+              { label: 'Messages', href: '/messages' },
+            ]}
+            actions={
+              <Button type="button" size="sm" onClick={() => navigate('/explore')}>
+                <Search data-icon="inline-start" />
+                Find coaches
+              </Button>
+            }
+          />
+          <StitchPageHeader
+            title="Messages"
+            description={
+              unreadTotal > 0
+                ? `Chats with trainers and students · ${unreadTotal} unread`
+                : 'Chats with your trainers and students'
+            }
+          >
+            <div className="flex flex-col gap-3">
+              <InputGroup className="max-w-xl bg-background">
+                <InputGroupAddon>
+                  <Search />
+                </InputGroupAddon>
+                <InputGroupInput
+                  type="search"
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  placeholder="Search conversations..."
+                  aria-label="Search conversations"
+                />
+              </InputGroup>
+
+              <ToggleGroup
+                type="single"
+                variant="outline"
+                size="sm"
+                value={filter}
+                onValueChange={(value) => {
+                  if (value) setFilter(value as InboxFilter);
+                }}
+                className="justify-start"
+                aria-label="Filter conversations"
+              >
+                <ToggleGroupItem value="all" aria-label="All conversations">
+                  All ({conversations.length})
+                </ToggleGroupItem>
+                <ToggleGroupItem value="unread" aria-label="Unread conversations">
+                  Unread ({unreadTotal})
+                </ToggleGroupItem>
+                <ToggleGroupItem value="bookings" aria-label="Booking conversations">
+                  Bookings ({bookingsCount})
+                </ToggleGroupItem>
+              </ToggleGroup>
+            </div>
+          </StitchPageHeader>
+        </StitchCanvas>
       </div>
 
-      {/* Conversations List */}
       <div className="flex-1 overflow-y-auto">
-        <div className="px-4 py-3 bg-muted/30 pb-safe-nav">
+        <StitchCanvas className="!space-y-0 !pt-4">
           {loading ? (
-            <div className="space-y-3">
-              {[...Array(5)].map((_, idx) => (
+            <div className="flex flex-col gap-3" aria-busy="true">
+              {Array.from({ length: SKELETON_COUNT }, (_, idx) => (
                 <ConversationCardSkeleton key={idx} />
               ))}
             </div>
-          ) : conversations.length === 0 ? (
-            <div className="text-center mt-12">
-              <MessageCircle className="w-12 h-12 text-gray-400 mx-auto" />
-              <p className="text-sm font-bold text-gray-900 mt-4">No Conversations Yet</p>
-              <p className="text-xs text-gray-600 mt-2">
-                Book a class with a trainer to start chatting.
-              </p>
-            </div>
+          ) : filtered.length === 0 ? (
+            <EmptyState
+              icon={MessageCircle}
+              title={query || filter !== 'all' ? 'No matches' : 'No conversations yet'}
+              description={
+                query
+                  ? 'Try another name.'
+                  : filter === 'unread'
+                    ? 'You’re all caught up.'
+                    : filter === 'bookings'
+                      ? 'No booking-linked chats yet.'
+                      : 'Book a class with a trainer to start chatting.'
+              }
+              action={
+                !query && filter === 'all' ? (
+                  <Button onClick={() => navigate('/explore')}>Find a trainer</Button>
+                ) : undefined
+              }
+            />
           ) : (
-            <div className="space-y-3">
-              {conversations.map((conv) => {
+            <ul className="flex flex-col gap-3">
+              {filtered.map((conv) => {
                 const isMyMessage = conv.last_message?.sender_id === user?.id;
-                
+                const bookingLabel = conv.booking_details
+                  ? [
+                      conv.booking_details.class_name,
+                      new Date(conv.booking_details.booking_date).toLocaleDateString('en-US', {
+                        month: 'short',
+                        day: 'numeric',
+                      }),
+                      conv.booking_details.booking_time,
+                      conv.booking_details.verification_code
+                        ? `ID ${conv.booking_details.verification_code}`
+                        : null,
+                    ]
+                      .filter(Boolean)
+                      .join(' · ')
+                  : undefined;
+
                 return (
-                  <button
-                    key={conv.id}
-                    onClick={() => navigate(`/messages/${conv.other_participant.id}`, {
-                      state: { bookingDetails: conv.booking_details }
-                    })}
-                    className="w-full bg-card rounded-lg p-3 mb-3 shadow-sm border border-border hover:bg-muted transition-colors text-left"
-                  >
-                    {/* Header with avatar, name, time and unread badge */}
-                    <div className="flex items-start gap-3 mb-2">
-                      {/* Avatar */}
-                      <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center flex-shrink-0 overflow-hidden">
-                        {conv.other_participant.avatar_url ? (
-                          <img 
-                            src={conv.other_participant.avatar_url} 
-                            alt={conv.other_participant.username}
-                            className="w-full h-full object-cover"
-                          />
-                        ) : (
-                          <MessageCircle className="w-5 h-5 text-gray-500" />
-                        )}
-                      </div>
-                      
-                      {/* Name and message preview */}
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center justify-between mb-1">
-                                  <span className={`text-sm ${conv.unread_count > 0 ? 'font-bold' : 'font-semibold'} text-foreground`}>
-                                    {conv.other_participant.username}
-                                  </span>
-                                  <div className="flex items-center gap-2 flex-shrink-0">
-                                    {conv.unread_count > 0 && (
-                                      <div className="px-2 py-0.5 bg-primary rounded-full">
-                                        <span className="text-primary-foreground text-xs font-bold">{conv.unread_count}</span>
-                                      </div>
-                                    )}
-                                    {conv.last_message && (
-                                      <span className={`text-xs ${conv.unread_count > 0 ? 'text-primary font-semibold' : 'text-muted-foreground'}`}>
-                                        {formatDistanceToNow(new Date(conv.last_message.created_at), { addSuffix: true })}
-                                      </span>
-                                    )}
-                                  </div>
-                                </div>
-
-                                {/* Last message preview */}
-                                {conv.last_message && (
-                                  <p className={`text-xs truncate ${conv.unread_count > 0 ? 'font-semibold text-foreground' : 'text-muted-foreground'}`}>
-                                    {isMyMessage && <span className="text-muted-foreground">You: </span>}
-                                    {conv.last_message.content}
-                                  </p>
-                                )}
-                              </div>
-                            </div>
-
-                            {/* Booking details if available */}
-                            {conv.booking_details && (
-                              <div className="mt-2 p-2.5 bg-muted rounded-lg border border-border">
-                                <p className={`text-xs mb-1.5 ${conv.unread_count > 0 ? 'font-bold' : 'font-semibold'} text-foreground`}>
-                                  {conv.booking_details.class_name}
-                                </p>
-                                <div className="flex flex-wrap items-center gap-1.5 text-xs">
-                                  <div className="flex items-center gap-1 px-2 py-0.5 bg-card rounded">
-                                    <span className="font-semibold text-foreground">Date:</span>
-                                    <span className="text-muted-foreground">
-                                      {new Date(conv.booking_details.booking_date).toLocaleDateString('en-US', { 
-                                        month: 'short', 
-                                        day: 'numeric',
-                                        year: 'numeric'
-                                      })}
-                                    </span>
-                                  </div>
-                                  <div className="flex items-center gap-1 px-2 py-0.5 bg-card rounded">
-                                    <span className="font-semibold text-foreground">Time:</span>
-                                    <span className="text-muted-foreground">{conv.booking_details.booking_time}</span>
-                                  </div>
-                                  <div className="flex items-center gap-1 px-2 py-0.5 bg-card rounded">
-                                    <span className="font-semibold text-foreground">ID:</span>
-                                    <span className="text-primary font-mono">{conv.booking_details.verification_code}</span>
-                                  </div>
-                                </div>
-                              </div>
-                            )}
-                  </button>
+                  <li key={conv.id}>
+                    <ConversationRow
+                      name={conv.other_participant.username}
+                      avatarUrl={conv.other_participant.avatar_url}
+                      preview={
+                        conv.last_message
+                          ? `${isMyMessage ? 'You: ' : ''}${conv.last_message.content}`
+                          : undefined
+                      }
+                      timestamp={
+                        conv.last_message
+                          ? formatDistanceToNow(new Date(conv.last_message.created_at), {
+                              addSuffix: true,
+                            })
+                          : undefined
+                      }
+                      unreadCount={conv.unread_count}
+                      bookingLabel={bookingLabel}
+                      onClick={() =>
+                        navigate(`/messages/${conv.other_participant.id}`, {
+                          state: { bookingDetails: conv.booking_details },
+                        })
+                      }
+                    />
+                  </li>
                 );
               })}
-            </div>
+            </ul>
           )}
-        </div>
+        </StitchCanvas>
       </div>
-    </div>
+    </AppScreen>
   );
 };
 

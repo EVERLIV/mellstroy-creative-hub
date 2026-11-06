@@ -1,410 +1,813 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Trainer, Class, UserRole } from '../types';
-import { Star, Users, BookOpen, Pencil, ShieldCheck, Plus, MoreVertical, Edit3, Trash2, Clock, LogOut, Shield, FileText, Crown, MapPin, Sparkles } from 'lucide-react';
+import {
+  ArrowRight,
+  Banknote,
+  BookOpen,
+  Briefcase,
+  Camera,
+  CheckCircle2,
+  ChevronRight,
+  Clock,
+  Crown,
+  Edit3,
+  FileText,
+  Lightbulb,
+  MapPin,
+  MoreVertical,
+  Pencil,
+  Plus,
+  Share2,
+  Shield,
+  ShieldCheck,
+  Star,
+  Timer,
+  Trash2,
+  TrendingUp,
+  Upload,
+  X,
+} from 'lucide-react';
 import { isTrainerProfileComplete } from '../utils/profile';
-import CompleteProfilePrompt from '../components/CompleteProfilePrompt';
+import ProfileActionMenu from '../components/ProfileActionMenu';
 import { supabase } from '../src/integrations/supabase/client';
 import MyDocumentsPage from './MyDocumentsPage';
+import { AppScreen } from '@/src/components/layout/screen';
+import { EmptyState } from '@/src/components/layout/states';
+import { Button } from '@/src/components/ui/button';
+import { Avatar, AvatarFallback, AvatarImage } from '@/src/components/ui/avatar';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/src/components/ui/dropdown-menu';
+import { APP_CONTENT } from '@/src/components/layout/shell';
+import { formatVND } from '@/src/lib/format';
+import { cn } from '@/src/lib/utils';
 
-const formatVND = (amount: number) => {
-    return new Intl.NumberFormat('vi-VN', {
-      style: 'currency',
-      currency: 'VND',
-      minimumFractionDigits: 0
-    }).format(amount);
-};
+const FALLBACK_CLASS_IMAGE = 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48';
+const MAX_VISIBLE_SPECIALTIES = 6;
 
 interface ProfilePageProps {
-    trainer: Trainer;
-    onEdit: () => void;
-    onManageClass: (cls: Class | null) => void;
-    onDeleteClass: (classId: number) => void;
-    userRole: UserRole;
-    onStartVerification: () => void;
-    onLogout: () => void;
+  trainer: Trainer;
+  onEdit: () => void;
+  onManageClass: (cls: Class | null) => void;
+  onDeleteClass: (classId: number) => void;
+  userRole: UserRole;
+  onStartVerification: () => void;
+  onLogout: () => void;
 }
 
-const ProfilePage: React.FC<ProfilePageProps> = ({ trainer, onEdit, onManageClass, onDeleteClass, userRole, onStartVerification, onLogout }) => {
-    const navigate = useNavigate();
-    const [menuOpenFor, setMenuOpenFor] = useState<number | null>(null);
-    const [isAdmin, setIsAdmin] = useState(false);
-    const [showDocuments, setShowDocuments] = useState(false);
-    const [documents, setDocuments] = useState<any[]>([]);
-    const menuRef = useRef<HTMLDivElement>(null);
-    const profileIsIncomplete = !isTrainerProfileComplete(trainer);
+type ClassTab = 'active' | 'drafts' | 'archived';
 
-    useEffect(() => {
-        const handleClickOutside = (event: MouseEvent) => {
-            if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
-                setMenuOpenFor(null);
-            }
-        };
-        document.addEventListener("mousedown", handleClickOutside);
-        return () => document.removeEventListener("mousedown", handleClickOutside);
-    }, []);
+function scheduleLabel(cls: Class): string {
+  const days = cls.schedule?.days?.slice(0, 3).join(', ');
+  const time = cls.schedule?.time;
+  if (days && time) return `${days} · ${time}`;
+  if (days) return days;
+  if (time) return time;
+  return 'Flexible schedule';
+}
 
-    useEffect(() => {
-        checkAdminStatus();
-        loadDocuments();
-    }, []);
-
-    const loadDocuments = async () => {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) return;
-
-        const { data } = await supabase
-            .from('trainer_documents')
-            .select('*')
-            .eq('trainer_id', user.id)
-            .order('created_at', { ascending: false })
-            .limit(3);
-
-        setDocuments(data || []);
-    };
-
-    const checkAdminStatus = async () => {
-        const { data: { user } } = await supabase.auth.getUser();
-        if (!user) return;
-
-        const { data: roles } = await supabase
-            .from('user_roles')
-            .select('role')
-            .eq('user_id', user.id)
-            .eq('role', 'admin')
-            .maybeSingle();
-
-        setIsAdmin(!!roles);
-    };
-
-    const handleMenuToggle = (classId: number) => {
-        setMenuOpenFor(prev => (prev === classId ? null : classId));
-    };
-    
-    const handleDelete = (classId: number) => {
-        if(window.confirm('Are you sure you want to delete this class?')) {
-            onDeleteClass(classId);
-        }
-        setMenuOpenFor(null);
-    }
-
-    const VerificationStatus = () => {
-        switch (trainer.verificationStatus) {
-            case 'unverified':
-                return (
-                    <div className="bg-white p-3 rounded-lg shadow-sm mb-3 flex items-center justify-between">
-                        <div>
-                            <h3 className="text-sm font-bold text-gray-900">Become a Verified Trainer</h3>
-                            <p className="text-xs text-gray-600 mt-1">Build trust and attract more clients.</p>
-                        </div>
-                        <button
-                            onClick={onStartVerification}
-                            className="px-4 py-2 bg-[#FF6B35] text-white rounded-lg text-xs font-medium hover:bg-orange-600 active:scale-95 shadow-sm transition-all duration-200"
-                        >
-                            Verify
-                        </button>
-                    </div>
-                );
-            case 'pending':
-                return (
-                    <div className="bg-white p-3 rounded-lg shadow-sm mb-3 flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                            <Clock className="w-5 h-5 text-[#FF6B35]" />
-                            <div>
-                                <h3 className="text-sm font-bold text-gray-900">Verification Pending</h3>
-                                <p className="text-xs text-gray-600 mt-1">Your verification request is being reviewed.</p>
-                            </div>
-                        </div>
-                    </div>
-                );
-            case 'verified':
-                return (
-                    <div className="bg-white p-3 rounded-lg shadow-sm mb-3 flex items-center gap-3">
-                        <ShieldCheck className="w-5 h-5 text-green-500" />
-                        <div>
-                            <h3 className="text-sm font-bold text-gray-900">Verified Trainer</h3>
-                            <p className="text-xs text-gray-600 mt-1">Your profile is verified and trusted.</p>
-                        </div>
-                    </div>
-                );
-            default:
-                return null;
-        }
-    };
-
-    if (showDocuments) {
-        return <MyDocumentsPage onBack={() => { setShowDocuments(false); loadDocuments(); }} />;
-    }
-
-    return (
-        <div className="bg-background h-full overflow-y-auto relative">
-            {/* Modern Compact Header */}
-            <div className="bg-card border-b border-border shadow-sm sticky top-0 z-10">
-                <div className="px-4 py-3">
-                    {/* Top Row: Title and Edit Button */}
-                    <div className="flex items-center justify-between mb-3">
-                        <h1 className="text-base font-bold text-foreground">Profile</h1>
-                        <button 
-                            onClick={onEdit}
-                            className="p-1.5 rounded-lg hover:bg-gray-100 transition-colors"
-                            aria-label="Edit profile"
-                        >
-                            <Pencil className="w-4 h-4 text-gray-600" />
-                        </button>
-                    </div>
-
-                    {/* Profile Info Row: Avatar, Name, Badges, Stats */}
-                    <div className="flex items-center gap-3">
-                        {/* Avatar */}
-                        <div className="relative flex-shrink-0">
-                            <img 
-                                src={trainer.imageUrl} 
-                                alt={trainer.name} 
-                                className="w-14 h-14 rounded-full object-cover border-2 border-white shadow-sm"
-                            />
-                            {trainer.verificationStatus === 'verified' && (
-                                <div className="absolute -bottom-1 -right-1 bg-green-500 rounded-full p-0.5 border-2 border-white">
-                                    <ShieldCheck className="w-3 h-3 text-white" />
-                                </div>
-                            )}
-                        </div>
-
-                        {/* Name and Info */}
-                        <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2 mb-1 flex-wrap">
-                                <h2 className="text-base font-bold text-gray-900 truncate">
-                                    {trainer.name}
-                                </h2>
-                                {trainer.isPremium && (
-                                    <div className="flex items-center gap-1 px-2 py-0.5 bg-[#FF6B35] rounded-full shadow-sm">
-                                        <Crown className="w-3 h-3 text-white" />
-                                        <span className="text-xs font-bold text-white">Premium</span>
-                                    </div>
-                                )}
-                                {!trainer.isPremium && (
-                                    <div className="flex items-center gap-1 px-2 py-0.5 bg-gray-100 rounded-full">
-                                        <Sparkles className="w-3 h-3 text-gray-600" />
-                                        <span className="text-xs font-medium text-gray-700">Basic</span>
-                                    </div>
-                                )}
-                            </div>
-                            <div className="flex items-center gap-3 flex-wrap">
-                                {trainer.location && (
-                                    <div className="flex items-center gap-1 text-xs text-gray-500">
-                                        <MapPin className="w-3 h-3" />
-                                        <span className="truncate">{trainer.location}</span>
-                                    </div>
-                                )}
-                                <div className="flex items-center gap-1 text-xs text-gray-500">
-                                    <Star className="w-3 h-3 text-[#FF6B35] fill-[#FF6B35]" />
-                                    <span className="font-medium text-gray-900">{trainer.rating.toFixed(1)}</span>
-                                    <span className="text-gray-400">({trainer.reviews})</span>
-                                </div>
-                                {trainer.specialty && trainer.specialty.length > 0 && (
-                                    <div className="flex items-center gap-1">
-                                        {trainer.specialty.slice(0, 2).map((spec, idx) => (
-                                            <span key={idx} className="text-xs font-medium bg-orange-100 text-orange-700 px-1.5 py-0.5 rounded">
-                                                {spec}
-                                            </span>
-                                        ))}
-                                        {trainer.specialty.length > 2 && (
-                                            <span className="text-xs text-gray-400">+{trainer.specialty.length - 2}</span>
-                                        )}
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            
-            <div className="px-4 py-3 pb-20">
-                {/* Complete Profile Prompt */}
-                {profileIsIncomplete && (
-                    <CompleteProfilePrompt role="trainer" onComplete={onEdit} />
-                )}
-
-                {/* Verification */}
-                <VerificationStatus />
-
-                {/* Premium CTA */}
-                {!trainer.isPremium ? (
-                    <div className="bg-[#FF6B35] p-4 rounded-lg mb-3 shadow-sm">
-                        <div className="flex items-start gap-3">
-                            <Crown className="w-6 h-6 text-white flex-shrink-0 mt-0.5" />
-                            <div className="flex-1">
-                                <h3 className="text-sm font-bold text-white mb-1">Upgrade to Premium</h3>
-                                <p className="text-xs text-white/90 mb-3">Unlock 5 photos per class, priority listing, verified badge, and advanced analytics</p>
-                                <button 
-                                    onClick={() => navigate('/subscription')}
-                                    className="w-full bg-white text-[#FF6B35] px-4 py-2 rounded-lg text-xs font-bold hover:bg-orange-50 transition-colors"
-                                >
-                                    Get Premium RhinoFit
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                ) : (
-                    <button
-                        onClick={() => navigate('/subscription')}
-                        className="w-full bg-white p-3 rounded-lg shadow-sm mb-3 flex items-center justify-between hover:bg-gray-50 transition-colors"
-                    >
-                        <div className="flex items-center gap-2">
-                            <Crown className="w-5 h-5 text-[#FF6B35]" />
-                            <span className="text-sm font-bold text-gray-900">Manage Subscription</span>
-                        </div>
-                        <span className="text-xs text-gray-500">View details →</span>
-                    </button>
-                )}
-
-                {/* My Documents */}
-                    <div className="bg-white p-3 rounded-lg shadow-sm mb-3">
-                    <div className="flex justify-between items-center mb-3">
-                        <h3 className="text-sm font-bold text-gray-900">My Documents</h3>
-                        <button 
-                            onClick={() => setShowDocuments(true)} 
-                            className="flex items-center text-xs font-medium text-[#FF6B35] hover:text-orange-600"
-                        >
-                            <FileText className="w-4 h-4 mr-1" />
-                            View All
-                        </button>
-                    </div>
-                    {documents.length > 0 ? (
-                        <div className="space-y-2">
-                            {documents.map((doc) => (
-                                <div key={doc.id} className="flex items-center justify-between p-2.5 bg-gray-50 rounded-lg">
-                                    <div className="flex items-center gap-2 flex-1 min-w-0">
-                                        <FileText className="w-4 h-4 text-gray-500 flex-shrink-0" />
-                                        <span className="text-xs text-gray-900 truncate">{doc.title}</span>
-                                    </div>
-                                    {doc.is_verified ? (
-                                        <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-medium">Verified</span>
-                                    ) : (
-                                        <span className="text-xs bg-orange-100 text-orange-700 px-2 py-0.5 rounded-full font-medium">Not Verified</span>
-                                    )}
-                                </div>
-                            ))}
-                        </div>
-                    ) : (
-                        <div className="text-center py-4">
-                            <p className="text-xs text-gray-600 mb-2">No documents uploaded</p>
-                            <button 
-                                onClick={() => setShowDocuments(true)}
-                                className="text-xs font-medium text-[#FF6B35] hover:text-orange-600"
-                            >
-                                Upload Documents
-                            </button>
-                        </div>
-                    )}
-                </div>
-
-                {/* Classes Section */}
-                    <div className="bg-white p-3 rounded-lg shadow-sm mb-3">
-                    <div className="flex justify-between items-center mb-4">
-                        <h3 className="text-sm font-bold text-gray-900">My Classes ({trainer.classes.length})</h3>
-                        <button
-                            onClick={() => onManageClass(null)}
-                            className="flex items-center gap-1.5 px-3 py-1.5 bg-[#FF6B35] text-white rounded-lg text-xs font-medium hover:bg-orange-600 active:scale-95 shadow-sm transition-all duration-200"
-                        >
-                            <Plus className="w-4 h-4" />
-                            Add Class
-                        </button>
-                    </div>
-
-                    {trainer.classes.length === 0 ? (
-                        <div className="text-center py-8">
-                            <BookOpen className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-                            <p className="text-xs text-gray-900 font-medium mb-1">No classes yet</p>
-                            <p className="text-xs text-gray-600 mb-4">Create your first class to start teaching</p>
-                            <button
-                                onClick={() => onManageClass(null)}
-                                className="px-4 py-2 bg-[#FF6B35] text-white rounded-lg text-xs font-medium hover:bg-orange-600 active:scale-95 shadow-sm transition-all duration-200"
-                            >
-                                Create Class
-                            </button>
-                        </div>
-                    ) : (
-                        <div className="space-y-3">
-                            {trainer.classes.map((cls) => (
-                                <div key={cls.id} className="bg-gray-50 rounded-lg p-3 border border-gray-200 hover:border-orange-300 transition-colors">
-                                    <div className="flex items-start justify-between gap-3">
-                                        <div className="flex-1 min-w-0">
-                                            <div className="flex items-start gap-2 mb-2">
-                                                <img 
-                                                    src={cls.imageUrl || 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48'} 
-                                                    alt={cls.name} 
-                                                    className="w-16 h-16 rounded-lg object-cover flex-shrink-0"
-                                                />
-                                                <div className="flex-1 min-w-0">
-                                                    <h4 className="text-xs font-bold text-gray-900 mb-1 truncate">{cls.name}</h4>
-                                                    <p className="text-xs text-gray-600 line-clamp-2 mb-2">{cls.description}</p>
-                                                    <div className="flex items-center gap-2 flex-wrap">
-                                                        <span className="text-xs font-medium text-[#FF6B35]">{formatVND(cls.price)}</span>
-                                                        <span className="text-gray-300">•</span>
-                                                        <span className="text-xs text-gray-500">{cls.duration} min</span>
-                                                        <span className="text-gray-300">•</span>
-                                                        <span className="text-xs text-gray-500">{cls.capacity} spots</span>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div className="relative flex-shrink-0" ref={menuRef}>
-                                            <button
-                                                onClick={() => handleMenuToggle(cls.id as number)}
-                                                className="p-2 hover:bg-gray-200 rounded-lg transition-colors"
-                                            >
-                                                <MoreVertical className="w-4 h-4 text-gray-600" />
-                                            </button>
-                                            {menuOpenFor === cls.id && (
-                                                <div className="absolute right-0 top-10 bg-white rounded-lg shadow-lg border border-gray-200 py-1 z-20 min-w-[120px]">
-                                                    <button
-                                                        onClick={() => {
-                                                            onManageClass(cls);
-                                                            setMenuOpenFor(null);
-                                                        }}
-                                                        className="w-full px-4 py-2 text-left text-xs text-gray-900 hover:bg-gray-50 flex items-center gap-2"
-                                                    >
-                                                        <Edit3 className="w-4 h-4" />
-                                                        Edit
-                                                    </button>
-                                                    <button
-                                                        onClick={() => handleDelete(cls.id as number)}
-                                                        className="w-full px-4 py-2 text-left text-xs text-red-600 hover:bg-red-50 flex items-center gap-2"
-                                                    >
-                                                        <Trash2 className="w-4 h-4" />
-                                                        Delete
-                                                    </button>
-                                                </div>
-                                            )}
-                                        </div>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    )}
-                </div>
-
-                {/* Admin Panel Link */}
-                {isAdmin && (
-                    <button
-                        onClick={() => navigate('/admin')}
-                        className="w-full bg-purple-600 text-white p-4 rounded-lg shadow-sm text-xs font-medium hover:bg-purple-700 active:scale-95 transition-all duration-200 mb-3"
-                    >
-                        Admin Dashboard
-                    </button>
-                )}
-
-                {/* Logout */}
-                <button 
-                    onClick={onLogout}
-                    className="w-full flex items-center justify-center bg-gray-200 text-gray-700 text-xs font-medium py-3 rounded-lg hover:bg-gray-300 active:scale-95 transition-all duration-200"
-                >
-                    <LogOut className="w-5 h-5 mr-2" />
-                    Logout
-                </button>
-            </div>
-        </div>
+function upcomingFromClasses(classes: Class[]) {
+  const today = new Date();
+  const items: { day: string; dateNum: string; title: string; meta: string; full?: boolean }[] = [];
+  for (let i = 0; i < 7 && items.length < 3; i++) {
+    const d = new Date(today);
+    d.setDate(today.getDate() + i);
+    const weekday = d.toLocaleDateString('en-US', { weekday: 'short' });
+    const match = classes.find((c) =>
+      c.schedule?.days?.some((day) => day.toLowerCase().startsWith(weekday.toLowerCase().slice(0, 3)))
     );
+    if (!match) continue;
+    const enrolled = match.bookings?.length ?? 0;
+    const full = match.capacity > 0 && enrolled >= match.capacity;
+    items.push({
+      day: weekday,
+      dateNum: String(d.getDate()),
+      title: match.name,
+      meta: `${match.schedule?.time || 'TBD'} · ${enrolled}/${match.capacity} registered`,
+      full,
+    });
+  }
+  return items;
+}
+
+const ProfilePage: React.FC<ProfilePageProps> = ({
+  trainer,
+  onEdit,
+  onManageClass,
+  onDeleteClass,
+  userRole,
+  onStartVerification,
+  onLogout,
+}) => {
+  const navigate = useNavigate();
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [showDocuments, setShowDocuments] = useState(false);
+  const [documents, setDocuments] = useState<
+    { id: string; title: string; is_verified?: boolean; created_at?: string }[]
+  >([]);
+  const [dismissPrompt, setDismissPrompt] = useState(false);
+  const [classTab, setClassTab] = useState<ClassTab>('active');
+  const profileIsIncomplete = !isTrainerProfileComplete(trainer);
+
+  useEffect(() => {
+    void checkAdminStatus();
+    void loadDocuments();
+  }, []);
+
+  const loadDocuments = async () => {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) return;
+
+    const { data } = await supabase
+      .from('trainer_documents')
+      .select('*')
+      .eq('trainer_id', user.id)
+      .order('created_at', { ascending: false })
+      .limit(3);
+
+    setDocuments(data || []);
+  };
+
+  const checkAdminStatus = async () => {
+    const {
+      data: { user },
+    } = await supabase.auth.getUser();
+    if (!user) return;
+
+    const { data: roles } = await supabase
+      .from('user_roles')
+      .select('role')
+      .eq('user_id', user.id)
+      .eq('role', 'admin')
+      .maybeSingle();
+
+    setIsAdmin(!!roles);
+  };
+
+  const handleDelete = (classId: number) => {
+    if (window.confirm('Are you sure you want to delete this class?')) {
+      onDeleteClass(classId);
+    }
+  };
+
+  const handleShare = async () => {
+    const url = `${window.location.origin}/trainer/${trainer.id}`;
+    try {
+      if (navigator.share) {
+        await navigator.share({ title: `${trainer.name} · RhinoFit`, url });
+      } else {
+        await navigator.clipboard.writeText(url);
+      }
+    } catch {
+      /* user cancelled */
+    }
+  };
+
+  const upcoming = useMemo(() => upcomingFromClasses(trainer.classes ?? []), [trainer.classes]);
+  const totalCapacity = useMemo(
+    () => (trainer.classes ?? []).reduce((sum, c) => sum + (c.capacity || 0), 0),
+    [trainer.classes]
+  );
+
+  if (showDocuments) {
+    return (
+      <MyDocumentsPage
+        onBack={() => {
+          setShowDocuments(false);
+          void loadDocuments();
+        }}
+      />
+    );
+  }
+
+  const initials = trainer.name
+    ?.split(' ')
+    .map((p) => p[0])
+    .join('')
+    .slice(0, 2)
+    .toUpperCase() || 'T';
+
+  return (
+    <AppScreen className="min-w-0 bg-[#f9fafb] dark:bg-background">
+      <div className={cn(APP_CONTENT, 'space-y-6 py-6')}>
+        {/* Page title */}
+        <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
+          <div>
+            <h1 className="text-2xl font-bold tracking-tight text-foreground">Trainer Profile</h1>
+            <p className="mt-0.5 text-sm text-muted-foreground">
+              Your public trainer profile, classes, qualifications, and student reviews
+            </p>
+          </div>
+          <div className="flex items-center gap-2 rounded-xl border border-border bg-card px-2 py-1.5 shadow-sm">
+            <span className="hidden rounded bg-emerald-50 px-1.5 py-0.5 text-[10px] font-bold text-emerald-700 sm:inline dark:bg-emerald-950 dark:text-emerald-300">
+              Coach
+            </span>
+            <ProfileActionMenu
+              user={trainer}
+              userRole={userRole}
+              onEditProfile={onEdit}
+              onLogout={onLogout}
+              onOpenDocuments={() => setShowDocuments(true)}
+            />
+          </div>
+        </div>
+
+        {/* Complete profile banner */}
+        {profileIsIncomplete && !dismissPrompt ? (
+          <div className="relative flex flex-col justify-between gap-4 rounded-xl border border-orange-200 bg-orange-50 p-4 shadow-sm dark:border-orange-900 dark:bg-orange-950/40 sm:flex-row sm:items-center">
+            <div className="flex items-start gap-3.5">
+              <div className="grid size-9 shrink-0 place-items-center rounded-lg bg-orange-100 text-orange-600 dark:bg-orange-900 dark:text-orange-300">
+                <Lightbulb className="size-5" />
+              </div>
+              <div>
+                <p className="text-sm font-bold text-orange-950 dark:text-orange-100">
+                  Complete your coach profile
+                </p>
+                <p className="mt-0.5 text-sm text-orange-800 dark:text-orange-200/90">
+                  A detailed bio, specialties, and certified documents help you attract more students
+                  across Saigon.
+                </p>
+              </div>
+            </div>
+            <div className="flex shrink-0 items-center gap-2 self-end sm:self-center">
+              <Button
+                type="button"
+                className="gap-1.5 bg-[#fd651e] text-white hover:bg-[#a73a00]"
+                onClick={onEdit}
+              >
+                Edit Profile
+                <ArrowRight className="size-4" />
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                className="text-orange-700 hover:bg-orange-100 dark:text-orange-200"
+                aria-label="Dismiss"
+                onClick={() => setDismissPrompt(true)}
+              >
+                <X className="size-4" />
+              </Button>
+            </div>
+          </div>
+        ) : null}
+
+        {/* Hero profile card */}
+        <section className="overflow-hidden rounded-xl border border-border bg-card shadow-sm">
+          <div className="relative h-32 w-full bg-gradient-to-r from-orange-100 via-amber-50 to-orange-100 dark:from-orange-950 dark:via-amber-950 dark:to-orange-950 sm:h-44">
+            <div
+              className="absolute inset-0 opacity-20"
+              style={{
+                backgroundImage: 'radial-gradient(#fd651e 1px, transparent 1px)',
+                backgroundSize: '16px 16px',
+              }}
+              aria-hidden
+            />
+            <div className="absolute right-4 top-4">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="gap-1.5 border-border bg-card/90 backdrop-blur-sm"
+                onClick={onEdit}
+              >
+                <Camera className="size-3.5" />
+                Change Cover
+              </Button>
+            </div>
+          </div>
+
+          <div className="px-5 pb-7 sm:px-8">
+            <div className="-mt-14 mb-5 flex flex-col justify-between gap-4 sm:-mt-16 sm:flex-row sm:items-end">
+              <div className="flex items-end gap-4">
+                <div className="relative">
+                  <Avatar className="size-24 rounded-2xl border-4 border-card shadow-md sm:size-28">
+                    <AvatarImage src={trainer.imageUrl} alt="" className="object-cover" />
+                    <AvatarFallback className="rounded-2xl text-2xl font-bold">{initials}</AvatarFallback>
+                  </Avatar>
+                  {trainer.verificationStatus === 'verified' ? (
+                    <div
+                      className="absolute -bottom-1.5 -right-1.5 rounded-full border-2 border-card bg-emerald-600 p-1 text-white shadow-sm"
+                      title="Identity verified"
+                    >
+                      <ShieldCheck className="size-3.5" />
+                    </div>
+                  ) : null}
+                </div>
+                <div className="pt-2 sm:pt-0">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <h2 className="text-2xl font-bold tracking-tight text-foreground">{trainer.name}</h2>
+                    {trainer.verificationStatus === 'verified' ? (
+                      <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-0.5 text-[11px] font-semibold text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300">
+                        <CheckCircle2 className="size-3" />
+                        Verified
+                      </span>
+                    ) : null}
+                  </div>
+                  <div className="mt-1 flex flex-wrap items-center gap-1.5 text-sm text-muted-foreground">
+                    {trainer.location ? (
+                      <>
+                        <MapPin className="size-4 text-[#fd651e]" />
+                        <span>{trainer.location}</span>
+                        <span className="mx-1 text-border">•</span>
+                      </>
+                    ) : null}
+                    <span className="font-semibold text-primary">RhinoFit Elite Trainer</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-2.5">
+                <Button type="button" variant="outline" size="sm" className="gap-1.5" onClick={handleShare}>
+                  <Share2 className="size-3.5" />
+                  Share Profile
+                </Button>
+                <Button type="button" variant="outline" size="sm" className="gap-1.5" onClick={onEdit}>
+                  <Pencil className="size-3.5" />
+                  Edit profile
+                </Button>
+              </div>
+            </div>
+
+            {trainer.specialty?.length ? (
+              <div className="mb-6 flex flex-wrap gap-2">
+                {trainer.specialty.slice(0, MAX_VISIBLE_SPECIALTIES).map((spec) => (
+                  <span
+                    key={spec}
+                    className="rounded-lg border border-border bg-muted/60 px-3 py-1 text-[11px] font-semibold text-muted-foreground"
+                  >
+                    {spec}
+                  </span>
+                ))}
+              </div>
+            ) : null}
+
+            <div className="grid grid-cols-2 gap-3.5 md:grid-cols-4">
+              <div className="rounded-xl border border-border bg-muted/50 p-3.5">
+                <div className="mb-1 flex items-center justify-between text-muted-foreground">
+                  <span className="inline-flex items-center gap-1 text-xs">
+                    <Star className="size-3.5 fill-amber-500 text-amber-500" />
+                    Rating
+                  </span>
+                  <span className="text-[11px]">{trainer.reviews} reviews</span>
+                </div>
+                <div className="flex items-baseline gap-1.5">
+                  <span className="text-2xl font-bold tabular-nums text-foreground">
+                    {trainer.rating.toFixed(1)}
+                  </span>
+                  <span className="text-xs text-muted-foreground">/ 5.0</span>
+                </div>
+              </div>
+              <div className="rounded-xl border border-border bg-muted/50 p-3.5">
+                <div className="mb-1 flex items-center justify-between text-muted-foreground">
+                  <span className="inline-flex items-center gap-1 text-xs">
+                    <BookOpen className="size-3.5 text-primary" />
+                    Classes
+                  </span>
+                  <span className="text-[11px] font-semibold text-emerald-600">Active</span>
+                </div>
+                <div className="flex items-baseline gap-1.5">
+                  <span className="text-2xl font-bold tabular-nums text-foreground">
+                    {trainer.classes.length}
+                  </span>
+                  <span className="text-xs text-muted-foreground">published</span>
+                </div>
+              </div>
+              <div className="rounded-xl border border-border bg-muted/50 p-3.5">
+                <div className="mb-1 flex items-center justify-between text-muted-foreground">
+                  <span className="inline-flex items-center gap-1 text-xs">
+                    <Briefcase className="size-3.5" />
+                    Experience
+                  </span>
+                </div>
+                <div className="flex items-baseline gap-1.5">
+                  <span className="text-2xl font-bold tabular-nums text-foreground">
+                    {trainer.experienceYears ?? '—'}
+                  </span>
+                  <span className="text-xs text-muted-foreground">yrs coaching</span>
+                </div>
+              </div>
+              <div className="rounded-xl border border-border bg-muted/50 p-3.5">
+                <div className="mb-1 flex items-center justify-between text-muted-foreground">
+                  <span className="inline-flex items-center gap-1 text-xs">
+                    <Banknote className="size-3.5 text-[#fd651e]" />
+                    Rate / hour
+                  </span>
+                </div>
+                <div className="flex items-baseline gap-1.5">
+                  <span className="text-2xl font-bold tabular-nums text-[#fd651e]">
+                    {trainer.price ? formatVND(trainer.price) : '—'}
+                  </span>
+                  <span className="text-xs text-muted-foreground">/ hr</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* Verification + Premium */}
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-12">
+          <div className="flex items-center justify-between gap-3 rounded-xl border border-border bg-card p-4 shadow-sm md:col-span-5">
+            <div className="flex items-center gap-3.5">
+              <div className="grid size-11 shrink-0 place-items-center rounded-xl border border-orange-100 bg-orange-50 text-orange-600 dark:border-orange-900 dark:bg-orange-950 dark:text-orange-300">
+                <Shield className="size-6" />
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-foreground">
+                  {trainer.verificationStatus === 'verified'
+                    ? 'Verified trainer'
+                    : trainer.verificationStatus === 'pending'
+                      ? 'Verification pending'
+                      : 'Become a verified trainer'}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  {trainer.verificationStatus === 'verified'
+                    ? 'Your profile is verified and trusted.'
+                    : trainer.verificationStatus === 'pending'
+                      ? 'Your request is being reviewed.'
+                      : 'Build trust and attract more clients.'}
+                </p>
+              </div>
+            </div>
+            {trainer.verificationStatus === 'verified' ? (
+              <span className="rounded-md border border-emerald-200 bg-emerald-50 px-3 py-1 text-[11px] font-semibold text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950 dark:text-emerald-300">
+                Verified
+              </span>
+            ) : (
+              <Button size="sm" onClick={onStartVerification}>
+                {trainer.verificationStatus === 'pending' ? 'Status' : 'Verify'}
+              </Button>
+            )}
+          </div>
+
+          <div className="flex flex-col justify-between gap-4 rounded-xl bg-gradient-to-r from-orange-600 to-amber-600 p-4 text-white shadow-sm sm:flex-row sm:items-center md:col-span-7">
+            <div className="flex items-center gap-3.5">
+              <div className="grid size-11 shrink-0 place-items-center rounded-xl bg-white/20 backdrop-blur-sm">
+                <Crown className="size-6 fill-white" />
+              </div>
+              <div>
+                <p className="flex flex-wrap items-center gap-2 text-sm font-bold">
+                  {trainer.isPremium ? 'Coach Pro active' : 'Upgrade to Coach Pro'}
+                  <span className="rounded bg-white/30 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider">
+                    Special
+                  </span>
+                </p>
+                <p className="text-xs text-orange-100">
+                  5 photos per class, priority listing, analytics &amp; more.
+                </p>
+              </div>
+            </div>
+            <Button
+              type="button"
+              className="shrink-0 self-start bg-white font-bold text-orange-700 hover:bg-orange-50 sm:self-center"
+              onClick={() => navigate('/subscription')}
+            >
+              {trainer.isPremium ? 'Manage' : 'Upgrade Now'}
+            </Button>
+          </div>
+        </div>
+
+        {/* Main split */}
+        <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-12">
+          {/* Classes */}
+          <section className="space-y-4 lg:col-span-8">
+            <div className="flex flex-col justify-between gap-3 rounded-xl border border-border bg-card p-4 shadow-sm sm:flex-row sm:items-center">
+              <div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <h3 className="text-lg font-bold text-foreground">
+                    My classes ({trainer.classes.length})
+                  </h3>
+                  <span className="rounded-full bg-[#e9edff] px-2 py-0.5 text-[11px] font-semibold text-primary">
+                    Open for Booking
+                  </span>
+                </div>
+                <p className="mt-0.5 text-xs text-muted-foreground">
+                  Classes and recurring training slots students can book
+                </p>
+              </div>
+              <div className="flex flex-wrap items-center gap-2 self-start sm:self-center">
+                <div className="flex items-center rounded-lg border border-border bg-muted/50 p-1">
+                  {(
+                    [
+                      ['active', `Active (${trainer.classes.length})`],
+                      ['drafts', 'Drafts (0)'],
+                      ['archived', 'Archived'],
+                    ] as const
+                  ).map(([id, label]) => (
+                    <button
+                      key={id}
+                      type="button"
+                      onClick={() => setClassTab(id)}
+                      className={cn(
+                        'rounded-md px-2.5 py-1 text-[11px] font-semibold transition-colors',
+                        classTab === id
+                          ? 'bg-card text-foreground shadow-sm'
+                          : 'text-muted-foreground hover:text-foreground'
+                      )}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
+                <Button
+                  type="button"
+                  size="sm"
+                  className="gap-1.5 bg-[#fd651e] text-white hover:bg-[#a73a00]"
+                  onClick={() => onManageClass(null)}
+                >
+                  <Plus className="size-4" />
+                  Add class
+                </Button>
+              </div>
+            </div>
+
+            {classTab !== 'active' ? (
+              <EmptyState
+                icon={BookOpen}
+                title={classTab === 'drafts' ? 'No drafts' : 'No archived classes'}
+                description="Only active published classes are shown here for now."
+              />
+            ) : trainer.classes.length === 0 ? (
+              <EmptyState
+                icon={BookOpen}
+                title="No classes yet"
+                description="Create your first class to start teaching"
+                action={
+                  <Button onClick={() => onManageClass(null)}>
+                    <Plus />
+                    Create class
+                  </Button>
+                }
+              />
+            ) : (
+              <ul className="flex flex-col gap-4">
+                {trainer.classes.map((cls) => {
+                  const spots = Math.max(cls.capacity - (cls.bookings?.length ?? 0), 0);
+                  return (
+                    <li
+                      key={cls.id}
+                      className="flex flex-col gap-4 rounded-xl border border-border bg-card p-4 shadow-sm transition-all hover:border-border sm:flex-row"
+                    >
+                      <div className="relative h-36 w-full shrink-0 overflow-hidden rounded-lg bg-muted sm:w-44">
+                        <img
+                          src={cls.imageUrl || FALLBACK_CLASS_IMAGE}
+                          alt=""
+                          className="size-full object-cover"
+                        />
+                        <span className="absolute left-2 top-2 rounded bg-foreground/80 px-2 py-0.5 text-[11px] font-semibold text-white backdrop-blur-md">
+                          {cls.classType || cls.level || 'Class'}
+                        </span>
+                      </div>
+                      <div className="flex min-w-0 flex-1 flex-col justify-between">
+                        <div>
+                          <div className="flex items-start justify-between gap-2">
+                            <div>
+                              <h4 className="text-base font-semibold text-foreground transition-colors hover:text-primary">
+                                {cls.name}
+                              </h4>
+                              <div className="mt-1 flex flex-wrap items-center gap-2">
+                                {cls.level ? (
+                                  <span className="rounded bg-muted px-2 py-0.5 text-[11px] font-semibold text-muted-foreground">
+                                    {cls.level}
+                                  </span>
+                                ) : null}
+                                <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
+                                  <Clock className="size-3" />
+                                  {scheduleLabel(cls)}
+                                </span>
+                              </div>
+                            </div>
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="shrink-0 text-muted-foreground"
+                                  aria-label={`Actions for ${cls.name}`}
+                                >
+                                  <MoreVertical />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end" className="min-w-[140px]">
+                                <DropdownMenuItem onSelect={() => onManageClass(cls)}>
+                                  <Edit3 />
+                                  Edit
+                                </DropdownMenuItem>
+                                <DropdownMenuItem
+                                  onSelect={() => handleDelete(cls.id as number)}
+                                  className="text-destructive focus:bg-destructive/10 focus:text-destructive"
+                                >
+                                  <Trash2 />
+                                  Delete
+                                </DropdownMenuItem>
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </div>
+                          {cls.description ? (
+                            <p className="mt-2 line-clamp-2 text-xs text-muted-foreground">
+                              {cls.description}
+                            </p>
+                          ) : null}
+                        </div>
+                        <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-border pt-3">
+                          <div className="flex flex-wrap items-center gap-3 text-xs">
+                            <span className="text-base font-bold tabular-nums text-[#fd651e]">
+                              {formatVND(cls.price)}
+                            </span>
+                            <span className="text-muted-foreground">•</span>
+                            <span className="inline-flex items-center gap-1 text-muted-foreground">
+                              <Timer className="size-3" />
+                              {cls.duration} min
+                            </span>
+                            <span className="text-muted-foreground">•</span>
+                            <span className="rounded bg-emerald-50 px-2 py-0.5 text-[11px] font-semibold text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300">
+                              {spots} spots available
+                            </span>
+                          </div>
+                          <button
+                            type="button"
+                            className="rounded px-2.5 py-1 text-[11px] font-semibold text-primary hover:bg-blue-50 dark:hover:bg-blue-950"
+                            onClick={() => navigate('/bookings')}
+                          >
+                            Manage Roster
+                          </button>
+                        </div>
+                      </div>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+          </section>
+
+          {/* Sidebar */}
+          <aside className="space-y-6 lg:col-span-4">
+            {/* Documents */}
+            <div className="rounded-xl border border-border bg-card p-4 shadow-sm">
+              <div className="mb-3 flex items-center justify-between border-b border-border pb-3">
+                <div className="flex items-center gap-2">
+                  <FileText className="size-4 text-primary" />
+                  <h4 className="text-sm font-semibold text-foreground">Documents &amp; Badges</h4>
+                </div>
+                <button
+                  type="button"
+                  className="inline-flex items-center gap-0.5 text-[11px] font-bold text-[#fd651e] hover:underline"
+                  onClick={() => setShowDocuments(true)}
+                >
+                  View all
+                  <ArrowRight className="size-3.5" />
+                </button>
+              </div>
+              {documents.length > 0 ? (
+                <ul className="space-y-2.5">
+                  {documents.map((doc) => (
+                    <li
+                      key={doc.id}
+                      className="flex items-center justify-between gap-2 rounded-lg border border-border bg-muted/40 p-2"
+                    >
+                      <div className="flex min-w-0 items-center gap-2.5">
+                        <ShieldCheck
+                          className={cn(
+                            'size-5 shrink-0',
+                            doc.is_verified ? 'text-emerald-600' : 'text-muted-foreground'
+                          )}
+                        />
+                        <div className="min-w-0">
+                          <p className="truncate text-[11px] font-semibold text-foreground">
+                            {doc.title}
+                          </p>
+                          <p className="text-[11px] text-muted-foreground">
+                            {doc.is_verified ? 'Verified' : 'Pending review'}
+                          </p>
+                        </div>
+                      </div>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="py-2 text-center text-xs text-muted-foreground">No documents uploaded</p>
+              )}
+              <div className="mt-4 border-t border-border pt-3">
+                <button
+                  type="button"
+                  onClick={() => setShowDocuments(true)}
+                  className="flex w-full items-center justify-center gap-1.5 rounded-lg border border-dashed border-border bg-muted/40 py-2.5 text-xs font-semibold text-muted-foreground transition-all hover:border-primary hover:bg-blue-50/50 hover:text-primary dark:hover:bg-blue-950/40"
+                >
+                  <Upload className="size-4" />
+                  Upload documents
+                </button>
+              </div>
+            </div>
+
+            {/* Schedule */}
+            <div className="rounded-xl border border-border bg-card p-4 shadow-sm">
+              <div className="mb-3 flex items-center justify-between border-b border-border pb-3">
+                <div className="flex items-center gap-2">
+                  <Clock className="size-4 text-[#fd651e]" />
+                  <h4 className="text-sm font-semibold text-foreground">Upcoming Schedule</h4>
+                </div>
+                <span className="text-xs text-muted-foreground">Next 7 days</span>
+              </div>
+              {upcoming.length > 0 ? (
+                <ul className="space-y-3">
+                  {upcoming.map((item) => (
+                    <li key={`${item.day}-${item.dateNum}-${item.title}`} className="flex items-start gap-3">
+                      <div className="w-12 rounded-lg border border-border bg-muted/50 py-1.5 text-center">
+                        <span className="block text-[10px] font-semibold uppercase text-muted-foreground">
+                          {item.day}
+                        </span>
+                        <span className="block text-base font-bold text-foreground">{item.dateNum}</span>
+                      </div>
+                      <div className="min-w-0 flex-1 text-xs">
+                        <p className="font-semibold text-foreground">{item.title}</p>
+                        <p className="text-muted-foreground">{item.meta}</p>
+                      </div>
+                      <span
+                        className={cn(
+                          'rounded px-1.5 py-0.5 text-[10px] font-bold',
+                          item.full
+                            ? 'bg-orange-100 text-orange-800 dark:bg-orange-950 dark:text-orange-300'
+                            : 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300'
+                        )}
+                      >
+                        {item.full ? 'Full' : 'Confirmed'}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="py-2 text-center text-xs text-muted-foreground">
+                  Add class schedules to see upcoming sessions.
+                </p>
+              )}
+              <div className="mt-4 border-t border-border pt-3">
+                <button
+                  type="button"
+                  className="block w-full text-center text-xs font-semibold text-primary hover:underline"
+                  onClick={() => navigate('/bookings')}
+                >
+                  Open full timetable
+                </button>
+              </div>
+            </div>
+
+            {/* Performance */}
+            <div className="rounded-xl border border-border bg-card p-4 shadow-sm">
+              <div className="mb-3 flex items-center justify-between border-b border-border pb-3">
+                <div className="flex items-center gap-2">
+                  <TrendingUp className="size-4 text-primary" />
+                  <h4 className="text-sm font-semibold text-foreground">Performance</h4>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <div className="rounded-lg bg-muted/50 p-2">
+                  <span className="block text-[11px] text-muted-foreground">Published</span>
+                  <span className="text-lg font-bold tabular-nums text-foreground">
+                    {trainer.classes.length}
+                  </span>
+                </div>
+                <div className="rounded-lg bg-muted/50 p-2">
+                  <span className="block text-[11px] text-muted-foreground">Total capacity</span>
+                  <span className="text-lg font-bold tabular-nums text-foreground">{totalCapacity}</span>
+                </div>
+                <div className="rounded-lg bg-muted/50 p-2">
+                  <span className="block text-[11px] text-muted-foreground">Reviews</span>
+                  <span className="text-lg font-bold tabular-nums text-foreground">{trainer.reviews}</span>
+                </div>
+                <div className="rounded-lg bg-muted/50 p-2">
+                  <span className="block text-[11px] text-muted-foreground">Rating</span>
+                  <span className="text-lg font-bold tabular-nums text-foreground">
+                    {trainer.rating.toFixed(1)}
+                  </span>
+                </div>
+              </div>
+              <button
+                type="button"
+                className="mt-3 flex w-full items-center justify-between py-1 text-xs text-muted-foreground hover:text-foreground"
+                onClick={() => navigate('/bookings')}
+              >
+                <span>View bookings</span>
+                <ChevronRight className="size-4" />
+              </button>
+            </div>
+
+            {isAdmin ? (
+              <Button variant="outline" onClick={() => navigate('/admin')} className="w-full justify-start">
+                <Shield />
+                Admin dashboard
+              </Button>
+            ) : null}
+          </aside>
+        </div>
+      </div>
+    </AppScreen>
+  );
 };
 
 export default ProfilePage;

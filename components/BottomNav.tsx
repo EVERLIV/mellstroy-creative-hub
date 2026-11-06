@@ -1,78 +1,42 @@
 import React from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
 import { NavLink } from './NavLink';
-import { Home, Search, MessageCircle, Calendar, User } from 'lucide-react';
+import { cn } from '@/src/lib/utils';
+import { NAV_ITEMS, isNavItemActive, triggerHapticFeedback } from './navItems';
 
-interface NavItem {
-  name: string;
-  path: string;
-  icon: React.FC<any>;
-  alternativePaths?: string[];
-}
-
+/** Mobile-only tab bar. On md+ screens navigation lives in <SideNav />. */
 const BottomNav: React.FC = () => {
-  const location = useLocation();
-  const navigate = useNavigate();
-  
-  const navItems: NavItem[] = [
-    { name: 'Home', path: '/', icon: Home },
-    { name: 'Explore', path: '/explore', icon: Search, alternativePaths: ['/requests/explore'] },
-    { name: 'Messages', path: '/messages', icon: MessageCircle },
-    { name: 'Bookings', path: '/bookings', icon: Calendar },
-    { name: 'Profile', path: '/profile', icon: User },
-  ];
-
-  // Haptic feedback function
-  const triggerHapticFeedback = () => {
-    // Check if Vibration API is supported
-    if ('vibrate' in navigator) {
-      // Short vibration for tap feedback (15ms)
-      navigator.vibrate(15);
-    }
-  };
-
-  const handleNavClick = (path: string, e: React.MouseEvent) => {
-    // Trigger haptic feedback
-    triggerHapticFeedback();
-    
-    // Let the NavLink handle the navigation
-    // No need to prevent default or manually navigate
-  };
+  const { pathname } = useLocation();
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 w-full bg-card border-t border-border z-50 shadow-[0_-1px_4px_rgba(0,0,0,0.05)] dark:shadow-[0_-1px_4px_rgba(255,107,53,0.1)]">
-      <div className="flex justify-around items-center h-14 px-4 sm:px-6 md:px-8 lg:px-12 max-w-full pb-1">
-        {navItems.map((item) => {
-          const isActive = location.pathname === item.path || 
-            (item.alternativePaths && item.alternativePaths.includes(location.pathname));
+    <nav
+      aria-label="Main"
+      className="fixed inset-x-0 bottom-0 z-50 border-t border-border bg-card/95 pb-[env(safe-area-inset-bottom)] shadow-[0_-1px_4px_rgba(0,0,0,0.05)] backdrop-blur supports-[backdrop-filter]:bg-card/80 md:hidden"
+    >
+      <div className="flex h-14 items-center justify-around px-4 pb-1">
+        {NAV_ITEMS.map((item) => {
+          const isActive = isNavItemActive(item, pathname);
+          const Icon = item.icon;
 
           return (
             <NavLink
               key={item.name}
               to={item.path}
               end
-              onClick={(e) => handleNavClick(item.path, e)}
-              className={`relative flex items-center justify-center transition-all duration-300 ease-out rounded-full h-10 group
-                active:scale-90 active:opacity-80
-                ${
-                  isActive
-                    ? 'bg-primary/20 dark:bg-primary/30 text-primary px-4 gap-2 shadow-sm'
-                    : 'w-10 text-muted-foreground hover:bg-muted hover:scale-110'
-                }`
-              }
+              onClick={triggerHapticFeedback}
               aria-label={item.name}
               aria-current={isActive ? 'page' : undefined}
+              className={cn(
+                'group relative flex h-10 items-center justify-center rounded-full transition-all duration-300 ease-out active:scale-90 active:opacity-80',
+                isActive
+                  ? 'gap-2 bg-primary/20 px-4 text-primary shadow-sm dark:bg-primary/30'
+                  : 'w-10 text-muted-foreground hover:bg-muted'
+              )}
             >
-              <item.icon 
-                className={`h-6 w-6 transition-transform duration-200 ${isActive ? '' : 'group-active:scale-90'}`} 
-                strokeWidth={isActive ? 2.5 : 2} 
-              />
-              <span className={`text-sm font-semibold whitespace-nowrap transition-opacity duration-200 ${isActive ? 'block animate-fade-in' : 'hidden'}`}>
-                {item.name}
-              </span>
-              
-              {/* Ripple effect on tap */}
-              <span className={`absolute inset-0 rounded-full bg-muted-foreground opacity-0 group-active:opacity-20 group-active:animate-ping`} />
+              <Icon className="h-6 w-6" strokeWidth={isActive ? 2.5 : 2} />
+              {isActive && (
+                <span className="animate-fade-in whitespace-nowrap text-sm font-semibold">{item.name}</span>
+              )}
             </NavLink>
           );
         })}

@@ -4,6 +4,12 @@ import { X, Save, Building, Sun, Home, Upload, Trash2 } from 'lucide-react';
 import { supabase } from '@/src/integrations/supabase/client';
 import { useAuth } from '@/src/hooks/useAuth';
 import { useToast } from '@/src/hooks/use-toast';
+import { cn } from '@/src/lib/utils';
+import { Button } from '@/src/components/ui/button';
+import { Input } from '@/src/components/ui/input';
+import { Textarea } from '@/src/components/ui/textarea';
+import { Switch } from '@/src/components/ui/switch';
+import { FormField, FormGrid } from '@/src/components/form/form-field';
 
 interface AddEditClassModalProps {
     cls: Class | null | undefined;
@@ -240,77 +246,92 @@ const AddEditClassModal: React.FC<AddEditClassModalProps> = ({ cls, onSave, onCa
 
     if (cls === undefined) return null;
 
+    const maxPhotos = isPremium ? 6 : 1;
+
     return (
-        <div 
-            className="fixed inset-0 bg-gray-600 flex items-center justify-center z-[60] p-4 pb-20 animate-fade-in overflow-y-auto"
+        <div
+            className="fixed inset-0 z-[60] flex items-end justify-center bg-black/60 animate-fade-in sm:items-center sm:p-4"
             onClick={onCancel}
             role="dialog"
             aria-modal="true"
+            aria-labelledby="class-modal-title"
         >
-            <div 
-                className="bg-gray-100 rounded-lg w-full max-w-md max-h-[85vh] overflow-hidden transform animate-slide-up flex flex-col my-4 shadow-2xl border border-gray-300"
+            <div
+                className="flex max-h-[92vh] w-full flex-col overflow-hidden rounded-t-2xl border border-border bg-card shadow-2xl animate-slide-up sm:max-h-[88vh] sm:max-w-2xl sm:rounded-xl"
                 onClick={e => e.stopPropagation()}
             >
-                <div className="p-3 bg-white border-b border-gray-200 flex items-center justify-between flex-shrink-0">
-                    <h2 className="text-base font-semibold text-gray-900">{cls ? 'Edit Class' : 'Add New Class'}</h2>
-                    <button onClick={onCancel} className="p-1.5 rounded-md hover:bg-gray-200 transition-colors">
-                        <X className="w-4 h-4 text-gray-600" />
-                    </button>
+                <div className="flex shrink-0 items-center justify-between border-b border-border px-4 py-3 md:px-6">
+                    <h2 id="class-modal-title" className="text-base font-semibold text-foreground md:text-lg">
+                        {cls ? 'Edit Class' : 'Add New Class'}
+                    </h2>
+                    <Button type="button" variant="ghost" size="icon" onClick={onCancel} aria-label="Close">
+                        <X />
+                    </Button>
                 </div>
-                
-                <form onSubmit={handleSave} className="flex-1 flex flex-col min-h-0 overflow-hidden bg-white">
-                    <div className="p-3 space-y-2.5 flex-1 overflow-y-auto overscroll-contain">
-                        <div>
-                            <label htmlFor="name" className="block text-sm font-medium text-slate-600 mb-1.5">Class Name</label>
-                            <input type="text" id="name" name="name" value={formData.name} onChange={handleChange} required className="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-slate-800" />
-                        </div>
-                        <div>
-                            <label htmlFor="description" className="block text-sm font-medium text-slate-600 mb-1.5">Description</label>
-                            <textarea id="description" name="description" value={formData.description} onChange={handleChange} rows={2} required className="w-full px-3 py-2 text-sm bg-slate-50 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-slate-800 resize-none" />
-                        </div>
-                        <div>
-                            <label className="block text-sm font-medium text-slate-600 mb-1.5">Class Type</label>
+
+                <form onSubmit={handleSave} className="flex min-h-0 flex-1 flex-col">
+                    <div className="flex-1 space-y-6 overflow-y-auto overscroll-contain p-4 md:p-6">
+                        <FormGrid>
+                            <FormField label="Class Name" htmlFor="name" required className="md:col-span-2">
+                                <Input type="text" name="name" value={formData.name} onChange={handleChange} required />
+                            </FormField>
+                            <FormField label="Description" htmlFor="description" required className="md:col-span-2">
+                                <Textarea name="description" value={formData.description} onChange={handleChange} rows={3} required className="resize-none" />
+                            </FormField>
+                        </FormGrid>
+
+                        <fieldset className="space-y-2">
+                            <legend className="text-sm font-medium text-foreground">Class Type</legend>
                             <div className="grid grid-cols-3 gap-2">
-                                {classTypeOptions.map(opt => (
-                                    <button
-                                        type="button"
-                                        key={opt.id}
-                                        onClick={() => setFormData(prev => ({...prev, classType: opt.id}))}
-                                        className={`flex flex-col items-center justify-center p-2 rounded-lg border-2 transition-colors ${formData.classType === opt.id ? 'border-blue-500 bg-blue-50' : 'border-slate-200 bg-white hover:bg-slate-50'}`}
-                                    >
-                                        <opt.icon className={`w-4 h-4 mb-0.5 ${formData.classType === opt.id ? 'text-blue-600' : 'text-slate-500'}`} />
-                                        <span className={`text-xs font-semibold ${formData.classType === opt.id ? 'text-blue-700' : 'text-slate-600'}`}>{opt.label}</span>
-                                    </button>
-                                ))}
-                            </div>
-                        </div>
-                         <div className="grid grid-cols-3 gap-2">
-                            <div>
-                                <label htmlFor="duration" className="block text-xs font-medium text-slate-600 mb-1">Duration</label>
-                                <input placeholder="min" type="number" id="duration" name="duration" value={formData.duration} onChange={handleChange} required className="w-full px-2 py-1.5 text-sm bg-slate-50 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-slate-800" />
-                            </div>
-                            <div>
-                                <label htmlFor="capacity" className="block text-xs font-medium text-slate-600 mb-1">Capacity</label>
-                                <input type="number" id="capacity" name="capacity" value={formData.capacity} onChange={handleChange} required className="w-full px-2 py-1.5 text-sm bg-slate-50 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-slate-800" />
-                            </div>
-                             <div>
-                                <label htmlFor="price" className="block text-xs font-medium text-slate-600 mb-1">Price</label>
-                                 <div className="relative">
-                                    <input type="number" id="price" name="price" value={formData.price} onChange={handleChange} required className="w-full pl-2 pr-8 py-1.5 text-sm bg-slate-50 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-slate-800 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" />
-                                    <span className="absolute inset-y-0 right-2 flex items-center text-slate-400 text-xs">VND</span>
-                                </div>
-                            </div>
-                        </div>
-                        {/* Language Selection */}
-                        <div>
-                            <label className="block text-sm font-medium text-slate-600 mb-1.5">Languages</label>
-                            <div className="flex flex-wrap gap-1.5">
-                                {['English', 'Vietnamese', 'Chinese', 'Korean', 'Japanese', 'French', 'Spanish'].map(lang => {
-                                    const isSelected = formData.language?.includes(lang);
+                                {classTypeOptions.map(opt => {
+                                    const isSelected = formData.classType === opt.id;
                                     return (
                                         <button
                                             type="button"
+                                            key={opt.id}
+                                            aria-pressed={isSelected}
+                                            onClick={() => setFormData(prev => ({ ...prev, classType: opt.id }))}
+                                            className={cn(
+                                                'flex flex-col items-center justify-center gap-1 rounded-lg border-2 p-3 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+                                                isSelected ? 'border-primary bg-primary/10 text-primary' : 'border-border bg-card text-muted-foreground hover:bg-muted/50'
+                                            )}
+                                        >
+                                            <opt.icon className="h-5 w-5" />
+                                            <span className="text-xs font-semibold">{opt.label}</span>
+                                        </button>
+                                    );
+                                })}
+                            </div>
+                        </fieldset>
+
+                        <div className="grid grid-cols-3 gap-3">
+                            <FormField label="Duration" htmlFor="duration" hint="minutes" required>
+                                <Input type="number" name="duration" placeholder="min" value={formData.duration} onChange={handleChange} required />
+                            </FormField>
+                            <FormField label="Capacity" htmlFor="capacity" required>
+                                <Input type="number" name="capacity" value={formData.capacity} onChange={handleChange} required />
+                            </FormField>
+                            <FormField label="Price" htmlFor="price" hint="VND" required>
+                                <Input
+                                    type="number"
+                                    name="price"
+                                    value={formData.price}
+                                    onChange={handleChange}
+                                    required
+                                    className="[appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+                                />
+                            </FormField>
+                        </div>
+
+                        <fieldset className="space-y-2">
+                            <legend className="text-sm font-medium text-foreground">Languages</legend>
+                            <div className="flex flex-wrap gap-2">
+                                {LANGUAGE_OPTIONS.map(lang => {
+                                    const isSelected = formData.language?.includes(lang) ?? false;
+                                    return (
+                                        <ChoiceChip
                                             key={lang}
+                                            selected={isSelected}
                                             onClick={() => {
                                                 const currentLangs = formData.language || [];
                                                 const newLangs = isSelected
@@ -318,142 +339,111 @@ const AddEditClassModal: React.FC<AddEditClassModalProps> = ({ cls, onSave, onCa
                                                     : [...currentLangs, lang];
                                                 setFormData(prev => ({ ...prev, language: newLangs }));
                                             }}
-                                            className={`px-2.5 py-1 text-xs font-medium rounded-full transition-colors border ${
-                                                isSelected
-                                                    ? 'bg-blue-500 text-white border-blue-500'
-                                                    : 'bg-white text-slate-600 border-slate-300 hover:bg-slate-100'
-                                            }`}
                                         >
                                             {lang}
-                                        </button>
+                                        </ChoiceChip>
                                     );
                                 })}
                             </div>
-                        </div>
-                        {/* Level Selection */}
-                        <div>
-                            <label className="block text-sm font-medium text-slate-600 mb-1.5">Class Level</label>
-                            <div className="flex flex-wrap gap-1.5">
-                                {['Beginner', 'Intermediate', 'Advanced', 'Beginner to Intermediate', 'Intermediate to Advanced'].map(level => (
-                                    <button
-                                        type="button"
+                        </fieldset>
+
+                        <fieldset className="space-y-2">
+                            <legend className="text-sm font-medium text-foreground">Class Level</legend>
+                            <div className="flex flex-wrap gap-2">
+                                {LEVEL_OPTIONS.map(level => (
+                                    <ChoiceChip
                                         key={level}
+                                        selected={formData.level === level}
                                         onClick={() => setFormData(prev => ({ ...prev, level: level }))}
-                                        className={`px-2.5 py-1 text-xs font-medium rounded-full transition-colors border ${
-                                            formData.level === level
-                                                ? 'bg-blue-500 text-white border-blue-500'
-                                                : 'bg-white text-slate-600 border-slate-300 hover:bg-slate-100'
-                                        }`}
                                     >
                                         {level}
-                                    </button>
+                                    </ChoiceChip>
                                 ))}
                             </div>
-                        </div>
-                        {/* Schedule Editor */}
-                        <div>
-                             <label className="block text-sm font-medium text-slate-600 mb-1.5">Recurring Schedule</label>
-                             <div className="p-2.5 border border-slate-200 rounded-lg">
-                                <div className="flex items-center gap-2">
-                                    <label htmlFor="time" className="text-xs font-medium text-slate-600 whitespace-nowrap">Time:</label>
-                                    <input type="time" name="time" value={formData.schedule?.time} onChange={handleScheduleChange} className="flex-1 w-full bg-slate-100 border-slate-300 rounded-md text-sm p-1.5 focus:ring-blue-500 focus:border-blue-500 text-slate-800"/>
-                                </div>
-                                <div className="mt-2">
-                                    <label className="text-xs font-medium text-slate-600 block mb-1.5">Repeats on:</label>
-                                    <div className="grid grid-cols-4 gap-1.5">
-                                        {dayOptions.map(day => {
-                                            const isSelected = formData.schedule?.days.includes(day);
-                                            return (
-                                                <button type="button" key={day} onClick={() => handleDayToggle(day)} className={`p-1.5 text-xs font-bold rounded-lg transition-colors border ${isSelected ? 'bg-blue-500 text-white border-blue-500' : 'bg-white text-slate-600 border-slate-300 hover:bg-slate-100'}`}>
-                                                    {day}
-                                                </button>
-                                            )
-                                        })}
-                                    </div>
-                                </div>
-                             </div>
-                         </div>
-                        
-                        {/* Additional Options */}
-                        <div>
-                            <label className="block text-sm font-medium text-slate-600 mb-2">Additional Options</label>
+                        </fieldset>
+
+                        <fieldset className="space-y-3 rounded-lg border border-border p-3 md:p-4">
+                            <legend className="px-1 text-sm font-medium text-foreground">Recurring Schedule</legend>
+                            <FormField label="Time" htmlFor="time">
+                                <Input type="time" name="time" value={formData.schedule?.time} onChange={handleScheduleChange} className="md:max-w-[12rem]" />
+                            </FormField>
                             <div className="space-y-2">
-                                {/* Kids Friendly Toggle */}
-                                <label htmlFor="kids-friendly-toggle" className="flex items-center justify-between cursor-pointer p-2.5 rounded-lg border border-slate-200 hover:bg-slate-50">
-                                    <div className="flex items-center gap-2">
-                                        <span className="text-2xl">👶</span>
-                                        <span className="text-sm font-medium text-slate-700">Kids Friendly</span>
-                                    </div>
-                                    <div className="relative">
-                                        <input 
-                                            type="checkbox" 
-                                            id="kids-friendly-toggle" 
-                                            className="sr-only peer" 
-                                            checked={formData.kids_friendly || false} 
-                                            onChange={(e) => setFormData(prev => ({ ...prev, kids_friendly: e.target.checked }))} 
-                                        />
-                                        <div className="w-11 h-6 bg-slate-200 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#FF6B35]"></div>
-                                    </div>
-                                </label>
-
-                                {/* Disability Friendly Toggle */}
-                                <label htmlFor="disability-friendly-toggle" className="flex items-center justify-between cursor-pointer p-2.5 rounded-lg border border-slate-200 hover:bg-slate-50">
-                                    <div className="flex items-center gap-2">
-                                        <span className="text-2xl">♿</span>
-                                        <span className="text-sm font-medium text-slate-700">Disability Friendly</span>
-                                    </div>
-                                    <div className="relative">
-                                        <input 
-                                            type="checkbox" 
-                                            id="disability-friendly-toggle" 
-                                            className="sr-only peer" 
-                                            checked={formData.disability_friendly || false} 
-                                            onChange={(e) => setFormData(prev => ({ ...prev, disability_friendly: e.target.checked }))} 
-                                        />
-                                        <div className="w-11 h-6 bg-slate-200 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#FF6B35]"></div>
-                                    </div>
-                                </label>
+                                <p className="text-sm font-medium text-foreground">Repeats on</p>
+                                <div className="grid grid-cols-4 gap-2 sm:grid-cols-7">
+                                    {dayOptions.map(day => (
+                                        <ChoiceChip
+                                            key={day}
+                                            selected={formData.schedule?.days.includes(day) ?? false}
+                                            onClick={() => handleDayToggle(day)}
+                                            className="rounded-lg font-bold"
+                                        >
+                                            {day}
+                                        </ChoiceChip>
+                                    ))}
+                                </div>
                             </div>
-                        </div>
+                        </fieldset>
 
-                        <div>
-                            <label className="block text-sm font-medium text-slate-600 mb-1.5">
-                                Class Photos ({uploadedImages.length}/{isPremium ? 6 : 1})
-                                <span className="ml-2 text-xs text-slate-400">Max 3MB</span>
-                            </label>
-                            
+                        <fieldset className="space-y-2">
+                            <legend className="text-sm font-medium text-foreground">Additional Options</legend>
+                            <div className="grid gap-2 md:grid-cols-2">
+                                <ToggleRow
+                                    id="kids-friendly-toggle"
+                                    emoji="👶"
+                                    label="Kids Friendly"
+                                    checked={formData.kids_friendly || false}
+                                    onCheckedChange={(checked) => setFormData(prev => ({ ...prev, kids_friendly: checked }))}
+                                />
+                                <ToggleRow
+                                    id="disability-friendly-toggle"
+                                    emoji="♿"
+                                    label="Disability Friendly"
+                                    checked={formData.disability_friendly || false}
+                                    onCheckedChange={(checked) => setFormData(prev => ({ ...prev, disability_friendly: checked }))}
+                                />
+                            </div>
+                        </fieldset>
+
+                        <div className="space-y-2">
+                            <p className="text-sm font-medium text-foreground">
+                                Class Photos ({uploadedImages.length}/{maxPhotos})
+                                <span className="ml-2 text-xs font-normal text-muted-foreground">Max 3MB</span>
+                            </p>
+
                             {uploadedImages.length > 0 && (
-                                <div className="grid grid-cols-3 gap-1.5 mb-2">
+                                <div className="grid grid-cols-3 gap-2 sm:grid-cols-4">
                                     {uploadedImages.map((url, index) => (
-                                        <div key={index} className="relative group">
-                                            <img 
-                                                src={url} 
+                                        <div key={index} className="group relative">
+                                            <img
+                                                src={url}
                                                 alt={`Class photo ${index + 1}`}
-                                                className="w-full h-16 object-cover rounded-lg"
+                                                className="aspect-square w-full rounded-lg object-cover"
                                             />
-                                            <button
+                                            {/* Always visible on touch; hover-reveal on md+ */}
+                                            <Button
                                                 type="button"
+                                                variant="destructive"
+                                                size="icon"
                                                 onClick={() => handleRemoveImage(index)}
-                                                className="absolute top-0.5 right-0.5 p-0.5 bg-red-500 text-white rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                                                aria-label={`Remove photo ${index + 1}`}
+                                                className="absolute right-1 top-1 h-7 w-7 rounded-full transition-opacity md:opacity-0 md:group-hover:opacity-100 md:focus-visible:opacity-100 [&_svg]:size-3.5"
                                             >
-                                                <Trash2 className="w-2.5 h-2.5" />
-                                            </button>
+                                                <Trash2 />
+                                            </Button>
                                         </div>
                                     ))}
                                 </div>
                             )}
-                            
-                            {uploadedImages.length < (isPremium ? 6 : 1) && (
-                                <label className="flex flex-col items-center justify-center w-full h-20 border-2 border-dashed border-slate-300 rounded-lg cursor-pointer bg-slate-50 hover:bg-slate-100 transition-colors">
-                                    <div className="flex flex-col items-center justify-center">
-                                        <Upload className="w-5 h-5 text-slate-400 mb-0.5" />
-                                        <p className="text-xs text-slate-500">
-                                            {uploading ? 'Uploading...' : 'Click to upload'}
-                                        </p>
-                                    </div>
+
+                            {uploadedImages.length < maxPhotos && (
+                                <label className="flex h-24 w-full cursor-pointer flex-col items-center justify-center gap-1 rounded-lg border-2 border-dashed border-border bg-muted/50 transition-colors hover:bg-muted focus-within:ring-2 focus-within:ring-ring">
+                                    <Upload className="h-5 w-5 text-muted-foreground" />
+                                    <span className="text-xs text-muted-foreground">
+                                        {uploading ? 'Uploading...' : 'Click to upload'}
+                                    </span>
                                     <input
                                         type="file"
-                                        className="hidden"
+                                        className="sr-only"
                                         accept="image/*"
                                         multiple={isPremium}
                                         onChange={handleImageUpload}
@@ -461,28 +451,78 @@ const AddEditClassModal: React.FC<AddEditClassModalProps> = ({ cls, onSave, onCa
                                     />
                                 </label>
                             )}
-                            
+
                             {!isPremium && (
-                                <p className="text-xs text-amber-600 mt-1.5">
-                                    💎 Upgrade to Premium for up to 6 photos
-                                </p>
+                                <p className="text-xs text-primary">💎 Upgrade to Premium for up to 6 photos</p>
                             )}
                         </div>
                     </div>
-                
-                    <div className="p-3 bg-gray-50 border-t border-gray-200 grid grid-cols-2 gap-2 flex-shrink-0">
-                        <button type="button" onClick={onCancel} className="w-full bg-white border border-gray-300 text-gray-700 font-medium py-2 px-3 rounded-md transition-all hover:bg-gray-100 text-sm">
+
+                    <div className="grid shrink-0 grid-cols-2 gap-2 border-t border-border bg-card px-4 py-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))] md:flex md:justify-end md:px-6 md:pb-3">
+                        <Button type="button" variant="outline" onClick={onCancel}>
                             Cancel
-                        </button>
-                        <button type="submit" className="w-full flex items-center justify-center bg-[#FF6B35] text-white font-medium py-2 px-3 rounded-md transition-all hover:bg-orange-600 text-sm shadow-sm">
-                           <Save className="w-4 h-4 mr-1.5" />
-                           Save
-                        </button>
+                        </Button>
+                        <Button type="submit">
+                            <Save />
+                            Save
+                        </Button>
                     </div>
                 </form>
             </div>
         </div>
     );
 };
+
+const LANGUAGE_OPTIONS = ['English', 'Vietnamese', 'Chinese', 'Korean', 'Japanese', 'French', 'Spanish'];
+const LEVEL_OPTIONS = ['Beginner', 'Intermediate', 'Advanced', 'Beginner to Intermediate', 'Intermediate to Advanced'];
+
+interface ChoiceChipProps {
+    selected: boolean;
+    onClick: () => void;
+    className?: string;
+    children: React.ReactNode;
+}
+
+function ChoiceChip({ selected, onClick, className, children }: ChoiceChipProps) {
+    return (
+        <button
+            type="button"
+            aria-pressed={selected}
+            onClick={onClick}
+            className={cn(
+                'min-h-9 rounded-full border px-3 py-1.5 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
+                selected
+                    ? 'border-primary bg-primary text-primary-foreground'
+                    : 'border-border bg-card text-muted-foreground hover:bg-muted',
+                className
+            )}
+        >
+            {children}
+        </button>
+    );
+}
+
+interface ToggleRowProps {
+    id: string;
+    emoji: string;
+    label: string;
+    checked: boolean;
+    onCheckedChange: (checked: boolean) => void;
+}
+
+function ToggleRow({ id, emoji, label, checked, onCheckedChange }: ToggleRowProps) {
+    return (
+        <label
+            htmlFor={id}
+            className="flex cursor-pointer items-center justify-between gap-3 rounded-lg border border-border p-3 hover:bg-muted/50"
+        >
+            <span className="flex items-center gap-2">
+                <span className="text-2xl" aria-hidden="true">{emoji}</span>
+                <span className="text-sm font-medium text-foreground">{label}</span>
+            </span>
+            <Switch id={id} checked={checked} onCheckedChange={onCheckedChange} />
+        </label>
+    );
+}
 
 export default AddEditClassModal;

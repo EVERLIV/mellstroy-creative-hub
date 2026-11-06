@@ -3,12 +3,24 @@ import { useSearchParams, useNavigate } from 'react-router-dom';
 import { supabase } from '../src/integrations/supabase/client';
 import { Trainer, Class, UserRole, ClassType } from '../types';
 import { CATEGORIES } from '../constants';
-import TrainerGrid from '../components/TrainerGrid';
 import ViewToggle from '../components/ViewToggle';
 import TrainerDetailPage from '../components/TrainerDetailPage';
 import CategoryFilters from '../components/CategoryFilters';
 import FilterModal from '../components/FilterModal';
-import { Search, SlidersHorizontal, Loader } from 'lucide-react';
+import {
+  DiscoveryCoachCard,
+  SpotlightClassCard,
+  SpotlightCoachCard,
+} from '../components/explore/ExploreDiscoveryCards';
+import type { ClassWithTrainer } from '../components/ClassCarousel';
+import { ChevronDown, Loader, Search, SlidersHorizontal } from 'lucide-react';
+import { AppScreen } from '@/src/components/layout/screen';
+import { Button } from '../src/components/ui/button';
+import { Input } from '../src/components/ui/input';
+import { APP_CONTENT } from '@/src/components/layout/shell';
+import { cn } from '../src/lib/utils';
+import TrainerListItem from '../components/TrainerListItem';
+import TrainerCardSkeleton from '../components/TrainerCardSkeleton';
 
 interface ExploreProps {
   onInitiateBooking?: (target: { trainer: Trainer; cls: Class }) => void;
@@ -174,8 +186,7 @@ const Explore: React.FC<ExploreProps> = ({
         supabase.from('classes').select('*').in('trainer_id', trainerIds),
         supabase.from('reviews').select(`
           *,
-          client:profiles!reviews_client_id_fkey(username)
-        `).in('trainer_id', trainerIds),
+          client:profiles!reviews_client_id_fkey(username)`).in('trainer_id', trainerIds),
       ]);
 
       if (profilesResult.error) throw profilesResult.error;
@@ -340,99 +351,279 @@ const Explore: React.FC<ExploreProps> = ({
     }, 300);
   };
 
+  const activeFilterCount =
+    activeFilters.specialty.length +
+    activeFilters.classType.length +
+    activeFilters.languages.length +
+    (activeFilters.district !== 'All' ? 1 : 0) +
+    (activeFilters.time !== 'any' ? 1 : 0) +
+    (activeFilters.level ? 1 : 0) +
+    (activeFilters.verified ? 1 : 0) +
+    (activeFilters.topRated ? 1 : 0) +
+    (activeFilters.premiumOnly ? 1 : 0);
+
+  const featuredClasses = React.useMemo(() => {
+    const entries: ClassWithTrainer[] = [];
+    for (const trainer of filteredTrainers) {
+      for (const cls of trainer.classes ?? []) {
+        entries.push({ trainer, cls });
+        if (entries.length >= 10) return entries;
+      }
+    }
+    return entries;
+  }, [filteredTrainers]);
+
+  const featuredTrainers = React.useMemo(
+    () => filteredTrainers.filter((t) => t.isPremium || t.rating >= 4.5).slice(0, 6),
+    [filteredTrainers]
+  );
+
+  const popularClasses = React.useMemo(
+    () => featuredClasses.slice(0, 6),
+    [featuredClasses]
+  );
+
   return (
-    <div className="bg-gray-50 h-full relative">
-      <div className="flex flex-col h-full">
-        {/* Header */}
-        <div className="sticky top-0 bg-white z-10 shadow-sm flex-shrink-0">
-          <div className="px-4 py-3">
-            <div className="flex items-center justify-between mb-2">
-              <h1 className="text-base font-bold text-gray-900">Explore</h1>
+    <AppScreen className="relative min-w-0 bg-[#f9fafb] dark:bg-background">
+      <div className={cn(APP_CONTENT, 'space-y-8 py-6')}>
+        {/* Discovery header */}
+        <section className="space-y-4">
+          <div className="flex flex-col justify-between gap-4 md:flex-row md:items-end">
+            <div>
+              <div className="mb-1 flex items-center gap-1.5 text-[11px] font-semibold tracking-wide text-[#fd651e]">
+                <span>DISCOVER</span>
+                <span>/</span>
+                <span className="text-muted-foreground">COACHES &amp; PROGRAMS</span>
+              </div>
+              <h1 className="text-[32px] font-bold leading-10 tracking-tight text-foreground">
+                Coaches
+              </h1>
+              <p className="mt-1 max-w-xl text-sm text-muted-foreground">
+                Discover top verified fitness, combat, tennis, and yoga coaches near you in Ho Chi
+                Minh City
+              </p>
+            </div>
+            <div className="flex items-center gap-3">
+              <ViewToggle viewMode={viewMode} setViewMode={setViewMode} />
               <button
-                onClick={() => setIsFilterModalOpen(true)}
-                className="p-2 rounded-lg bg-gray-100 hover:bg-gray-200 transition-colors active:scale-95"
-                aria-label="Open filters"
+                type="button"
+                className="inline-flex items-center gap-2 rounded-lg border border-border bg-card px-3.5 py-1.5 text-xs font-semibold text-foreground shadow-sm transition-colors hover:bg-muted"
               >
-                <SlidersHorizontal className="w-5 h-5 text-gray-800" />
+                <span className="font-normal text-muted-foreground">Sort:</span>
+                <span>Recommended</span>
+                <ChevronDown className="size-4 text-muted-foreground" />
               </button>
             </div>
-            
-            {/* Search Bar */}
-            <div className="relative mb-2">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-              <input
-                type="text"
-                placeholder="Search trainers..."
+          </div>
+
+          <div className="flex items-center gap-3">
+            <div className="relative flex-1">
+              <Search
+                className="pointer-events-none absolute left-3.5 top-1/2 size-5 -translate-y-1/2 text-muted-foreground"
+                aria-hidden
+              />
+              <Input
+                type="search"
+                placeholder="Search coaches by discipline, name, or credentials…"
+                aria-label="Search trainers"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-9 pr-3 py-2 bg-white border border-gray-200 rounded-lg text-xs text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 placeholder:text-gray-400 transition-all duration-200"
+                className="h-11 rounded-xl border-border bg-card pl-10 shadow-sm"
               />
             </div>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setIsFilterModalOpen(true)}
+              aria-label={
+                activeFilterCount
+                  ? `Open filters (${activeFilterCount} active)`
+                  : 'Open filters'
+              }
+              className="relative h-11 gap-2 rounded-xl border-border bg-card px-4 shadow-sm"
+            >
+              <SlidersHorizontal className="size-5 text-primary" />
+              <span className="hidden sm:inline">Filters</span>
+              {activeFilterCount > 0 ? (
+                <span className="absolute -right-1 -top-1 grid size-5 place-items-center rounded-full bg-primary text-[10px] font-semibold text-primary-foreground">
+                  {activeFilterCount}
+                </span>
+              ) : null}
+            </Button>
+          </div>
 
-            {/* Category Filters */}
-            <CategoryFilters
-              categories={allCategories}
-              selectedCategory={selectedCategory || 'all'}
-              onSelectCategory={(categoryId) => {
-                setSelectedCategory(categoryId);
-                if (categoryId === 'all' || !categoryId) {
-                  navigate('/explore');
-                } else {
-                  navigate(`/explore?category=${categoryId}`);
-                }
-              }}
-            />
-          </div>
-        </div>
-        
-        {/* Content */}
-        <div className="flex-1 overflow-y-auto">
-          <div className="px-4 py-3">
-            <div className="flex justify-between items-center mb-3">
-              <h2 className="text-xs font-medium text-gray-600">
-                {filteredTrainers.length} {filteredTrainers.length === 1 ? 'trainer' : 'trainers'} found
-              </h2>
-              <ViewToggle viewMode={viewMode} setViewMode={setViewMode} />
+          <CategoryFilters
+            categories={allCategories}
+            selectedCategory={selectedCategory || 'all'}
+            onSelectCategory={(categoryId) => {
+              setSelectedCategory(categoryId);
+              if (categoryId === 'all' || !categoryId) {
+                navigate('/explore');
+              } else {
+                navigate(`/explore?category=${categoryId}`);
+              }
+            }}
+          />
+        </section>
+
+        {/* Featured coaches */}
+        {!loading && featuredTrainers.length > 0 ? (
+          <section className="space-y-3" aria-label="Featured coaches">
+            <div className="flex items-end justify-between gap-3">
+              <div>
+                <span className="block text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                  Spotlight
+                </span>
+                <h2 className="text-lg font-bold tracking-tight text-foreground">
+                  Featured Coaches
+                </h2>
+              </div>
             </div>
-            <TrainerGrid
-              trainers={displayedTrainers}
-              viewMode={viewMode}
-              onSelectTrainer={handleSelectTrainer}
-              isLoading={loading}
-              favoriteTrainerIds={favoriteTrainerIds}
-              onToggleFavorite={onToggleFavorite}
-            />
-            
-            {/* Lazy Loading Trigger */}
-            {hasMore && (
-              <div ref={observerTarget} className="flex justify-center items-center py-6">
-                {loadingMore && (
-                  <div className="flex items-center gap-2 text-gray-600">
-                    <Loader className="w-5 h-5 animate-spin" />
-                    <span className="text-xs">Loading more trainers...</span>
-                  </div>
-                )}
+            <div className="grid grid-cols-2 gap-3.5 sm:grid-cols-3 lg:grid-cols-6">
+              {featuredTrainers.map((trainer) => (
+                <SpotlightCoachCard
+                  key={trainer.id}
+                  trainer={trainer}
+                  isFavorite={favoriteTrainerIds.includes(trainer.id)}
+                  onToggleFavorite={onToggleFavorite}
+                  onSelect={() => handleSelectTrainer(trainer)}
+                />
+              ))}
+            </div>
+          </section>
+        ) : null}
+
+        {/* Popular classes */}
+        {!loading && popularClasses.length > 0 ? (
+          <section className="space-y-3" aria-label="Popular classes">
+            <div className="flex items-end justify-between gap-3">
+              <div>
+                <span className="block text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                  Nearby
+                </span>
+                <h2 className="text-lg font-bold tracking-tight text-foreground">
+                  Popular Classes
+                </h2>
               </div>
-            )}
-            
-            {!hasMore && displayedTrainers.length > 0 && (
-              <div className="text-center py-6">
-                <p className="text-xs text-gray-500">No more trainers to load</p>
-              </div>
-            )}
+            </div>
+            <div className="grid grid-cols-2 gap-3.5 sm:grid-cols-3 lg:grid-cols-6">
+              {popularClasses.map(({ cls, trainer }) => (
+                <SpotlightClassCard
+                  key={`${trainer.id}:${cls.id}`}
+                  cls={cls}
+                  trainer={trainer}
+                  onSelect={() => navigate(`/class/${cls.id}`)}
+                />
+              ))}
+            </div>
+          </section>
+        ) : null}
+
+        {/* All coaches */}
+        <section className="space-y-4 pt-2" aria-label="All coaches">
+          <div className="flex flex-wrap items-end justify-between gap-3">
+            <div>
+              <h2 className="text-2xl font-bold tracking-tight text-foreground">All Coaches</h2>
+              <p className="text-xs text-muted-foreground">
+                {loading
+                  ? 'Loading…'
+                  : `${filteredTrainers.length} coach${filteredTrainers.length === 1 ? '' : 'es'} available in District 1 & surrounding areas`}
+              </p>
+            </div>
+            <span className="rounded-full bg-[#e9edff] px-3 py-1 text-[11px] font-bold text-primary">
+              Ho Chi Minh City
+            </span>
           </div>
-        </div>
+
+          {loading ? (
+            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4" aria-busy>
+              {Array.from({ length: 8 }, (_, i) => (
+                <TrainerCardSkeleton key={i} />
+              ))}
+            </div>
+          ) : displayedTrainers.length === 0 ? (
+            <div className="py-12 text-center">
+              <p className="mb-2 text-sm text-muted-foreground">No coaches found</p>
+              <p className="text-xs text-muted-foreground/80">Try adjusting your filters</p>
+            </div>
+          ) : viewMode === 'list' ? (
+            <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
+              {displayedTrainers.map((trainer) => (
+                <TrainerListItem
+                  key={trainer.id}
+                  trainer={trainer}
+                  onSelect={() => handleSelectTrainer(trainer)}
+                  isFavorite={favoriteTrainerIds.includes(trainer.id)}
+                  onToggleFavorite={onToggleFavorite ?? (() => undefined)}
+                />
+              ))}
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
+              {displayedTrainers.map((trainer) => (
+                <DiscoveryCoachCard
+                  key={trainer.id}
+                  trainer={trainer}
+                  isFavorite={favoriteTrainerIds.includes(trainer.id)}
+                  onToggleFavorite={onToggleFavorite}
+                  onSelect={() => handleSelectTrainer(trainer)}
+                  onBook={() => handleSelectTrainer(trainer)}
+                />
+              ))}
+            </div>
+          )}
+
+          {hasMore ? (
+            <div ref={observerTarget} className="flex items-center justify-center py-6">
+              {loadingMore ? (
+                <div role="status" className="flex items-center gap-2 text-muted-foreground">
+                  <Loader className="size-5 animate-spin" aria-hidden />
+                  <span className="text-sm">Loading more coaches…</span>
+                </div>
+              ) : null}
+            </div>
+          ) : null}
+
+          {!hasMore && displayedTrainers.length > 0 ? (
+            <div className="mt-4 flex flex-col items-center border-t border-border py-8 text-center">
+              <p className="mb-3 text-sm text-muted-foreground">
+                You&apos;ve seen all {displayedTrainers.length} coaches shown above
+              </p>
+              <div className="flex flex-wrap items-center justify-center gap-3">
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="rounded-lg shadow-sm"
+                  onClick={() => {
+                    handleResetFilters();
+                    setSelectedCategory(null);
+                    navigate('/explore');
+                  }}
+                >
+                  Explore All Sports
+                </Button>
+                <Button
+                  type="button"
+                  className="rounded-lg bg-primary shadow-sm"
+                  onClick={() => navigate('/venues')}
+                >
+                  Browse Venues
+                </Button>
+              </div>
+            </div>
+          ) : null}
+        </section>
       </div>
 
-      {/* Trainer Detail Overlay */}
-      {selectedTrainer && (
-        <div className={`absolute inset-0 z-20 bg-white transition-all duration-300 ${
-          isExitingDetail 
-            ? 'translate-x-full opacity-0' 
-            : 'translate-x-0 opacity-100'
-        }`}>
-          <TrainerDetailPage 
-            trainer={selectedTrainer} 
+      {selectedTrainer ? (
+        <div
+          className={cn(
+            'fixed inset-0 z-50 overflow-y-auto bg-background transition-all duration-300 md:absolute',
+            isExitingDetail ? 'translate-x-full opacity-0' : 'translate-x-0 opacity-100'
+          )}
+        >
+          <TrainerDetailPage
+            trainer={selectedTrainer}
             onBack={handleBackFromDetail}
             onInitiateBooking={onInitiateBooking}
             userRole={userRole}
@@ -442,9 +633,8 @@ const Explore: React.FC<ExploreProps> = ({
             onOpenReviewsModal={onOpenReviewsModal}
           />
         </div>
-      )}
+      ) : null}
 
-      {/* Filter Modal */}
       <FilterModal
         isOpen={isFilterModalOpen}
         onClose={() => setIsFilterModalOpen(false)}
@@ -452,7 +642,7 @@ const Explore: React.FC<ExploreProps> = ({
         onApplyFilters={handleApplyFilters}
         onResetFilters={handleResetFilters}
       />
-    </div>
+    </AppScreen>
   );
 };
 

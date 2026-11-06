@@ -1,11 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { 
-  ArrowLeft, 
-  Users, 
-  Calendar, 
-  BookOpen, 
-  Star, 
+import {
+  Users,
+  Calendar,
+  BookOpen,
+  Star,
   Upload,
   Shield,
   TrendingUp,
@@ -14,10 +13,20 @@ import {
   UserCheck,
   UserX,
   FileText,
-  Crown
+  Crown,
+  ChevronRight,
+  LayoutDashboard,
+  type LucideIcon,
 } from 'lucide-react';
 import { supabase } from '../src/integrations/supabase/client';
 import { useToast } from '../src/hooks/use-toast';
+import { AppScreen, ScreenHeader, ScreenBody, ScreenSection, ScreenSplit } from '@/src/components/layout/screen';
+import { PageLoader, EmptyState } from '@/src/components/layout/states';
+import { Button } from '@/src/components/ui/button';
+import { Avatar, AvatarFallback, AvatarImage } from '@/src/components/ui/avatar';
+import { StatusBadge } from '@/src/components/ui/status-badge';
+import SmoothTab from '@/src/components/kokonutui/smooth-tab';
+import { cn } from '@/src/lib/utils';
 
 interface Stats {
   totalUsers: number;
@@ -85,8 +94,7 @@ const AdminDashboardPage: React.FC = () => {
         .from('trainer_documents')
         .select(`
           *,
-          trainer:profiles!trainer_documents_trainer_id_fkey(id, username, is_premium)
-        `)
+          trainer:profiles!trainer_documents_trainer_id_fkey(id, username, is_premium)`)
         .eq('is_verified', false)
         .order('priority', { ascending: false })
         .order('created_at', { ascending: true });
@@ -164,12 +172,10 @@ const AdminDashboardPage: React.FC = () => {
 
   const fetchStats = async () => {
     try {
-      // Total users
       const { count: usersCount } = await supabase
         .from('profiles')
         .select('*', { count: 'exact', head: true });
 
-      // Trainers and Clients
       const { data: rolesData } = await supabase
         .from('user_roles')
         .select('role');
@@ -177,7 +183,6 @@ const AdminDashboardPage: React.FC = () => {
       const trainers = rolesData?.filter(r => r.role === 'trainer').length || 0;
       const clients = rolesData?.filter(r => r.role === 'client').length || 0;
 
-      // Events
       const { count: eventsCount } = await supabase
         .from('events')
         .select('*', { count: 'exact', head: true });
@@ -187,12 +192,10 @@ const AdminDashboardPage: React.FC = () => {
         .select('*', { count: 'exact', head: true })
         .eq('status', 'pending');
 
-      // Bookings
       const { count: bookingsCount } = await supabase
         .from('bookings')
         .select('*', { count: 'exact', head: true });
 
-      // Reviews
       const { count: reviewsCount } = await supabase
         .from('reviews')
         .select('*', { count: 'exact', head: true });
@@ -233,8 +236,7 @@ const AdminDashboardPage: React.FC = () => {
           date,
           time,
           location,
-          organizer:profiles!events_organizer_id_fkey(username, avatar_url)
-        `)
+          organizer:profiles!events_organizer_id_fkey(username, avatar_url)`)
         .eq('status', 'pending')
         .order('created_at', { ascending: false });
 
@@ -259,7 +261,6 @@ const AdminDashboardPage: React.FC = () => {
 
       if (error) throw error;
 
-      // Fetch roles for each user
       const usersWithRoles = await Promise.all(
         (profiles || []).map(async (profile) => {
           const { data: rolesData } = await supabase
@@ -331,411 +332,305 @@ const AdminDashboardPage: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin" />
-      </div>
+      <AppScreen>
+        <PageLoader title="Loading admin dashboard…" className="min-h-svh" />
+      </AppScreen>
     );
   }
 
-  return (
-    <div className="min-h-screen bg-background pb-24">
-      {/* Header */}
-      <div className="bg-gradient-to-br from-orange-500 to-pink-500 pt-6 pb-8 px-4">
-        <div className="max-w-6xl mx-auto">
-          <button
-            onClick={() => navigate('/profile')}
-            className="mb-4 p-2 rounded-full bg-white/20 hover:bg-white/30 transition-colors"
-          >
-            <ArrowLeft className="w-6 h-6 text-white" />
-          </button>
-          <div className="flex items-center gap-3 mb-2">
-            <Shield className="w-8 h-8 text-white" />
-            <h1 className="text-2xl font-bold text-white">Admin Dashboard</h1>
-          </div>
-          <p className="text-white/90 text-sm">Manage platform, users, and content</p>
-        </div>
-      </div>
+  const pendingDocumentsCount = pendingDocuments.length;
 
-      <div className="max-w-6xl mx-auto px-4 py-6">
-        {/* Tabs */}
-        <div className="flex gap-2 mb-6 bg-card rounded-lg p-1">
-          <button
-            onClick={() => setActiveTab('overview')}
-            className={`flex-1 py-2 px-4 rounded-md font-medium transition-colors ${
-              activeTab === 'overview'
-                ? 'bg-primary text-primary-foreground'
-                : 'text-muted-foreground hover:text-foreground'
-            }`}
-          >
-            Overview
-          </button>
-          <button
-            onClick={() => setActiveTab('events')}
-            className={`flex-1 py-2 px-4 rounded-md font-medium transition-colors ${
-              activeTab === 'events'
-                ? 'bg-primary text-primary-foreground'
-                : 'text-muted-foreground hover:text-foreground'
-            }`}
-          >
-            Events ({stats.pendingEvents})
-          </button>
-          <button
-            onClick={() => setActiveTab('users')}
-            className={`flex-1 py-2 px-4 rounded-md font-medium transition-colors ${
-              activeTab === 'users'
-                ? 'bg-primary text-primary-foreground'
-                : 'text-muted-foreground hover:text-foreground'
-            }`}
-          >
-            Users
-          </button>
-          <button
-            onClick={() => setActiveTab('documents')}
-            className={`flex-1 py-2 px-4 rounded-md font-medium transition-colors ${
-              activeTab === 'documents'
-                ? 'bg-primary text-primary-foreground'
-                : 'text-muted-foreground hover:text-foreground'
-            }`}
-          >
-            Documents ({pendingDocuments.length})
-          </button>
-        </div>
+  const metricGroups: ReadonlyArray<{
+    title: string;
+    items: ReadonlyArray<{ icon: LucideIcon; label: string; value: number | string }>;
+  }> = [
+    {
+      title: 'People',
+      items: [
+        { icon: Users, label: 'Total users', value: stats.totalUsers },
+        { icon: TrendingUp, label: 'Trainers', value: stats.totalTrainers },
+        { icon: Users, label: 'Clients', value: stats.totalClients },
+      ],
+    },
+    {
+      title: 'Activity',
+      items: [
+        { icon: BookOpen, label: 'Bookings', value: stats.totalBookings },
+        { icon: Calendar, label: 'Events', value: stats.totalEvents },
+        { icon: Star, label: 'Reviews', value: stats.totalReviews },
+        { icon: Star, label: 'Avg rating', value: stats.avgRating },
+      ],
+    },
+  ];
 
-        {/* Overview Tab */}
-        {activeTab === 'overview' && (
-          <div className="space-y-6">
-            {/* Stats Grid */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <div className="bg-card rounded-lg p-4 border border-border">
-                <div className="flex items-center gap-2 mb-2">
-                  <Users className="w-5 h-5 text-blue-500" />
-                  <span className="text-sm text-muted-foreground">Total Users</span>
-                </div>
-                <p className="text-2xl font-bold text-foreground">{stats.totalUsers}</p>
-              </div>
+  const quickActions: ReadonlyArray<{ icon: LucideIcon; title: string; text: string; onClick: () => void }> = [
+    { icon: Upload, title: 'Upload media files', text: 'Upload images to storage buckets', onClick: () => navigate('/media-upload') },
+    { icon: Calendar, title: 'Review events', text: `${stats.pendingEvents} pending approval`, onClick: () => setActiveTab('events') },
+    { icon: Users, title: 'Manage users', text: 'Verify trainers & manage roles', onClick: () => setActiveTab('users') },
+    { icon: TrendingUp, title: 'View all events', text: 'See platform events', onClick: () => navigate('/events') },
+  ];
 
-              <div className="bg-card rounded-lg p-4 border border-border">
-                <div className="flex items-center gap-2 mb-2">
-                  <TrendingUp className="w-5 h-5 text-green-500" />
-                  <span className="text-sm text-muted-foreground">Trainers</span>
-                </div>
-                <p className="text-2xl font-bold text-foreground">{stats.totalTrainers}</p>
-              </div>
+  const overviewContent = (
+    <div className="flex flex-col gap-6 pt-4 md:gap-8">
+      {/* What needs a decision right now */}
+      <section aria-label="Needs attention" className="grid gap-3 md:grid-cols-2">
+        <button
+          type="button"
+          onClick={() => setActiveTab('events')}
+          className="flex items-center gap-4 rounded-2xl border border-border bg-card p-4 text-left transition-colors hover:border-primary/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring md:p-5"
+        >
+          <span className="grid size-12 shrink-0 place-items-center rounded-2xl bg-primary/10 text-primary">
+            <Calendar className="size-6" aria-hidden="true" />
+          </span>
+          <span className="flex min-w-0 flex-1 flex-col">
+            <span className="text-3xl font-semibold tabular-nums text-foreground">{stats.pendingEvents}</span>
+            <span className="text-sm text-muted-foreground">Events awaiting approval</span>
+          </span>
+          <ChevronRight className="size-5 shrink-0 text-muted-foreground" aria-hidden="true" />
+        </button>
+        <button
+          type="button"
+          onClick={() => setActiveTab('documents')}
+          className="flex items-center gap-4 rounded-2xl border border-border bg-card p-4 text-left transition-colors hover:border-primary/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring md:p-5"
+        >
+          <span className="grid size-12 shrink-0 place-items-center rounded-2xl bg-primary/10 text-primary">
+            <FileText className="size-6" aria-hidden="true" />
+          </span>
+          <span className="flex min-w-0 flex-1 flex-col">
+            <span className="text-3xl font-semibold tabular-nums text-foreground">{pendingDocumentsCount}</span>
+            <span className="text-sm text-muted-foreground">Documents to verify</span>
+          </span>
+          <ChevronRight className="size-5 shrink-0 text-muted-foreground" aria-hidden="true" />
+        </button>
+      </section>
 
-              <div className="bg-card rounded-lg p-4 border border-border">
-                <div className="flex items-center gap-2 mb-2">
-                  <Calendar className="w-5 h-5 text-purple-500" />
-                  <span className="text-sm text-muted-foreground">Events</span>
-                </div>
-                <p className="text-2xl font-bold text-foreground">{stats.totalEvents}</p>
-              </div>
-
-              <div className="bg-card rounded-lg p-4 border border-border">
-                <div className="flex items-center gap-2 mb-2">
-                  <BookOpen className="w-5 h-5 text-orange-500" />
-                  <span className="text-sm text-muted-foreground">Bookings</span>
-                </div>
-                <p className="text-2xl font-bold text-foreground">{stats.totalBookings}</p>
-              </div>
-
-              <div className="bg-card rounded-lg p-4 border border-border">
-                <div className="flex items-center gap-2 mb-2">
-                  <Star className="w-5 h-5 text-yellow-500" />
-                  <span className="text-sm text-muted-foreground">Reviews</span>
-                </div>
-                <p className="text-2xl font-bold text-foreground">{stats.totalReviews}</p>
-              </div>
-
-              <div className="bg-card rounded-lg p-4 border border-border">
-                <div className="flex items-center gap-2 mb-2">
-                  <Star className="w-5 h-5 text-yellow-500" />
-                  <span className="text-sm text-muted-foreground">Avg Rating</span>
-                </div>
-                <p className="text-2xl font-bold text-foreground">{stats.avgRating}</p>
-              </div>
-
-              <div className="bg-card rounded-lg p-4 border border-border">
-                <div className="flex items-center gap-2 mb-2">
-                  <Users className="w-5 h-5 text-indigo-500" />
-                  <span className="text-sm text-muted-foreground">Clients</span>
-                </div>
-                <p className="text-2xl font-bold text-foreground">{stats.totalClients}</p>
-              </div>
-
-              <div className="bg-card rounded-lg p-4 border border-border">
-                <div className="flex items-center gap-2 mb-2">
-                  <Calendar className="w-5 h-5 text-red-500" />
-                  <span className="text-sm text-muted-foreground">Pending</span>
-                </div>
-                <p className="text-2xl font-bold text-foreground">{stats.pendingEvents}</p>
-              </div>
-            </div>
-
-            {/* Quick Actions */}
-            <div className="bg-card rounded-lg p-6 border border-border">
-              <h2 className="text-lg font-semibold text-foreground mb-4">Quick Actions</h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <button
-                  onClick={() => navigate('/media-upload')}
-                  className="flex items-center gap-3 p-4 bg-muted/50 hover:bg-muted rounded-lg transition-colors"
-                >
-                  <Upload className="w-6 h-6 text-primary" />
-                  <div className="text-left">
-                    <p className="font-semibold text-foreground">Upload Media Files</p>
-                    <p className="text-sm text-muted-foreground">Upload images to storage buckets</p>
-                  </div>
-                </button>
-
-                <button
-                  onClick={() => setActiveTab('events')}
-                  className="flex items-center gap-3 p-4 bg-muted/50 hover:bg-muted rounded-lg transition-colors"
-                >
-                  <Calendar className="w-6 h-6 text-primary" />
-                  <div className="text-left">
-                    <p className="font-semibold text-foreground">Review Events</p>
-                    <p className="text-sm text-muted-foreground">{stats.pendingEvents} pending approval</p>
-                  </div>
-                </button>
-
-                <button
-                  onClick={() => setActiveTab('users')}
-                  className="flex items-center gap-3 p-4 bg-muted/50 hover:bg-muted rounded-lg transition-colors"
-                >
-                  <Users className="w-6 h-6 text-primary" />
-                  <div className="text-left">
-                    <p className="font-semibold text-foreground">Manage Users</p>
-                    <p className="text-sm text-muted-foreground">Verify trainers & manage roles</p>
-                  </div>
-                </button>
-
-                <button
-                  onClick={() => navigate('/events')}
-                  className="flex items-center gap-3 p-4 bg-muted/50 hover:bg-muted rounded-lg transition-colors"
-                >
-                  <TrendingUp className="w-6 h-6 text-primary" />
-                  <div className="text-left">
-                    <p className="font-semibold text-foreground">View All Events</p>
-                    <p className="text-sm text-muted-foreground">See platform events</p>
-                  </div>
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Events Tab */}
-        {activeTab === 'events' && (
-          <div className="space-y-4">
-            <h2 className="text-xl font-semibold text-foreground mb-4">
-              Pending Events ({pendingEvents.length})
-            </h2>
-            {pendingEvents.length === 0 ? (
-              <div className="bg-card rounded-lg p-8 text-center border border-border">
-                <Calendar className="w-12 h-12 text-muted-foreground mx-auto mb-3" />
-                <p className="text-muted-foreground">No pending events to review</p>
-              </div>
-            ) : (
-              pendingEvents.map((event) => (
-                <div key={event.id} className="bg-card rounded-lg p-6 border border-border">
-                  <div className="flex items-start justify-between mb-4">
-                    <div className="flex-1">
-                      <h3 className="text-lg font-semibold text-foreground mb-1">{event.title}</h3>
-                      <p className="text-sm text-muted-foreground mb-2">{event.description}</p>
-                      <div className="flex flex-wrap gap-4 text-sm text-muted-foreground">
-                        <span>📅 {event.date}</span>
-                        <span>🕐 {event.time}</span>
-                        <span>📍 {event.location}</span>
-                      </div>
+      <ScreenSplit
+        main={
+          <>
+            {metricGroups.map((group) => (
+              <ScreenSection key={group.title} title={group.title}>
+                <dl className="grid grid-cols-2 gap-3 md:grid-cols-4">
+                  {group.items.map((stat) => (
+                    <div key={stat.label} className="flex flex-col gap-2 rounded-2xl border border-border bg-card p-4">
+                      <dt className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <stat.icon className="size-4 text-primary" aria-hidden="true" />
+                        {stat.label}
+                      </dt>
+                      <dd className="text-2xl font-semibold tabular-nums text-foreground">{stat.value}</dd>
                     </div>
-                  </div>
-                  <div className="flex items-center justify-between pt-4 border-t border-border">
-                    <div className="flex items-center gap-2">
-                      {event.organizer.avatar_url ? (
-                        <img
-                          src={event.organizer.avatar_url}
-                          alt={event.organizer.username}
-                          className="w-8 h-8 rounded-full object-cover"
-                        />
-                      ) : (
-                        <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center">
-                          <Users className="w-4 h-4 text-muted-foreground" />
-                        </div>
-                      )}
-                      <span className="text-sm font-medium text-foreground">
-                        {event.organizer.username}
-                      </span>
-                    </div>
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => handleEventAction(event.id, 'rejected')}
-                        className="flex items-center gap-1 px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg transition-colors"
-                      >
-                        <XCircle className="w-4 h-4" />
-                        Reject
-                      </button>
-                      <button
-                        onClick={() => handleEventAction(event.id, 'approved')}
-                        className="flex items-center gap-1 px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg transition-colors"
-                      >
-                        <CheckCircle className="w-4 h-4" />
-                        Approve
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
-        )}
-
-        {/* Documents Tab */}
-        {activeTab === 'documents' && (
-          <div className="space-y-4">
-            <h2 className="text-xl font-semibold text-foreground mb-4">
-              Pending Document Verification ({pendingDocuments.length})
-            </h2>
-            {pendingDocuments.length === 0 ? (
-              <div className="bg-card rounded-lg border border-border p-8 text-center">
-                <FileText className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-                <p className="text-muted-foreground">No pending documents to verify</p>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {pendingDocuments.map((doc) => {
-                  const trainer = doc.trainer as any;
-                  return (
-                    <div
-                      key={doc.id}
-                      className={`bg-card rounded-lg border p-4 ${
-                        trainer?.is_premium ? 'border-yellow-400 border-2' : 'border-border'
-                      }`}
-                    >
-                      <div className="flex items-start gap-4">
-                        <img
-                          src={doc.file_url}
-                          alt={doc.title}
-                          className="w-24 h-24 object-cover rounded-lg flex-shrink-0"
-                        />
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-start justify-between gap-2 mb-2">
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-2 mb-1">
-                                <h3 className="font-semibold text-foreground truncate">{doc.title}</h3>
-                                {trainer?.is_premium && (
-                                  <Crown className="w-4 h-4 text-yellow-500 flex-shrink-0" title="Premium User - Priority" />
-                                )}
-                              </div>
-                              <p className="text-sm text-muted-foreground capitalize mb-1">{doc.document_type}</p>
-                              <p className="text-sm text-muted-foreground">Trainer: {trainer?.username || 'Unknown'}</p>
-                              <p className="text-xs text-muted-foreground mt-1">
-                                Uploaded: {new Date(doc.created_at).toLocaleDateString()}
-                              </p>
-                            </div>
-                          </div>
-                          {doc.rejection_reason && (
-                            <div className="bg-red-50 border border-red-200 rounded-lg p-2 mb-2">
-                              <p className="text-xs text-red-700">
-                                <strong>Previous rejection:</strong> {doc.rejection_reason}
-                              </p>
-                            </div>
-                          )}
-                          <div className="flex gap-2 mt-3">
-                            <button
-                              onClick={() => handleDocumentVerification(doc.id, 'approve')}
-                              className="flex items-center gap-2 px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg text-sm font-medium transition-colors"
-                            >
-                              <CheckCircle className="w-4 h-4" />
-                              Approve
-                            </button>
-                            <button
-                              onClick={() => {
-                                const reason = prompt('Rejection reason (optional):');
-                                if (reason !== null) {
-                                  handleDocumentVerification(doc.id, 'reject', reason || undefined);
-                                }
-                              }}
-                              className="flex items-center gap-2 px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg text-sm font-medium transition-colors"
-                            >
-                              <XCircle className="w-4 h-4" />
-                              Reject
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Users Tab */}
-        {activeTab === 'users' && (
-          <div className="space-y-4">
-            <h2 className="text-xl font-semibold text-foreground mb-4">
-              User Management ({users.length})
-            </h2>
-            <div className="bg-card rounded-lg border border-border overflow-hidden">
-              {users.map((user) => (
-                <div
-                  key={user.id}
-                  className="flex items-center justify-between p-4 border-b border-border last:border-b-0 hover:bg-muted/50 transition-colors"
-                >
-                  <div className="flex items-center gap-3">
-                    {user.avatar_url ? (
-                      <img
-                        src={user.avatar_url}
-                        alt={user.username}
-                        className="w-10 h-10 rounded-full object-cover"
-                      />
-                    ) : (
-                      <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center">
-                        <Users className="w-5 h-5 text-muted-foreground" />
-                      </div>
-                    )}
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <p className="font-semibold text-foreground">{user.username}</p>
-                        {user.is_verified && (
-                          <CheckCircle className="w-4 h-4 text-blue-500" />
-                        )}
-                        {user.is_premium && (
-                          <Star className="w-4 h-4 text-yellow-500" />
-                        )}
-                      </div>
-                      <p className="text-xs text-muted-foreground">
-                        {user.roles.join(', ') || 'No roles'}
-                      </p>
-                    </div>
-                  </div>
+                  ))}
+                </dl>
+              </ScreenSection>
+            ))}
+          </>
+        }
+        aside={
+          <ScreenSection title="Quick actions">
+            <ul className="flex flex-col divide-y divide-border overflow-hidden rounded-2xl border border-border bg-card">
+              {quickActions.map((action) => (
+                <li key={action.title}>
                   <button
-                    onClick={() => toggleVerification(user.id, user.is_verified)}
-                    className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
-                      user.is_verified
-                        ? 'bg-red-500 hover:bg-red-600 text-white'
-                        : 'bg-green-500 hover:bg-green-600 text-white'
-                    }`}
+                    type="button"
+                    onClick={action.onClick}
+                    className="flex w-full items-center gap-3 p-4 text-left transition-colors hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring"
                   >
-                    {user.is_verified ? (
-                      <>
-                        <UserX className="w-4 h-4" />
-                        Unverify
-                      </>
-                    ) : (
-                      <>
-                        <UserCheck className="w-4 h-4" />
-                        Verify
-                      </>
-                    )}
+                    <action.icon className="size-5 shrink-0 text-primary" aria-hidden="true" />
+                    <span className="flex min-w-0 flex-1 flex-col">
+                      <span className="text-sm font-semibold text-foreground">{action.title}</span>
+                      <span className="truncate text-xs text-muted-foreground">{action.text}</span>
+                    </span>
+                    <ChevronRight className="size-4 shrink-0 text-muted-foreground" aria-hidden="true" />
                   </button>
-                </div>
+                </li>
               ))}
-            </div>
-          </div>
-        )}
-      </div>
+            </ul>
+          </ScreenSection>
+        }
+      />
     </div>
+  );
+
+  const eventsContent = (
+    <div className="flex flex-col gap-4 pt-4">
+      {pendingEvents.length === 0 ? (
+        <EmptyState icon={Calendar} title="No pending events" description="Nothing to review right now." />
+      ) : (
+        <ul className="grid gap-4 lg:grid-cols-2">
+          {pendingEvents.map((event) => (
+            <li key={event.id}>
+              <article className="flex h-full flex-col gap-4 rounded-2xl border border-border bg-card p-4 md:p-5">
+                <div className="flex flex-col gap-2">
+                  <h3 className="text-base font-semibold text-foreground md:text-lg">{event.title}</h3>
+                  <p className="line-clamp-3 text-sm text-muted-foreground">{event.description}</p>
+                  <p className="flex flex-wrap gap-x-3 gap-y-1 text-sm text-muted-foreground">
+                    <span>{event.date}</span>
+                    <span>{event.time}</span>
+                    <span>{event.location}</span>
+                  </p>
+                </div>
+                <div className="mt-auto flex flex-wrap items-center justify-between gap-3 border-t border-border pt-4">
+                  <div className="flex min-w-0 items-center gap-2">
+                    <Avatar className="size-8">
+                      <AvatarImage src={event.organizer.avatar_url || undefined} alt={event.organizer.username} />
+                      <AvatarFallback>{event.organizer.username.charAt(0).toUpperCase()}</AvatarFallback>
+                    </Avatar>
+                    <span className="truncate text-sm font-medium text-foreground">{event.organizer.username}</span>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button variant="outline" size="sm" onClick={() => handleEventAction(event.id, 'rejected')}>
+                      <XCircle /> Reject
+                    </Button>
+                    <Button size="sm" onClick={() => handleEventAction(event.id, 'approved')}>
+                      <CheckCircle /> Approve
+                    </Button>
+                  </div>
+                </div>
+              </article>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+
+  const documentsContent = (
+    <div className="flex flex-col gap-4 pt-4">
+      {pendingDocuments.length === 0 ? (
+        <EmptyState icon={FileText} title="No pending documents" description="All trainer documents are reviewed." />
+      ) : (
+        <ul className="grid gap-4 lg:grid-cols-2">
+          {pendingDocuments.map((doc) => {
+            const trainer = doc.trainer as any;
+            return (
+              <li key={doc.id}>
+                <article
+                  className={cn(
+                    'flex h-full gap-4 rounded-2xl border bg-card p-4',
+                    trainer?.is_premium ? 'border-primary/50' : 'border-border'
+                  )}
+                >
+                  <img src={doc.file_url} alt={doc.title} className="size-24 shrink-0 rounded-xl bg-muted object-cover md:size-28" />
+                  <div className="flex min-w-0 flex-1 flex-col gap-2">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <h3 className="truncate font-semibold text-foreground">{doc.title}</h3>
+                      {trainer?.is_premium && (
+                        <StatusBadge tone="primary">
+                          <Crown className="size-3" /> Priority
+                        </StatusBadge>
+                      )}
+                    </div>
+                    <p className="text-sm text-muted-foreground">
+                      <span className="capitalize">{doc.document_type}</span> · {trainer?.username || 'Unknown'}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      Uploaded {new Date(doc.created_at).toLocaleDateString()}
+                    </p>
+                    {doc.rejection_reason && (
+                      <p className="rounded-lg border border-destructive/30 bg-destructive/10 p-2 text-xs text-destructive">
+                        <strong>Previous rejection:</strong> {doc.rejection_reason}
+                      </p>
+                    )}
+                    <div className="mt-auto flex flex-wrap gap-2 pt-1">
+                      <Button size="sm" onClick={() => handleDocumentVerification(doc.id, 'approve')}>
+                        <CheckCircle /> Approve
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => {
+                          const reason = prompt('Rejection reason (optional):');
+                          if (reason !== null) {
+                            handleDocumentVerification(doc.id, 'reject', reason || undefined);
+                          }
+                        }}
+                      >
+                        <XCircle /> Reject
+                      </Button>
+                    </div>
+                  </div>
+                </article>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+    </div>
+  );
+
+  const usersContent = (
+    <div className="pt-4">
+      {users.length === 0 ? (
+        <EmptyState icon={Users} title="No users yet" description="New sign-ups appear here." />
+      ) : (
+        <ul className="flex flex-col divide-y divide-border overflow-hidden rounded-2xl border border-border bg-card">
+          {users.map((user) => (
+            <li key={user.id} className="flex items-center justify-between gap-3 p-4 transition-colors hover:bg-muted/50">
+              <div className="flex min-w-0 items-center gap-3">
+                <Avatar className="size-10">
+                  <AvatarImage src={user.avatar_url || undefined} alt={user.username} />
+                  <AvatarFallback>{user.username.charAt(0).toUpperCase()}</AvatarFallback>
+                </Avatar>
+                <div className="flex min-w-0 flex-col gap-0.5">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <p className="truncate font-semibold text-foreground">{user.username}</p>
+                    {user.is_verified && <StatusBadge status="verified" />}
+                    {user.is_premium && <StatusBadge tone="primary">Premium</StatusBadge>}
+                  </div>
+                  <p className="truncate text-xs capitalize text-muted-foreground">{user.roles.join(', ') || 'No roles'}</p>
+                </div>
+              </div>
+              <Button
+                size="sm"
+                variant={user.is_verified ? 'outline' : 'default'}
+                onClick={() => toggleVerification(user.id, user.is_verified)}
+                className="shrink-0"
+              >
+                {user.is_verified ? (
+                  <>
+                    <UserX /> Unverify
+                  </>
+                ) : (
+                  <>
+                    <UserCheck /> Verify
+                  </>
+                )}
+              </Button>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+
+  return (
+    <AppScreen>
+      <ScreenHeader
+        title={
+          <span className="flex items-center gap-2">
+            <Shield className="size-5 text-primary" aria-hidden="true" />
+            Admin dashboard
+          </span>
+        }
+        description="Manage platform, users, and content"
+        onBack={() => navigate('/profile')}
+        width="feed"
+        breadcrumbs={[{ label: 'Profile', href: '/profile' }, { label: 'Admin' }]}
+      />
+
+      <ScreenBody width="feed">
+        <SmoothTab
+          label="Admin sections"
+          value={activeTab}
+          onChange={(id) => setActiveTab(id as typeof activeTab)}
+          items={[
+            { id: 'overview', title: 'Overview', icon: LayoutDashboard, content: overviewContent },
+            { id: 'events', title: `Events (${stats.pendingEvents})`, icon: Calendar, content: eventsContent },
+            { id: 'users', title: 'Users', icon: Users, content: usersContent },
+            { id: 'documents', title: `Documents (${pendingDocumentsCount})`, icon: FileText, content: documentsContent },
+          ]}
+        />
+      </ScreenBody>
+    </AppScreen>
   );
 };
 

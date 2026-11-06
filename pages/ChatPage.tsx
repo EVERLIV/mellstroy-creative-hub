@@ -1,6 +1,19 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Trainer, Booking, UserRole } from '../types';
-import { ArrowLeft, Send, MoreVertical, AlertTriangle, Flag, Plus, Mic, CheckCircle, XCircle, Check, CheckCheck } from 'lucide-react';
+import { Send, MoreVertical, AlertTriangle, Flag, Plus, Mic, CheckCircle, XCircle, Check, CheckCheck } from 'lucide-react';
+import { AppScreen, ScreenHeader } from '../src/components/layout/screen';
+import { ABOVE_MOBILE_NAV, SCREEN_GUTTER, SCREEN_WIDTH } from '../src/components/layout/shell';
+import MessageBubble from '../components/chat/MessageBubble';
+import { Avatar, AvatarFallback, AvatarImage } from '../src/components/ui/avatar';
+import { Button } from '../src/components/ui/button';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '../src/components/ui/dropdown-menu';
+import { Textarea } from '../src/components/ui/textarea';
+import { cn } from '../src/lib/utils';
 
 interface BookingConfirmationBarProps {
     onConfirm: () => void;
@@ -8,19 +21,18 @@ interface BookingConfirmationBarProps {
 }
 
 const BookingConfirmationBar: React.FC<BookingConfirmationBarProps> = ({ onConfirm, onCancel }) => (
-    <div className="bg-blue-50 border border-blue-200 p-3 animate-fade-in rounded-lg">
-        <p className="text-sm font-semibold text-blue-800 text-center mb-2">This chat is regarding a booked class.</p>
+    <div className="animate-fade-in rounded-xl border border-primary/30 bg-primary/10 p-3">
+        <p className="mb-2 text-center text-sm font-semibold text-primary">This chat is regarding a booked class.</p>
         <div className="grid grid-cols-2 gap-2">
-            <button onClick={onConfirm} className="flex items-center justify-center w-full bg-green-500 text-white font-bold py-2 rounded-lg hover:bg-green-600 transition-colors text-sm">
-                <CheckCircle className="w-4 h-4 mr-1.5" /> Confirm Attendance
-            </button>
-            <button onClick={onCancel} className="flex items-center justify-center w-full bg-red-500 text-white font-bold py-2 rounded-lg hover:bg-red-600 transition-colors text-sm">
-                <XCircle className="w-4 h-4 mr-1.5" /> Cancel Booking
-            </button>
+            <Button onClick={onConfirm} className="w-full font-semibold">
+                <CheckCircle /> Confirm attendance
+            </Button>
+            <Button onClick={onCancel} variant="destructive" className="w-full font-semibold">
+                <XCircle /> Cancel booking
+            </Button>
         </div>
     </div>
 );
-
 
 interface ChatPageProps {
     personToChatWith: Trainer;
@@ -41,9 +53,7 @@ interface ChatPageProps {
 
 const ChatPage: React.FC<ChatPageProps> = ({ personToChatWith, context, onBack, onSendMessage, onOpenReportModal, userRole, currentUser, onUpdateBookingStatus, bookingStatus }) => {
     const [message, setMessage] = useState('');
-    const [isMenuOpen, setIsMenuOpen] = useState(false);
     const messagesEndRef = useRef<HTMLDivElement>(null);
-    const menuRef = useRef<HTMLDivElement>(null);
     const textareaRef = useRef<HTMLTextAreaElement>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -52,16 +62,6 @@ const ChatPage: React.FC<ChatPageProps> = ({ personToChatWith, context, onBack, 
     }
 
     useEffect(scrollToBottom, [personToChatWith.chatHistory]);
-    
-    useEffect(() => {
-        const handleClickOutside = (event: MouseEvent) => {
-            if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
-                setIsMenuOpen(false);
-            }
-        };
-        document.addEventListener("mousedown", handleClickOutside);
-        return () => document.removeEventListener("mousedown", handleClickOutside);
-    }, []);
 
     const handleInput = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
         setMessage(e.target.value);
@@ -103,106 +103,143 @@ const ChatPage: React.FC<ChatPageProps> = ({ personToChatWith, context, onBack, 
     };
 
     return (
-        <div className="flex flex-col h-screen bg-slate-100 relative">
-            <button onClick={onBack} className="absolute top-4 left-4 z-20 bg-white shadow-md p-2 rounded-full text-gray-800 hover:bg-gray-100 transition-colors">
-                <ArrowLeft className="w-6 h-6" />
-            </button>
-             <div className="absolute top-4 right-4 z-20" ref={menuRef}>
-                <button onClick={() => setIsMenuOpen(prev => !prev)} className="p-2 rounded-full bg-white shadow-md text-gray-700 hover:bg-gray-100 transition-colors">
-                    <MoreVertical className="w-6 h-6" />
-                </button>
-                {isMenuOpen && (
-                    <div className="absolute right-0 top-full mt-2 w-48 bg-white rounded-lg shadow-xl z-20 border border-slate-200 animate-fade-in-fast">
-                        <button 
-                            onClick={() => { onOpenReportModal(personToChatWith); setIsMenuOpen(false); }} 
-                            className="w-full text-left flex items-center px-4 py-2 text-sm text-slate-700 hover:bg-slate-100 rounded-lg">
-                            <Flag className="w-4 h-4 mr-3" /> Report Chat
-                        </button>
-                    </div>
-                )}
-            </div>
+        <AppScreen className="flex flex-col">
+            <ScreenHeader
+                width="form"
+                onBack={onBack}
+                title={
+                    <span className="flex items-center gap-3">
+                        <Avatar className="size-9 md:size-10">
+                            <AvatarImage src={personToChatWith.imageUrl} alt={personToChatWith.name} className="object-cover" />
+                            <AvatarFallback>{personToChatWith.name.charAt(0).toUpperCase()}</AvatarFallback>
+                        </Avatar>
+                        <span className="min-w-0">
+                            <span className="block truncate text-base md:text-lg">{personToChatWith.name}</span>
+                            <span
+                                className="block truncate text-xs font-normal text-muted-foreground"
+                                title={context ? `Regarding: ${context.className}${context.bookingDate ? ` on ${context.bookingDate}` : ''}` : undefined}
+                            >
+                                {context ? `Re: ${context.className}` : personToChatWith.specialty.join(', ')}
+                            </span>
+                        </span>
+                    </span>
+                }
+                actions={
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon" aria-label="Conversation options">
+                                <MoreVertical />
+                            </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-48">
+                            <DropdownMenuItem
+                                className="text-destructive focus:text-destructive"
+                                onClick={() => onOpenReportModal(personToChatWith)}
+                            >
+                                <Flag /> Report chat
+                            </DropdownMenuItem>
+                        </DropdownMenuContent>
+                    </DropdownMenu>
+                }
+            />
 
-            <div className="flex-1 overflow-y-auto pt-20">
-                 <div className="flex flex-col items-center px-4 pb-4">
-                     <img src={personToChatWith.imageUrl} alt={personToChatWith.name} className="w-16 h-16 rounded-full object-cover" />
-                    <h2 className="font-bold text-xl text-gray-800 mt-2">{personToChatWith.name}</h2>
-                    {context ? (
-                        <p className="text-xs text-gray-500" title={`Regarding: ${context.className}${context.bookingDate ? ` on ${context.bookingDate}` : ''}`}>
-                            Re: {context.className}
-                        </p>
-                    ) : (
-                        <p className="text-xs text-gray-500">{personToChatWith.specialty.join(', ')}</p>
+            {/* Messages: bottom padding clears the fixed composer (+ MorphicNavbar on mobile) */}
+            <div className="flex-1 bg-muted/30">
+                <div
+                    className={cn(
+                        'mx-auto flex w-full flex-col gap-4 py-4 pb-[calc(10rem_+_env(safe-area-inset-bottom))] md:pb-28',
+                        SCREEN_WIDTH.form,
+                        SCREEN_GUTTER
                     )}
-                </div>
-                
-                <div className="px-4 space-y-2 mb-4">
+                >
                     {userRole === 'trainer' && bookingStatus === 'booked' && (
                         <BookingConfirmationBar onConfirm={handleConfirmAttendance} onCancel={handleCancelBookingByTrainer} />
                     )}
-                    
+
                     {personToChatWith.aiWarning && (
-                        <div className="bg-yellow-100 border border-yellow-300 p-3 flex items-start space-x-3 animate-fade-in rounded-lg">
-                            <AlertTriangle className="w-6 h-6 text-yellow-600 flex-shrink-0 mt-0.5" />
-                            <div>
-                                <h4 className="font-bold text-yellow-800">AI Warning</h4>
-                                <p className="text-sm text-yellow-700">{personToChatWith.aiWarning}</p>
+                        <div role="alert" className="flex animate-fade-in items-start gap-3 rounded-xl border border-destructive/40 bg-destructive/10 p-3">
+                            <AlertTriangle className="mt-0.5 size-5 shrink-0 text-destructive" aria-hidden="true" />
+                            <div className="flex flex-col gap-0.5">
+                                <h4 className="font-semibold text-foreground">AI Warning</h4>
+                                <p className="text-sm text-muted-foreground">{personToChatWith.aiWarning}</p>
                             </div>
                         </div>
                     )}
-                </div>
 
-                <div className="p-4 space-y-4">
-                    {personToChatWith.chatHistory.map(msg => (
-                        <div key={msg.id} className={`flex items-end ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
-                            {msg.sender === 'trainer' && <img src={personToChatWith.imageUrl} className="w-6 h-6 rounded-full mr-2" />}
-                            <div className={`max-w-xs md:max-w-md px-4 py-2 rounded-2xl shadow-sm ${
-                                msg.sender === 'user' 
-                                ? 'bg-[#FF6B35] text-white rounded-br-none' 
-                                : 'bg-white text-gray-800 rounded-bl-none'
-                            }`}>
-                                <p className="text-sm" style={{ whiteSpace: 'pre-wrap', wordWrap: 'break-word' }}>{msg.text}</p>
-                                <div className="flex items-center justify-end mt-1">
-                                    <p className={`text-xs ${msg.sender === 'user' ? 'text-orange-100' : 'text-gray-400'}`}>{msg.timestamp}</p>
-                                    {msg.sender === 'user' && (
-                                        msg.status === 'read'
-                                        ? <CheckCheck size={16} className="ml-1.5 text-blue-300" />
-                                        : <Check size={16} className="ml-1.5 text-orange-100/80" />
+                    <div className="flex flex-col gap-3">
+                        {personToChatWith.chatHistory.map((msg) => {
+                            const isUser = msg.sender === 'user';
+                            return (
+                                <div key={msg.id} className={cn('flex items-end gap-2', isUser ? 'justify-end' : 'justify-start')}>
+                                    {!isUser && (
+                                        <Avatar className="size-6 shrink-0">
+                                            <AvatarImage src={personToChatWith.imageUrl} alt="" className="object-cover" />
+                                            <AvatarFallback className="text-[10px]">{personToChatWith.name.charAt(0).toUpperCase()}</AvatarFallback>
+                                        </Avatar>
                                     )}
+                                    <MessageBubble
+                                        className="min-w-0 flex-1"
+                                        isOwn={isUser}
+                                        timestamp={msg.timestamp}
+                                        body={
+                                            <span className="whitespace-pre-wrap break-words">
+                                                {msg.text}
+                                                {isUser && (
+                                                    <span className="ml-2 inline-flex translate-y-0.5 align-middle">
+                                                        {msg.status === 'read' ? (
+                                                            <CheckCheck size={16} aria-label="Read" />
+                                                        ) : (
+                                                            <Check size={16} className="opacity-70" aria-label="Sent" />
+                                                        )}
+                                                    </span>
+                                                )}
+                                            </span>
+                                        }
+                                    />
                                 </div>
-                            </div>
-                        </div>
-                    ))}
-                     <div ref={messagesEndRef} />
+                            );
+                        })}
+                        <div ref={messagesEndRef} />
+                    </div>
                 </div>
             </div>
 
-            <div className="px-3 pt-3 bg-white border-t border-slate-200 pb-safe-nav">
-                <input type="file" ref={fileInputRef} onChange={handleFileChange} className="hidden" accept="image/*" />
-                <div className="flex items-end space-x-3 bg-slate-100 rounded-2xl p-2">
-                    <button onClick={handleAddPhotoClick} className="flex-shrink-0 w-10 h-10 flex items-center justify-center rounded-full text-slate-500 hover:bg-slate-200 transition-colors" aria-label="Attach file">
-                        <Plus className="w-5 h-5" />
-                    </button>
-                    <textarea
-                        ref={textareaRef}
-                        value={message}
-                        onChange={handleInput}
-                        onKeyPress={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); } }}
-                        placeholder="Type a message..."
-                        rows={1}
-                        className="flex-1 w-full bg-transparent border-none focus:outline-none focus:ring-0 resize-none max-h-32 text-sm py-2 text-slate-800 placeholder:text-slate-500"
-                    />
-                    {message.trim() ? (
-                        <button onClick={handleSend} className="w-10 h-10 flex-shrink-0 flex items-center justify-center rounded-full bg-[#FF6B35] text-white hover:bg-orange-600 transition-colors" aria-label="Send message">
-                            <Send className="w-5 h-5" />
-                        </button>
-                    ) : (
-                        <button className="w-10 h-10 flex-shrink-0 flex items-center justify-center rounded-full text-slate-500 hover:bg-slate-200 transition-colors" aria-label="Use voice input">
-                            <Mic className="w-5 h-5" />
-                        </button>
-                    )}
+            {/* Composer: above MorphicNavbar on mobile, aligned with the message column */}
+            <div className={cn('fixed inset-x-0 z-30 border-t border-border bg-background/95 backdrop-blur', ABOVE_MOBILE_NAV)}>
+                <div className={cn('mx-auto w-full py-3', SCREEN_WIDTH.form, SCREEN_GUTTER)}>
+                    <input type="file" ref={fileInputRef} onChange={handleFileChange} className="hidden" accept="image/*" />
+                    <div className="flex items-end gap-2 rounded-2xl border border-input bg-card p-2 shadow-sm transition-shadow focus-within:ring-1 focus-within:ring-ring">
+                        <Button variant="ghost" size="icon" onClick={handleAddPhotoClick} className="shrink-0 rounded-full" aria-label="Attach file">
+                            <Plus />
+                        </Button>
+                        <Textarea
+                            ref={textareaRef}
+                            value={message}
+                            onChange={handleInput}
+                            onKeyPress={(e) => {
+                                if (e.key === 'Enter' && !e.shiftKey) {
+                                    e.preventDefault();
+                                    handleSend();
+                                }
+                            }}
+                            placeholder="Type a message..."
+                            aria-label="Message"
+                            rows={1}
+                            className="max-h-32 min-h-10 flex-1 resize-none border-0 bg-transparent px-2 py-2 shadow-none focus-visible:ring-0"
+                        />
+                        {message.trim() ? (
+                            <Button size="icon" onClick={handleSend} className="shrink-0 rounded-full" aria-label="Send message">
+                                <Send />
+                            </Button>
+                        ) : (
+                            <Button variant="ghost" size="icon" className="shrink-0 rounded-full" aria-label="Use voice input">
+                                <Mic />
+                            </Button>
+                        )}
+                    </div>
                 </div>
             </div>
-        </div>
+        </AppScreen>
     );
 };
 
