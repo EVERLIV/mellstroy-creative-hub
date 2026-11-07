@@ -32,9 +32,10 @@ export const NAV_ITEMS: readonly NavItem[] = [
 
 /** Secondary discover links — desktop sidebar only. */
 export const DISCOVER_ITEMS: readonly NavItem[] = [
+  { name: 'Classes', path: '/classes', icon: Dumbbell },
   { name: 'Events', path: '/events', icon: CalendarDays },
   { name: 'Venues & Courts', path: '/venues', icon: MapPin },
-  { name: 'Search', path: '/search', icon: Dumbbell },
+  { name: 'Search', path: '/search', icon: Search },
   { name: 'Favorites', path: '/favorites', icon: Heart },
   { name: 'Meal planner', path: '/meal-planner', icon: UtensilsCrossed },
   { name: 'AI Coach', path: '/ai-coach', icon: Sparkles },

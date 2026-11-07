@@ -1,45 +1,46 @@
 import React from 'react';
-import { LayoutGrid, List } from 'lucide-react';
-import { cn } from '@/src/lib/utils';
+import { LayoutGrid, List, Map as MapIcon } from 'lucide-react';
+import { ToggleGroup, ToggleGroupItem } from '@/src/components/ui/toggle-group';
+
+type BaseMode = 'grid' | 'list';
+type ExtendedMode = BaseMode | 'map';
 
 interface ViewToggleProps {
-  viewMode: 'grid' | 'list';
-  setViewMode: (mode: 'grid' | 'list') => void;
+  viewMode: ExtendedMode;
+  setViewMode: (mode: any) => void;
+  /** Include map option (Classes page). */
+  withMap?: boolean;
 }
 
-const OPTIONS = [
-  { mode: 'grid', label: 'Grid view', icon: LayoutGrid },
-  { mode: 'list', label: 'List view', icon: List },
-] as const;
-
-const ViewToggle: React.FC<ViewToggleProps> = React.memo(({ viewMode, setViewMode }) => (
-  <div
-    role="group"
-    aria-label="View mode"
-    className="inline-flex rounded-lg border border-border bg-card p-0.5 shadow-sm"
-  >
-    {OPTIONS.map(({ mode, label, icon: Icon }) => {
-      const isActive = viewMode === mode;
-      return (
-        <button
-          key={mode}
-          type="button"
-          onClick={() => setViewMode(mode)}
-          aria-label={label}
-          aria-pressed={isActive}
-          className={cn(
-            'grid size-8 place-items-center rounded-md transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring',
-            isActive
-              ? 'bg-[#e9edff] text-primary'
-              : 'text-muted-foreground hover:text-foreground'
-          )}
-        >
-          <Icon className="size-4" />
-        </button>
-      );
-    })}
-  </div>
-));
+const ViewToggle: React.FC<ViewToggleProps> = React.memo(
+  ({ viewMode, setViewMode, withMap = false }) => (
+    <ToggleGroup
+      type="single"
+      variant="outline"
+      size="sm"
+      value={viewMode}
+      onValueChange={(value) => {
+        if (!value) return;
+        if (value === 'grid' || value === 'list' || (withMap && value === 'map')) {
+          setViewMode(value);
+        }
+      }}
+      aria-label="View mode"
+    >
+      <ToggleGroupItem value="grid" aria-label="Card view" className="px-2.5">
+        <LayoutGrid />
+      </ToggleGroupItem>
+      <ToggleGroupItem value="list" aria-label="List view" className="px-2.5">
+        <List />
+      </ToggleGroupItem>
+      {withMap ? (
+        <ToggleGroupItem value="map" aria-label="Map view" className="px-2.5">
+          <MapIcon />
+        </ToggleGroupItem>
+      ) : null}
+    </ToggleGroup>
+  )
+);
 
 ViewToggle.displayName = 'ViewToggle';
 

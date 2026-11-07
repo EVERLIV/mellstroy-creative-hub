@@ -21,6 +21,7 @@ import WelcomePage from './pages/WelcomePage';
 import DashboardPage from './pages/DashboardPage';
 import HomePage from './pages/HomePage';
 import Explore from './pages/Explore';
+import ClassesPage from './pages/ClassesPage';
 import ExploreRequestsPage from './pages/ExploreRequestsPage';
 import SearchPage from './pages/SearchPage';
 import FavoritesPage from './pages/FavoritesPage';
@@ -293,6 +294,14 @@ const AppRoutes = () => {
                   onOpenReviewsModal={handleOpenReviewsModal}
                 />
               )}
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/classes"
+          element={
+            <ProtectedRoute>
+              <ClassesPage />
             </ProtectedRoute>
           }
         />

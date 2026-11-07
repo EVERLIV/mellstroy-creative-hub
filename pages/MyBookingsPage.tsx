@@ -1,6 +1,21 @@
 import React, { useState, useEffect } from 'react';
-import { Trainer, Class, Booking, UserRole } from '../types';
-import { X, Calendar, MapPin, QrCode, CheckCircle, Clock, MessageCircle, Star, FileText, Edit, Eye, Plus } from 'lucide-react';
+import { UserRole } from '../types';
+import {
+  ArrowLeft,
+  Calendar,
+  CheckCircle,
+  Clock,
+  Edit,
+  Eye,
+  FileText,
+  MapPin,
+  MessageCircle,
+  Plus,
+  QrCode,
+  Sparkles,
+  Star,
+  X,
+} from 'lucide-react';
 import { supabase } from '../src/integrations/supabase/client';
 import { useAuth } from '../src/hooks/useAuth';
 import { useEffectiveRole } from '../src/hooks/useViewMode';
@@ -11,20 +26,50 @@ import VerifyAttendanceModal from '../components/VerifyAttendanceModal';
 import BookingCardSkeleton from '../components/BookingCardSkeleton';
 import { usePullToRefresh } from '../src/hooks/usePullToRefresh';
 import PullToRefreshIndicator from '../components/PullToRefreshIndicator';
-import EmptyBookingsState from '../components/EmptyBookingsState';
 import RequestCard from '../components/RequestCard';
 import { TrainingRequest } from '../types';
 import { AppScreen } from '@/src/components/layout/screen';
-import { DetailContextStrip } from '@/src/components/layout/detail-context-strip';
-import { StitchCanvas, StitchPageHeader } from '@/src/components/layout/stitch-page';
+import { APP_CONTENT } from '@/src/components/layout/shell';
 import { cn } from '@/src/lib/utils';
-import { PageLoader, EmptyState } from '../src/components/layout/states';
+import { PageLoader } from '../src/components/layout/states';
+import { Avatar, AvatarFallback, AvatarImage } from '../src/components/ui/avatar';
+import { Badge } from '../src/components/ui/badge';
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from '../src/components/ui/breadcrumb';
 import { Button } from '../src/components/ui/button';
-import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription } from '../src/components/ui/card';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from '../src/components/ui/card';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '../src/components/ui/dialog';
+import {
+  Empty,
+  EmptyContent,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyMedia,
+  EmptyTitle,
+} from '../src/components/ui/empty';
 import { Skeleton } from '../src/components/ui/skeleton';
 import { StatusBadge } from '../src/components/ui/status-badge';
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '../src/components/ui/dialog';
-import SmoothTab from '../src/components/kokonutui/smooth-tab';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../src/components/ui/tabs';
 import HoldButton from '../src/components/kokonutui/hold-button';
 import { formatVND } from '../src/lib/format';
 
@@ -157,158 +202,219 @@ const BookedClassCard: React.FC<BookedClassCardProps> = ({
     };
 
     const shortBookingId = (booking.id.slice(0, 2) + booking.id.slice(9, 11) + booking.id.slice(14, 15)).toUpperCase();
+    const initials = (displayPerson?.name || 'RH')
+      .split(' ')
+      .map((p) => p[0])
+      .join('')
+      .slice(0, 2)
+      .toUpperCase();
 
     return (
         <>
-            <Card className="flex flex-col overflow-hidden rounded-xl border border-border bg-card shadow-sm transition-colors hover:border-primary/40">
-                <CardHeader className="flex-row items-start justify-between gap-3 space-y-0 p-4 pb-3">
-                    <div className="flex min-w-0 flex-col gap-1">
-                        <CardTitle className="truncate text-sm md:text-base">{cls.name}</CardTitle>
-                        <CardDescription>
+            <Card className="flex h-full flex-col overflow-hidden">
+                <CardHeader className="flex-row items-start gap-3 space-y-0 p-4 pb-3">
+                    <Avatar className="size-11 border border-border">
+                        <AvatarImage src={displayPerson?.avatarUrl || DEFAULT_AVATAR} alt="" />
+                        <AvatarFallback>{initials}</AvatarFallback>
+                    </Avatar>
+                    <div className="min-w-0 flex-1">
+                        <div className="flex items-start justify-between gap-2">
+                            <CardTitle className="truncate text-base leading-tight">{cls.name}</CardTitle>
+                            {booking.status === 'attended' ? (
+                                <StatusBadge status="attended" className="shrink-0">
+                                    <CheckCircle />
+                                    Verified
+                                </StatusBadge>
+                            ) : booking.status === 'cancelled' ? (
+                                <StatusBadge status="cancelled" className="shrink-0" />
+                            ) : (
+                                <Badge variant="secondary" className="shrink-0">
+                                    Booked
+                                </Badge>
+                            )}
+                        </div>
+                        <CardDescription className="mt-1">
                             <button
                                 type="button"
                                 onClick={() => setShowProfileModal(true)}
-                                className="text-left text-xs text-primary hover:underline focus-visible:outline-none focus-visible:underline md:text-sm"
+                                className="text-left text-primary hover:underline focus-visible:outline-none focus-visible:underline"
                             >
-                                {isStudentView ? `Trainer: ${trainer?.name || 'N/A'}` : `Student: ${student?.name || 'N/A'}`}
+                                {isStudentView
+                                    ? `Trainer: ${trainer?.name || 'N/A'}`
+                                    : `Student: ${student?.name || 'N/A'}`}
                             </button>
                         </CardDescription>
                     </div>
-                    {booking.status === 'attended' && (
-                        <StatusBadge status="attended" className="shrink-0">
-                            <CheckCircle className="size-3.5" />
-                            Verified
-                        </StatusBadge>
-                    )}
                 </CardHeader>
 
                 <CardContent className="flex flex-1 flex-col gap-3 p-4 pt-0">
-                    <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs text-foreground">
-                        <span className="flex items-center gap-1">
-                            <Calendar className="size-3.5 text-primary" />
+                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5 text-xs">
+                        <span className="inline-flex items-center gap-1.5 font-medium">
+                            <Calendar className="text-primary" />
                             {booking.date}
                         </span>
-                        <span className="flex items-center gap-1">
-                            <Clock className="size-3.5 text-primary" />
+                        <span className="inline-flex items-center gap-1.5 font-medium">
+                            <Clock className="text-primary" />
                             {booking.time}
                         </span>
-                        {displayPerson?.location && (
-                            <span className="flex min-w-0 items-center gap-1">
-                                <MapPin className="size-3.5 shrink-0 text-primary" />
+                        {displayPerson?.location ? (
+                            <span className="inline-flex min-w-0 items-center gap-1.5 text-muted-foreground">
+                                <MapPin className="shrink-0 text-primary" />
                                 <span className="truncate">{displayPerson.location}</span>
                             </span>
-                        )}
+                        ) : null}
                     </div>
 
-                    <dl className="flex flex-col gap-1.5 rounded-lg bg-muted/50 p-3 text-xs">
+                    <dl className="grid grid-cols-2 gap-2 rounded-lg bg-muted/50 p-3 text-xs">
                         <DetailRow label="Booking ID" value={<span className="font-mono font-semibold">{shortBookingId}</span>} />
-                        {booking.createdAt && <DetailRow label="Booked on" value={booking.createdAt} />}
-                        <DetailRow label="Duration" value={`${cls.duration} minutes`} />
-                        <DetailRow label="Price" value={<span className="font-semibold text-primary">{formatVND(cls.price)}</span>} />
+                        <DetailRow label="Duration" value={`${cls.duration} min`} />
+                        {booking.createdAt ? (
+                            <DetailRow label="Booked on" value={booking.createdAt} />
+                        ) : null}
+                        <DetailRow
+                            label="Price"
+                            value={<span className="font-semibold tabular-nums text-primary">{formatVND(cls.price)}</span>}
+                        />
                     </dl>
                 </CardContent>
 
-                <CardFooter className="gap-2 border-t border-border p-4">
-                        <Button size="sm" variant="secondary" className="flex-1" onClick={handleChatClick}>
-                            <MessageCircle />
-                            Chat
-                        </Button>
+                <CardFooter className="gap-2 border-t p-3">
+                    <Button size="sm" variant="secondary" className="flex-1" onClick={handleChatClick}>
+                        <MessageCircle />
+                        Chat
+                    </Button>
 
-                        {isStudentView ? (
-                            <>
-                                {booking.status === 'booked' && (
-                                    <>
-                                        <Button size="sm" variant="secondary" className="flex-1" onClick={() => onStartCancellation(bookingInfo)}>
-                                            <X />
-                                            Cancel
-                                        </Button>
-                                        {booking.verificationCode && (
-                                            <Button
-                                                size="sm"
-                                                variant="outline"
-                                                className="text-primary"
-                                                onClick={() => onShowVerificationCode?.(booking.verificationCode!, booking.id)}
-                                                aria-label="Show attendance QR code"
-                                            >
-                                                <QrCode />
-                                            </Button>
-                                        )}
-                                    </>
-                                )}
-                                {booking.status === 'attended' && !booking.hasReview && (
-                                    <Button size="sm" className="flex-1" onClick={() => onOpenReviewModal(trainer, cls, booking)}>
-                                        Leave Review
+                    {isStudentView ? (
+                        <>
+                            {booking.status === 'booked' ? (
+                                <>
+                                    <Button
+                                        size="sm"
+                                        variant="outline"
+                                        className="flex-1"
+                                        onClick={() => onStartCancellation(bookingInfo)}
+                                    >
+                                        <X />
+                                        Cancel
                                     </Button>
-                                )}
-                            </>
-                        ) : (
-                            booking.status === 'booked' && onVerifyAttendance && (
-                                <Button size="sm" className="flex-1" onClick={onVerifyAttendance}>
-                                    Verify
+                                    {booking.verificationCode ? (
+                                        <Button
+                                            size="icon"
+                                            variant="outline"
+                                            className="shrink-0"
+                                            onClick={() =>
+                                                onShowVerificationCode?.(booking.verificationCode!, booking.id)
+                                            }
+                                            aria-label="Show attendance QR code"
+                                        >
+                                            <QrCode />
+                                        </Button>
+                                    ) : null}
+                                </>
+                            ) : null}
+                            {booking.status === 'attended' && !booking.hasReview ? (
+                                <Button
+                                    size="sm"
+                                    className="flex-1"
+                                    onClick={() => onOpenReviewModal(trainer, cls, booking)}
+                                >
+                                    Leave review
                                 </Button>
-                            )
-                        )}
+                            ) : null}
+                        </>
+                    ) : (
+                        booking.status === 'booked' && onVerifyAttendance ? (
+                            <Button size="sm" className="flex-1" onClick={onVerifyAttendance}>
+                                Verify
+                            </Button>
+                        ) : null
+                    )}
                 </CardFooter>
             </Card>
 
-            {showProfileModal && displayPerson && (
+            {showProfileModal && displayPerson ? (
                 <Dialog open onOpenChange={(open) => { if (!open) setShowProfileModal(false); }}>
                     <DialogContent className="max-w-md">
                         <DialogHeader>
                             <DialogTitle>Profile</DialogTitle>
+                            <DialogDescription>
+                                {isStudentView ? 'Coach details for this booking' : 'Student details for this booking'}
+                            </DialogDescription>
                         </DialogHeader>
-                        <div className="flex flex-col items-center">
-                            <img
-                                src={displayPerson.avatarUrl || DEFAULT_AVATAR}
-                                alt={displayPerson.name}
-                                className="mb-3 h-24 w-24 rounded-full border-4 border-border object-cover"
-                            />
-                            <h3 className="text-lg font-bold text-foreground">{displayPerson.name}</h3>
+                        <div className="flex flex-col items-center gap-3">
+                            <Avatar className="size-24 border border-border">
+                                <AvatarImage src={displayPerson.avatarUrl || DEFAULT_AVATAR} alt="" />
+                                <AvatarFallback className="text-lg">{initials}</AvatarFallback>
+                            </Avatar>
+                            <h3 className="text-lg font-semibold">{displayPerson.name}</h3>
                         </div>
-                        <div className="flex flex-col gap-3">
-                            {displayPerson.location && (
-                                <div className="flex items-center gap-2 text-sm text-foreground">
-                                    <MapPin className="h-4 w-4 text-primary" />
+                        <div className="flex flex-col gap-2 text-sm">
+                            {displayPerson.location ? (
+                                <p className="inline-flex items-center gap-2 text-muted-foreground">
+                                    <MapPin className="text-primary" />
                                     {displayPerson.location}
-                                </div>
-                            )}
-                            {displayPerson.rating && (
-                                <div className="flex items-center gap-2 text-sm text-foreground">
-                                    <Star className="h-4 w-4 fill-primary text-primary" />
-                                    Rating: {displayPerson.rating.toFixed(1)}
-                                </div>
-                            )}
+                                </p>
+                            ) : null}
+                            {displayPerson.rating ? (
+                                <p className="inline-flex items-center gap-2 text-muted-foreground">
+                                    <Star className="fill-amber-500 text-amber-500" />
+                                    {displayPerson.rating.toFixed(1)} rating
+                                </p>
+                            ) : null}
                         </div>
                         <DialogFooter className="flex-col gap-2 sm:flex-col sm:space-x-0">
                             <Button
                                 className="w-full"
                                 onClick={() => {
                                     setShowProfileModal(false);
-                                    if (isStudentView && trainer) {
-                                        navigate(`/trainer/${trainer.id}`);
-                                    }
+                                    if (isStudentView && trainer) navigate(`/trainer/${trainer.id}`);
                                 }}
                             >
-                                View Full Profile
+                                View full profile
                             </Button>
                             <Button variant="outline" className="w-full" onClick={handleChatClick}>
                                 <MessageCircle />
-                                Send Message
+                                Send message
                             </Button>
                         </DialogFooter>
                     </DialogContent>
                 </Dialog>
-            )}
+            ) : null}
         </>
     );
 };
 
 function DetailRow({ label, value }: { label: string; value: React.ReactNode }) {
     return (
-        <div className="flex items-center justify-between gap-3">
-            <dt className="text-muted-foreground">{label}:</dt>
-            <dd className="text-right text-foreground">{value}</dd>
+        <div className="flex min-w-0 flex-col gap-0.5">
+            <dt className="text-[10px] uppercase tracking-wide text-muted-foreground">{label}</dt>
+            <dd className="truncate font-medium text-foreground">{value}</dd>
         </div>
+    );
+}
+
+function BookingsEmpty({ type }: { type: 'upcoming' | 'past' }) {
+    const navigate = useNavigate();
+    const isUpcoming = type === 'upcoming';
+    return (
+        <Empty className="border border-dashed bg-card">
+            <EmptyHeader>
+                <EmptyMedia variant="icon">
+                    {isUpcoming ? <Calendar /> : <Sparkles />}
+                </EmptyMedia>
+                <EmptyTitle>{isUpcoming ? 'No upcoming classes' : 'No past classes'}</EmptyTitle>
+                <EmptyDescription>
+                    {isUpcoming
+                        ? 'Book a session to see it here with time, location, and check-in QR.'
+                        : 'Completed classes will land here so you can chat or leave a review.'}
+                </EmptyDescription>
+            </EmptyHeader>
+            <EmptyContent>
+                <Button onClick={() => navigate(isUpcoming ? '/classes' : '/explore')}>
+                    {isUpcoming ? 'Browse classes' : 'Find a coach'}
+                </Button>
+            </EmptyContent>
+        </Empty>
     );
 }
 
@@ -671,20 +777,27 @@ const MyBookingsPage: React.FC = () => {
 
     if (!user) {
         return (
-            <AppScreen>
-                <StitchCanvas>
-                    <EmptyState
-                        icon={Calendar}
-                        title="Sign in to see your bookings"
-                        description="Please log in to view your bookings"
-                        action={<Button onClick={() => navigate('/auth')}>Go to Login</Button>}
-                    />
-                </StitchCanvas>
+            <AppScreen className="bg-muted/30">
+                <div className={cn(APP_CONTENT, 'py-10')}>
+                    <Empty className="border border-dashed bg-card">
+                        <EmptyHeader>
+                            <EmptyMedia variant="icon">
+                                <Calendar />
+                            </EmptyMedia>
+                            <EmptyTitle>Sign in to see your bookings</EmptyTitle>
+                            <EmptyDescription>Log in to view upcoming classes, QR check-in, and history.</EmptyDescription>
+                        </EmptyHeader>
+                        <EmptyContent>
+                            <Button onClick={() => navigate('/auth')}>Go to login</Button>
+                        </EmptyContent>
+                    </Empty>
+                </div>
             </AppScreen>
         );
     }
 
     const isStudent = userRole === 'student';
+    const nextUp = upcomingClasses[0] ?? null;
 
     const renderBookingList = (items: BookingInfo[], type: 'upcoming' | 'past') =>
         items.length > 0 ? (
@@ -705,88 +818,93 @@ const MyBookingsPage: React.FC = () => {
                 ))}
             </div>
         ) : (
-            <EmptyBookingsState type={type} />
+            <BookingsEmpty type={type} />
         );
 
+    const pageTitle =
+        isStudent && activeMainTab === 'requests' ? 'My Requests' : 'My Bookings';
+    const pageDescription = isStudent
+        ? activeMainTab === 'requests'
+            ? 'Training requests you’ve posted for coaches'
+            : 'Upcoming sessions, check-in QR, and past classes'
+        : 'Classes your students booked with you';
+
     return (
-        // Fixed-height column so the list is the scroll container pull-to-refresh measures.
-        <AppScreen className="flex min-h-[calc(100dvh-3.5rem)] min-w-0 flex-col overflow-x-hidden bg-[#f9fafb] dark:bg-background lg:min-h-[calc(100dvh-4rem)]">
-            <div className="shrink-0 border-b border-border bg-card/95 backdrop-blur">
-                <StitchCanvas className="!space-y-0 flex flex-col gap-3 !py-4">
-                    <DetailContextStrip
-                        backLabel="Back to Home"
-                        onBack={() => navigate('/')}
-                        crumbs={[
-                            { label: 'Home', href: '/' },
-                            {
-                                label: isStudent && activeMainTab === 'requests' ? 'My Requests' : 'My Bookings',
-                                href: '/bookings',
-                            },
-                        ]}
-                        actions={
-                            isStudent && activeMainTab === 'requests' ? (
-                                <Button
-                                    size="sm"
-                                    onClick={() => navigate('/requests/create')}
-                                    aria-label="Create request"
-                                >
-                                    <Plus data-icon="inline-start" />
-                                    Create Request
-                                </Button>
-                            ) : undefined
-                        }
-                    />
-                    <StitchPageHeader
-                        title={
-                            isStudent && activeMainTab === 'requests' ? 'My Requests' : 'My Bookings'
-                        }
-                        description={
-                            isStudent
-                                ? activeMainTab === 'requests'
-                                    ? 'Training requests you’ve posted for coaches'
-                                    : 'Your upcoming and past classes'
-                                : 'Classes your students booked with you'
-                        }
-                    >
-                        {isStudent ? (
-                            <div
-                                className="inline-flex items-center rounded-lg border border-border bg-muted/60 p-1"
-                                role="tablist"
-                                aria-label="My bookings sections"
+        <AppScreen className="flex min-h-[calc(100dvh-3.5rem)] min-w-0 flex-col overflow-x-hidden bg-muted/30 lg:min-h-[calc(100dvh-4rem)]">
+            <header className="shrink-0 border-b bg-card/95 backdrop-blur">
+                <div className={cn(APP_CONTENT, 'flex flex-col gap-4 py-4')}>
+                    <div className="flex flex-wrap items-center justify-between gap-3">
+                        <div className="flex flex-col gap-2">
+                            <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                className="-ml-2 w-fit"
+                                onClick={() => navigate('/')}
                             >
-                                {(
-                                    [
-                                        { id: 'bookings', label: 'Bookings', icon: Calendar },
-                                        { id: 'requests', label: 'My Requests', icon: FileText },
-                                    ] as const
-                                ).map(({ id, label, icon: Icon }) => {
-                                    const active = activeMainTab === id;
-                                    return (
-                                        <button
-                                            key={id}
-                                            type="button"
-                                            role="tab"
-                                            aria-selected={active}
-                                            onClick={() => setActiveMainTab(id)}
-                                            className={cn(
-                                                'inline-flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-semibold transition-colors',
-                                                active && 'bg-card text-foreground shadow-sm',
-                                                !active && 'text-muted-foreground hover:text-foreground'
-                                            )}
+                                <ArrowLeft />
+                                Back to Home
+                            </Button>
+                            <Breadcrumb>
+                                <BreadcrumbList>
+                                    <BreadcrumbItem>
+                                        <BreadcrumbLink
+                                            href="/"
+                                            onClick={(e) => {
+                                                e.preventDefault();
+                                                navigate('/');
+                                            }}
                                         >
-                                            <Icon className="size-4" />
-                                            {label}
-                                        </button>
-                                    );
-                                })}
-                            </div>
+                                            Home
+                                        </BreadcrumbLink>
+                                    </BreadcrumbItem>
+                                    <BreadcrumbSeparator />
+                                    <BreadcrumbItem>
+                                        <BreadcrumbPage>{pageTitle}</BreadcrumbPage>
+                                    </BreadcrumbItem>
+                                </BreadcrumbList>
+                            </Breadcrumb>
+                        </div>
+                        {isStudent && activeMainTab === 'requests' ? (
+                            <Button size="sm" onClick={() => navigate('/requests/create')}>
+                                <Plus />
+                                Create request
+                            </Button>
+                        ) : isStudent ? (
+                            <Button size="sm" variant="outline" onClick={() => navigate('/classes')}>
+                                Book a class
+                            </Button>
                         ) : null}
-                    </StitchPageHeader>
-                </StitchCanvas>
-            </div>
+                    </div>
+
+                    <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
+                        <div className="flex flex-col gap-1">
+                            <h1 className="text-2xl font-bold tracking-tight md:text-3xl">{pageTitle}</h1>
+                            <p className="text-sm text-muted-foreground">{pageDescription}</p>
+                        </div>
+                        {isStudent ? (
+                            <Tabs
+                                value={activeMainTab}
+                                onValueChange={(v) => setActiveMainTab(v as 'bookings' | 'requests')}
+                            >
+                                <TabsList aria-label="My bookings sections">
+                                    <TabsTrigger value="bookings" className="gap-1.5">
+                                        <Calendar />
+                                        Bookings
+                                    </TabsTrigger>
+                                    <TabsTrigger value="requests" className="gap-1.5">
+                                        <FileText />
+                                        My Requests
+                                    </TabsTrigger>
+                                </TabsList>
+                            </Tabs>
+                        ) : null}
+                    </div>
+                </div>
+            </header>
 
             <div ref={containerRef} className="flex-1 overflow-y-auto">
-                <StitchCanvas className="!pt-4">
+                <div className={cn(APP_CONTENT, 'flex flex-col gap-4 py-4')}>
                     <PullToRefreshIndicator
                         pullDistance={pullDistance}
                         isRefreshing={isRefreshing}
@@ -801,24 +919,64 @@ const MyBookingsPage: React.FC = () => {
                                 ))}
                             </div>
                         ) : (
-                            // Kokonut UI smooth-tab: swipe between Upcoming and Past on touch screens
-                            <SmoothTab
-                                label="Booking period"
+                            <Tabs
                                 value={activeBookingTab}
-                                onChange={(id) => setActiveBookingTab(id as 'upcoming' | 'past')}
-                                items={[
-                                    {
-                                        id: 'upcoming',
-                                        title: `Upcoming (${upcomingClasses.length})`,
-                                        content: renderBookingList(upcomingClasses, 'upcoming'),
-                                    },
-                                    {
-                                        id: 'past',
-                                        title: `Past (${pastClasses.length})`,
-                                        content: renderBookingList(pastClasses, 'past'),
-                                    },
-                                ]}
-                            />
+                                onValueChange={(v) => setActiveBookingTab(v as 'upcoming' | 'past')}
+                                className="flex flex-col gap-4"
+                            >
+                                <TabsList className="w-full justify-start sm:w-auto">
+                                    <TabsTrigger value="upcoming">
+                                        Upcoming
+                                        <Badge variant="secondary" className="ml-1.5 tabular-nums">
+                                            {upcomingClasses.length}
+                                        </Badge>
+                                    </TabsTrigger>
+                                    <TabsTrigger value="past">
+                                        Past
+                                        <Badge variant="secondary" className="ml-1.5 tabular-nums">
+                                            {pastClasses.length}
+                                        </Badge>
+                                    </TabsTrigger>
+                                </TabsList>
+
+                                <TabsContent value="upcoming" className="mt-0 flex flex-col gap-4">
+                                    {nextUp ? (
+                                        <Card className="border-primary/30 bg-primary/5">
+                                            <CardHeader className="flex-row items-start justify-between gap-3 space-y-0 pb-2">
+                                                <div>
+                                                    <Badge className="mb-2">Next up</Badge>
+                                                    <CardTitle className="text-lg">{nextUp.cls.name}</CardTitle>
+                                                    <CardDescription>
+                                                        {nextUp.booking.date} · {nextUp.booking.time}
+                                                        {nextUp.trainer?.name
+                                                            ? ` · ${nextUp.trainer.name}`
+                                                            : ''}
+                                                    </CardDescription>
+                                                </div>
+                                                {nextUp.booking.verificationCode ? (
+                                                    <Button
+                                                        size="sm"
+                                                        onClick={() =>
+                                                            handleShowVerificationCode(
+                                                                nextUp.booking.verificationCode!,
+                                                                nextUp.booking.id
+                                                            )
+                                                        }
+                                                    >
+                                                        <QrCode />
+                                                        Check-in QR
+                                                    </Button>
+                                                ) : null}
+                                            </CardHeader>
+                                        </Card>
+                                    ) : null}
+                                    {renderBookingList(upcomingClasses, 'upcoming')}
+                                </TabsContent>
+
+                                <TabsContent value="past" className="mt-0">
+                                    {renderBookingList(pastClasses, 'past')}
+                                </TabsContent>
+                            </Tabs>
                         )
                     ) : isLoadingRequests ? (
                         <div className="grid gap-3 lg:grid-cols-2">
@@ -827,70 +985,99 @@ const MyBookingsPage: React.FC = () => {
                             ))}
                         </div>
                     ) : requestsData.length === 0 ? (
-                        <EmptyState
-                            icon={FileText}
-                            title="No Requests Yet"
-                            description="Create your first training request to find trainers"
-                            action={
-                                <Button className="bg-[#fd651e] text-white hover:bg-[#a73a00]" onClick={() => navigate('/requests/create')}>
+                        <Empty className="border border-dashed bg-card">
+                            <EmptyHeader>
+                                <EmptyMedia variant="icon">
+                                    <FileText />
+                                </EmptyMedia>
+                                <EmptyTitle>No requests yet</EmptyTitle>
+                                <EmptyDescription>
+                                    Post a training request and coaches can respond with offers.
+                                </EmptyDescription>
+                            </EmptyHeader>
+                            <EmptyContent>
+                                <Button onClick={() => navigate('/requests/create')}>
                                     <Plus />
-                                    Create Request
+                                    Create request
                                 </Button>
-                            }
-                        />
+                            </EmptyContent>
+                        </Empty>
                     ) : (
                         <div className="grid gap-3 lg:grid-cols-2">
                             {requestsData.map((request) => (
                                 <div key={request.id} className="flex flex-col gap-2">
-                                        <RequestCard
-                                            request={request}
-                                            userRole="student"
-                                            currentUserId={user.id}
-                                            onViewResponses={(req) => navigate(`/requests/${req.id}/responses`, { state: { request: req } })}
-                                            onClick={() => navigate(`/requests/${request.id}/responses`, { state: { request } })}
-                                        />
-                                        <div className="flex gap-2">
+                                    <RequestCard
+                                        request={request}
+                                        userRole="student"
+                                        currentUserId={user.id}
+                                        onViewResponses={(req) =>
+                                            navigate(`/requests/${req.id}/responses`, {
+                                                state: { request: req },
+                                            })
+                                        }
+                                        onClick={() =>
+                                            navigate(`/requests/${request.id}/responses`, {
+                                                state: { request },
+                                            })
+                                        }
+                                    />
+                                    <div className="flex gap-2">
+                                        <Button
+                                            size="sm"
+                                            variant="secondary"
+                                            className="flex-1"
+                                            onClick={() =>
+                                                navigate(`/requests/${request.id}/responses`, {
+                                                    state: { request },
+                                                })
+                                            }
+                                        >
+                                            <Eye />
+                                            View responses ({request.responses_count || 0})
+                                        </Button>
+                                        {request.status === 'open' ? (
                                             <Button
-                                                size="sm"
-                                                variant="secondary"
-                                                className="flex-1"
-                                                onClick={() => navigate(`/requests/${request.id}/responses`, { state: { request } })}
+                                                size="icon"
+                                                variant="outline"
+                                                onClick={() =>
+                                                    navigate(`/requests/${request.id}/edit`, {
+                                                        state: { request },
+                                                    })
+                                                }
+                                                aria-label="Edit request"
                                             >
-                                                <Eye />
-                                                View Responses ({request.responses_count || 0})
+                                                <Edit />
                                             </Button>
-                                            {request.status === 'open' && (
-                                                <Button
-                                                    size="sm"
-                                                    variant="outline"
-                                                    className="text-primary"
-                                                    onClick={() => navigate(`/requests/${request.id}/edit`, { state: { request } })}
-                                                    aria-label="Edit request"
-                                                >
-                                                    <Edit />
-                                                </Button>
-                                            )}
-                                        </div>
+                                        ) : null}
+                                    </div>
                                 </div>
                             ))}
                         </div>
                     )}
-                </StitchCanvas>
+                </div>
             </div>
 
-            {cancelBookingTarget && (
+            {cancelBookingTarget ? (
                 <CancelBookingModal
                     bookingInfo={cancelBookingTarget}
                     onConfirm={handleCancelBooking}
                     onClose={() => setCancelBookingTarget(null)}
                 />
-            )}
+            ) : null}
 
-            {verificationCode && (
-                <Dialog open onOpenChange={(open) => { if (!open) setVerificationCode(null); }}>
+            {verificationCode ? (
+                <Dialog
+                    open
+                    onOpenChange={(open) => {
+                        if (!open) setVerificationCode(null);
+                    }}
+                >
                     <DialogContent className="max-h-[90vh] max-w-sm overflow-y-auto">
                         <DialogHeader>
-                            <DialogTitle>Verification Code</DialogTitle>
+                            <DialogTitle>Check-in QR</DialogTitle>
+                            <DialogDescription>
+                                Show this code at the venue so your coach can verify attendance.
+                            </DialogDescription>
                         </DialogHeader>
                         <BookingVerificationDisplay
                             verificationCode={verificationCode}
@@ -899,9 +1086,9 @@ const MyBookingsPage: React.FC = () => {
                         />
                     </DialogContent>
                 </Dialog>
-            )}
+            ) : null}
 
-            {showVerifyModal && (
+            {showVerifyModal ? (
                 <VerifyAttendanceModal
                     isOpen={true}
                     trainerId={user?.id || ''}
@@ -910,12 +1097,12 @@ const MyBookingsPage: React.FC = () => {
                         setShowVerifyModal(null);
                         loadBookings();
                         toast({
-                            title: "Success",
-                            description: "Attendance verified successfully"
+                            title: 'Success',
+                            description: 'Attendance verified successfully',
                         });
                     }}
                 />
-            )}
+            ) : null}
         </AppScreen>
     );
 };

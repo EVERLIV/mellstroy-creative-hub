@@ -1,32 +1,56 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState, type ReactNode } from 'react';
+import { Crown, ShieldCheck, Star, type LucideIcon } from 'lucide-react';
 import { FITNESS_ACTIVITIES, HCMC_DISTRICTS, CLASS_TYPES } from '../constants';
-import { ShieldCheck, Star, Check, Crown, type LucideIcon } from 'lucide-react';
 import { ClassType } from '../types';
 import { cn } from '@/src/lib/utils';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/src/components/ui/dialog';
+import { Badge } from '@/src/components/ui/badge';
 import { Button } from '@/src/components/ui/button';
-import { NativeSelect } from '@/src/components/ui/native-select';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/src/components/ui/dialog';
+import {
+  Field,
+  FieldContent,
+  FieldDescription,
+  FieldGroup,
+  FieldLabel,
+  FieldLegend,
+  FieldSeparator,
+  FieldSet,
+  FieldTitle,
+} from '@/src/components/ui/field';
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/src/components/ui/select';
 import { Switch } from '@/src/components/ui/switch';
+import { ToggleGroup, ToggleGroupItem } from '@/src/components/ui/toggle-group';
 
 /* ------------------------------------------------------------------ */
-/* Shared filter building blocks (also used by VenueFilterModal and    */
-/* DistrictFilterModal)                                                */
+/* Shared filter shell (Venue + District modals reuse this)            */
 /* ------------------------------------------------------------------ */
 
-/** Bottom sheet on phones, centered dialog on md+. */
 const RESPONSIVE_SHEET_CLASS =
-  'bottom-0 left-0 top-auto flex h-[92dvh] max-w-none translate-x-0 translate-y-0 flex-col gap-0 rounded-b-none rounded-t-2xl border-x-0 border-b-0 p-0 sm:rounded-b-none sm:rounded-t-2xl md:bottom-auto md:left-[50%] md:top-[50%] md:h-auto md:max-h-[85vh] md:max-w-lg md:translate-x-[-50%] md:translate-y-[-50%] md:rounded-xl md:border';
+  'bottom-0 left-0 top-auto flex h-[92dvh] max-w-none translate-x-0 translate-y-0 flex-col gap-0 overflow-hidden rounded-b-none rounded-t-2xl border-x-0 border-b-0 p-0 sm:rounded-b-none sm:rounded-t-2xl md:bottom-auto md:left-[50%] md:top-[50%] md:h-auto md:max-h-[85vh] md:max-w-lg md:translate-x-[-50%] md:translate-y-[-50%] md:rounded-xl md:border';
 
 interface FilterSheetProps {
   isOpen: boolean;
   onClose: () => void;
   title: string;
   onReset?: () => void;
-  /** Rendered under the title row, outside the scroll area (e.g. a search field). */
-  headerExtra?: React.ReactNode;
-  footer?: React.ReactNode;
+  headerExtra?: ReactNode;
+  footer?: ReactNode;
   bodyClassName?: string;
-  children: React.ReactNode;
+  children: ReactNode;
 }
 
 export function FilterSheet({
@@ -41,24 +65,29 @@ export function FilterSheet({
 }: FilterSheetProps) {
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className={RESPONSIVE_SHEET_CLASS} aria-describedby={undefined}>
-        <DialogHeader className="shrink-0 space-y-3 border-b border-border p-4 pr-12 text-left">
+      <DialogContent className={RESPONSIVE_SHEET_CLASS}>
+        <DialogHeader className="shrink-0 gap-3 border-b p-4 pr-12 text-left">
           <div className="flex items-center justify-between gap-2">
-            <DialogTitle className="text-base font-semibold">{title}</DialogTitle>
-            {onReset && (
-              <Button variant="ghost" size="sm" onClick={onReset} className="text-muted-foreground">
+            <DialogTitle>{title}</DialogTitle>
+            {onReset ? (
+              <Button type="button" variant="outline" size="sm" onClick={onReset}>
                 Reset
               </Button>
-            )}
+            ) : null}
           </div>
+          <DialogDescription className="sr-only">
+            Refine coaches and classes by specialty, location, schedule, and more.
+          </DialogDescription>
           {headerExtra}
         </DialogHeader>
-        <div className={cn('flex-1 space-y-6 overflow-y-auto p-4 md:p-6', bodyClassName)}>{children}</div>
-        {footer && (
-          <div className="shrink-0 border-t border-border bg-background p-4 pb-[calc(1rem_+_env(safe-area-inset-bottom))] md:pb-4">
+        <div className={cn('min-h-0 flex-1 overflow-y-auto p-4 md:p-6', bodyClassName)}>
+          {children}
+        </div>
+        {footer ? (
+          <DialogFooter className="shrink-0 border-t bg-background p-4 pb-[calc(1rem+env(safe-area-inset-bottom))] sm:flex-col sm:space-x-0 md:pb-4">
             {footer}
-          </div>
-        )}
+          </DialogFooter>
+        ) : null}
       </DialogContent>
     </Dialog>
   );
@@ -72,50 +101,50 @@ export function FilterGroup({
 }: {
   title: string;
   icon?: LucideIcon;
-  meta?: React.ReactNode;
-  children: React.ReactNode;
+  meta?: ReactNode;
+  children: ReactNode;
 }) {
   return (
-    <fieldset>
-      <div className="mb-3 flex items-center justify-between gap-2">
-        <legend className="flex items-center gap-2 text-sm font-semibold text-foreground">
-          {Icon && <Icon className="h-4 w-4 text-muted-foreground" aria-hidden="true" />}
+    <Field>
+      <div className="flex items-center justify-between gap-2">
+        <FieldLabel className="flex items-center gap-2">
+          {Icon ? <Icon className="text-muted-foreground" aria-hidden /> : null}
           {title}
-        </legend>
-        {meta && <span className="text-xs text-muted-foreground">{meta}</span>}
+        </FieldLabel>
+        {meta ? <FieldDescription className="!mt-0 text-xs">{meta}</FieldDescription> : null}
       </div>
-      {children}
-    </fieldset>
+      <FieldContent>{children}</FieldContent>
+    </Field>
   );
 }
 
-interface ChoiceChipProps {
+export function ChoiceChip({
+  selected,
+  onClick,
+  disabled,
+  shape = 'tile',
+  showCheck: _showCheck,
+  children,
+}: {
   selected: boolean;
   onClick: () => void;
   disabled?: boolean;
   shape?: 'pill' | 'tile';
   showCheck?: boolean;
-  children: React.ReactNode;
-}
-
-export function ChoiceChip({ selected, onClick, disabled, shape = 'tile', showCheck, children }: ChoiceChipProps) {
+  children: ReactNode;
+}) {
   return (
-    <button
+    <Button
       type="button"
-      onClick={onClick}
+      variant={selected ? 'default' : 'outline'}
+      size="sm"
       disabled={disabled}
       aria-pressed={selected}
-      className={cn(
-        'inline-flex min-h-10 items-center justify-center gap-1.5 border px-3 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50',
-        shape === 'pill' ? 'rounded-full' : 'rounded-lg',
-        selected
-          ? 'border-primary bg-primary text-primary-foreground'
-          : 'border-border bg-card text-foreground hover:bg-muted'
-      )}
+      onClick={onClick}
+      className={cn(shape === 'pill' && 'rounded-full', 'h-9')}
     >
-      {showCheck && selected && <Check className="h-4 w-4" strokeWidth={3} aria-hidden="true" />}
       {children}
-    </button>
+    </Button>
   );
 }
 
@@ -133,16 +162,13 @@ export function ToggleRow({
   onCheckedChange: () => void;
 }) {
   return (
-    <label
-      htmlFor={id}
-      className="flex cursor-pointer items-center justify-between gap-3 rounded-lg p-2 transition-colors hover:bg-muted"
-    >
-      <span className="flex items-center gap-3 text-sm font-medium text-foreground">
-        <Icon className="h-5 w-5 text-primary" aria-hidden="true" />
-        {label}
-      </span>
+    <Field orientation="horizontal" className="rounded-lg px-2 py-1.5 hover:bg-muted">
+      <FieldLabel htmlFor={id} className="flex flex-1 cursor-pointer items-center gap-3">
+        <Icon className="text-primary" aria-hidden />
+        <FieldTitle>{label}</FieldTitle>
+      </FieldLabel>
       <Switch id={id} checked={checked} onCheckedChange={onCheckedChange} />
-    </label>
+    </Field>
   );
 }
 
@@ -175,44 +201,51 @@ const TIMES = ['any', 'morning', 'afternoon', 'evening'] as const;
 const LANGUAGES = ['English', 'Vietnamese', 'Russian', 'Chinese'];
 const LEVELS = ['Beginner', 'Intermediate', 'Advanced'];
 
-const timeLabel = (time: Filters['time']) => (time === 'any' ? 'Any time' : time.charAt(0).toUpperCase() + time.slice(1));
+const timeLabel = (time: Filters['time']) =>
+  time === 'any' ? 'Any time' : time.charAt(0).toUpperCase() + time.slice(1);
 
-const FilterModal: React.FC<FilterModalProps> = ({ isOpen, onClose, activeFilters, onApplyFilters, onResetFilters }) => {
+const EMPTY_FILTERS: Filters = {
+  specialty: [],
+  verified: false,
+  topRated: false,
+  premiumOnly: false,
+  district: 'All',
+  time: 'any',
+  classType: [],
+  languages: [],
+  level: '',
+};
+
+const chipGroupClass =
+  'flex h-auto w-full flex-wrap justify-start gap-2 data-[variant=outline]:bg-transparent';
+
+const chipItemClass =
+  'h-9 flex-none rounded-full px-3 data-[state=on]:bg-primary data-[state=on]:text-primary-foreground data-[state=on]:hover:bg-primary/90';
+
+const tileItemClass =
+  'h-10 flex-1 basis-[calc(50%-0.25rem)] data-[state=on]:bg-primary data-[state=on]:text-primary-foreground data-[state=on]:hover:bg-primary/90 sm:basis-auto';
+
+const FilterModal: React.FC<FilterModalProps> = ({
+  isOpen,
+  onClose,
+  activeFilters,
+  onApplyFilters,
+  onResetFilters,
+}) => {
   const [tempFilters, setTempFilters] = useState(activeFilters);
 
   useEffect(() => {
-    setTempFilters(activeFilters);
+    if (isOpen) setTempFilters(activeFilters);
   }, [activeFilters, isOpen]);
 
-  const handleToggleChange = (filterName: 'verified' | 'topRated' | 'premiumOnly') => {
-    setTempFilters((prev) => ({ ...prev, [filterName]: !prev[filterName] }));
+  const handleReset = () => {
+    setTempFilters(EMPTY_FILTERS);
+    onResetFilters();
   };
 
-  const handleSpecialtyToggle = (specialty: string) => {
-    setTempFilters((prev) => {
-      const current = prev.specialty;
-      if (current.includes(specialty)) {
-        return { ...prev, specialty: current.filter((s) => s !== specialty) };
-      }
-      if (current.length < MAX_SPECIALTIES) {
-        return { ...prev, specialty: [...current, specialty] };
-      }
-      return prev; // At limit, do nothing
-    });
-  };
-
-  const handleClassTypeToggle = (type: ClassType) => {
-    setTempFilters((prev) => ({
-      ...prev,
-      classType: prev.classType.includes(type) ? prev.classType.filter((t) => t !== type) : [...prev.classType, type],
-    }));
-  };
-
-  const handleLanguageToggle = (lang: string) => {
-    setTempFilters((prev) => ({
-      ...prev,
-      languages: prev.languages.includes(lang) ? prev.languages.filter((l) => l !== lang) : [...prev.languages, lang],
-    }));
+  const handleSpecialtyChange = (values: string[]) => {
+    if (values.length > MAX_SPECIALTIES) return;
+    setTempFilters((prev) => ({ ...prev, specialty: values }));
   };
 
   return (
@@ -220,130 +253,185 @@ const FilterModal: React.FC<FilterModalProps> = ({ isOpen, onClose, activeFilter
       isOpen={isOpen}
       onClose={onClose}
       title="Filters"
-      onReset={onResetFilters}
+      onReset={handleReset}
       footer={
-        <Button onClick={() => onApplyFilters(tempFilters)} className="w-full" size="lg">
+        <Button type="button" size="lg" className="w-full" onClick={() => onApplyFilters(tempFilters)}>
           Apply filters
         </Button>
       }
     >
-      <FilterGroup title="Specialty" meta={`${tempFilters.specialty.length} / ${MAX_SPECIALTIES} selected`}>
-        <div className="flex flex-wrap gap-2">
-          {FITNESS_ACTIVITIES.map((activity) => {
-            const isSelected = tempFilters.specialty.includes(activity);
-            return (
-              <ChoiceChip
-                key={activity}
-                shape="pill"
-                selected={isSelected}
-                disabled={!isSelected && tempFilters.specialty.length >= MAX_SPECIALTIES}
-                onClick={() => handleSpecialtyToggle(activity)}
-              >
-                {activity}
-              </ChoiceChip>
-            );
-          })}
-        </div>
-      </FilterGroup>
+      <FieldGroup className="gap-6">
+        <FieldSet>
+          <div className="mb-3 flex items-center justify-between gap-2">
+            <FieldLegend variant="label">Specialty</FieldLegend>
+            <Badge variant="secondary" className="font-normal tabular-nums">
+              {tempFilters.specialty.length} / {MAX_SPECIALTIES} selected
+            </Badge>
+          </div>
+          <ToggleGroup
+            type="multiple"
+            variant="outline"
+            value={tempFilters.specialty}
+            onValueChange={handleSpecialtyChange}
+            className={chipGroupClass}
+            aria-label="Specialty"
+          >
+            {FITNESS_ACTIVITIES.map((activity) => {
+              const selected = tempFilters.specialty.includes(activity);
+              const atLimit = !selected && tempFilters.specialty.length >= MAX_SPECIALTIES;
+              return (
+                <ToggleGroupItem
+                  key={activity}
+                  value={activity}
+                  disabled={atLimit}
+                  className={chipItemClass}
+                >
+                  {activity}
+                </ToggleGroupItem>
+              );
+            })}
+          </ToggleGroup>
+        </FieldSet>
 
-      <FilterGroup title="Location (district)">
-        <NativeSelect
-          aria-label="District"
-          name="district"
-          value={tempFilters.district}
-          onChange={(e) => setTempFilters((prev) => ({ ...prev, district: e.target.value }))}
-        >
-          <option value="All">All Districts</option>
-          {HCMC_DISTRICTS.map((district) => (
-            <option key={district} value={district}>
-              {district}
-            </option>
-          ))}
-        </NativeSelect>
-      </FilterGroup>
+        <Field>
+          <FieldLabel>Location (district)</FieldLabel>
+          <Select
+            value={tempFilters.district}
+            onValueChange={(district) => setTempFilters((prev) => ({ ...prev, district }))}
+          >
+            <SelectTrigger aria-label="District">
+              <SelectValue placeholder="All Districts" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectGroup>
+                <SelectItem value="All">All Districts</SelectItem>
+                {HCMC_DISTRICTS.map((district) => (
+                  <SelectItem key={district} value={district}>
+                    {district}
+                  </SelectItem>
+                ))}
+              </SelectGroup>
+            </SelectContent>
+          </Select>
+        </Field>
 
-      <FilterGroup title="Time of day">
-        <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 md:grid-cols-2">
-          {TIMES.map((time) => (
-            <ChoiceChip
-              key={time}
-              selected={tempFilters.time === time}
-              onClick={() => setTempFilters((prev) => ({ ...prev, time }))}
-            >
-              {timeLabel(time)}
-            </ChoiceChip>
-          ))}
-        </div>
-      </FilterGroup>
+        <Field>
+          <FieldLabel>Time of day</FieldLabel>
+          <ToggleGroup
+            type="single"
+            variant="outline"
+            value={tempFilters.time}
+            onValueChange={(value) => {
+              if (!value) return;
+              setTempFilters((prev) => ({
+                ...prev,
+                time: value as Filters['time'],
+              }));
+            }}
+            className="grid w-full grid-cols-2 gap-2"
+            aria-label="Time of day"
+          >
+            {TIMES.map((time) => (
+              <ToggleGroupItem key={time} value={time} className={tileItemClass}>
+                {timeLabel(time)}
+              </ToggleGroupItem>
+            ))}
+          </ToggleGroup>
+        </Field>
 
-      <FilterGroup title="Class environment">
-        <div className="grid grid-cols-3 gap-2">
-          {CLASS_TYPES.map((type) => (
-            <ChoiceChip
-              key={type}
-              showCheck
-              selected={tempFilters.classType.includes(type)}
-              onClick={() => handleClassTypeToggle(type)}
-            >
-              {type}
-            </ChoiceChip>
-          ))}
-        </div>
-      </FilterGroup>
+        <Field>
+          <FieldLabel>Class environment</FieldLabel>
+          <ToggleGroup
+            type="multiple"
+            variant="outline"
+            value={tempFilters.classType}
+            onValueChange={(values) =>
+              setTempFilters((prev) => ({ ...prev, classType: values as ClassType[] }))
+            }
+            className="grid w-full grid-cols-3 gap-2"
+            aria-label="Class environment"
+          >
+            {CLASS_TYPES.map((type) => (
+              <ToggleGroupItem key={type} value={type} className={tileItemClass}>
+                {type}
+              </ToggleGroupItem>
+            ))}
+          </ToggleGroup>
+        </Field>
 
-      <FilterGroup title="Language">
-        <div className="grid grid-cols-2 gap-2">
-          {LANGUAGES.map((lang) => (
-            <ChoiceChip
-              key={lang}
-              showCheck
-              selected={tempFilters.languages.includes(lang)}
-              onClick={() => handleLanguageToggle(lang)}
-            >
-              {lang}
-            </ChoiceChip>
-          ))}
-        </div>
-      </FilterGroup>
+        <Field>
+          <FieldLabel>Language</FieldLabel>
+          <ToggleGroup
+            type="multiple"
+            variant="outline"
+            value={tempFilters.languages}
+            onValueChange={(languages) => setTempFilters((prev) => ({ ...prev, languages }))}
+            className="grid w-full grid-cols-2 gap-2"
+            aria-label="Language"
+          >
+            {LANGUAGES.map((lang) => (
+              <ToggleGroupItem key={lang} value={lang} className={tileItemClass}>
+                {lang}
+              </ToggleGroupItem>
+            ))}
+          </ToggleGroup>
+        </Field>
 
-      <FilterGroup title="Difficulty level">
-        <div className="grid grid-cols-3 gap-2">
-          {LEVELS.map((lvl) => (
-            <ChoiceChip
-              key={lvl}
-              showCheck
-              selected={tempFilters.level === lvl}
-              onClick={() => setTempFilters((prev) => ({ ...prev, level: prev.level === lvl ? '' : lvl }))}
-            >
-              {lvl}
-            </ChoiceChip>
-          ))}
-        </div>
-      </FilterGroup>
+        <Field>
+          <FieldLabel>Difficulty level</FieldLabel>
+          <ToggleGroup
+            type="single"
+            variant="outline"
+            value={tempFilters.level || undefined}
+            onValueChange={(level) =>
+              setTempFilters((prev) => ({ ...prev, level: level || '' }))
+            }
+            className="grid w-full grid-cols-3 gap-2"
+            aria-label="Difficulty level"
+          >
+            {LEVELS.map((lvl) => (
+              <ToggleGroupItem key={lvl} value={lvl} className={tileItemClass}>
+                {lvl}
+              </ToggleGroupItem>
+            ))}
+          </ToggleGroup>
+        </Field>
 
-      <div className="space-y-1 border-t border-border pt-4">
-        <ToggleRow
-          id="verified-toggle"
-          icon={ShieldCheck}
-          label="Verified trainers"
-          checked={tempFilters.verified}
-          onCheckedChange={() => handleToggleChange('verified')}
-        />
-        <ToggleRow
-          id="toprated-toggle"
-          icon={Star}
-          label="Top rated (4.8+)"
-          checked={tempFilters.topRated}
-          onCheckedChange={() => handleToggleChange('topRated')}
-        />
-        <ToggleRow
-          id="premium-toggle"
-          icon={Crown}
-          label="Premium trainers"
-          checked={tempFilters.premiumOnly}
-          onCheckedChange={() => handleToggleChange('premiumOnly')}
-        />
-      </div>
+        <FieldSeparator />
+
+        <FieldSet className="gap-1">
+          <FieldLegend variant="label" className="sr-only">
+            Trust & quality
+          </FieldLegend>
+          <ToggleRow
+            id="verified-toggle"
+            icon={ShieldCheck}
+            label="Verified trainers"
+            checked={tempFilters.verified}
+            onCheckedChange={() =>
+              setTempFilters((prev) => ({ ...prev, verified: !prev.verified }))
+            }
+          />
+          <ToggleRow
+            id="toprated-toggle"
+            icon={Star}
+            label="Top rated (4.8+)"
+            checked={tempFilters.topRated}
+            onCheckedChange={() =>
+              setTempFilters((prev) => ({ ...prev, topRated: !prev.topRated }))
+            }
+          />
+          <ToggleRow
+            id="premium-toggle"
+            icon={Crown}
+            label="Premium trainers"
+            checked={tempFilters.premiumOnly}
+            onCheckedChange={() =>
+              setTempFilters((prev) => ({ ...prev, premiumOnly: !prev.premiumOnly }))
+            }
+          />
+        </FieldSet>
+      </FieldGroup>
     </FilterSheet>
   );
 };

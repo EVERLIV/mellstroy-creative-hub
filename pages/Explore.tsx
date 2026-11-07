@@ -9,17 +9,42 @@ import CategoryFilters from '../components/CategoryFilters';
 import FilterModal from '../components/FilterModal';
 import {
   DiscoveryCoachCard,
-  SpotlightClassCard,
-  SpotlightCoachCard,
+  DiscoveryCoachListItem,
 } from '../components/explore/ExploreDiscoveryCards';
-import type { ClassWithTrainer } from '../components/ClassCarousel';
-import { ChevronDown, Loader, Search, SlidersHorizontal } from 'lucide-react';
+import { Loader, Search, SlidersHorizontal, X } from 'lucide-react';
 import { AppScreen } from '@/src/components/layout/screen';
+import { Badge } from '../src/components/ui/badge';
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from '../src/components/ui/breadcrumb';
 import { Button } from '../src/components/ui/button';
-import { Input } from '../src/components/ui/input';
+import {
+  InputGroup,
+  InputGroupAddon,
+  InputGroupButton,
+  InputGroupInput,
+} from '../src/components/ui/input-group';
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '../src/components/ui/select';
+import {
+  Empty,
+  EmptyContent,
+  EmptyDescription,
+  EmptyHeader,
+  EmptyTitle,
+} from '../src/components/ui/empty';
 import { APP_CONTENT } from '@/src/components/layout/shell';
 import { cn } from '../src/lib/utils';
-import TrainerListItem from '../components/TrainerListItem';
 import TrainerCardSkeleton from '../components/TrainerCardSkeleton';
 
 interface ExploreProps {
@@ -31,7 +56,7 @@ interface ExploreProps {
   onOpenReviewsModal?: (trainer: Trainer) => void;
 }
 
-const TRAINERS_PER_PAGE = 15;
+const TRAINERS_PER_PAGE = 24;
 
 const allCategories = [{ id: 'all', name: 'All', icon: 'grid' }, ...CATEGORIES];
 
@@ -117,6 +142,7 @@ const Explore: React.FC<ExploreProps> = ({
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
+  const [sortBy, setSortBy] = useState('recommended');
   const [activeFilters, setActiveFilters] = useState({
     specialty: [] as string[],
     verified: false,
@@ -362,92 +388,194 @@ const Explore: React.FC<ExploreProps> = ({
     (activeFilters.topRated ? 1 : 0) +
     (activeFilters.premiumOnly ? 1 : 0);
 
-  const featuredClasses = React.useMemo(() => {
-    const entries: ClassWithTrainer[] = [];
-    for (const trainer of filteredTrainers) {
-      for (const cls of trainer.classes ?? []) {
-        entries.push({ trainer, cls });
-        if (entries.length >= 10) return entries;
-      }
+  const activeFilterChips = React.useMemo(() => {
+    const chips: { key: string; label: string; clear: () => void }[] = [];
+    activeFilters.specialty.forEach((s) => {
+      chips.push({
+        key: `specialty:${s}`,
+        label: s,
+        clear: () =>
+          setActiveFilters((prev) => ({
+            ...prev,
+            specialty: prev.specialty.filter((x) => x !== s),
+          })),
+      });
+    });
+    if (activeFilters.district !== 'All') {
+      chips.push({
+        key: 'district',
+        label: activeFilters.district,
+        clear: () => setActiveFilters((prev) => ({ ...prev, district: 'All' })),
+      });
     }
-    return entries;
-  }, [filteredTrainers]);
+    if (activeFilters.time !== 'any') {
+      chips.push({
+        key: 'time',
+        label: activeFilters.time,
+        clear: () => setActiveFilters((prev) => ({ ...prev, time: 'any' })),
+      });
+    }
+    activeFilters.classType.forEach((t) => {
+      chips.push({
+        key: `class:${t}`,
+        label: t,
+        clear: () =>
+          setActiveFilters((prev) => ({
+            ...prev,
+            classType: prev.classType.filter((x) => x !== t),
+          })),
+      });
+    });
+    activeFilters.languages.forEach((l) => {
+      chips.push({
+        key: `lang:${l}`,
+        label: l,
+        clear: () =>
+          setActiveFilters((prev) => ({
+            ...prev,
+            languages: prev.languages.filter((x) => x !== l),
+          })),
+      });
+    });
+    if (activeFilters.level) {
+      chips.push({
+        key: 'level',
+        label: activeFilters.level,
+        clear: () => setActiveFilters((prev) => ({ ...prev, level: '' })),
+      });
+    }
+    if (activeFilters.verified) {
+      chips.push({
+        key: 'verified',
+        label: 'Verified',
+        clear: () => setActiveFilters((prev) => ({ ...prev, verified: false })),
+      });
+    }
+    if (activeFilters.topRated) {
+      chips.push({
+        key: 'topRated',
+        label: 'Top rated',
+        clear: () => setActiveFilters((prev) => ({ ...prev, topRated: false })),
+      });
+    }
+    if (activeFilters.premiumOnly) {
+      chips.push({
+        key: 'premium',
+        label: 'Premium',
+        clear: () => setActiveFilters((prev) => ({ ...prev, premiumOnly: false })),
+      });
+    }
+    return chips;
+  }, [activeFilters]);
 
-  const featuredTrainers = React.useMemo(
-    () => filteredTrainers.filter((t) => t.isPremium || t.rating >= 4.5).slice(0, 6),
-    [filteredTrainers]
-  );
-
-  const popularClasses = React.useMemo(
-    () => featuredClasses.slice(0, 6),
-    [featuredClasses]
-  );
+  const sortedDisplayed = React.useMemo(() => {
+    const list = [...displayedTrainers];
+    switch (sortBy) {
+      case 'rating':
+        return list.sort((a, b) => b.rating - a.rating || b.reviews - a.reviews);
+      case 'price-asc':
+        return list.sort((a, b) => a.price - b.price);
+      case 'price-desc':
+        return list.sort((a, b) => b.price - a.price);
+      case 'reviews':
+        return list.sort((a, b) => b.reviews - a.reviews);
+      default:
+        return list;
+    }
+  }, [displayedTrainers, sortBy]);
 
   return (
-    <AppScreen className="relative min-w-0 bg-[#f9fafb] dark:bg-background">
-      <div className={cn(APP_CONTENT, 'space-y-8 py-6')}>
+    <AppScreen className="relative min-w-0 bg-muted/30">
+      <div className={cn(APP_CONTENT, 'flex flex-col gap-8 py-6')}>
         {/* Discovery header */}
-        <section className="space-y-4">
+        <section className="flex flex-col gap-4">
           <div className="flex flex-col justify-between gap-4 md:flex-row md:items-end">
-            <div>
-              <div className="mb-1 flex items-center gap-1.5 text-[11px] font-semibold tracking-wide text-[#fd651e]">
-                <span>DISCOVER</span>
-                <span>/</span>
-                <span className="text-muted-foreground">COACHES &amp; PROGRAMS</span>
-              </div>
-              <h1 className="text-[32px] font-bold leading-10 tracking-tight text-foreground">
-                Coaches
+            <div className="flex flex-col gap-2">
+              <Breadcrumb>
+                <BreadcrumbList className="text-[11px] font-semibold uppercase tracking-wide">
+                  <BreadcrumbItem>
+                    <span className="text-primary">Discover</span>
+                  </BreadcrumbItem>
+                  <BreadcrumbSeparator>/</BreadcrumbSeparator>
+                  <BreadcrumbItem>
+                    <BreadcrumbPage className="font-semibold uppercase text-muted-foreground">
+                      Coaches
+                    </BreadcrumbPage>
+                  </BreadcrumbItem>
+                </BreadcrumbList>
+              </Breadcrumb>
+              <h1 className="text-3xl font-bold tracking-tight text-foreground md:text-[32px] md:leading-10">
+                Find a coach
               </h1>
-              <p className="mt-1 max-w-xl text-sm text-muted-foreground">
-                Discover top verified fitness, combat, tennis, and yoga coaches near you in Ho Chi
-                Minh City
+              <p className="max-w-xl text-sm text-muted-foreground">
+                Compare verified coaches nearby — specialty, price, rating, and availability in one
+                dense list. Looking for sessions?{' '}
+                <button
+                  type="button"
+                  className="font-medium text-primary underline-offset-4 hover:underline"
+                  onClick={() => navigate('/classes')}
+                >
+                  Browse classes
+                </button>
               </p>
             </div>
-            <div className="flex items-center gap-3">
-              <ViewToggle viewMode={viewMode} setViewMode={setViewMode} />
-              <button
-                type="button"
-                className="inline-flex items-center gap-2 rounded-lg border border-border bg-card px-3.5 py-1.5 text-xs font-semibold text-foreground shadow-sm transition-colors hover:bg-muted"
-              >
-                <span className="font-normal text-muted-foreground">Sort:</span>
-                <span>Recommended</span>
-                <ChevronDown className="size-4 text-muted-foreground" />
-              </button>
-            </div>
+            <Select value={sortBy} onValueChange={setSortBy}>
+              <SelectTrigger className="w-[180px]" aria-label="Sort coaches">
+                <SelectValue placeholder="Sort" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectGroup>
+                  <SelectItem value="recommended">Recommended</SelectItem>
+                  <SelectItem value="rating">Highest rated</SelectItem>
+                  <SelectItem value="reviews">Most reviews</SelectItem>
+                  <SelectItem value="price-asc">Price: low to high</SelectItem>
+                  <SelectItem value="price-desc">Price: high to low</SelectItem>
+                </SelectGroup>
+              </SelectContent>
+            </Select>
           </div>
 
           <div className="flex items-center gap-3">
-            <div className="relative flex-1">
-              <Search
-                className="pointer-events-none absolute left-3.5 top-1/2 size-5 -translate-y-1/2 text-muted-foreground"
-                aria-hidden
-              />
-              <Input
+            <InputGroup className="h-11 flex-1 bg-card">
+              <InputGroupAddon>
+                <Search aria-hidden />
+              </InputGroupAddon>
+              <InputGroupInput
                 type="search"
                 placeholder="Search coaches by discipline, name, or credentials…"
                 aria-label="Search trainers"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="h-11 rounded-xl border-border bg-card pl-10 shadow-sm"
               />
-            </div>
+              {searchQuery ? (
+                <InputGroupAddon align="inline-end">
+                  <InputGroupButton
+                    size="icon-sm"
+                    aria-label="Clear search"
+                    onClick={() => setSearchQuery('')}
+                  >
+                    <X />
+                  </InputGroupButton>
+                </InputGroupAddon>
+              ) : null}
+            </InputGroup>
             <Button
               type="button"
               variant="outline"
+              className="relative h-11 gap-2 bg-card px-4"
               onClick={() => setIsFilterModalOpen(true)}
               aria-label={
                 activeFilterCount
                   ? `Open filters (${activeFilterCount} active)`
                   : 'Open filters'
               }
-              className="relative h-11 gap-2 rounded-xl border-border bg-card px-4 shadow-sm"
             >
-              <SlidersHorizontal className="size-5 text-primary" />
+              <SlidersHorizontal className="text-primary" />
               <span className="hidden sm:inline">Filters</span>
               {activeFilterCount > 0 ? (
-                <span className="absolute -right-1 -top-1 grid size-5 place-items-center rounded-full bg-primary text-[10px] font-semibold text-primary-foreground">
+                <Badge className="absolute -right-2 -top-2 size-5 justify-center rounded-full p-0 text-[10px]">
                   {activeFilterCount}
-                </span>
+                </Badge>
               ) : null}
             </Button>
           </div>
@@ -464,103 +592,102 @@ const Explore: React.FC<ExploreProps> = ({
               }
             }}
           />
+
+          {activeFilterChips.length > 0 ? (
+            <div className="flex flex-wrap items-center gap-2">
+              {activeFilterChips.map((chip) => (
+                <Badge key={chip.key} variant="secondary" className="gap-1 pr-1 capitalize">
+                  {chip.label}
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    className="size-5 rounded-full"
+                    aria-label={`Remove ${chip.label} filter`}
+                    onClick={chip.clear}
+                  >
+                    <X />
+                  </Button>
+                </Badge>
+              ))}
+              <Button type="button" variant="ghost" size="sm" onClick={handleResetFilters}>
+                Clear all
+              </Button>
+            </div>
+          ) : null}
         </section>
 
-        {/* Featured coaches */}
-        {!loading && featuredTrainers.length > 0 ? (
-          <section className="space-y-3" aria-label="Featured coaches">
-            <div className="flex items-end justify-between gap-3">
-              <div>
-                <span className="block text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-                  Spotlight
-                </span>
-                <h2 className="text-lg font-bold tracking-tight text-foreground">
-                  Featured Coaches
-                </h2>
-              </div>
+        {/* Results — single view system (grid | list) */}
+        <section className="flex flex-col gap-4" aria-label="Coach results">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <h2 className="text-lg font-bold tracking-tight text-foreground">
+                {loading
+                  ? 'Loading coaches…'
+                  : `${filteredTrainers.length} coach${filteredTrainers.length === 1 ? '' : 'es'}`}
+              </h2>
+              <p className="text-xs text-muted-foreground">Ho Chi Minh City · denser results for faster comparison</p>
             </div>
-            <div className="grid grid-cols-2 gap-3.5 sm:grid-cols-3 lg:grid-cols-6">
-              {featuredTrainers.map((trainer) => (
-                <SpotlightCoachCard
+            <div className="flex items-center gap-2">
+              <ViewToggle viewMode={viewMode} setViewMode={setViewMode} />
+              <Badge variant="secondary">{viewMode === 'list' ? 'List' : 'Cards'}</Badge>
+            </div>
+          </div>
+
+          {loading ? (
+            <div
+              className={cn(
+                'grid gap-3',
+                viewMode === 'list'
+                  ? 'grid-cols-1 lg:grid-cols-2'
+                  : 'grid-cols-2 items-stretch sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5'
+              )}
+              aria-busy
+            >
+              {Array.from({ length: 10 }, (_, i) => (
+                <TrainerCardSkeleton key={i} />
+              ))}
+            </div>
+          ) : sortedDisplayed.length === 0 ? (
+            <Empty className="border border-dashed bg-card">
+              <EmptyHeader>
+                <EmptyTitle>No coaches found</EmptyTitle>
+                <EmptyDescription>
+                  Try adjusting your filters or search to see more coaches nearby.
+                </EmptyDescription>
+              </EmptyHeader>
+              {activeFilterCount > 0 || searchQuery ? (
+                <EmptyContent>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      handleResetFilters();
+                      setSearchQuery('');
+                    }}
+                  >
+                    Clear filters
+                  </Button>
+                </EmptyContent>
+              ) : null}
+            </Empty>
+          ) : viewMode === 'list' ? (
+            <div className="grid grid-cols-1 gap-2.5 lg:grid-cols-2">
+              {sortedDisplayed.map((trainer) => (
+                <DiscoveryCoachListItem
                   key={trainer.id}
                   trainer={trainer}
                   isFavorite={favoriteTrainerIds.includes(trainer.id)}
                   onToggleFavorite={onToggleFavorite}
                   onSelect={() => handleSelectTrainer(trainer)}
-                />
-              ))}
-            </div>
-          </section>
-        ) : null}
-
-        {/* Popular classes */}
-        {!loading && popularClasses.length > 0 ? (
-          <section className="space-y-3" aria-label="Popular classes">
-            <div className="flex items-end justify-between gap-3">
-              <div>
-                <span className="block text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
-                  Nearby
-                </span>
-                <h2 className="text-lg font-bold tracking-tight text-foreground">
-                  Popular Classes
-                </h2>
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-3.5 sm:grid-cols-3 lg:grid-cols-6">
-              {popularClasses.map(({ cls, trainer }) => (
-                <SpotlightClassCard
-                  key={`${trainer.id}:${cls.id}`}
-                  cls={cls}
-                  trainer={trainer}
-                  onSelect={() => navigate(`/class/${cls.id}`)}
-                />
-              ))}
-            </div>
-          </section>
-        ) : null}
-
-        {/* All coaches */}
-        <section className="space-y-4 pt-2" aria-label="All coaches">
-          <div className="flex flex-wrap items-end justify-between gap-3">
-            <div>
-              <h2 className="text-2xl font-bold tracking-tight text-foreground">All Coaches</h2>
-              <p className="text-xs text-muted-foreground">
-                {loading
-                  ? 'Loading…'
-                  : `${filteredTrainers.length} coach${filteredTrainers.length === 1 ? '' : 'es'} available in District 1 & surrounding areas`}
-              </p>
-            </div>
-            <span className="rounded-full bg-[#e9edff] px-3 py-1 text-[11px] font-bold text-primary">
-              Ho Chi Minh City
-            </span>
-          </div>
-
-          {loading ? (
-            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4" aria-busy>
-              {Array.from({ length: 8 }, (_, i) => (
-                <TrainerCardSkeleton key={i} />
-              ))}
-            </div>
-          ) : displayedTrainers.length === 0 ? (
-            <div className="py-12 text-center">
-              <p className="mb-2 text-sm text-muted-foreground">No coaches found</p>
-              <p className="text-xs text-muted-foreground/80">Try adjusting your filters</p>
-            </div>
-          ) : viewMode === 'list' ? (
-            <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
-              {displayedTrainers.map((trainer) => (
-                <TrainerListItem
-                  key={trainer.id}
-                  trainer={trainer}
-                  onSelect={() => handleSelectTrainer(trainer)}
-                  isFavorite={favoriteTrainerIds.includes(trainer.id)}
-                  onToggleFavorite={onToggleFavorite ?? (() => undefined)}
+                  onBook={() => handleSelectTrainer(trainer)}
                 />
               ))}
             </div>
           ) : (
-            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
-              {displayedTrainers.map((trainer) => (
+            <div className="grid grid-cols-2 items-stretch gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+              {sortedDisplayed.map((trainer) => (
                 <DiscoveryCoachCard
                   key={trainer.id}
                   trainer={trainer}
@@ -593,21 +720,12 @@ const Explore: React.FC<ExploreProps> = ({
                 <Button
                   type="button"
                   variant="outline"
-                  className="rounded-lg shadow-sm"
-                  onClick={() => {
-                    handleResetFilters();
-                    setSelectedCategory(null);
-                    navigate('/explore');
-                  }}
+                  onClick={() => navigate('/classes')}
                 >
-                  Explore All Sports
+                  Browse classes
                 </Button>
-                <Button
-                  type="button"
-                  className="rounded-lg bg-primary shadow-sm"
-                  onClick={() => navigate('/venues')}
-                >
-                  Browse Venues
+                <Button type="button" onClick={() => navigate('/venues')}>
+                  Browse venues
                 </Button>
               </div>
             </div>
