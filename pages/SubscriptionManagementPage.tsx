@@ -173,7 +173,7 @@ const SubscriptionManagementPage: React.FC<SubscriptionManagementPageProps> = ({
                             action={
                                 <Button
                                     onClick={() => navigate('/profile')}
-                                    className="bg-[#fd651e] text-white hover:bg-[#a73a00]"
+                                    className=""
                                 >
                                     <Crown />
                                     View Premium Plans
@@ -190,7 +190,7 @@ const SubscriptionManagementPage: React.FC<SubscriptionManagementPageProps> = ({
 
     const main = (
         <>
-            <StitchPanel className="border-[#fd651e]/40">
+            <StitchPanel className="border-primary/40">
                 <CardHeader className="flex-row items-center justify-between gap-3 space-y-0">
                     <div className="flex min-w-0 items-center gap-3">
                         <div className="grid size-10 shrink-0 place-items-center rounded-full bg-primary/10 text-primary">

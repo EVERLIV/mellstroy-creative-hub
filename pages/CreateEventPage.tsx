@@ -171,7 +171,7 @@ const CreateEventPage: React.FC<CreateEventPageProps> = ({ onBack, onSuccess }) 
                         <ParticleButton
                             type="submit"
                             size="lg"
-                            className="w-full bg-[#fd651e] text-white hover:bg-[#a73a00] md:w-auto"
+                            className="w-full md:w-auto"
                             disabled={!isFormValid || loading}
                             status={loading ? 'pending' : 'idle'}
                             pendingLabel="Submitting..."

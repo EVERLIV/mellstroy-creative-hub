@@ -72,6 +72,9 @@ import { StatusBadge } from '../src/components/ui/status-badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../src/components/ui/tabs';
 import HoldButton from '../src/components/kokonutui/hold-button';
 import { formatVND } from '../src/lib/format';
+import { trackEvent } from '../src/lib/analytics';
+import { TipAfterService } from '../components/marketplace/TipAfterService';
+import { WaitlistPanel } from '../components/marketplace/WaitlistPanel';
 
 const BOOKING_SKELETONS = 4;
 
@@ -111,11 +114,18 @@ type BookingInfo = { trainer: TrainerData; cls: ClassData; booking: BookingData;
 interface CancelBookingModalProps {
     bookingInfo: BookingInfo;
     onConfirm: (trainerId: string, classId: string, date: string, time: string) => void;
+    onReschedule: (bookingInfo: BookingInfo) => void;
     onClose: () => void;
 }
 
-const CancelBookingModal: React.FC<CancelBookingModalProps> = ({ bookingInfo, onConfirm, onClose }) => {
+const CancelBookingModal: React.FC<CancelBookingModalProps> = ({
+    bookingInfo,
+    onConfirm,
+    onReschedule,
+    onClose,
+}) => {
     const { trainer, cls, booking } = bookingInfo;
+    const [step, setStep] = useState<'offer' | 'confirm'>('offer');
 
     const handleConfirm = () => {
         onConfirm(trainer.id, cls.id, booking.date, booking.time);
@@ -126,29 +136,57 @@ const CancelBookingModal: React.FC<CancelBookingModalProps> = ({ bookingInfo, on
         <Dialog open onOpenChange={(open) => { if (!open) onClose(); }}>
             <DialogContent className="max-w-sm">
                 <DialogHeader className="text-center sm:text-center">
-                    <DialogTitle>Cancel Booking</DialogTitle>
+                    <DialogTitle>
+                        {step === 'offer' ? 'Need a different time?' : 'Cancel Booking'}
+                    </DialogTitle>
                     <DialogDescription>
                         {cls.name} · {booking.date} at {booking.time}
                     </DialogDescription>
                 </DialogHeader>
-                <p className="text-center text-sm text-foreground">
-                    Are you sure you want to cancel this booking? This action cannot be undone.
-                </p>
-                <DialogFooter className="flex-col gap-2 sm:flex-col sm:space-x-0">
-                    {/* Irreversible: press and hold to confirm (Kokonut UI hold-button) */}
-                    <HoldButton
-                        variant="red"
-                        className="w-full"
-                        holdingLabel="Keep holding…"
-                        completeLabel="Cancelled"
-                        onHoldComplete={handleConfirm}
-                    >
-                        Hold to cancel booking
-                    </HoldButton>
-                    <Button variant="outline" className="w-full" onClick={onClose}>
-                        Keep Booking
-                    </Button>
-                </DialogFooter>
+                {step === 'offer' ? (
+                    <>
+                        <p className="text-center text-sm text-foreground">
+                            Reschedule first to keep your spot with this coach. Cancellation is available if you still need it.
+                        </p>
+                        <DialogFooter className="flex-col gap-2 sm:flex-col sm:space-x-0">
+                            <Button
+                                className="w-full"
+                                onClick={() => {
+                                    onReschedule(bookingInfo);
+                                    onClose();
+                                }}
+                            >
+                                Reschedule slot
+                            </Button>
+                            <Button variant="outline" className="w-full" onClick={() => setStep('confirm')}>
+                                Continue to cancel
+                            </Button>
+                            <Button variant="ghost" className="w-full" onClick={onClose}>
+                                Keep booking
+                            </Button>
+                        </DialogFooter>
+                    </>
+                ) : (
+                    <>
+                        <p className="text-center text-sm text-foreground">
+                            Are you sure you want to cancel this booking? This action cannot be undone.
+                        </p>
+                        <DialogFooter className="flex-col gap-2 sm:flex-col sm:space-x-0">
+                            <HoldButton
+                                variant="red"
+                                className="w-full"
+                                holdingLabel="Keep holding…"
+                                completeLabel="Cancelled"
+                                onHoldComplete={handleConfirm}
+                            >
+                                Hold to cancel booking
+                            </HoldButton>
+                            <Button variant="outline" className="w-full" onClick={() => setStep('offer')}>
+                                Back
+                            </Button>
+                        </DialogFooter>
+                    </>
+                )}
             </DialogContent>
         </Dialog>
     );
@@ -159,6 +197,7 @@ interface BookedClassCardProps {
     onOpenChat: (personToChatWith: TrainerData, context: { classId: string; className: string; bookingDate: string; studentId: string; }) => void;
     onStartCancellation: (bookingInfo: BookingInfo) => void;
     onOpenReviewModal: (trainer: TrainerData, cls: ClassData, booking: BookingData) => void;
+    onRepeatBook?: (bookingInfo: BookingInfo) => void;
     userRole: UserRole;
     onShowVerificationCode?: (code: string, bookingId: string) => void;
     onVerifyAttendance?: () => void;
@@ -171,6 +210,7 @@ const BookedClassCard: React.FC<BookedClassCardProps> = ({
     onOpenChat,
     onStartCancellation,
     onOpenReviewModal,
+    onRepeatBook,
     userRole,
     onShowVerificationCode,
     onVerifyAttendance
@@ -312,14 +352,31 @@ const BookedClassCard: React.FC<BookedClassCardProps> = ({
                                     ) : null}
                                 </>
                             ) : null}
-                            {booking.status === 'attended' && !booking.hasReview ? (
-                                <Button
-                                    size="sm"
-                                    className="flex-1"
-                                    onClick={() => onOpenReviewModal(trainer, cls, booking)}
-                                >
-                                    Leave review
-                                </Button>
+                            {booking.status === 'attended' ? (
+                                <div className="flex w-full flex-col gap-2">
+                                    <div className="flex gap-2">
+                                        {!booking.hasReview ? (
+                                            <Button
+                                                size="sm"
+                                                className="flex-1"
+                                                onClick={() => onOpenReviewModal(trainer, cls, booking)}
+                                            >
+                                                Leave review
+                                            </Button>
+                                        ) : null}
+                                        {onRepeatBook ? (
+                                            <Button
+                                                size="sm"
+                                                variant="outline"
+                                                className="flex-1"
+                                                onClick={() => onRepeatBook(bookingInfo)}
+                                            >
+                                                Book again
+                                            </Button>
+                                        ) : null}
+                                    </div>
+                                    <TipAfterService bookingId={booking.id} userId={booking.userId} />
+                                </div>
                             ) : null}
                         </>
                     ) : (
@@ -440,9 +497,16 @@ const MyBookingsPage: React.FC = () => {
     const navigate = useNavigate();
     const location = useLocation();
     const { toast } = useToast();
-    const [activeMainTab, setActiveMainTab] = useState<'bookings' | 'requests'>('bookings');
+    const [activeMainTab, setActiveMainTab] = useState<'bookings' | 'requests' | 'waitlist'>('bookings');
     const [activeBookingTab, setActiveBookingTab] = useState<'upcoming' | 'past'>('upcoming');
     const [cancelBookingTarget, setCancelBookingTarget] = useState<BookingInfo | null>(null);
+
+    useEffect(() => {
+        const tab = new URLSearchParams(location.search).get('tab');
+        if (tab === 'waitlist' || tab === 'requests' || tab === 'bookings') {
+            setActiveMainTab(tab);
+        }
+    }, [location.search]);
     const [verificationCode, setVerificationCode] = useState<string | null>(null);
     const [verificationBookingId, setVerificationBookingId] = useState<string | null>(null);
     const [showVerifyModal, setShowVerifyModal] = useState<BookingInfo | null>(null);
@@ -456,7 +520,7 @@ const MyBookingsPage: React.FC = () => {
         onRefresh: async () => {
             if (activeMainTab === 'bookings') {
                 await loadBookings();
-            } else {
+            } else if (activeMainTab === 'requests') {
                 await loadRequests();
             }
         }
@@ -735,7 +799,7 @@ const MyBookingsPage: React.FC = () => {
         try {
             const { error } = await supabase
                 .from('bookings')
-                .delete()
+                .update({ status: 'cancelled' })
                 .eq('client_id', user.id)
                 .eq('class_id', classId)
                 .eq('booking_date', new Date(date).toISOString().split('T')[0])
@@ -756,6 +820,28 @@ const MyBookingsPage: React.FC = () => {
                 variant: "destructive"
             });
         }
+    };
+
+    const handleReschedule = (bookingInfo: BookingInfo) => {
+        trackEvent('reschedule_offer', {
+            bookingId: bookingInfo.booking.id,
+            classId: bookingInfo.cls.id,
+        }, user?.id);
+        navigate(`/class/${bookingInfo.cls.id}`, {
+            state: {
+                rescheduleFrom: bookingInfo.booking.id,
+                preferredDate: bookingInfo.booking.date,
+            },
+        });
+        toast({
+            title: 'Pick a new slot',
+            description: 'Choose another date for this class to finish rescheduling.',
+        });
+    };
+
+    const handleRepeatBook = (bookingInfo: BookingInfo) => {
+        trackEvent('repeat_book', { classId: bookingInfo.cls.id }, user?.id);
+        navigate(`/class/${bookingInfo.cls.id}`);
     };
 
     const handleOpenReviewModal = (trainer: TrainerData, cls: ClassData, booking: BookingData) => {
@@ -809,6 +895,7 @@ const MyBookingsPage: React.FC = () => {
                         onOpenChat={handleOpenChat}
                         onStartCancellation={handleStartCancellation}
                         onOpenReviewModal={handleOpenReviewModal}
+                        onRepeatBook={type === 'past' ? handleRepeatBook : undefined}
                         userRole={userRole!}
                         {...(type === 'upcoming' && {
                             onShowVerificationCode: handleShowVerificationCode,
@@ -822,15 +909,26 @@ const MyBookingsPage: React.FC = () => {
         );
 
     const pageTitle =
-        isStudent && activeMainTab === 'requests' ? 'My Requests' : 'My Bookings';
-    const pageDescription = isStudent
-        ? activeMainTab === 'requests'
-            ? 'Training requests you’ve posted for coaches'
-            : 'Upcoming sessions, check-in QR, and past classes'
-        : 'Classes your students booked with you';
+        activeMainTab === 'waitlist'
+            ? isStudent
+                ? 'My Waitlist'
+                : 'Class Waitlists'
+            : isStudent && activeMainTab === 'requests'
+              ? 'My Requests'
+              : 'My Bookings';
+    const pageDescription =
+        activeMainTab === 'waitlist'
+            ? isStudent
+                ? 'Classes you’re waiting on — we’ll notify you when a spot opens'
+                : 'Athletes waiting for your full classes — notify them when a spot frees up'
+            : isStudent
+              ? activeMainTab === 'requests'
+                ? 'Training requests you’ve posted for coaches'
+                : 'Upcoming sessions, check-in QR, and past classes'
+              : 'Upcoming sessions with your athletes';
 
     return (
-        <AppScreen className="flex min-h-[calc(100dvh-3.5rem)] min-w-0 flex-col overflow-x-hidden bg-muted/30 lg:min-h-[calc(100dvh-4rem)]">
+        <AppScreen className="flex min-w-0 flex-col bg-muted/30">
             <header className="shrink-0 border-b bg-card/95 backdrop-blur">
                 <div className={cn(APP_CONTENT, 'flex flex-col gap-4 py-4')}>
                     <div className="flex flex-wrap items-center justify-between gap-3">
@@ -882,23 +980,29 @@ const MyBookingsPage: React.FC = () => {
                             <h1 className="text-2xl font-bold tracking-tight md:text-3xl">{pageTitle}</h1>
                             <p className="text-sm text-muted-foreground">{pageDescription}</p>
                         </div>
-                        {isStudent ? (
-                            <Tabs
-                                value={activeMainTab}
-                                onValueChange={(v) => setActiveMainTab(v as 'bookings' | 'requests')}
-                            >
-                                <TabsList aria-label="My bookings sections">
-                                    <TabsTrigger value="bookings" className="gap-1.5">
-                                        <Calendar />
-                                        Bookings
-                                    </TabsTrigger>
+                        <Tabs
+                            value={activeMainTab}
+                            onValueChange={(v) =>
+                                setActiveMainTab(v as 'bookings' | 'requests' | 'waitlist')
+                            }
+                        >
+                            <TabsList aria-label="My bookings sections">
+                                <TabsTrigger value="bookings" className="gap-1.5">
+                                    <Calendar />
+                                    Bookings
+                                </TabsTrigger>
+                                <TabsTrigger value="waitlist" className="gap-1.5">
+                                    <Sparkles />
+                                    Waitlist
+                                </TabsTrigger>
+                                {isStudent ? (
                                     <TabsTrigger value="requests" className="gap-1.5">
                                         <FileText />
                                         My Requests
                                     </TabsTrigger>
-                                </TabsList>
-                            </Tabs>
-                        ) : null}
+                                ) : null}
+                            </TabsList>
+                        </Tabs>
                     </div>
                 </div>
             </header>
@@ -911,7 +1015,12 @@ const MyBookingsPage: React.FC = () => {
                         pullProgress={pullProgress}
                     />
 
-                    {activeMainTab === 'bookings' ? (
+                    {activeMainTab === 'waitlist' ? (
+                        <WaitlistPanel
+                            userId={user?.id}
+                            role={isStudent ? 'student' : 'trainer'}
+                        />
+                    ) : activeMainTab === 'bookings' ? (
                         isLoadingBookings ? (
                             <div className="grid gap-3 lg:grid-cols-2">
                                 {Array.from({ length: BOOKING_SKELETONS }, (_, idx) => (
@@ -1061,6 +1170,7 @@ const MyBookingsPage: React.FC = () => {
                 <CancelBookingModal
                     bookingInfo={cancelBookingTarget}
                     onConfirm={handleCancelBooking}
+                    onReschedule={handleReschedule}
                     onClose={() => setCancelBookingTarget(null)}
                 />
             ) : null}

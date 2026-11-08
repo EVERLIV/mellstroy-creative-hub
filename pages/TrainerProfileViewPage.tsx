@@ -15,6 +15,7 @@ interface TrainerProfileViewPageProps {
   onToggleFavorite?: (trainerId: string) => void;
   onInitiateBooking?: (target: { trainer: Trainer; cls: Class }) => void;
   onOpenReviewsModal?: (trainer: Trainer) => void;
+  onOpenChat?: (trainer: Trainer) => void;
 }
 
 const TrainerProfileViewPage: React.FC<TrainerProfileViewPageProps> = ({
@@ -24,6 +25,7 @@ const TrainerProfileViewPage: React.FC<TrainerProfileViewPageProps> = ({
   onToggleFavorite,
   onInitiateBooking,
   onOpenReviewsModal,
+  onOpenChat,
 }) => {
   const { trainerId } = useParams<{ trainerId: string }>();
   const navigate = useNavigate();
@@ -146,13 +148,14 @@ const TrainerProfileViewPage: React.FC<TrainerProfileViewPageProps> = ({
   return (
     <TrainerDetailPage
       trainer={trainer}
-      onBack={() => navigate(-1)}
-      onInitiateBooking={onInitiateBooking}
+      onBack={() => navigate('/explore')}
+      onInitiateBooking={onInitiateBooking ?? (() => undefined)}
       userRole={userRole}
       currentUserId={currentUserId}
       isFavorite={favoriteTrainerIds.includes(trainer.id)}
-      onToggleFavorite={onToggleFavorite}
-      onOpenReviewsModal={onOpenReviewsModal}
+      onToggleFavorite={onToggleFavorite ?? (() => undefined)}
+      onOpenReviewsModal={onOpenReviewsModal ?? (() => undefined)}
+      onOpenChat={onOpenChat}
     />
   );
 };

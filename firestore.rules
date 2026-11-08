@@ -1,0 +1,78 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() {
+      return request.auth != null;
+    }
+    function isOwner(uid) {
+      return signedIn() && request.auth.uid == uid;
+    }
+
+    match /profiles/{userId} {
+      allow read: if true;
+      allow write: if isOwner(userId);
+    }
+    match /user_roles/{userId} {
+      allow read: if signedIn();
+      allow write: if isOwner(userId);
+    }
+    match /classes/{id} {
+      allow read: if true;
+      allow write: if signedIn();
+    }
+    match /venues/{id} {
+      allow read: if true;
+      allow write: if signedIn();
+    }
+    match /class_packages/{id} {
+      allow read: if true;
+      allow write: if signedIn();
+    }
+    match /bookings/{id} {
+      allow read: if signedIn();
+      allow create: if signedIn();
+      allow update, delete: if signedIn() &&
+        (resource.data.client_id == request.auth.uid || request.auth != null);
+    }
+    match /waitlist_entries/{id} {
+      allow read: if signedIn();
+      allow create: if signedIn() && request.resource.data.user_id == request.auth.uid;
+      allow update: if signedIn();
+    }
+    match /notifications/{id} {
+      allow read: if signedIn() && resource.data.user_id == request.auth.uid;
+      allow create: if signedIn();
+      allow update: if signedIn() && resource.data.user_id == request.auth.uid;
+    }
+    match /reviews/{id} {
+      allow read: if true;
+      allow write: if signedIn();
+    }
+    match /promoted_listings/{id} {
+      allow read: if true;
+    }
+    match /partner_offers/{id} {
+      allow read: if true;
+    }
+    match /related_services/{id} {
+      allow read: if true;
+    }
+    match /promo_codes/{id} {
+      allow read: if true;
+    }
+    match /analytics_events/{id} {
+      allow create: if true;
+      allow read: if signedIn();
+    }
+    match /booking_holds/{id} {
+      allow read, write: if signedIn();
+    }
+    match /saved_searches/{id} {
+      allow read, write: if signedIn() && request.resource.data.user_id == request.auth.uid;
+    }
+    match /{document=**} {
+      allow read: if true;
+      allow write: if signedIn();
+    }
+  }
+}

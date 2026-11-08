@@ -1,15 +1,37 @@
 import { useState, useEffect, createContext, useContext, ReactNode } from 'react';
-import { User, Session } from '@supabase/supabase-js';
-import { supabase } from '@/src/integrations/supabase/client';
+import {
+  onAuthStateChanged,
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
+  signOut as fbSignOut,
+  updateProfile,
+  GoogleAuthProvider,
+  FacebookAuthProvider,
+  signInWithPopup,
+  type User as FirebaseUser,
+} from 'firebase/auth';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { auth, db } from '@/src/lib/firebase';
+import { ensureSeeded, listCollection, upsertRow } from '@/src/lib/firebase-store';
 import { useToast } from '@/src/hooks/use-toast';
 import { UserRole } from '@/types';
+import { SEED_IDS } from '@/src/data/seed/mockBackendData';
+
+/** App user shape — keeps `id` so existing pages using user.id keep working. */
+export type AppUser = {
+  id: string;
+  uid: string;
+  email: string | null;
+  displayName?: string | null;
+  photoURL?: string | null;
+};
+
+type Session = { user: AppUser; access_token: string };
 
 interface AuthContextType {
-  user: User | null;
+  user: AppUser | null;
   session: Session | null;
-  /** Account UI role: student | trainer. Null when admin or unset. */
   userRole: UserRole | null;
-  /** True when user_roles.role === 'admin'. */
   isAdmin: boolean;
   loading: boolean;
   signIn: (email: string, password: string) => Promise<void>;
@@ -17,10 +39,22 @@ interface AuthContextType {
   signOut: () => Promise<void>;
   signInWithGoogle: () => Promise<void>;
   signInWithFacebook: () => Promise<void>;
+  /** Demo helpers — instant local roles without Firebase console. */
+  signInAsDemo: (role: 'student' | 'trainer') => Promise<void>;
   checkOnboardingStatus: (userId: string) => Promise<boolean>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+function toAppUser(u: FirebaseUser): AppUser {
+  return {
+    id: u.uid,
+    uid: u.uid,
+    email: u.email,
+    displayName: u.displayName,
+    photoURL: u.photoURL,
+  };
+}
 
 function mapDbRole(role: string | null | undefined): { userRole: UserRole | null; isAdmin: boolean } {
   if (!role) return { userRole: null, isAdmin: false };
@@ -30,8 +64,44 @@ function mapDbRole(role: string | null | undefined): { userRole: UserRole | null
   return { userRole: null, isAdmin: false };
 }
 
+async function ensureProfile(user: AppUser, username?: string, role: UserRole = 'student') {
+  ensureSeeded();
+  upsertRow('profiles', {
+    id: user.id,
+    username: username || user.displayName || user.email?.split('@')[0] || 'Athlete',
+    email: user.email,
+    role,
+    onboarding_completed: true,
+    created_at: new Date().toISOString(),
+    last_seen: new Date().toISOString(),
+  });
+  upsertRow('user_roles', {
+    id: `${user.id}-role`,
+    user_id: user.id,
+    role,
+  });
+
+  try {
+    await setDoc(
+      doc(db, 'profiles', user.id),
+      {
+        id: user.id,
+        username: username || user.displayName || user.email?.split('@')[0] || 'Athlete',
+        email: user.email,
+        role,
+        onboarding_completed: true,
+        updated_at: new Date().toISOString(),
+      },
+      { merge: true }
+    );
+    await setDoc(doc(db, 'user_roles', user.id), { user_id: user.id, role }, { merge: true });
+  } catch {
+    /* offline / rules — local seed still works */
+  }
+}
+
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<AppUser | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [userRole, setUserRole] = useState<UserRole | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
@@ -39,186 +109,160 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const { toast } = useToast();
 
   const fetchUserRole = async (userId: string) => {
+    ensureSeeded();
     try {
-      const { data, error } = await supabase
-        .from('user_roles')
-        .select('role')
-        .eq('user_id', userId)
-        .maybeSingle();
-
-      if (error) {
-        console.error('Error fetching user role:', error);
-        setUserRole(null);
-        setIsAdmin(false);
+      const local = listCollection('user_roles').find((r) => r.user_id === userId) as
+        | { role?: string }
+        | undefined;
+      if (local?.role) {
+        const mapped = mapDbRole(local.role);
+        setUserRole(mapped.userRole);
+        setIsAdmin(mapped.isAdmin);
         return;
       }
-
-      const mapped = mapDbRole(data?.role);
+      const snap = await getDoc(doc(db, 'user_roles', userId));
+      const role = snap.exists() ? (snap.data().role as string) : 'student';
+      const mapped = mapDbRole(role);
       setUserRole(mapped.userRole);
       setIsAdmin(mapped.isAdmin);
-    } catch (error) {
-      console.error('Error fetching user role:', error);
-      setUserRole(null);
+    } catch {
+      setUserRole('student');
       setIsAdmin(false);
     }
   };
 
   useEffect(() => {
-    let mounted = true;
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (_event, nextSession) => {
-        if (!mounted) return;
-
-        setSession(nextSession);
-        setUser(nextSession?.user ?? null);
-
-        if (nextSession?.user) {
-          setTimeout(() => {
-            if (mounted) fetchUserRole(nextSession.user.id);
-          }, 0);
-        } else {
-          setUserRole(null);
-          setIsAdmin(false);
-        }
-
+    ensureSeeded();
+    const demo = localStorage.getItem('rhinofit.demoUser');
+    if (demo) {
+      try {
+        const parsed = JSON.parse(demo) as { user: AppUser; role: UserRole };
+        setUser(parsed.user);
+        setSession({ user: parsed.user, access_token: 'demo' });
+        setUserRole(parsed.role);
         setLoading(false);
+      } catch {
+        localStorage.removeItem('rhinofit.demoUser');
       }
-    );
+    }
 
-    supabase.auth.getSession().then(({ data: { session: existing } }) => {
-      if (!mounted) return;
-
-      setSession(existing);
-      setUser(existing?.user ?? null);
-
-      if (existing?.user) {
-        setTimeout(() => {
-          if (mounted) fetchUserRole(existing.user.id);
-        }, 0);
+    const unsub = onAuthStateChanged(auth, (fbUser) => {
+      if (localStorage.getItem('rhinofit.demoUser')) {
+        setLoading(false);
+        return;
       }
-
+      if (fbUser) {
+        const appUser = toAppUser(fbUser);
+        setUser(appUser);
+        setSession({ user: appUser, access_token: 'firebase' });
+        void fetchUserRole(appUser.id);
+      } else {
+        setUser(null);
+        setSession(null);
+        setUserRole(null);
+        setIsAdmin(false);
+      }
       setLoading(false);
     });
-
-    return () => {
-      mounted = false;
-      subscription.unsubscribe();
-    };
+    return () => unsub();
   }, []);
 
   const signIn = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
-
-    if (error) {
-      toast({
-        title: 'Error signing in',
-        description: error.message,
-        variant: 'destructive',
-      });
+    try {
+      const cred = await signInWithEmailAndPassword(auth, email, password);
+      await ensureProfile(toAppUser(cred.user));
+      toast({ title: 'Welcome back!', description: 'Signed in with Firebase.' });
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Sign in failed';
+      toast({ title: 'Error signing in', description: message, variant: 'destructive' });
       throw error;
     }
-
-    toast({
-      title: 'Welcome back!',
-      description: 'You have successfully signed in.',
-    });
   };
 
   const signUp = async (email: string, password: string, username: string) => {
-    const redirectUrl = `${window.location.origin}/`;
-
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        emailRedirectTo: redirectUrl,
-        data: {
-          username,
-        },
-      },
-    });
-
-    if (error) {
-      toast({
-        title: 'Error signing up',
-        description: error.message,
-        variant: 'destructive',
-      });
+    try {
+      const cred = await createUserWithEmailAndPassword(auth, email, password);
+      await updateProfile(cred.user, { displayName: username });
+      await ensureProfile(toAppUser(cred.user), username, 'student');
+      toast({ title: 'Account created!', description: 'Welcome to RhinoFit.' });
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Sign up failed';
+      toast({ title: 'Error signing up', description: message, variant: 'destructive' });
       throw error;
     }
-
-    toast({
-      title: 'Account created!',
-      description: 'Welcome to Mellstroy Challenge!',
-    });
   };
 
   const signOut = async () => {
-    const { error } = await supabase.auth.signOut();
-
-    if (error) {
-      toast({
-        title: 'Error signing out',
-        description: error.message,
-        variant: 'destructive',
-      });
-      throw error;
+    localStorage.removeItem('rhinofit.demoUser');
+    try {
+      await fbSignOut(auth);
+    } catch {
+      /* demo-only session */
     }
-
-    toast({
-      title: 'Signed out',
-      description: 'You have been signed out successfully.',
-    });
+    setUser(null);
+    setSession(null);
+    setUserRole(null);
+    toast({ title: 'Signed out' });
   };
 
   const signInWithGoogle = async () => {
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: 'google',
-      options: {
-        redirectTo: `${window.location.origin}/`,
-      },
-    });
-
-    if (error) {
-      toast({
-        title: 'Error signing in with Google',
-        description: error.message,
-        variant: 'destructive',
-      });
+    try {
+      const cred = await signInWithPopup(auth, new GoogleAuthProvider());
+      await ensureProfile(toAppUser(cred.user));
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Google sign-in failed';
+      toast({ title: 'Google Sign-in failed', description: message, variant: 'destructive' });
       throw error;
     }
   };
 
   const signInWithFacebook = async () => {
-    const { error } = await supabase.auth.signInWithOAuth({
-      provider: 'facebook',
-      options: {
-        redirectTo: `${window.location.origin}/`,
-      },
-    });
-
-    if (error) {
-      toast({
-        title: 'Error signing in with Facebook',
-        description: error.message,
-        variant: 'destructive',
-      });
+    try {
+      const cred = await signInWithPopup(auth, new FacebookAuthProvider());
+      await ensureProfile(toAppUser(cred.user));
+    } catch (error: unknown) {
+      const message = error instanceof Error ? error.message : 'Facebook sign-in failed';
+      toast({ title: 'Facebook Sign-in failed', description: message, variant: 'destructive' });
       throw error;
     }
   };
 
-  const checkOnboardingStatus = async (userId: string): Promise<boolean> => {
-    const { data } = await supabase
-      .from('profiles')
-      .select('onboarding_completed')
-      .eq('id', userId)
-      .maybeSingle();
+  const signInAsDemo = async (role: 'student' | 'trainer') => {
+    ensureSeeded();
+    const id = role === 'student' ? SEED_IDS.student : SEED_IDS.trainerA;
+    const profile = listCollection('profiles').find((p) => p.id === id) as {
+      username?: string;
+      email?: string;
+    };
+    const appUser: AppUser = {
+      id,
+      uid: id,
+      email: profile?.email || `${role}@rhinofit.demo`,
+      displayName: profile?.username || role,
+    };
+    localStorage.setItem('rhinofit.demoUser', JSON.stringify({ user: appUser, role }));
+    setUser(appUser);
+    setSession({ user: appUser, access_token: 'demo' });
+    setUserRole(role);
+    setIsAdmin(false);
+    toast({
+      title: `Demo ${role}`,
+      description: role === 'trainer' ? 'View waitlists & coach tools' : 'Browse, book, join waitlists',
+    });
+  };
 
-    return data?.onboarding_completed ?? false;
+  const checkOnboardingStatus = async (userId: string): Promise<boolean> => {
+    ensureSeeded();
+    const local = listCollection('profiles').find((p) => p.id === userId) as
+      | { onboarding_completed?: boolean }
+      | undefined;
+    if (local) return Boolean(local.onboarding_completed);
+    try {
+      const snap = await getDoc(doc(db, 'profiles', userId));
+      return Boolean(snap.data()?.onboarding_completed);
+    } catch {
+      return true;
+    }
   };
 
   return (
@@ -234,6 +278,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         signOut,
         signInWithGoogle,
         signInWithFacebook,
+        signInAsDemo,
         checkOnboardingStatus,
       }}
     >

@@ -170,6 +170,24 @@ const EditAboutMePage: React.FC<EditAboutMePageProps> = ({ user, onSave, onCance
                                         <option key={district} value={district}>{district}</option>
                                     ))}
                                 </NativeSelect>
+                                <FieldDescription>
+                                    Used to measure distance to coaches and classes.
+                                </FieldDescription>
+                            </Field>
+                            <Field>
+                                <FieldLabel htmlFor="distanceUnit">Distance unit</FieldLabel>
+                                <NativeSelect
+                                    id="distanceUnit"
+                                    name="distanceUnit"
+                                    value={formData.distanceUnit || 'km'}
+                                    onChange={handleChange}
+                                >
+                                    <option value="km">Kilometers (km)</option>
+                                    <option value="mi">Miles (mi)</option>
+                                </NativeSelect>
+                                <FieldDescription>
+                                    Explore and Classes filters use this unit.
+                                </FieldDescription>
                             </Field>
                             <Field>
                                 <FieldLabel htmlFor="bio">About me</FieldLabel>

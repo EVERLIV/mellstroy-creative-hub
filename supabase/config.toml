@@ -1,1 +1,5 @@
-project_id = "sakcqmqjxzfgdgegnxgv"
+[functions.create-booking-payment]
+verify_jwt = true
+
+[functions.marketplace-lifecycle]
+verify_jwt = false

@@ -66,7 +66,7 @@ const AICoachPage: React.FC<AICoachPageProps> = ({ messages, onSendMessage, isLo
           <StitchPageHeader
             title={
               <span className="flex items-center gap-2">
-                <span className="grid size-8 place-items-center rounded-lg bg-orange-50 text-[#fd651e]">
+                <span className="grid size-8 place-items-center rounded-lg bg-primary/10 text-primary">
                   <Sparkles className="size-4" aria-hidden />
                 </span>
                 AI fitness coach
@@ -87,7 +87,7 @@ const AICoachPage: React.FC<AICoachPageProps> = ({ messages, onSendMessage, isLo
           <div className="mx-auto w-full max-w-2xl space-y-4">
             {messages.length === 0 && !isLoading && (
               <div className="flex flex-col items-center gap-6 py-8 text-center md:py-12">
-                <div className="grid size-16 place-items-center rounded-2xl bg-orange-50 text-[#fd651e] md:size-20">
+                <div className="grid size-16 place-items-center rounded-2xl bg-primary/10 text-primary md:size-20">
                   <Sparkles className="size-8 md:size-10" aria-hidden />
                 </div>
                 <div className="flex flex-col gap-2">
@@ -104,9 +104,9 @@ const AICoachPage: React.FC<AICoachPageProps> = ({ messages, onSendMessage, isLo
                       <button
                         type="button"
                         onClick={() => onSendMessage(text)}
-                        className="flex w-full items-center gap-3 rounded-xl border border-border bg-card px-4 py-3 text-left text-sm font-medium text-foreground shadow-sm transition-colors hover:border-[#fd651e]/40 hover:bg-orange-50/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#fd651e]/40"
+                        className="flex w-full items-center gap-3 rounded-xl border border-border bg-card px-4 py-3 text-left text-sm font-medium text-foreground shadow-sm transition-colors hover:border-primary/40 hover:bg-primary/10/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
                       >
-                        <Icon className="size-4 shrink-0 text-[#fd651e]" aria-hidden />
+                        <Icon className="size-4 shrink-0 text-primary" aria-hidden />
                         {text}
                       </button>
                     </li>
@@ -130,7 +130,7 @@ const AICoachPage: React.FC<AICoachPageProps> = ({ messages, onSendMessage, isLo
                     aria-hidden
                     className={cn(
                       'grid size-9 shrink-0 place-items-center rounded-xl',
-                      isUser ? 'bg-[#fd651e] text-white' : 'bg-orange-50 text-[#fd651e]'
+                      isUser ? 'bg-primary text-white' : 'bg-primary/10 text-primary'
                     )}
                   >
                     {isUser ? <User className="size-5" /> : <Bot className="size-5" />}
@@ -146,7 +146,7 @@ const AICoachPage: React.FC<AICoachPageProps> = ({ messages, onSendMessage, isLo
                       className={cn(
                         'rounded-2xl px-4 py-3 shadow-sm',
                         isUser
-                          ? 'rounded-tr-md bg-[#fd651e] text-white'
+                          ? 'rounded-tr-md bg-primary text-white'
                           : 'rounded-tl-md border border-border bg-card text-foreground'
                       )}
                     >
@@ -168,7 +168,7 @@ const AICoachPage: React.FC<AICoachPageProps> = ({ messages, onSendMessage, isLo
               >
                 <div
                   aria-hidden
-                  className="grid size-9 shrink-0 place-items-center rounded-xl bg-orange-50 text-[#fd651e]"
+                  className="grid size-9 shrink-0 place-items-center rounded-xl bg-primary/10 text-primary"
                 >
                   <Bot className="size-5" />
                 </div>
@@ -177,7 +177,7 @@ const AICoachPage: React.FC<AICoachPageProps> = ({ messages, onSendMessage, isLo
                     {TYPING_DELAYS.map((delay) => (
                       <span
                         key={delay}
-                        className="size-2 animate-bounce rounded-full bg-[#fd651e]"
+                        className="size-2 animate-bounce rounded-full bg-primary"
                         style={{ animationDelay: delay }}
                       />
                     ))}

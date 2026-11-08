@@ -17,6 +17,7 @@ import {
 } from '@/src/components/ui/field';
 import AttractButton from '@/src/components/kokonutui/attract-button';
 import ParticleButton from '@/src/components/kokonutui/particle-button';
+import { consumeAuthReturnTo } from '@/src/lib/require-auth';
 
 const MIN_PASSWORD_LENGTH = 6;
 
@@ -31,7 +32,15 @@ const AuthPage = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [isPasswordVisible, setIsPasswordVisible] = useState(false);
   const [isConfirmPasswordVisible, setIsConfirmPasswordVisible] = useState(false);
-  const { signIn, signUp, signInWithGoogle, signInWithFacebook, user, checkOnboardingStatus } = useAuth();
+  const {
+    signIn,
+    signUp,
+    signInWithGoogle,
+    signInWithFacebook,
+    signInAsDemo,
+    user,
+    checkOnboardingStatus,
+  } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -39,7 +48,12 @@ const AuthPage = () => {
     const checkAndRedirect = async () => {
       if (user) {
         const isOnboarded = await checkOnboardingStatus(user.id);
-        navigate(isOnboarded ? '/' : '/onboarding');
+        if (!isOnboarded) {
+          navigate('/onboarding');
+          return;
+        }
+        const returnTo = consumeAuthReturnTo();
+        navigate(returnTo || '/');
       }
     };
     checkAndRedirect();
@@ -166,6 +180,29 @@ const AuthPage = () => {
               >
                 Create an account
               </AttractButton>
+              <div className="space-y-2 border-t border-border pt-4">
+                <p className="text-center text-xs text-muted-foreground">
+                  Firebase demo (mock data — no console setup needed)
+                </p>
+                <div className="flex gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="flex-1"
+                    onClick={() => void signInAsDemo('student')}
+                  >
+                    Demo student
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="flex-1"
+                    onClick={() => void signInAsDemo('trainer')}
+                  >
+                    Demo trainer
+                  </Button>
+                </div>
+              </div>
             </div>
           </div>
         </section>

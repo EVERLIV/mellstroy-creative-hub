@@ -89,6 +89,11 @@ interface ProfileDropdownProps
   /** Called once Sign out has been held for `holdDuration` ms. */
   onSignOut?: () => void;
   holdDuration?: number;
+  /**
+   * Compact trigger for tight chrome (top nav): avatar + chevron only.
+   * Full name/email stay in the open panel.
+   */
+  compact?: boolean;
 }
 
 const SAMPLE_ACCOUNTS: Account[] = [
@@ -289,6 +294,8 @@ function Identity({
   status,
   transition,
   stacked,
+  /** Shared layout morph. Off in compact nav — sticky remounts otherwise fly the avatar. */
+  layoutShare = true,
 }: {
   uid: string;
   shared: boolean;
@@ -297,8 +304,10 @@ function Identity({
   status: AccountStatus;
   transition: Transition;
   stacked: boolean;
+  layoutShare?: boolean;
 }) {
   const hidden = shared ? undefined : "invisible";
+  const useLayout = layoutShare && shared;
   return (
     <span
       className={cn(
@@ -308,8 +317,8 @@ function Identity({
     >
       <motion.span
         className={cn("relative z-20 block", hidden)}
-        key={shared ? "avatar-shared" : "avatar-static"}
-        layoutId={shared ? `${uid}-avatar` : undefined}
+        key={useLayout ? "avatar-shared" : "avatar-static"}
+        layoutId={useLayout ? `${uid}-avatar` : undefined}
         transition={transition}
       >
         <Avatar
@@ -325,8 +334,8 @@ function Identity({
             "relative z-20 block truncate font-medium text-sm text-foreground leading-5",
             hidden
           )}
-          key={shared ? "name-shared" : "name-static"}
-          layoutId={shared ? `${uid}-name` : undefined}
+          key={useLayout ? "name-shared" : "name-static"}
+          layoutId={useLayout ? `${uid}-name` : undefined}
           transition={transition}
         >
           {account.name}
@@ -336,8 +345,8 @@ function Identity({
             "relative z-20 block truncate text-xs text-muted-foreground leading-4",
             hidden
           )}
-          key={shared ? "email-shared" : "email-static"}
-          layoutId={shared ? `${uid}-email` : undefined}
+          key={useLayout ? "email-shared" : "email-static"}
+          layoutId={useLayout ? `${uid}-email` : undefined}
           transition={transition}
         >
           {account.email}
@@ -512,15 +521,11 @@ function StatusRow({
 }
 
 function ThemeRow({
-  uid,
   theme,
   onChange,
-  reduced,
 }: {
-  uid: string;
   theme: AccountTheme;
   onChange: (theme: AccountTheme) => void;
-  reduced: boolean;
 }) {
   return (
     <fieldset
@@ -545,10 +550,9 @@ function ThemeRow({
               type="button"
             >
               {checked ? (
-                <motion.span
+                <span
                   className="absolute inset-0 rounded-lg bg-card shadow-[0_1px_2px_rgb(0_0_0/0.08)]"
-                  layoutId={`${uid}-theme`}
-                  transition={reduced ? INSTANT : INDICATOR_SPRING}
+                  aria-hidden
                 />
               ) : null}
               <Icon className="relative size-3.5" />
@@ -620,6 +624,7 @@ export default function ProfileDropdown({
   onStatusChange,
   onSignOut,
   holdDuration = 1200,
+  compact = false,
   className,
   ...props
 }: ProfileDropdownProps) {
@@ -889,7 +894,13 @@ export default function ProfileDropdown({
         aria-controls={sharedInPanel ? menuId : undefined}
         aria-expanded={sharedInPanel}
         aria-haspopup="menu"
-        className="flex w-60 items-center gap-2.5 rounded-2xl border border-border bg-card p-2 pr-3 text-left outline-none transition-colors duration-150 hover:border-border hover:bg-muted/50 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+        aria-label={compact ? `Account menu, ${account.name}` : undefined}
+        className={cn(
+          "flex items-center text-left outline-none transition-colors duration-150 hover:border-border hover:bg-muted/50 focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+          compact
+            ? "gap-1 rounded-xl border border-border bg-card p-1.5 pr-2"
+            : "w-60 gap-2.5 rounded-2xl border border-border bg-card p-2 pr-3"
+        )}
         onClick={(event) => {
           const via = viaOf(event);
           openMenu(via, via === "keyboard" ? "first" : "menu");
@@ -903,17 +914,29 @@ export default function ProfileDropdown({
         ref={triggerRef}
         type="button"
       >
-        <span className="min-w-0 flex-1">
-          <Identity
-            account={account}
-            shared={!sharedInPanel}
-            stacked={false}
-            status={status}
-            tone={tone}
-            transition={sharedTransition}
-            uid={uid}
-          />
-        </span>
+        {compact ? (
+          /* Static avatar — no layoutId. Shared morph flies across sticky nav on route changes. */
+          <span className={cn("relative z-20 block", sharedInPanel && "invisible")}>
+            <Avatar
+              account={account}
+              className="size-8"
+              status={status}
+              tone={tone}
+            />
+          </span>
+        ) : (
+          <span className="min-w-0 flex-1">
+            <Identity
+              account={account}
+              shared={!sharedInPanel}
+              stacked={false}
+              status={status}
+              tone={tone}
+              transition={sharedTransition}
+              uid={uid}
+            />
+          </span>
+        )}
         <ChevronsUpDown
           aria-hidden="true"
           className={cn(
@@ -964,6 +987,7 @@ export default function ProfileDropdown({
                   <Identity
                     account={account}
                     shared={sharedInPanel}
+                    layoutShare={!compact}
                     stacked
                     status={status}
                     tone={tone}
@@ -988,12 +1012,7 @@ export default function ProfileDropdown({
                   tabIndex={-1}
                 >
                   <StatusRow onChange={setStatus} status={status} />
-                  <ThemeRow
-                    onChange={setTheme}
-                    reduced={reduced}
-                    theme={theme}
-                    uid={uid}
-                  />
+                  <ThemeRow onChange={setTheme} theme={theme} />
                   <Separator />
                   {items.map((item, index) => (
                     <LinkItem

@@ -87,7 +87,7 @@ const MealPlannerPage: React.FC<MealPlannerPageProps> = ({ user, onClose, onSave
                 <StitchPageHeader
                     title={
                         <span className="flex items-center gap-2">
-                            <span className="grid size-8 place-items-center rounded-lg bg-orange-50 text-[#fd651e]">
+                            <span className="grid size-8 place-items-center rounded-lg bg-primary/10 text-primary">
                                 <Sparkles className="size-4" aria-hidden />
                             </span>
                             AI meal planner
@@ -116,7 +116,7 @@ const MealPlannerPage: React.FC<MealPlannerPageProps> = ({ user, onClose, onSave
                                             aria-checked={isSelected}
                                             onClick={() => handlePrefChange('duration', id)}
                                             className={cn(
-                                                'rounded-md px-3 py-2 text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#fd651e]/40',
+                                                'rounded-md px-3 py-2 text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40',
                                                 isSelected
                                                     ? 'bg-card text-foreground shadow-sm'
                                                     : 'text-muted-foreground hover:text-foreground'
@@ -150,9 +150,9 @@ const MealPlannerPage: React.FC<MealPlannerPageProps> = ({ user, onClose, onSave
                                                     aria-checked={isSelected}
                                                     onClick={() => handlePrefChange('eatingStyle', style.id)}
                                                     className={cn(
-                                                        'rounded-xl border px-2 py-2.5 text-center text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#fd651e]/40',
+                                                        'rounded-xl border px-2 py-2.5 text-center text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/40',
                                                         isSelected
-                                                            ? 'border-[#fd651e] bg-orange-50 text-[#fd651e]'
+                                                            ? 'border-primary bg-primary/10 text-primary'
                                                             : 'border-border bg-card text-muted-foreground hover:bg-muted/50'
                                                     )}
                                                 >
@@ -206,7 +206,7 @@ const MealPlannerPage: React.FC<MealPlannerPageProps> = ({ user, onClose, onSave
 
                         <ParticleButton
                             size="lg"
-                            className="w-full bg-[#fd651e] hover:bg-[#a73a00]"
+                            className="w-full"
                             onClick={handleGeneratePlan}
                             disabled={isLoading}
                             status={isLoading ? 'pending' : error ? 'error' : 'idle'}
@@ -253,7 +253,7 @@ const MealPlannerPage: React.FC<MealPlannerPageProps> = ({ user, onClose, onSave
                                             icon={<Save />}
                                             pendingLabel="Saving"
                                             successLabel="Saved"
-                                            className="h-11 bg-[#fd651e] hover:bg-[#a73a00] md:h-10"
+                                            className="h-11 md:h-10"
                                         >
                                             Save this plan
                                         </ParticleButton>
@@ -269,14 +269,14 @@ const MealPlannerPage: React.FC<MealPlannerPageProps> = ({ user, onClose, onSave
                                                     type="button"
                                                     onClick={() => toggleDay(dailyPlan.day)}
                                                     aria-expanded={isOpen}
-                                                    className="flex w-full items-center gap-3 p-4 text-left transition-colors hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#fd651e]/40"
+                                                    className="flex w-full items-center gap-3 p-4 text-left transition-colors hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary/40"
                                                 >
-                                                    <span className="grid size-9 shrink-0 place-items-center rounded-full bg-orange-50 text-sm font-semibold tabular-nums text-[#fd651e]">
+                                                    <span className="grid size-9 shrink-0 place-items-center rounded-full bg-primary/10 text-sm font-semibold tabular-nums text-primary">
                                                         {index + 1}
                                                     </span>
                                                     <span className="min-w-0 flex-1 truncate font-semibold text-foreground">{dailyPlan.day}</span>
                                                     <span className="flex items-center gap-1 text-xs font-medium text-muted-foreground">
-                                                        <Flame className="size-3.5 text-[#fd651e]" aria-hidden />
+                                                        <Flame className="size-3.5 text-primary" aria-hidden />
                                                         {dailyPlan.daily_summary.calories}
                                                     </span>
                                                     <ChevronDown className={cn('size-5 shrink-0 text-muted-foreground transition-transform', isOpen && 'rotate-180')} aria-hidden />

@@ -98,7 +98,7 @@ const FavoritesPage: React.FC<FavoritesPageProps> = ({
         {count > 0 ? (
           <StitchPanel className="p-4 sm:p-5">
             <div className="mb-4 flex items-center gap-2">
-              <Heart className="size-4 fill-[#fd651e] text-[#fd651e]" aria-hidden />
+              <Heart className="size-4 fill-primary text-primary" aria-hidden />
               <h2 className="text-sm font-semibold text-foreground">Favorite trainers</h2>
             </div>
             <TrainerGrid
@@ -117,7 +117,7 @@ const FavoritesPage: React.FC<FavoritesPageProps> = ({
               title="No favorites yet"
               description="Tap the heart icon on a trainer's profile to add them to your favorites."
               action={
-                <Button className="bg-[#fd651e] text-white hover:bg-[#a73a00]" onClick={goExplore}>
+                <Button className="" onClick={goExplore}>
                   Explore trainers
                 </Button>
               }

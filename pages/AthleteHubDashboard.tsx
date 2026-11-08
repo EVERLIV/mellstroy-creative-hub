@@ -34,8 +34,6 @@ import type { Trainer } from '@/types';
  * Shell owns top nav — this page is content-only, same max-w-7xl rail.
  */
 
-const CTA = 'bg-[#2563eb] text-white hover:bg-[#004ac6]';
-const CTA_OUTLINE = 'border-[#2563eb] text-[#2563eb] hover:bg-blue-50 dark:hover:bg-blue-950/40';
 
 const WEEK_SESSIONS = [
   {
@@ -145,7 +143,7 @@ function VenueInstantCard({
             alt=""
             className="size-full object-cover"
           />
-          <span className="absolute left-3 top-3 rounded bg-[#2563eb] px-2.5 py-1 text-[11px] font-bold text-white shadow-sm">
+          <span className="absolute left-3 top-3 rounded bg-primary px-2.5 py-1 text-[11px] font-bold text-white shadow-sm">
             {venue.category}
           </span>
           <div className="absolute right-3 top-3 flex items-center gap-1 rounded-full bg-card/90 px-2 py-0.5 text-[11px] font-bold text-foreground backdrop-blur">
@@ -172,7 +170,7 @@ function VenueInstantCard({
                     'rounded border px-2 py-1 text-xs font-semibold transition-colors',
                     i === 2
                       ? 'border-emerald-200 bg-emerald-50 font-bold text-emerald-700 hover:bg-emerald-600 hover:text-white dark:border-emerald-900 dark:bg-emerald-950 dark:text-emerald-300'
-                      : 'border-border bg-muted/60 text-foreground hover:bg-[#2563eb] hover:text-white'
+                      : 'border-border bg-muted/60 text-foreground hover:bg-primary hover:text-white'
                   )}
                 >
                   {slot}
@@ -191,7 +189,7 @@ function VenueInstantCard({
             <span className="text-sm font-normal text-muted-foreground">/hr</span>
           </span>
         </div>
-        <Button type="button" size="sm" className={cn('h-8', CTA)} onClick={onBook}>
+        <Button type="button" size="sm" className='h-8' onClick={onBook}>
           Book Slot
         </Button>
       </div>
@@ -232,7 +230,7 @@ function CoachCard({
           {formatVND(trainer.price)}
           <span className="font-normal text-muted-foreground">/class</span>
         </p>
-        <Button type="button" size="sm" className={cn('mt-auto w-full', CTA)} onClick={onBook}>
+        <Button type="button" size="sm" className='mt-auto w-full' onClick={onBook}>
           Book Session
         </Button>
       </div>
@@ -269,7 +267,7 @@ export default function AthleteHubDashboard() {
         <section className="relative overflow-hidden rounded-xl border border-border bg-gradient-to-r from-card via-[#e9edff] to-card p-6 shadow-sm dark:from-card dark:via-card dark:to-card md:p-8">
           <div className="relative z-10 flex flex-col justify-between gap-6 lg:flex-row lg:items-center">
             <div className="max-w-2xl space-y-2">
-              <div className="inline-flex items-center gap-2 rounded-full border border-orange-500/20 bg-orange-50 px-2.5 py-1 dark:bg-orange-950/40">
+              <div className="inline-flex items-center gap-2 rounded-full border border-orange-500/20 bg-primary/10 px-2.5 py-1 dark:bg-orange-950/40">
                 <Flame className="size-4 text-orange-600" />
                 <span className="text-xs font-semibold text-orange-800 dark:text-orange-200">
                   14-Day Active Streak
@@ -288,7 +286,7 @@ export default function AthleteHubDashboard() {
             <div className="flex flex-wrap items-center gap-3">
               <Button
                 type="button"
-                className={cn('h-10 gap-2', CTA)}
+                className='h-10 gap-2'
                 onClick={() => navigate('/venues')}
               >
                 <Dumbbell className="size-4" />
@@ -297,7 +295,7 @@ export default function AthleteHubDashboard() {
               <Button
                 type="button"
                 variant="outline"
-                className={cn('h-10 gap-2', CTA_OUTLINE)}
+                className="h-10 gap-2"
                 onClick={() => navigate('/explore')}
               >
                 Schedule Coach
@@ -323,7 +321,7 @@ export default function AthleteHubDashboard() {
           <div className="rounded-lg border border-border bg-card p-5 shadow-sm transition-shadow hover:shadow">
             <div className="mb-2 flex items-center justify-between text-muted-foreground">
               <span className="text-sm font-medium">Active Bookings</span>
-              <span className="grid size-8 place-items-center rounded-lg bg-[#e9edff] text-[#004ac6] dark:bg-blue-950">
+              <span className="grid size-8 place-items-center rounded-lg bg-primary/10 text-primary dark:bg-primary/10">
                 <Calendar className="size-4" />
               </span>
             </div>
@@ -356,7 +354,7 @@ export default function AthleteHubDashboard() {
           <div className="rounded-lg border border-border bg-card p-5 shadow-sm transition-shadow hover:shadow">
             <div className="mb-2 flex items-center justify-between text-muted-foreground">
               <span className="text-sm font-medium">Membership Tier</span>
-              <span className="grid size-8 place-items-center rounded-lg bg-orange-50 text-orange-600 dark:bg-orange-950">
+              <span className="grid size-8 place-items-center rounded-lg bg-primary/10 text-orange-600 dark:bg-orange-950">
                 <Verified className="size-4" />
               </span>
             </div>
@@ -382,7 +380,7 @@ export default function AthleteHubDashboard() {
             </div>
             <button
               type="button"
-              className="inline-flex items-center gap-1 text-sm font-semibold text-[#004ac6] hover:underline"
+              className="inline-flex items-center gap-1 text-sm font-semibold text-primary hover:underline"
               onClick={() => navigate('/subscription')}
             >
               Redeem perks & recovery passes
@@ -402,7 +400,7 @@ export default function AthleteHubDashboard() {
                     Next Confirmed Match
                   </span>
                 </div>
-                <span className="inline-flex items-center gap-1 rounded-full bg-orange-50 px-2.5 py-1 text-xs font-semibold text-orange-700 dark:bg-orange-950 dark:text-orange-300">
+                <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-2.5 py-1 text-xs font-semibold text-orange-700 dark:bg-orange-950 dark:text-orange-300">
                   <Clock className="size-3.5" />
                   18h 42m away
                 </span>
@@ -420,7 +418,7 @@ export default function AthleteHubDashboard() {
                 </div>
                 <div className="flex-1 space-y-2">
                   <div className="flex flex-wrap items-center gap-2">
-                    <span className="rounded bg-blue-50 px-2 py-0.5 text-xs font-semibold text-[#2563eb] dark:bg-blue-950">
+                    <span className="rounded bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary dark:bg-primary/10">
                       Padel Tennis
                     </span>
                     <span className="rounded bg-emerald-50 px-2 py-0.5 text-xs font-semibold text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300">
@@ -462,7 +460,7 @@ export default function AthleteHubDashboard() {
                 type="button"
                 variant="secondary"
                 size="sm"
-                className="h-8 gap-1.5 text-[#004ac6]"
+                className="h-8 gap-1.5 text-primary"
                 onClick={() => navigate('/messages')}
               >
                 <MessageCircle className="size-3.5" />
@@ -478,7 +476,7 @@ export default function AthleteHubDashboard() {
                   <h3 className="text-base font-semibold text-foreground">Weekly Training Rhythm</h3>
                   <p className="text-sm text-muted-foreground">Target: 4 sessions / week</p>
                 </div>
-                <span className="text-sm font-semibold text-[#004ac6]">3 of 4 Completed</span>
+                <span className="text-sm font-semibold text-primary">3 of 4 Completed</span>
               </div>
               <div className="mb-5 grid grid-cols-7 gap-1.5 text-center">
                 {days.map((d) => (
@@ -486,15 +484,15 @@ export default function AthleteHubDashboard() {
                     key={d.label}
                     className={cn(
                       'flex flex-col items-center rounded-lg p-2',
-                      d.isToday && 'bg-[#e9edff] ring-1 ring-[#004ac6] dark:bg-blue-950',
-                      d.isTomorrow && !d.isToday && 'bg-orange-50 dark:bg-orange-950/50',
+                      d.isToday && 'bg-primary/10 ring-1 ring-primary dark:bg-primary/10',
+                      d.isTomorrow && !d.isToday && 'bg-primary/10 dark:bg-orange-950/50',
                       !d.isToday && !d.isTomorrow && 'bg-muted/50'
                     )}
                   >
                     <span
                       className={cn(
                         'text-[11px] font-semibold',
-                        d.isToday && 'font-bold text-[#004ac6]',
+                        d.isToday && 'font-bold text-primary',
                         d.isTomorrow && !d.isToday && 'text-orange-600',
                         !d.isToday && !d.isTomorrow && 'text-muted-foreground'
                       )}
@@ -504,7 +502,7 @@ export default function AthleteHubDashboard() {
                     <span
                       className={cn(
                         'my-1 text-sm font-bold',
-                        d.isToday && 'text-[#004ac6]',
+                        d.isToday && 'text-primary',
                         d.isTomorrow && !d.isToday && 'text-orange-600'
                       )}
                     >
@@ -514,8 +512,8 @@ export default function AthleteHubDashboard() {
                       className={cn(
                         'size-1.5 rounded-full',
                         d.done && 'bg-emerald-500',
-                        d.isToday && 'bg-[#2563eb]',
-                        d.isTomorrow && !d.isToday && 'bg-orange-500',
+                        d.isToday && 'bg-primary',
+                        d.isTomorrow && !d.isToday && 'bg-primary/100',
                         !d.done && !d.isToday && !d.isTomorrow && 'bg-border'
                       )}
                     />
@@ -533,7 +531,7 @@ export default function AthleteHubDashboard() {
                         className={cn(
                           'grid size-8 place-items-center rounded-lg text-xs font-bold',
                           s.tone === 'done' && 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950',
-                          s.tone === 'confirmed' && 'bg-blue-50 text-[#2563eb] dark:bg-blue-950',
+                          s.tone === 'confirmed' && 'bg-primary/10 text-primary dark:bg-primary/10',
                           s.tone === 'open' && 'bg-muted text-muted-foreground'
                         )}
                       >
@@ -547,7 +545,7 @@ export default function AthleteHubDashboard() {
                     {s.tone === 'open' ? (
                       <button
                         type="button"
-                        className="text-[11px] font-bold text-[#004ac6] hover:underline"
+                        className="text-[11px] font-bold text-primary hover:underline"
                         onClick={() => navigate('/venues')}
                       >
                         {s.right}
@@ -579,7 +577,7 @@ export default function AthleteHubDashboard() {
           <button
             type="button"
             onClick={() => navigate('/ai-coach')}
-            className="flex items-start gap-4 rounded-xl border border-border bg-card p-5 text-left shadow-sm transition-all hover:border-[#2563eb]/40"
+            className="flex items-start gap-4 rounded-xl border border-border bg-card p-5 text-left shadow-sm transition-all hover:border-primary/40"
           >
             <span className="grid size-12 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-orange-500 to-orange-700 text-white shadow-sm">
               <Sparkles className="size-6" />
@@ -588,7 +586,7 @@ export default function AthleteHubDashboard() {
               <span className="flex items-center justify-between gap-2">
                 <span className="flex items-center gap-2">
                   <span className="text-base font-semibold">AI Performance Coach</span>
-                  <span className="rounded bg-orange-50 px-2 py-0.5 text-[10px] font-bold text-orange-800 dark:bg-orange-950 dark:text-orange-200">
+                  <span className="rounded bg-primary/10 px-2 py-0.5 text-[10px] font-bold text-orange-800 dark:bg-orange-950 dark:text-orange-200">
                     Optimized
                   </span>
                 </span>
@@ -598,7 +596,7 @@ export default function AthleteHubDashboard() {
                 “Your heart rate recovery was 4 bpm slower after Monday&apos;s session. Recommended:
                 Cryo or Sauna session after tomorrow&apos;s high-intensity padel drill.”
               </span>
-              <span className="inline-flex items-center gap-1 pt-1 text-sm font-semibold text-[#004ac6]">
+              <span className="inline-flex items-center gap-1 pt-1 text-sm font-semibold text-primary">
                 Book 20-min Cold Plunge @ District 1
                 <ArrowRight className="size-3.5" />
               </span>
@@ -608,7 +606,7 @@ export default function AthleteHubDashboard() {
           <button
             type="button"
             onClick={() => navigate('/meal-planner')}
-            className="flex items-start gap-4 rounded-xl border border-border bg-card p-5 text-left shadow-sm transition-all hover:border-[#2563eb]/40"
+            className="flex items-start gap-4 rounded-xl border border-border bg-card p-5 text-left shadow-sm transition-all hover:border-primary/40"
           >
             <span className="grid size-12 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-emerald-600 to-emerald-800 text-white shadow-sm">
               <UtensilsCrossed className="size-6" />
@@ -705,7 +703,7 @@ export default function AthleteHubDashboard() {
                 type="button"
                 variant="ghost"
                 size="sm"
-                className="text-[#004ac6]"
+                className="text-primary"
                 onClick={() => navigate('/explore')}
               >
                 View all
@@ -791,11 +789,11 @@ export default function AthleteHubDashboard() {
                         className={cn(
                           'rounded-full px-2 py-0.5 text-[11px] font-bold',
                           row.status === 'Confirmed' &&
-                            'bg-blue-50 text-[#2563eb] dark:bg-blue-950',
+                            'bg-primary/10 text-primary dark:bg-primary/10',
                           row.status === 'Completed' &&
                             'bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300',
                           row.status === 'Paid' &&
-                            'bg-orange-50 text-orange-700 dark:bg-orange-950 dark:text-orange-300'
+                            'bg-primary/10 text-orange-700 dark:bg-orange-950 dark:text-orange-300'
                         )}
                       >
                         {row.status}
@@ -808,7 +806,7 @@ export default function AthleteHubDashboard() {
                     <td className="px-5 py-3.5">
                       <button
                         type="button"
-                        className="font-semibold text-[#004ac6] hover:underline"
+                        className="font-semibold text-primary hover:underline"
                       >
                         PDF
                       </button>

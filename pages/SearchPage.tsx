@@ -155,7 +155,7 @@ const SearchPage: React.FC<SearchPageProps> = ({
               <SlidersHorizontal />
               <span className="hidden md:inline">Filters</span>
               {activeFilterCount > 0 ? (
-                <span className="grid h-5 min-w-5 place-items-center rounded-full bg-[#fd651e] px-1 text-[11px] font-semibold text-white">
+                <span className="grid h-5 min-w-5 place-items-center rounded-full bg-primary px-1 text-[11px] font-semibold text-white">
                   {activeFilterCount}
                 </span>
               ) : null}
@@ -167,7 +167,7 @@ const SearchPage: React.FC<SearchPageProps> = ({
                   setActiveFilters(initialFilters);
                   setIsFilterModalOpen(false);
                 }}
-                className="h-11 shrink-0 text-[#fd651e] hover:text-[#a73a00]"
+                className="h-11 shrink-0 text-primary hover:text-primary/90"
               >
                 Reset
               </Button>
@@ -201,7 +201,7 @@ const SearchPage: React.FC<SearchPageProps> = ({
                   <Button
                     variant="outline"
                     onClick={() => setActiveFilters(initialFilters)}
-                    className="border-[#fd651e] text-[#fd651e] hover:text-[#a73a00]"
+                    className="border-primary text-primary hover:text-primary/90"
                   >
                     Reset filters
                   </Button>

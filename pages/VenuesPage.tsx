@@ -280,7 +280,7 @@ const VenuesPage: React.FC<VenuesPageProps> = ({ venues, onBack }) => {
   }
 
   return (
-    <AppScreen className="min-w-0 overflow-x-hidden bg-background">
+    <AppScreen className="min-w-0 bg-background">
       <div className={cn('mx-auto w-full max-w-6xl space-y-5 py-4 md:py-6', SCREEN_GUTTER, SCREEN_BOTTOM_SAFE)}>
         {/* Toolbar */}
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center">

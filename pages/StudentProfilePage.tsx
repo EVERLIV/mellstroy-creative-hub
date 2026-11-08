@@ -230,34 +230,31 @@ const StudentProfilePage: React.FC<StudentProfilePageProps> = (props) => {
         </div>
 
         {profileIsIncomplete && !dismissPrompt ? (
-          <div className="relative flex flex-col justify-between gap-4 rounded-xl border border-orange-200 bg-orange-50 p-4 shadow-sm dark:border-orange-900 dark:bg-orange-950/40 sm:flex-row sm:items-center">
-            <div className="flex items-start gap-3.5">
-              <div className="grid size-9 shrink-0 place-items-center rounded-lg bg-orange-100 text-orange-600 dark:bg-orange-900 dark:text-orange-300">
-                <Lightbulb className="size-5" />
+          <div className="flex flex-col justify-between gap-4 rounded-xl border border-border/80 bg-card p-4 sm:flex-row sm:items-center">
+            <div className="flex items-start gap-3">
+              <div className="grid size-9 shrink-0 place-items-center rounded-lg bg-muted text-muted-foreground">
+                <Lightbulb className="size-4" />
               </div>
-              <div>
-                <p className="text-sm font-bold text-orange-950 dark:text-orange-100">
-                  Complete your athlete profile
-                </p>
-                <p className="mt-0.5 text-sm text-orange-800 dark:text-orange-200/90">
-                  Add fitness stats and goals to get better coach recommendations across Saigon.
+              <div className="space-y-0.5">
+                <p className="text-sm font-medium text-foreground">Complete your athlete profile</p>
+                <p className="text-sm text-muted-foreground">
+                  Fitness stats and goals improve coach matches in Saigon.
                 </p>
               </div>
             </div>
             <div className="flex shrink-0 items-center gap-2 self-end sm:self-center">
               <Button
                 type="button"
-                className="gap-1.5 bg-[#fd651e] text-white hover:bg-[#a73a00]"
+                className="gap-1.5"
                 onClick={() => handleNavigateTo('edit-about')}
               >
-                Edit Profile
+                Edit profile
                 <ArrowRight className="size-4" />
               </Button>
               <Button
                 type="button"
                 variant="ghost"
                 size="icon"
-                className="text-orange-700 hover:bg-orange-100"
                 aria-label="Dismiss"
                 onClick={() => setDismissPrompt(true)}
               >
@@ -267,15 +264,10 @@ const StudentProfilePage: React.FC<StudentProfilePageProps> = (props) => {
           </div>
         ) : null}
 
-        {/* Hero — same architecture as trainer */}
-        <section className="overflow-hidden rounded-xl border border-border bg-card shadow-sm">
-          <div className="relative h-28 w-full bg-gradient-to-r from-orange-100 via-amber-50 to-orange-100 dark:from-orange-950 dark:via-amber-950 dark:to-orange-950 sm:h-40">
+        <section className="overflow-hidden rounded-xl border border-border/80 bg-card">
+          <div className="relative h-28 w-full bg-muted sm:h-40">
             <div
-              className="absolute inset-0 opacity-20"
-              style={{
-                backgroundImage: 'radial-gradient(#fd651e 1px, transparent 1px)',
-                backgroundSize: '16px 16px',
-              }}
+              className="absolute inset-0 bg-[linear-gradient(135deg,hsl(var(--muted))_0%,hsl(var(--background))_55%,hsl(var(--muted))_100%)]"
               aria-hidden
             />
             <div className="absolute right-4 top-4">
@@ -283,36 +275,37 @@ const StudentProfilePage: React.FC<StudentProfilePageProps> = (props) => {
                 type="button"
                 variant="outline"
                 size="sm"
-                className="gap-1.5 border-border bg-card/90 backdrop-blur-sm"
+                className="gap-1.5 bg-card/95"
                 onClick={() => handleNavigateTo('edit-about')}
               >
                 <Camera className="size-3.5" />
-                Change Cover
+                Change cover
               </Button>
             </div>
           </div>
 
           <div className="px-5 pb-6 sm:px-8">
-            <div className="-mt-12 mb-5 flex flex-col justify-between gap-4 sm:-mt-14 sm:flex-row sm:items-end">
-              <div className="flex items-end gap-4">
-                <Avatar className="size-20 rounded-2xl border-4 border-card shadow-md sm:size-24">
-                  <AvatarImage src={currentUser.imageUrl} alt="" className="object-cover" />
-                  <AvatarFallback className="rounded-2xl text-xl font-bold">{initials}</AvatarFallback>
-                </Avatar>
-                <div>
-                  <h2 className="text-2xl font-bold tracking-tight text-foreground">
-                    {currentUser.name || 'Athlete'}
-                  </h2>
-                  <div className="mt-1 flex flex-wrap items-center gap-1.5 text-sm text-muted-foreground">
-                    {currentUser.location ? (
-                      <>
-                        <MapPin className="size-4 text-[#fd651e]" />
-                        <span>{currentUser.location}</span>
-                        <span className="mx-1 text-border">•</span>
-                      </>
-                    ) : null}
-                    <span className="font-semibold text-primary">RhinoFit Member</span>
-                  </div>
+            <div className="relative -mt-12 mb-5 sm:-mt-14">
+              <Avatar className="size-20 rounded-2xl border-[3px] border-card shadow-[0_0_0_1px_rgba(0,0,0,0.06),0_1px_2px_-1px_rgba(0,0,0,0.06),0_2px_4px_rgba(0,0,0,0.04)] sm:size-24">
+                <AvatarImage src={currentUser.imageUrl} alt="" className="object-cover" />
+                <AvatarFallback className="rounded-2xl text-xl font-semibold">{initials}</AvatarFallback>
+              </Avatar>
+            </div>
+
+            <div className="mb-5 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+              <div className="min-w-0 space-y-1.5">
+                <h2 className="text-2xl font-semibold tracking-tight text-foreground">
+                  {currentUser.name || 'Athlete'}
+                </h2>
+                <div className="flex flex-wrap items-center gap-1.5 text-sm text-muted-foreground">
+                  {currentUser.location ? (
+                    <>
+                      <MapPin className="size-3.5" />
+                      <span>{currentUser.location}</span>
+                      <span className="mx-1 text-border">·</span>
+                    </>
+                  ) : null}
+                  <span className="text-foreground/80">RhinoFit member</span>
                 </div>
               </div>
               <div className="flex flex-wrap gap-2">
@@ -447,7 +440,7 @@ const StudentProfilePage: React.FC<StudentProfilePageProps> = (props) => {
                       onClick={item.onClick}
                       className="flex w-full items-center gap-3 py-3.5 text-left transition-colors hover:bg-muted/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                     >
-                      <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-orange-50 text-[#fd651e] dark:bg-orange-950">
+                      <span className="grid size-10 shrink-0 place-items-center rounded-lg bg-muted text-muted-foreground">
                         <item.icon className="size-5" aria-hidden />
                       </span>
                       <span className="min-w-0 flex-1">
@@ -488,7 +481,7 @@ const StudentProfilePage: React.FC<StudentProfilePageProps> = (props) => {
                 </Button>
                 <Button
                   type="button"
-                  className="w-full justify-between bg-[#fd651e] text-white hover:bg-[#a73a00]"
+                  className="w-full justify-between"
                   onClick={onNavigateToBookings}
                 >
                   My bookings

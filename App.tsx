@@ -90,7 +90,11 @@ const AppRoutes = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
-  const [bookingModalData, setBookingModalData] = useState<{ trainer: Trainer; cls: Class } | null>(null);
+  const [bookingModalData, setBookingModalData] = useState<{
+    trainer: Trainer;
+    cls: Class;
+    preferredDate?: Date;
+  } | null>(null);
   const [reviewModalData, setReviewModalData] = useState<{ booking: Booking; trainer: Trainer } | null>(null);
   const [reviewsModalTrainer, setReviewsModalTrainer] = useState<Trainer | null>(null);
   const [chatTrainer, setChatTrainer] = useState<Trainer | null>(null);
@@ -167,12 +171,17 @@ const AppRoutes = () => {
     };
   }, [user?.id]);
 
-  const handleInitiateBooking = (data: { trainer: Trainer; cls: Class }) => {
+  const handleInitiateBooking = (data: {
+    trainer: Trainer;
+    cls: Class;
+    preferredDate?: Date;
+  }) => {
     setBookingModalData(data);
   };
 
   const handleOpenChat = (trainer: Trainer) => {
     setChatTrainer(trainer);
+    navigate(`/messages/${encodeURIComponent(trainer.id)}`);
   };
 
   const handleOpenReviewsModal = (trainer: Trainer) => {
@@ -286,7 +295,6 @@ const AppRoutes = () => {
               ) : (
                 <Explore
                   onInitiateBooking={handleInitiateBooking}
-                  onOpenChat={handleOpenChat}
                   userRole={userRole}
                   currentUserId={currentUserId}
                   favoriteTrainerIds={favoriteTrainerIds}
@@ -341,6 +349,7 @@ const AppRoutes = () => {
                 onToggleFavorite={toggleFavorite}
                 onInitiateBooking={handleInitiateBooking}
                 onOpenReviewsModal={handleOpenReviewsModal}
+                onOpenChat={handleOpenChat}
               />
             </ProtectedRoute>
           }
@@ -600,7 +609,8 @@ const AppRoutes = () => {
       {bookingModalData && (
         <BookingModal
           bookingTarget={bookingModalData}
-          onConfirmBooking={async (trainerId, classId, startDate, period) => {
+          currentUserId={user?.id}
+          onConfirmBooking={async (trainerId, classId, startDate, period, meta) => {
             try {
               if (!user?.id) {
                 toast({
@@ -633,7 +643,13 @@ const AppRoutes = () => {
                   client_id: user.id,
                   booking_date: bookingDate,
                   booking_time: bookingTime,
-                  status: 'booked'
+                  status: 'booked',
+                  hold_id: meta?.holdId ?? null,
+                  amount_paid: meta?.amountPaid ?? null,
+                  service_fee: meta?.serviceFee ?? 0,
+                  tip_amount: meta?.tipAmount ?? 0,
+                  promo_code: meta?.promoCode ?? null,
+                  stripe_payment_intent_id: meta?.paymentIntentId ?? null,
                 })
                 .select()
                 .single();
@@ -645,6 +661,13 @@ const AppRoutes = () => {
                   variant: "destructive",
                 });
                 return;
+              }
+
+              if (meta?.holdId) {
+                await supabase
+                  .from('booking_holds' as never)
+                  .update({ status: 'converted' } as never)
+                  .eq('id', meta.holdId);
               }
 
               // Show verification code modal
@@ -659,6 +682,7 @@ const AppRoutes = () => {
                 title: "Booking Confirmed!",
                 description: `Your booking has been confirmed for ${period === 'once' ? '1 session' : '4 weeks'}`,
               });
+              window.dispatchEvent(new Event('rhinofit:booking-complete'));
               setBookingModalData(null);
             } catch (error) {
               toast({

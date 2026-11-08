@@ -1,7 +1,6 @@
 import React, { useMemo, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
-  Bell,
   Calendar,
   ChevronDown,
   Menu,
@@ -26,6 +25,9 @@ import { APP_CONTENT } from '@/src/components/layout/shell';
 import ConnectedProfileActionMenu from './ConnectedProfileActionMenu';
 import ViewModeSwitcher from './ViewModeSwitcher';
 import SiteFooter from './SiteFooter';
+import { NotificationsBell } from './marketplace/NotificationsBell';
+import { DevSeedPanel } from './DevSeedPanel';
+import { ensureSeeded } from '@/src/lib/firebase-store';
 import {
   ACCOUNT_ITEMS,
   DISCOVER_ITEMS,
@@ -133,8 +135,8 @@ function DesktopTopNav() {
   );
 
   return (
-    <header className="sticky top-0 z-40 hidden border-b border-border bg-card/95 backdrop-blur-md md:block">
-      <div className={cn(APP_CONTENT, 'flex h-14 items-center gap-4 lg:h-16')}>
+    <header className="sticky top-0 z-40 hidden border-b border-border/80 bg-background/85 backdrop-blur-md md:block">
+      <div className={cn(APP_CONTENT, 'flex h-14 items-center gap-3 overflow-visible lg:h-16 lg:gap-4')}>
         <BrandLockup className="shrink-0" subtitle="Train smarter." />
 
         <nav className="flex min-w-0 items-center gap-0.5" aria-label="Primary">
@@ -144,7 +146,7 @@ function DesktopTopNav() {
           <DiscoverDropdown pathname={pathname} />
         </nav>
 
-        <div className="ml-auto flex shrink-0 items-center gap-1.5">
+        <div className="ml-auto flex min-w-0 shrink-0 items-center gap-1">
           <ViewModeSwitcher className="hidden 2xl:inline-flex" />
           <Button
             type="button"
@@ -153,29 +155,20 @@ function DesktopTopNav() {
             aria-label="Search"
             onClick={() => navigate('/search')}
           >
-            <Search className="size-5" />
+            <Search className="size-4" />
           </Button>
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            className="relative"
-            aria-label="Notifications"
-            onClick={() => navigate('/messages')}
-          >
-            <Bell className="size-5" />
-            <span className="absolute right-1.5 top-1.5 size-2 rounded-full bg-primary ring-2 ring-card" />
-          </Button>
+          <NotificationsBell />
           <Button
             type="button"
             size="sm"
-            className="gap-1.5"
+            variant="default"
+            className="ml-1 gap-1.5"
             onClick={() => navigate(role === 'trainer' ? '/requests/explore' : '/venues')}
           >
             <Calendar className="size-3.5" />
             Book Now
           </Button>
-          <div className="ml-1 border-l border-border pl-2">
+          <div className="ml-1.5 shrink-0 border-l border-border/80 pl-2.5">
             <ConnectedProfileActionMenu />
           </div>
         </div>
@@ -219,17 +212,7 @@ function MobileTopNav() {
             >
               <Search className="size-5" />
             </Button>
-            <Button
-              type="button"
-              variant="ghost"
-              size="icon"
-              className="relative"
-              aria-label="Notifications"
-              onClick={() => navigate('/messages')}
-            >
-              <Bell className="size-5" />
-              <span className="absolute right-1.5 top-1.5 size-1.5 rounded-full bg-primary ring-2 ring-card" />
-            </Button>
+            <NotificationsBell iconClassName="size-5" />
             <Button
               type="button"
               size="sm"
@@ -352,16 +335,26 @@ function MobileBottomNav({ role }: { role: string }) {
 export function AppShell({ children }: { children: React.ReactNode }) {
   const role = useEffectiveRole();
 
+  React.useEffect(() => {
+    ensureSeeded();
+  }, []);
+
   return (
-    <div className="flex min-h-svh min-w-0 flex-col overflow-x-hidden bg-background">
+    <div className="flex min-h-svh min-w-0 flex-col overflow-x-clip bg-background">
       <DesktopTopNav />
       <MobileTopNav />
-      <div className="relative flex min-h-0 min-w-0 flex-1 flex-col overflow-x-hidden pb-[calc(4.75rem+env(safe-area-inset-bottom))] md:pb-0">
+      {/*
+        Grow with page content and let the document scroll.
+        Avoid min-h-0 + overflow-x-hidden here — that combo creates a scrollport
+        that clips sticky rails and hides lower sections on detail pages.
+      */}
+      <div className="relative min-w-0 flex-1 pb-[calc(4.75rem+env(safe-area-inset-bottom))] md:pb-0">
         {children}
       </div>
       {/* Desktop site footer — messages, bookings, dialogs and all other pages. */}
       <SiteFooter />
       <MobileBottomNav role={role} />
+      <DevSeedPanel />
     </div>
   );
 }

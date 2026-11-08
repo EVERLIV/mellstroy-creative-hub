@@ -270,13 +270,13 @@ const ExploreRequestsPage: React.FC = () => {
               <SlidersHorizontal />
               <span className="hidden sm:inline">Filters</span>
               {activeFilterCount > 0 && (
-                <span className="grid h-5 min-w-5 place-items-center rounded-full bg-[#fd651e] px-1 text-[11px] font-semibold text-white">
+                <span className="grid h-5 min-w-5 place-items-center rounded-full bg-primary px-1 text-[11px] font-semibold text-white">
                   {activeFilterCount}
                 </span>
               )}
             </Button>
             {activeFilterCount > 0 && (
-              <Button variant="ghost" onClick={handleResetFilters} className="h-11 shrink-0 text-[#fd651e] hover:text-[#a73a00]">
+              <Button variant="ghost" onClick={handleResetFilters} className="h-11 shrink-0 text-primary hover:text-primary/90">
                 Reset
               </Button>
             )}
@@ -294,7 +294,7 @@ const ExploreRequestsPage: React.FC = () => {
                   className={cn(
                     'h-9 shrink-0 whitespace-nowrap rounded-full px-3.5 text-xs font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring md:text-sm',
                     isActive
-                      ? 'bg-[#fd651e] text-white shadow-sm hover:bg-[#a73a00]'
+                      ? 'bg-primary text-white shadow-sm hover:bg-primary/90'
                       : 'border border-border bg-card text-muted-foreground hover:bg-muted hover:text-foreground'
                   )}
                 >
@@ -319,7 +319,7 @@ const ExploreRequestsPage: React.FC = () => {
               }
               action={
                 activeFilterCount > 0 && (
-                  <Button onClick={handleResetFilters} className="bg-[#fd651e] text-white hover:bg-[#a73a00]">
+                  <Button onClick={handleResetFilters} className="">
                     Reset Filters
                   </Button>
                 )
@@ -348,7 +348,7 @@ const ExploreRequestsPage: React.FC = () => {
             </div>
             {hasMore && (
               <div ref={observerTarget} className="flex items-center justify-center py-4">
-                {loadingMore && <Loader2 className="size-5 animate-spin text-[#fd651e]" aria-label="Loading more" />}
+                {loadingMore && <Loader2 className="size-5 animate-spin text-primary" aria-label="Loading more" />}
               </div>
             )}
           </StitchPanel>

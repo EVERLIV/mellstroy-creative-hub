@@ -26,6 +26,8 @@ interface ProfileActionMenuProps {
   /** Extra role-specific entries. */
   extraItems?: ProfileMenuItem[];
   className?: string;
+  /** Avatar-only trigger for top nav / tight chrome. */
+  compact?: boolean;
 }
 
 /**
@@ -40,6 +42,7 @@ const ProfileActionMenu: React.FC<ProfileActionMenuProps> = ({
   onOpenDocuments,
   extraItems = [],
   className,
+  compact = true,
 }) => {
   const navigate = useNavigate();
   const { user: authUser } = useAuth();
@@ -138,6 +141,7 @@ const ProfileActionMenu: React.FC<ProfileActionMenuProps> = ({
       defaultStatus="online"
       onSignOut={onLogout}
       holdDuration={1000}
+      compact={compact}
     />
   );
 };

@@ -35,7 +35,7 @@ const MyMealPlansPage: React.FC<MyMealPlansPageProps> = ({ plans, onDelete, onBa
         <StitchPageHeader
           title={
             <span className="flex items-center gap-2">
-              <span className="grid size-8 place-items-center rounded-lg bg-orange-50 text-[#fd651e]">
+              <span className="grid size-8 place-items-center rounded-lg bg-primary/10 text-primary">
                 <UtensilsCrossed className="size-4" aria-hidden />
               </span>
               My meal plans
@@ -62,7 +62,7 @@ const MyMealPlansPage: React.FC<MyMealPlansPageProps> = ({ plans, onDelete, onBa
                   <StitchPanel className="overflow-hidden">
                     <div className="flex flex-col gap-4 p-4 md:p-5">
                       <div className="flex items-start gap-3">
-                        <span className="grid size-10 shrink-0 place-items-center rounded-full bg-orange-50 text-[#fd651e]">
+                        <span className="grid size-10 shrink-0 place-items-center rounded-full bg-primary/10 text-primary">
                           <UtensilsCrossed className="size-5" aria-hidden />
                         </span>
                         <div className="flex min-w-0 flex-1 flex-col gap-1">
@@ -139,7 +139,7 @@ const MyMealPlansPage: React.FC<MyMealPlansPageProps> = ({ plans, onDelete, onBa
               title="No meal plans yet"
               description="Generate a plan from the AI meal planner and save it here."
               action={
-                <Button className="bg-[#fd651e] text-white hover:bg-[#a73a00]" onClick={onBack}>
+                <Button className="" onClick={onBack}>
                   Back to profile
                 </Button>
               }

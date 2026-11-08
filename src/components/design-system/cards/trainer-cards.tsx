@@ -169,7 +169,10 @@ export type TrainerMagazineCardProps = {
   className?: string;
 };
 
-/** Full-bleed magazine tile for explore / rails. */
+/**
+ * Full-bleed magazine tile — portrait presence first (same world as TrainerProfileViewPage).
+ * Hierarchy: face → name → price → book. Soft gradient only, no badge clutter.
+ */
 export function TrainerMagazineCard({
   name,
   imageUrl,
@@ -188,30 +191,32 @@ export function TrainerMagazineCard({
   return (
     <article
       className={cn(
-        'group relative isolate aspect-[3/4] overflow-hidden rounded-3xl bg-muted ring-1 ring-inset ring-border/40',
+        'group relative isolate aspect-[3/4] overflow-hidden rounded-xl bg-muted ring-1 ring-inset ring-border/50',
         className
       )}
     >
+      <div className="absolute inset-x-0 top-0 z-20 h-1.5 bg-gradient-to-r from-primary to-primary" aria-hidden />
+
       <button type="button" onClick={onSelect} className="absolute inset-0 z-0" aria-label={`Open ${name}`}>
         <img
           src={imageUrl}
           alt=""
           loading="lazy"
-          className="size-full object-cover transition-transform duration-700 group-hover:scale-105"
+          className="size-full object-cover transition-transform duration-500 ease-[cubic-bezier(0.23,1,0.32,1)] group-hover:scale-[1.03]"
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-background via-background/55 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/25 to-transparent" />
       </button>
 
-      <div className="pointer-events-none absolute inset-x-0 top-0 z-10 flex items-start justify-between p-3">
+      <div className="pointer-events-none absolute inset-x-0 top-0 z-10 flex items-start justify-between p-3 pt-4">
         <div className="pointer-events-auto flex flex-wrap gap-1.5">
           {isPremium ? (
-            <span className="inline-flex items-center gap-1 rounded-full bg-primary px-2 py-0.5 text-[10px] font-semibold text-primary-foreground">
+            <span className="inline-flex items-center gap-1 rounded-md bg-primary px-2 py-0.5 text-[10px] font-semibold text-white">
               <Crown className="size-3" />
               Premium
             </span>
           ) : null}
           {tag ? (
-            <span className="rounded-full bg-background/80 px-2 py-0.5 text-[10px] font-medium text-foreground backdrop-blur">
+            <span className="rounded-md bg-background/85 px-2 py-0.5 text-[10px] font-medium capitalize text-foreground backdrop-blur-sm">
               {tag}
             </span>
           ) : null}
@@ -219,7 +224,7 @@ export function TrainerMagazineCard({
         {onToggleFavorite ? (
           <button
             type="button"
-            className="pointer-events-auto grid size-9 place-items-center rounded-full bg-background/80 text-foreground backdrop-blur transition hover:bg-background"
+            className="pointer-events-auto grid size-8 place-items-center rounded-full border border-white/20 bg-background/85 text-foreground backdrop-blur-sm transition hover:bg-background"
             onClick={(e) => {
               e.stopPropagation();
               onToggleFavorite();
@@ -227,7 +232,7 @@ export function TrainerMagazineCard({
             aria-label={isFavorite ? 'Remove from favorites' : 'Add to favorites'}
             aria-pressed={!!isFavorite}
           >
-            <Heart className={cn('size-4', isFavorite && 'fill-destructive text-destructive')} />
+            <Heart className={cn('size-3.5', isFavorite && 'fill-destructive text-destructive')} />
           </button>
         ) : null}
       </div>
@@ -235,14 +240,20 @@ export function TrainerMagazineCard({
       <div className="absolute inset-x-0 bottom-0 z-10 flex flex-col gap-3 p-3 md:p-4">
         <button type="button" onClick={onSelect} className="text-left">
           <div className="flex items-center gap-1.5">
-            <h3 className="truncate text-base font-semibold tracking-tight text-foreground md:text-lg">{name}</h3>
-            {verified ? <ShieldCheck className="size-4 shrink-0 text-primary" aria-label="Verified" /> : null}
+            <h3 className="truncate text-base font-semibold tracking-tight text-white md:text-lg">
+              {name}
+            </h3>
+            {verified ? (
+              <span className="grid size-5 shrink-0 place-items-center rounded-full bg-primary text-white">
+                <ShieldCheck className="size-3" aria-label="Verified" />
+              </span>
+            ) : null}
           </div>
-          <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-muted-foreground">
-            <span className="inline-flex items-center gap-1 text-foreground">
-              <Star className="size-3 fill-primary text-primary" />
-              <span className="font-semibold">{rating.toFixed(1)}</span>
-              <span className="text-muted-foreground">({reviews})</span>
+          <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-xs text-white/75">
+            <span className="inline-flex items-center gap-1 text-white">
+              <Star className="size-3 fill-amber-400 text-amber-400" />
+              <span className="font-semibold tabular-nums">{rating.toFixed(1)}</span>
+              <span className="text-white/65">({reviews})</span>
             </span>
             <span className="inline-flex min-w-0 items-center gap-1">
               <MapPin className="size-3 shrink-0" />
@@ -252,14 +263,16 @@ export function TrainerMagazineCard({
         </button>
         <div className="flex items-end justify-between gap-2">
           <div>
-            <div className="text-lg font-semibold tabular-nums tracking-tight text-foreground">{formatVND(price)}</div>
-            <div className="text-[10px] uppercase tracking-[0.14em] text-muted-foreground">per class</div>
+            <div className="text-lg font-bold tabular-nums tracking-tight text-white">
+              {formatVND(price)}
+            </div>
+            <div className="text-[10px] font-medium tracking-wide text-white/60">/ session</div>
           </div>
           <AttractButton
             type="button"
             onClick={onSelect}
             containerClassName="shrink-0"
-            className="!h-10 !min-w-0 !rounded-full !px-4 !text-xs"
+            className="!h-9 !min-w-0 !rounded-lg !bg-primary !px-3.5 !text-xs !text-primary-foreground hover:!bg-primary/90"
           >
             Book
           </AttractButton>

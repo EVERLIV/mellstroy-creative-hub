@@ -21,15 +21,23 @@ import { cn } from '@/src/lib/utils';
 import { formatVND } from '@/src/lib/format';
 import { Button } from '@/src/components/ui/button';
 import { AppScreen } from '@/src/components/layout/screen';
+import { APP_CONTENT } from '@/src/components/layout/shell';
 import { DetailContextStrip } from '@/src/components/layout/detail-context-strip';
 import { PageLoader, EmptyState } from '@/src/components/layout/states';
+import { StickyBookBar } from './marketplace/StickyBookBar';
+import { SimilarTrainers, pickSimilarTrainers } from './marketplace/SimilarTrainers';
+import { CrossSellCarousel } from './marketplace/CrossSellCarousel';
+import { PackagePicker } from './marketplace/PackagePicker';
+import { WaitlistButton } from './marketplace/WaitlistButton';
+import { fetchActivePackages, type ClassPackage } from '@/src/lib/marketplace';
+import { trackEvent } from '@/src/lib/analytics';
 
 /**
- * Stitch Performance Card System → Trainer profile
- * projects/.../screens/d9d62af03fab48eb9fba12bc1338b3b7
+ * Intent: athlete decides whether to book this coach.
+ * Hierarchy: master identity card → classes → sticky book rail.
+ * Lives inside AppShell (nav + footer); document scroll only — no overlay.
  */
 
-const CTA = 'bg-[#2563eb] text-white hover:bg-[#004ac6]';
 const REVIEWS_PREVIEW = 3;
 const LOW_SLOTS_THRESHOLD = 3;
 const NEARLY_FULL_PERCENT = 75;
@@ -88,11 +96,10 @@ interface ClassCardProps {
   userRole: UserRole;
   currentUserId: string;
   onInitiateBooking: (target: { trainer: Trainer; cls: Class }) => void;
-  onBack: () => void;
 }
 
 const ClassCard: React.FC<ClassCardProps> = React.memo(
-  ({ cls, trainer, userRole, onInitiateBooking, onBack }) => {
+  ({ cls, trainer, userRole, onInitiateBooking }) => {
     const navigate = useNavigate();
     const [enrolledCount, setEnrolledCount] = useState(0);
 
@@ -107,7 +114,7 @@ const ClassCard: React.FC<ClassCardProps> = React.memo(
       'https://images.unsplash.com/photo-1517836357463-d25dfeac3438?w=800';
 
     useEffect(() => {
-      const classId = (cls as { _dbId?: string })._dbId || cls.id;
+      const classId = String((cls as { _dbId?: string })._dbId || cls.id);
       const loadBookings = async () => {
         const { data, error } = await supabase.from('bookings').select('id').eq('class_id', classId);
         if (!error && data) setEnrolledCount(data.length);
@@ -127,13 +134,16 @@ const ClassCard: React.FC<ClassCardProps> = React.memo(
     }, [cls]);
 
     const openClass = () => {
-      const classId = (cls as { _dbId?: string })._dbId || cls.id;
-      onBack();
-      setTimeout(() => navigate(`/class/${classId}`), 80);
+      const classId = String((cls as { _dbId?: string })._dbId || cls.id);
+      navigate(`/class/${classId}`);
     };
 
     const book = (e: React.MouseEvent) => {
       e.stopPropagation();
+      if (isFull) {
+        openClass();
+        return;
+      }
       onInitiateBooking({ trainer, cls });
     };
 
@@ -185,7 +195,7 @@ const ClassCard: React.FC<ClassCardProps> = React.memo(
           </div>
 
           <div className="p-5">
-            <h3 className="text-lg font-semibold tracking-tight text-foreground transition-colors group-hover:text-[#004ac6]">
+            <h3 className="text-lg font-semibold tracking-tight text-foreground transition-colors group-hover:text-primary">
               {cls.name}
             </h3>
             {cls.description ? (
@@ -243,7 +253,7 @@ const ClassCard: React.FC<ClassCardProps> = React.memo(
                       className={cn(
                         'flex items-center justify-center gap-1 rounded-lg px-2 py-1.5 text-center text-xs font-semibold',
                         i === 0
-                          ? 'border-2 border-[#2563eb] bg-blue-50 text-[#004ac6] dark:bg-blue-950'
+                          ? 'border-2 border-primary bg-blue-50 text-primary dark:bg-blue-950'
                           : 'border border-border bg-card text-muted-foreground'
                       )}
                     >
@@ -269,11 +279,11 @@ const ClassCard: React.FC<ClassCardProps> = React.memo(
           <Button
             type="button"
             size="sm"
-            className={cn('gap-1', CTA)}
-            disabled={isFull || isBookingDisabledForTrainer}
+            className='gap-1'
+            disabled={isBookingDisabledForTrainer}
             onClick={book}
           >
-            {isFull ? 'Full' : isBookingDisabledForTrainer ? 'N/A' : 'Reserve Spot'}
+            {isFull ? 'Waitlist' : isBookingDisabledForTrainer ? 'N/A' : 'Reserve Spot'}
             {!isFull && !isBookingDisabledForTrainer ? <ArrowRight className="size-3.5" /> : null}
           </Button>
         </div>
@@ -297,6 +307,8 @@ interface TrainerDetailPageProps {
   isFavorite: boolean;
   onToggleFavorite: (trainerId: string) => void;
   onOpenReviewsModal: (trainer: Trainer) => void;
+  onOpenChat?: (trainer: Trainer) => void;
+  allTrainers?: Trainer[];
 }
 
 const TrainerDetailPage: React.FC<TrainerDetailPageProps> = ({
@@ -308,10 +320,15 @@ const TrainerDetailPage: React.FC<TrainerDetailPageProps> = ({
   isFavorite,
   onToggleFavorite,
   onOpenReviewsModal,
+  onOpenChat,
+  allTrainers = [],
 }) => {
   const [isGalleryOpen, setIsGalleryOpen] = useState(false);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [classes, setClasses] = useState<Class[]>(trainer?.classes || []);
+  const [packages, setPackages] = useState<ClassPackage[]>([]);
+  const [selectedPackage, setSelectedPackage] = useState<ClassPackage | null>(null);
+  const [similarPool, setSimilarPool] = useState<Trainer[]>(allTrainers);
   const classesSectionRef = useRef<HTMLDivElement>(null);
 
   const displayClasses = useMemo(
@@ -324,10 +341,54 @@ const TrainerDetailPage: React.FC<TrainerDetailPageProps> = ({
   }, [trainer?.id, trainer?.classes]);
 
   useEffect(() => {
+    window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+  }, [trainer?.id]);
+
+  useEffect(() => {
+    if (!trainer?.id) return;
+    trackEvent('trainer_profile_view', { trainerId: trainer.id }, currentUserId);
+    const params = new URLSearchParams(window.location.search);
+    const ref = params.get('ref');
+    if (ref) trackEvent('trainer_profile_view', { trainerId: trainer.id, ref }, currentUserId);
+    let booked = false;
+    const mark = () => {
+      booked = true;
+    };
+    window.addEventListener('rhinofit:booking-complete', mark);
+    return () => {
+      window.removeEventListener('rhinofit:booking-complete', mark);
+      if (!booked && currentUserId) {
+        trackEvent('booking_abandon', { trainerId: trainer.id, stage: 'profile_leave' }, currentUserId);
+        const key = `rf-abandon-${trainer.id}`;
+        if (!sessionStorage.getItem(key)) {
+          sessionStorage.setItem(key, '1');
+          void supabase.from('notifications').insert({
+            user_id: currentUserId,
+            type: 'profile_abandon',
+            title: 'Still thinking it over?',
+            message: `${trainer.name} often has a free slot tomorrow — finish booking when you’re ready.`,
+            reference_id: trainer.id,
+            href: `/trainer/${trainer.id}`,
+            is_read: false,
+          } as never);
+        }
+      }
+    };
+  }, [trainer?.id, trainer?.name, currentUserId]);
+
+  useEffect(() => {
     if (!trainer?.id) return;
     const loadClasses = async () => {
       const { data, error } = await supabase.from('classes').select('*').eq('trainer_id', trainer.id);
-      if (!error && data) setClasses(data.map((row) => transformClassData(row as Record<string, unknown>)));
+      if (!error && data) {
+        const mapped = data.map((row) => transformClassData(row as Record<string, unknown>));
+        setClasses(mapped);
+        if (mapped[0]) {
+          const { data: pkgs } = await fetchActivePackages(String(mapped[0].id));
+          setPackages(pkgs);
+          if (pkgs[0]) setSelectedPackage(pkgs[0]);
+        }
+      }
     };
     loadClasses();
     const channel = supabase
@@ -342,6 +403,38 @@ const TrainerDetailPage: React.FC<TrainerDetailPageProps> = ({
       supabase.removeChannel(channel);
     };
   }, [trainer?.id]);
+
+  useEffect(() => {
+    if (allTrainers.length) {
+      setSimilarPool(allTrainers);
+      return;
+    }
+    void (async () => {
+      const { data } = await supabase
+        .from('profiles')
+        .select('id, username, specialty, rating, reviews_count, location, avatar_url, price_per_hour, is_verified, is_premium')
+        .limit(40);
+      if (!data) return;
+      setSimilarPool(
+        data.map((p) => ({
+          id: p.id,
+          name: p.username,
+          specialty: p.specialty || [],
+          rating: Number(p.rating) || 0,
+          reviews: p.reviews_count || 0,
+          location: p.location || '',
+          price: Number(p.price_per_hour) || 0,
+          imageUrl: p.avatar_url || '',
+          verificationStatus: p.is_verified ? 'verified' : 'unverified',
+          isPremium: !!p.is_premium,
+          bio: '',
+          reviewsData: [],
+          classes: [],
+          chatHistory: [],
+        })) as Trainer[]
+      );
+    })();
+  }, [allTrainers, trainer?.id]);
 
   if (!trainer) {
     return (
@@ -367,7 +460,9 @@ const TrainerDetailPage: React.FC<TrainerDetailPageProps> = ({
   const scrollToClasses = () =>
     classesSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
 
-  const sessionPrice = trainer.price || (displayClasses[0]?.price ?? 0);
+  const sessionPrice = Number(
+    selectedPackage?.price ?? trainer.price ?? displayClasses[0]?.price ?? 0
+  );
   const titleLine = [
     trainer.specialty?.[0] ? `${trainer.specialty[0]} Coach` : 'Performance Coach',
     trainer.verificationStatus === 'verified' ? 'Verified' : null,
@@ -377,10 +472,25 @@ const TrainerDetailPage: React.FC<TrainerDetailPageProps> = ({
     .join(' • ');
 
   const quote = trainer.reviewsData?.[0];
+  const similar = pickSimilarTrainers(trainer, similarPool, 4);
+  const startBook = () => {
+    if (displayClasses[0]) onInitiateBooking({ trainer, cls: displayClasses[0] });
+    else scrollToClasses();
+  };
+  const responseLabel =
+    trainer.responseTimeMs != null
+      ? trainer.responseTimeMs < 3_600_000
+        ? `~${Math.max(1, Math.round(trainer.responseTimeMs / 60_000))} min reply`
+        : `~${Math.round(trainer.responseTimeMs / 3_600_000)}h reply`
+      : null;
+  const onPlatform =
+    trainer.createdAt != null
+      ? new Date(trainer.createdAt).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })
+      : null;
 
   return (
-    <div className="min-w-0 bg-[#f9fafb] text-foreground dark:bg-background">
-      <div className="mx-auto w-full max-w-7xl space-y-6 px-4 py-6 sm:px-6 md:px-8">
+    <AppScreen className="min-w-0 bg-muted/30 text-foreground">
+      <div className={cn(APP_CONTENT, 'space-y-6 py-6 md:py-8 pb-28 md:pb-8')}>
         <DetailContextStrip
           backLabel="Back to Coaches"
           onBack={onBack}
@@ -435,7 +545,7 @@ const TrainerDetailPage: React.FC<TrainerDetailPageProps> = ({
 
         {/* Master trainer card */}
         <section className="relative overflow-hidden rounded-xl border border-border bg-card p-6 shadow-sm">
-          <div className="absolute inset-x-0 top-0 h-1.5 bg-gradient-to-r from-[#004ac6] to-[#2563eb]" />
+          <div className="absolute inset-x-0 top-0 h-1.5 bg-gradient-to-r from-primary to-primary" />
           <div className="flex flex-col gap-6 sm:flex-row">
             <div className="relative shrink-0">
               <div className="h-36 w-32 overflow-hidden rounded-xl border border-border bg-muted shadow-sm sm:h-48 sm:w-40">
@@ -449,7 +559,7 @@ const TrainerDetailPage: React.FC<TrainerDetailPageProps> = ({
               </div>
               {trainer.verificationStatus === 'verified' ? (
                 <div
-                  className="absolute -bottom-2 -right-2 rounded-full border-2 border-card bg-[#004ac6] p-1 text-white shadow-md"
+                  className="absolute -bottom-2 -right-2 rounded-full border-2 border-card bg-primary p-1 text-white shadow-md"
                   title="Verified"
                 >
                   <ShieldCheck className="size-4" />
@@ -479,7 +589,7 @@ const TrainerDetailPage: React.FC<TrainerDetailPageProps> = ({
                     </span>
                   </div>
                 </div>
-                <p className="mt-0.5 text-sm font-semibold text-[#004ac6]">{titleLine}</p>
+                <p className="mt-0.5 text-sm font-semibold text-primary">{titleLine}</p>
                 <p className="mt-2.5 line-clamp-3 text-sm text-muted-foreground">
                   {trainer.bio ||
                     trainer.shortDescription ||
@@ -493,7 +603,7 @@ const TrainerDetailPage: React.FC<TrainerDetailPageProps> = ({
                         className={cn(
                           'rounded-md border px-2.5 py-1 text-xs font-medium',
                           i === trainer.specialty.length - 1
-                            ? 'border-transparent bg-[#e9edff] font-semibold text-[#004ac6] dark:bg-blue-950'
+                            ? 'border-transparent bg-primary/10 font-semibold text-primary dark:bg-blue-950'
                             : 'border-border bg-muted/50 text-muted-foreground'
                         )}
                       >
@@ -526,7 +636,7 @@ const TrainerDetailPage: React.FC<TrainerDetailPageProps> = ({
 
           {quote ? (
             <div className="mt-5 flex items-start gap-3 rounded-lg border-t border-border/60 bg-muted/40 p-3 pt-4">
-              <Quote className="mt-0.5 size-5 shrink-0 text-[#2563eb]" />
+              <Quote className="mt-0.5 size-5 shrink-0 text-primary" />
               <p className="text-sm text-muted-foreground">
                 <span className="font-semibold text-foreground">“{quote.comment}”</span>
                 <span className="ml-1">— {quote.reviewerName}</span>
@@ -556,11 +666,8 @@ const TrainerDetailPage: React.FC<TrainerDetailPageProps> = ({
               </Button>
               <Button
                 type="button"
-                className={cn('flex-1 gap-1.5 sm:flex-initial', CTA)}
-                onClick={() => {
-                  if (displayClasses[0]) onInitiateBooking({ trainer, cls: displayClasses[0] });
-                  else scrollToClasses();
-                }}
+                className='flex-1 gap-1.5 sm:flex-initial'
+                onClick={startBook}
                 disabled={userRole === 'trainer'}
               >
                 <Calendar className="size-4" />
@@ -572,6 +679,42 @@ const TrainerDetailPage: React.FC<TrainerDetailPageProps> = ({
 
         <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
           <div className="space-y-6 lg:col-span-8">
+            {/* Quality signals */}
+            <section className="grid grid-cols-2 gap-3 rounded-xl border border-border bg-card p-4 sm:grid-cols-4">
+              <div>
+                <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Reply</p>
+                <p className="text-sm font-semibold">{responseLabel || '—'}</p>
+              </div>
+              <div>
+                <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Accept rate</p>
+                <p className="text-sm font-semibold tabular-nums">
+                  {trainer.acceptanceRate != null ? `${Math.round(trainer.acceptanceRate)}%` : '—'}
+                </p>
+              </div>
+              <div>
+                <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">On platform</p>
+                <p className="text-sm font-semibold">{onPlatform || '—'}</p>
+              </div>
+              <div>
+                <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">Sessions from</p>
+                <p className="text-sm font-semibold tabular-nums">{formatVND(sessionPrice || 0)}</p>
+              </div>
+            </section>
+
+            {packages.length > 0 ? (
+              <section className="space-y-3 rounded-xl border border-border bg-card p-5 shadow-sm">
+                <div>
+                  <h2 className="text-lg font-semibold tracking-tight">Packages</h2>
+                  <p className="text-sm text-muted-foreground">Single, 5-pack, or 10-pack with savings</p>
+                </div>
+                <PackagePicker
+                  packages={packages}
+                  value={selectedPackage?.id}
+                  onChange={setSelectedPackage}
+                />
+              </section>
+            ) : null}
+
             {/* About */}
             {trainer.bio ? (
               <section className="rounded-xl border border-border bg-card p-5 shadow-sm">
@@ -581,7 +724,7 @@ const TrainerDetailPage: React.FC<TrainerDetailPageProps> = ({
                 </p>
                 {trainer.location ? (
                   <p className="mt-3 flex items-center gap-1.5 text-sm text-muted-foreground">
-                    <MapPin className="size-3.5 text-[#2563eb]" />
+                    <MapPin className="size-3.5 text-primary" />
                     {trainer.location}
                   </p>
                 ) : null}
@@ -610,7 +753,6 @@ const TrainerDetailPage: React.FC<TrainerDetailPageProps> = ({
                       userRole={userRole}
                       currentUserId={currentUserId}
                       onInitiateBooking={onInitiateBooking}
-                      onBack={onBack}
                     />
                   ))}
                 </div>
@@ -662,7 +804,7 @@ const TrainerDetailPage: React.FC<TrainerDetailPageProps> = ({
                     type="button"
                     variant="ghost"
                     size="sm"
-                    className="text-[#004ac6]"
+                    className="text-primary"
                     onClick={() => onOpenReviewsModal(trainer)}
                   >
                     View all
@@ -687,6 +829,24 @@ const TrainerDetailPage: React.FC<TrainerDetailPageProps> = ({
                         <StarRow rating={review.rating} />
                       </div>
                       <p className="text-sm text-muted-foreground">{review.comment}</p>
+                      {review.criteria ? (
+                        <div className="mt-2 flex flex-wrap gap-1.5">
+                          {Object.entries(review.criteria).map(([k, v]) => (
+                            <span
+                              key={k}
+                              className="rounded-md bg-muted px-2 py-0.5 text-[10px] font-medium capitalize text-muted-foreground"
+                            >
+                              {k} {String(v)}
+                            </span>
+                          ))}
+                        </div>
+                      ) : null}
+                      {review.trainerReply ? (
+                        <p className="mt-2 border-l-2 border-primary/40 pl-2 text-xs text-muted-foreground">
+                          <span className="font-semibold text-foreground">Coach: </span>
+                          {review.trainerReply}
+                        </p>
+                      ) : null}
                     </article>
                   ))}
                 </div>
@@ -698,10 +858,13 @@ const TrainerDetailPage: React.FC<TrainerDetailPageProps> = ({
                 />
               )}
             </section>
+
+            <SimilarTrainers trainers={similar} />
+            <CrossSellCarousel specialty={trainer.specialty?.[0]} />
           </div>
 
-          {/* Sticky rail */}
-          <aside className="space-y-4 lg:col-span-4 lg:sticky lg:top-24 lg:self-start">
+          {/* Sticky book rail — sticks under AppShell top nav on document scroll */}
+          <aside className="space-y-4 lg:col-span-4 lg:sticky lg:top-[5.5rem] lg:self-start">
             <div className="rounded-xl border border-border bg-card p-5 shadow-sm">
               <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
                 Session from
@@ -725,23 +888,28 @@ const TrainerDetailPage: React.FC<TrainerDetailPageProps> = ({
               </ul>
               <Button
                 type="button"
-                className={cn('mt-4 w-full gap-1.5', CTA)}
-                onClick={() => {
-                  if (displayClasses[0]) onInitiateBooking({ trainer, cls: displayClasses[0] });
-                  else scrollToClasses();
-                }}
+                className='mt-4 w-full gap-1.5'
+                onClick={startBook}
                 disabled={userRole === 'trainer' || displayClasses.length === 0}
               >
                 <Calendar className="size-4" />
                 Book Session
               </Button>
+              {displayClasses[0] ? (
+                <WaitlistButton
+                  classId={String(displayClasses[0].id)}
+                  userId={currentUserId}
+                  className="mt-2 w-full"
+                />
+              ) : null}
               <Button
                 type="button"
                 variant="outline"
                 className="mt-2 w-full gap-1.5"
                 onClick={() => {
-                  /* chat routed via parent when available */
-                  scrollToClasses();
+                  trackEvent('chat_open', { trainerId: trainer.id }, currentUserId);
+                  if (onOpenChat) onOpenChat(trainer);
+                  else scrollToClasses();
                 }}
               >
                 <MessageCircle className="size-4" />
@@ -775,7 +943,16 @@ const TrainerDetailPage: React.FC<TrainerDetailPageProps> = ({
           onClose={() => setIsGalleryOpen(false)}
         />
       ) : null}
-    </div>
+
+      {userRole !== 'trainer' ? (
+        <StickyBookBar
+          price={sessionPrice}
+          meta={selectedPackage?.name || displayClasses[0]?.name}
+          onBook={startBook}
+          disabled={displayClasses.length === 0}
+        />
+      ) : null}
+    </AppScreen>
   );
 };
 

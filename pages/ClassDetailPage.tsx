@@ -3,7 +3,7 @@ import { useNavigate, useParams, Link } from 'react-router-dom';
 import {
   ArrowRight,
   Building,
-  Calendar,
+  Calendar as CalendarIcon,
   CheckCircle2,
   Clock,
   Dumbbell,
@@ -23,26 +23,40 @@ import { supabase } from '../src/integrations/supabase/client';
 import { Class, Trainer, UserRole, Review } from '../types';
 import { cn } from '@/src/lib/utils';
 import { formatVND } from '@/src/lib/format';
+import { Badge } from '@/src/components/ui/badge';
 import { Button } from '@/src/components/ui/button';
+import { Calendar } from '@/src/components/ui/calendar';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/src/components/ui/card';
+import { Separator } from '@/src/components/ui/separator';
 import { PageLoader, EmptyState } from '@/src/components/layout/states';
 import { DetailContextStrip } from '@/src/components/layout/detail-context-strip';
 import { useOptionalCartQuantities } from '@/src/hooks/useCartQuantities';
+import { StickyBookBar } from '../components/marketplace/StickyBookBar';
+import { WaitlistButton } from '../components/marketplace/WaitlistButton';
+import { CrossSellCarousel } from '../components/marketplace/CrossSellCarousel';
+import { BundleCart } from '../components/marketplace/BundleCart';
+import { PackagePicker } from '../components/marketplace/PackagePicker';
+import { ClassFacilityCard } from '../components/marketplace/ClassFacilityCard';
+import { fetchActivePackages, type ClassPackage } from '@/src/lib/marketplace';
+import { trackEvent } from '@/src/lib/analytics';
+import { requireAuth } from '@/src/lib/require-auth';
 
 /**
  * Stitch Class Details → product page
  * Intent: athlete reserves a mat/court spot now.
  * Hierarchy: hero + sticky Book CTA win; editorial modules follow.
- * Palette: Stitch blue (#2563eb) for selection, orange (#fd651e) for convert.
  * Depth: borders + whisper shadow. No sidebar — shell owns top nav.
  */
 
-const CTA_BLUE = 'bg-[#2563eb] text-white hover:bg-[#004ac6]';
-const CTA_ORANGE = 'bg-[#fd651e] text-white hover:bg-[#a73a00]';
 
 interface ClassDetailPageProps {
   userRole?: UserRole;
   currentUserId?: string;
-  onInitiateBooking?: (target: { trainer: Trainer; cls: Class }) => void;
+  onInitiateBooking?: (target: {
+    trainer: Trainer;
+    cls: Class;
+    preferredDate?: Date;
+  }) => void;
   onOpenChat?: (
     trainer: Trainer,
     context?: { className: string; bookingDate?: string }
@@ -85,26 +99,32 @@ const mapClass = (c: Record<string, unknown>): Class => ({
   disability_friendly: Boolean(c.disability_friendly),
 });
 
-function nextSessionDays(scheduleDays?: string[]) {
-  const today = new Date();
-  const labels = ['Today', 'Tomorrow', 'Weekend', 'Sunday'];
-  return Array.from({ length: 4 }).map((_, i) => {
+const WEEKDAY = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'] as const;
+
+function startOfDay(d: Date) {
+  const next = new Date(d);
+  next.setHours(0, 0, 0, 0);
+  return next;
+}
+
+function isScheduleDay(date: Date, scheduleDays?: string[]) {
+  if (!scheduleDays?.length) return false;
+  return scheduleDays.includes(WEEKDAY[date.getDay()]);
+}
+
+function firstUpcomingScheduleDate(scheduleDays?: string[]) {
+  const today = startOfDay(new Date());
+  for (let i = 0; i < 60; i++) {
     const d = new Date(today);
     d.setDate(today.getDate() + i);
-    const weekday = d.toLocaleDateString('en-US', { weekday: 'short' });
-    const dayNum = d.getDate();
-    return {
-      key: `${i}`,
-      eyebrow: labels[i] || weekday,
-      title: `${weekday} ${dayNum}`,
-      meta: scheduleDays?.length ? `${scheduleDays.length} slots` : 'Open',
-      date: d,
-    };
-  });
+    if (isScheduleDay(d, scheduleDays)) return d;
+  }
+  return undefined;
 }
 
 const ClassDetailPage: React.FC<ClassDetailPageProps> = ({
   userRole = 'student',
+  currentUserId,
   onInitiateBooking,
   onOpenChat,
 }) => {
@@ -116,10 +136,11 @@ const ClassDetailPage: React.FC<ClassDetailPageProps> = ({
   const [enrolledCount, setEnrolledCount] = useState(0);
   const [classReviews, setClassReviews] = useState<Review[]>([]);
   const [similarClasses, setSimilarClasses] = useState<Class[]>([]);
-  const [selectedDay, setSelectedDay] = useState(0);
-  const [selectedSlot, setSelectedSlot] = useState(0);
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
   const [passOption, setPassOption] = useState<'single' | 'pack'>('single');
   const [saved, setSaved] = useState(false);
+  const [packages, setPackages] = useState<ClassPackage[]>([]);
+  const [selectedPackage, setSelectedPackage] = useState<ClassPackage | null>(null);
   const cart = useOptionalCartQuantities();
   const cartId = classId ? `class:${classId}` : '';
 
@@ -253,49 +274,39 @@ const ClassDetailPage: React.FC<ClassDetailPageProps> = ({
     };
   }, [classId]);
 
-  const days = useMemo(
-    () => nextSessionDays(classData?.schedule?.days),
-    [classData?.schedule?.days]
-  );
+  const scheduleDays = classData?.schedule?.days ?? [];
+  const scheduleTimeLabel = classData?.schedule?.time
+    ? formatTime(classData.schedule.time)
+    : null;
 
-  const slots = useMemo(() => {
-    const time = classData?.schedule?.time
-      ? formatTime(classData.schedule.time)
-      : '07:00 AM';
-    const endHint = classData?.duration
-      ? `${classData.duration} min`
-      : '75 min';
-    const spotsLeft = Math.max(classData ? classData.capacity - enrolledCount : 0, 0);
-    return [
-      {
-        id: 0,
-        range: `${time} – session`,
-        badge: spotsLeft <= 2 && spotsLeft > 0 ? `${spotsLeft} spot${spotsLeft === 1 ? '' : 's'} left` : null,
-        badgeTone: 'urgent' as const,
-        meta: `${classData?.classType || 'Studio'} • Coach ${trainer?.name || ''}`,
-        price: classData?.price || 0,
-        status: spotsLeft === 0 ? 'Full' : 'Selected',
-      },
-      {
-        id: 1,
-        range: '12:00 PM – Midday',
-        badge: 'Midday Flow',
-        badgeTone: 'neutral' as const,
-        meta: `${classData?.classType || 'Studio'} • Coach ${trainer?.name || ''}`,
-        price: classData?.price || 0,
-        status: 'Available',
-      },
-      {
-        id: 2,
-        range: '06:30 PM – Evening',
-        badge: 'Peak Hours',
-        badgeTone: 'success' as const,
-        meta: `${classData?.classType || 'Studio'} • Coach ${trainer?.name || ''}`,
-        price: classData?.price || 0,
-        status: 'Available',
-      },
-    ].map((s) => ({ ...s, endHint }));
-  }, [classData, enrolledCount, trainer?.name]);
+  useEffect(() => {
+    if (!classData?.schedule?.days?.length) {
+      setSelectedDate(undefined);
+      return;
+    }
+    setSelectedDate((prev) => {
+      if (prev && isScheduleDay(prev, classData.schedule?.days)) return prev;
+      return firstUpcomingScheduleDate(classData.schedule?.days);
+    });
+  }, [classData?.id, classData?.schedule?.days]);
+
+  useEffect(() => {
+    if (!classId) return;
+    trackEvent('trainer_profile_view', { surface: 'class', classId }, currentUserId);
+    void (async () => {
+      const { data } = await fetchActivePackages(classId);
+      setPackages(data);
+      if (data[0]) setSelectedPackage(data[0]);
+    })();
+  }, [classId, currentUserId]);
+
+  const selectedDateLabel = selectedDate
+    ? selectedDate.toLocaleDateString('en-US', {
+        weekday: 'short',
+        month: 'short',
+        day: 'numeric',
+      })
+    : 'Pick a day';
 
   if (loading) {
     return (
@@ -309,7 +320,7 @@ const ClassDetailPage: React.FC<ClassDetailPageProps> = ({
     return (
       <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 md:px-8">
         <EmptyState
-          icon={Calendar}
+          icon={CalendarIcon}
           title="Class not found"
           description={`Class ID: ${classId}`}
           action={<Button onClick={() => navigate('/explore')}>Back to Explore</Button>}
@@ -347,9 +358,33 @@ const ClassDetailPage: React.FC<ClassDetailPageProps> = ({
 
   const handleBook = () => {
     if (!onInitiateBooking || isBookingDisabled) return;
+    if (
+      !requireAuth(currentUserId, navigate, {
+        returnTo: `/class/${classId}`,
+      })
+    ) {
+      return;
+    }
     if (cartId) cart?.setQuantity(cartId, Math.max(1, cart.getQuantity(cartId) || 1));
-    onInitiateBooking({ trainer, cls: classData });
+    onInitiateBooking({
+      trainer,
+      cls: classData,
+      preferredDate: selectedDate,
+    });
   };
+
+  const handleMessageCoach = () => {
+    if (!trainer) return;
+    onOpenChat?.(trainer, {
+      className: classData?.name || '',
+      bookingDate: selectedDate
+        ? selectedDate.toISOString().split('T')[0]
+        : undefined,
+    });
+  };
+
+  const scrollToSchedule = () =>
+    document.getElementById('class-schedule')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
 
   const typeIcon =
     classData.classType === 'Outdoor' ? (
@@ -426,7 +461,7 @@ const ClassDetailPage: React.FC<ClassDetailPageProps> = ({
           <img src={cover} alt="" className="size-full object-cover object-center" />
           <div className="absolute inset-0 bg-gradient-to-t from-[#293040]/90 via-transparent to-black/15" />
           <div className="absolute left-4 top-4 flex flex-wrap gap-2">
-            <span className="rounded-full bg-[#fd651e] px-3 py-1 text-xs font-bold text-white shadow-sm">
+            <span className="rounded-full bg-primary px-3 py-1 text-xs font-bold text-white shadow-sm">
               Hot Pick
             </span>
             <span className="rounded-full bg-white/90 px-3 py-1 text-xs font-semibold text-foreground backdrop-blur-md">
@@ -455,7 +490,7 @@ const ClassDetailPage: React.FC<ClassDetailPageProps> = ({
                   with Coach{' '}
                   <button
                     type="button"
-                    className="font-semibold text-white underline decoration-[#fd651e] decoration-2 underline-offset-4"
+                    className="font-semibold text-white underline decoration-primary decoration-2 underline-offset-4"
                     onClick={() => navigate(`/trainer/${trainer.id}`)}
                   >
                     {trainer.name}
@@ -520,7 +555,7 @@ const ClassDetailPage: React.FC<ClassDetailPageProps> = ({
                         'grid size-10 shrink-0 place-items-center rounded-lg',
                         m.tone === 'orange' && 'bg-orange-50 text-orange-700 dark:bg-orange-950',
                         m.tone === 'green' && 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950',
-                        m.tone === 'blue' && 'bg-muted text-[#004ac6]'
+                        m.tone === 'blue' && 'bg-muted text-primary'
                       )}
                     >
                       {m.icon}
@@ -542,115 +577,118 @@ const ClassDetailPage: React.FC<ClassDetailPageProps> = ({
               </div>
             </section>
 
-            {/* Schedule */}
-            <section className="rounded-xl border border-border bg-card p-6 shadow-sm">
-              <div className="mb-4 flex items-center justify-between gap-3">
-                <div>
-                  <h2 className="text-lg font-bold tracking-tight">Select Session Date & Time</h2>
-                  <p className="text-sm text-muted-foreground">
-                    Book ahead to secure your spot. Instant confirmation.
-                  </p>
+            {/* Coach schedule — real class days/time */}
+            <Card id="class-schedule" className="scroll-mt-24 shadow-sm">
+              <CardHeader className="gap-1">
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div>
+                    <CardTitle className="text-lg">Coach schedule</CardTitle>
+                    <CardDescription>
+                      Dates this class runs with {trainer.name}. Pick a day, then book.
+                    </CardDescription>
+                  </div>
+                  <Button type="button" variant="ghost" size="sm" onClick={scrollToSchedule}>
+                    <CalendarIcon data-icon="inline-start" />
+                    Jump to calendar
+                  </Button>
                 </div>
-                <button
-                  type="button"
-                  className="inline-flex items-center gap-1 text-sm font-semibold text-[#004ac6] hover:underline"
-                  onClick={() => navigate('/bookings')}
-                >
-                  View calendar
-                  <ArrowRight className="size-3.5" />
-                </button>
-              </div>
-
-              <div className="mb-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
-                {days.map((d, i) => (
-                  <button
-                    key={d.key}
-                    type="button"
-                    onClick={() => setSelectedDay(i)}
-                    className={cn(
-                      'flex flex-col items-center rounded-lg px-3 py-2.5 transition-all',
-                      selectedDay === i
-                        ? 'border-2 border-[#2563eb] bg-blue-50 text-[#004ac6] dark:bg-blue-950'
-                        : 'border border-border bg-card text-muted-foreground hover:border-[#2563eb]/50 hover:text-foreground'
-                    )}
-                  >
-                    <span className="text-[11px] font-bold uppercase tracking-wider">{d.eyebrow}</span>
-                    <span className="text-sm font-bold text-foreground">{d.title}</span>
-                    <span
-                      className={cn(
-                        'text-[11px] font-semibold',
-                        selectedDay === i ? 'text-orange-600' : 'text-muted-foreground'
-                      )}
-                    >
-                      {d.meta}
-                    </span>
-                  </button>
-                ))}
-              </div>
-
-              <div className="space-y-2.5">
-                {slots.map((slot) => {
-                  const active = selectedSlot === slot.id;
-                  return (
-                    <button
-                      key={slot.id}
-                      type="button"
-                      onClick={() => setSelectedSlot(slot.id)}
-                      className={cn(
-                        'flex w-full items-center justify-between rounded-lg p-3.5 text-left transition-all',
-                        active
-                          ? 'border-2 border-[#2563eb] bg-[#f1f3ff] dark:bg-blue-950/40'
-                          : 'border border-border bg-card hover:border-[#2563eb]/50'
-                      )}
-                    >
-                      <div className="flex items-center gap-4">
-                        <span
-                          className={cn(
-                            'grid size-5 place-items-center rounded-full border-2',
-                            active ? 'border-[#2563eb]' : 'border-border'
-                          )}
+                {scheduleDays.length > 0 ? (
+                  <div className="flex flex-wrap gap-1.5 pt-1">
+                    {WEEKDAY.map((day) => {
+                      const active = scheduleDays.includes(day);
+                      return (
+                        <Badge
+                          key={day}
+                          variant={active ? "default" : "outline"}
+                          className={cn(!active && "text-muted-foreground opacity-50")}
                         >
-                          {active ? <span className="size-2.5 rounded-full bg-[#2563eb]" /> : null}
-                        </span>
-                        <div>
-                          <div className="flex flex-wrap items-center gap-2">
-                            <span className="text-sm font-semibold text-foreground">{slot.range}</span>
-                            {slot.badge ? (
-                              <span
-                                className={cn(
-                                  'rounded-full px-2 py-0.5 text-[11px] font-bold',
-                                  slot.badgeTone === 'urgent' &&
-                                    'bg-orange-50 text-orange-800 dark:bg-orange-950 dark:text-orange-200',
-                                  slot.badgeTone === 'success' &&
-                                    'bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300',
-                                  slot.badgeTone === 'neutral' && 'bg-muted text-muted-foreground'
-                                )}
-                              >
-                                {slot.badge}
-                              </span>
-                            ) : null}
-                          </div>
-                          <p className="text-xs text-muted-foreground">{slot.meta}</p>
+                          {day}
+                        </Badge>
+                      );
+                    })}
+                  </div>
+                ) : null}
+              </CardHeader>
+              <CardContent>
+                {scheduleDays.length === 0 || !scheduleTimeLabel ? (
+                  <EmptyState
+                    icon={CalendarIcon}
+                    title="No published schedule"
+                    description="This coach hasn’t set recurring days for this class yet. Message them to arrange a time."
+                    action={
+                      <Button type="button" variant="outline" onClick={handleMessageCoach}>
+                        <MessageCircle data-icon="inline-start" />
+                        Message Coach
+                      </Button>
+                    }
+                  />
+                ) : (
+                  <div className="flex flex-col gap-6 lg:flex-row lg:items-start">
+                    <Calendar
+                      mode="single"
+                      selected={selectedDate}
+                      onSelect={setSelectedDate}
+                      disabled={(date) => {
+                        const today = startOfDay(new Date());
+                        return date < today || !isScheduleDay(date, scheduleDays);
+                      }}
+                      modifiers={{
+                        scheduled: (date) => isScheduleDay(date, scheduleDays),
+                      }}
+                      modifiersClassNames={{
+                        scheduled:
+                          "font-semibold text-primary underline decoration-primary/40 underline-offset-2",
+                      }}
+                      className="rounded-xl border border-border bg-card shadow-sm"
+                    />
+
+                    <div className="flex min-w-0 flex-1 flex-col gap-3">
+                      <div className="rounded-xl border border-border bg-muted/40 p-4">
+                        <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
+                          Selected session
+                        </p>
+                        <p className="mt-1 text-base font-semibold tracking-tight text-foreground">
+                          {selectedDateLabel}
+                        </p>
+                        <Separator className="my-3" />
+                        <div className="flex items-center justify-between gap-3">
+                          <span className="inline-flex items-center gap-2 text-sm text-muted-foreground">
+                            <Clock className="size-4 text-primary" />
+                            {scheduleTimeLabel}
+                            <span className="text-border">·</span>
+                            {classData.duration} min
+                          </span>
+                          <span className="text-sm font-bold tabular-nums">
+                            {formatVND(classData.price)}
+                          </span>
                         </div>
+                        <p className="mt-2 text-xs text-muted-foreground">
+                          {classData.classType} · {spotsLeft} spot{spotsLeft === 1 ? "" : "s"} left
+                        </p>
                       </div>
-                      <div className="text-right">
-                        <span className="block text-sm font-bold tabular-nums">
-                          {formatVND(slot.price)}
-                        </span>
-                        <span
-                          className={cn(
-                            'block text-[11px] font-semibold',
-                            active ? 'text-emerald-600' : 'text-muted-foreground'
-                          )}
-                        >
-                          {active ? 'Selected' : slot.status}
-                        </span>
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
-            </section>
+
+                      <Button
+                        type="button"
+                        className="h-11 w-full gap-2"
+                        disabled={isBookingDisabled || !selectedDate}
+                        onClick={handleBook}
+                      >
+                        <CalendarIcon className="size-4" />
+                        {isFull
+                          ? "Class full"
+                          : isTrainer
+                            ? "Trainers cannot book"
+                            : selectedDate
+                              ? "Book this session"
+                              : "Select a schedule day"}
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            <ClassFacilityCard classId={String(classData.id)} />
 
             {/* About */}
             <section className="rounded-xl border border-border bg-card p-6 shadow-sm">
@@ -717,7 +755,7 @@ const ClassDetailPage: React.FC<ClassDetailPageProps> = ({
                     alt=""
                     className="size-20 rounded-2xl border-2 border-white object-cover shadow-md"
                   />
-                  <span className="absolute -bottom-1.5 -right-1.5 grid size-6 place-items-center rounded-full bg-[#fd651e] text-xs font-bold text-white shadow-sm">
+                  <span className="absolute -bottom-1.5 -right-1.5 grid size-6 place-items-center rounded-full bg-primary text-xs font-bold text-white shadow-sm">
                     ★
                   </span>
                 </div>
@@ -743,7 +781,7 @@ const ClassDetailPage: React.FC<ClassDetailPageProps> = ({
                   <Button
                     type="button"
                     variant="outline"
-                    className={cn('flex-1 border-[#2563eb] text-[#004ac6] sm:flex-none', 'hover:bg-blue-50')}
+                    className='flex-1 sm:flex-none'
                     onClick={() => navigate(`/trainer/${trainer.id}`)}
                   >
                     View Profile
@@ -752,7 +790,7 @@ const ClassDetailPage: React.FC<ClassDetailPageProps> = ({
                     type="button"
                     variant="secondary"
                     className="flex-1 sm:flex-none"
-                    onClick={() => onOpenChat?.(trainer, { className: classData.name })}
+                    onClick={handleMessageCoach}
                   >
                     Message Coach
                   </Button>
@@ -764,13 +802,13 @@ const ClassDetailPage: React.FC<ClassDetailPageProps> = ({
             <section className="rounded-xl border border-border bg-card p-6 shadow-sm">
               <div className="mb-4 flex items-center justify-between">
                 <h2 className="text-lg font-bold tracking-tight">Venue & Location</h2>
-                <span className="inline-flex items-center gap-1 text-sm font-semibold text-[#004ac6]">
+                <span className="inline-flex items-center gap-1 text-sm font-semibold text-primary">
                   <MapPin className="size-3.5" />
                   Get directions
                 </span>
               </div>
               <div className="mb-4 flex items-start gap-4">
-                <span className="grid size-12 shrink-0 place-items-center rounded-xl border border-border bg-muted text-[#004ac6]">
+                <span className="grid size-12 shrink-0 place-items-center rounded-xl border border-border bg-muted text-primary">
                   <Building className="size-6" />
                 </span>
                 <div>
@@ -829,7 +867,7 @@ const ClassDetailPage: React.FC<ClassDetailPageProps> = ({
                     >
                       <div className="flex items-center justify-between gap-2">
                         <div className="flex items-center gap-2.5">
-                          <span className="grid size-8 place-items-center rounded-full bg-[#2563eb] text-xs font-bold text-white">
+                          <span className="grid size-8 place-items-center rounded-full bg-primary text-xs font-bold text-white">
                             {review.reviewerName.slice(0, 2).toUpperCase()}
                           </span>
                           <div>
@@ -869,7 +907,7 @@ const ClassDetailPage: React.FC<ClassDetailPageProps> = ({
                   <h2 className="text-lg font-bold tracking-tight">More classes you might like</h2>
                   <button
                     type="button"
-                    className="text-sm font-semibold text-[#004ac6] hover:underline"
+                    className="text-sm font-semibold text-primary hover:underline"
                     onClick={() => navigate('/explore')}
                   >
                     Explore all
@@ -881,7 +919,7 @@ const ClassDetailPage: React.FC<ClassDetailPageProps> = ({
                       key={cls.id}
                       type="button"
                       onClick={() => navigate(`/class/${cls.id}`)}
-                      className="group overflow-hidden rounded-xl border border-border bg-card text-left transition-all hover:border-[#2563eb]/50 hover:shadow-md"
+                      className="group overflow-hidden rounded-xl border border-border bg-card text-left transition-all hover:border-primary/50 hover:shadow-md"
                     >
                       <div className="relative h-32 w-full overflow-hidden bg-muted">
                         <img
@@ -897,7 +935,7 @@ const ClassDetailPage: React.FC<ClassDetailPageProps> = ({
                         </span>
                       </div>
                       <div className="p-3">
-                        <h4 className="text-sm font-semibold transition-colors group-hover:text-[#004ac6]">
+                        <h4 className="text-sm font-semibold transition-colors group-hover:text-primary">
                           {cls.name}
                         </h4>
                         <p className="mt-0.5 truncate text-xs text-muted-foreground">
@@ -922,7 +960,7 @@ const ClassDetailPage: React.FC<ClassDetailPageProps> = ({
 
           {/* Sticky booking rail */}
           <aside className="space-y-4 lg:col-span-4 lg:sticky lg:top-24" id="booking-card">
-            <div className="relative overflow-hidden rounded-2xl border-2 border-[#2563eb]/20 bg-card p-6 shadow-md">
+            <div className="relative overflow-hidden rounded-2xl border-2 border-primary/20 bg-card p-6 shadow-md">
               {spotsLeft > 0 && spotsLeft <= 3 ? (
                 <div className="mb-4 flex items-center gap-1.5 rounded-lg bg-orange-50 px-3 py-1.5 text-xs font-bold text-orange-800 dark:bg-orange-950/50 dark:text-orange-200">
                   <Flame className="size-4 text-orange-600" />
@@ -953,8 +991,8 @@ const ClassDetailPage: React.FC<ClassDetailPageProps> = ({
                   className={cn(
                     'flex cursor-pointer items-center justify-between rounded-lg p-3 transition-all',
                     passOption === 'single'
-                      ? 'border-2 border-[#2563eb] bg-[#f1f3ff] dark:bg-blue-950/30'
-                      : 'border border-border hover:border-[#2563eb]/50'
+                      ? 'border-2 border-primary bg-primary/5 dark:bg-blue-950/30'
+                      : 'border border-border hover:border-primary/50'
                   )}
                 >
                   <span className="flex items-center gap-2.5">
@@ -963,7 +1001,7 @@ const ClassDetailPage: React.FC<ClassDetailPageProps> = ({
                       name="pass_option"
                       checked={passOption === 'single'}
                       onChange={() => setPassOption('single')}
-                      className="size-4 accent-[#2563eb]"
+                      className="size-4 accent-primary"
                     />
                     <span>
                       <span className="block text-xs font-bold text-foreground">Single Session Entry</span>
@@ -978,8 +1016,8 @@ const ClassDetailPage: React.FC<ClassDetailPageProps> = ({
                   className={cn(
                     'flex cursor-pointer items-center justify-between rounded-lg p-3 transition-all',
                     passOption === 'pack'
-                      ? 'border-2 border-[#2563eb] bg-[#f1f3ff] dark:bg-blue-950/30'
-                      : 'border border-border hover:border-[#2563eb]/50'
+                      ? 'border-2 border-primary bg-primary/5 dark:bg-blue-950/30'
+                      : 'border border-border hover:border-primary/50'
                   )}
                 >
                   <span className="flex items-center gap-2.5">
@@ -988,7 +1026,7 @@ const ClassDetailPage: React.FC<ClassDetailPageProps> = ({
                       name="pass_option"
                       checked={passOption === 'pack'}
                       onChange={() => setPassOption('pack')}
-                      className="size-4 accent-[#2563eb]"
+                      className="size-4 accent-primary"
                     />
                     <span>
                       <span className="block text-xs font-bold text-foreground">5-Class Pack (Save 18%)</span>
@@ -1004,10 +1042,12 @@ const ClassDetailPage: React.FC<ClassDetailPageProps> = ({
               <div className="mb-5 space-y-2 rounded-xl border border-border bg-muted/40 p-3.5 text-xs">
                 <div className="flex items-center justify-between text-muted-foreground">
                   <span className="inline-flex items-center gap-1.5 font-medium text-foreground">
-                    <Calendar className="size-3.5 text-[#2563eb]" />
-                    {days[selectedDay]?.title}
+                    <CalendarIcon className="size-3.5 text-primary" />
+                    {selectedDateLabel}
                   </span>
-                  <span className="font-bold text-foreground">{slots[selectedSlot]?.range}</span>
+                  <span className="font-bold text-foreground">
+                    {scheduleTimeLabel || 'TBD'}
+                  </span>
                 </div>
                 <div className="flex items-center justify-between text-muted-foreground">
                   <span className="inline-flex items-center gap-1.5">
@@ -1020,9 +1060,18 @@ const ClassDetailPage: React.FC<ClassDetailPageProps> = ({
                 </div>
               </div>
 
+              {packages.length > 0 ? (
+                <div className="mb-3">
+                  <PackagePicker
+                    packages={packages}
+                    value={selectedPackage?.id}
+                    onChange={setSelectedPackage}
+                  />
+                </div>
+              ) : null}
               <Button
                 type="button"
-                className={cn('mb-3 h-12 w-full gap-2 text-base font-bold shadow-md', CTA_ORANGE)}
+                className='mb-3 h-12 w-full gap-2 text-base font-semibold'
                 disabled={isBookingDisabled}
                 onClick={handleBook}
               >
@@ -1033,6 +1082,15 @@ const ClassDetailPage: React.FC<ClassDetailPageProps> = ({
                     ? 'Trainers Cannot Book'
                     : 'Book This Spot Now'}
               </Button>
+              {isFull && !isTrainer ? (
+                <WaitlistButton
+                  classId={String(classData.id)}
+                  userId={currentUserId}
+                  preferredDate={selectedDate?.toISOString().split('T')[0]}
+                  preferredTime={classData.schedule?.time}
+                  className="mb-3 w-full"
+                />
+              ) : null}
               <Button
                 type="button"
                 variant="outline"
@@ -1042,6 +1100,24 @@ const ClassDetailPage: React.FC<ClassDetailPageProps> = ({
               >
                 Book with RhinoFit Pass (1 Credit)
               </Button>
+              <BundleCart
+                className="mb-4"
+                items={[
+                  {
+                    id: `class-${classData.id}`,
+                    label: classData.name,
+                    price: classData.price,
+                    description: 'This session',
+                  },
+                  ...similarClasses.slice(0, 2).map((c) => ({
+                    id: `class-${c.id}`,
+                    label: c.name,
+                    price: c.price,
+                    description: 'Frequently booked together',
+                  })),
+                ]}
+                onCheckout={() => handleBook()}
+              />
 
               <div className="space-y-2 border-t border-border pt-4 text-xs text-muted-foreground">
                 {[
@@ -1071,14 +1147,34 @@ const ClassDetailPage: React.FC<ClassDetailPageProps> = ({
                 type="button"
                 variant="outline"
                 size="sm"
-                onClick={() => onOpenChat?.(trainer, { className: classData.name })}
+                onClick={handleMessageCoach}
               >
                 Chat
               </Button>
             </div>
           </aside>
         </div>
+
+        <div className="mt-8 pb-24 md:pb-0">
+          <CrossSellCarousel specialty={trainer.specialty?.[0]} title="Often booked with this class" />
+        </div>
       </div>
+
+      {!isTrainer ? (
+        <StickyBookBar
+          price={Number(selectedPackage?.price ?? classData.price)}
+          meta={isFull ? 'Join waitlist if full' : selectedPackage?.name || classData.name}
+          label={isFull ? 'Waitlist' : 'Book'}
+          disabled={isTrainer}
+          onBook={() => {
+            if (isFull) {
+              document.getElementById('booking-card')?.scrollIntoView({ behavior: 'smooth' });
+              return;
+            }
+            handleBook();
+          }}
+        />
+      ) : null}
     </div>
   );
 };

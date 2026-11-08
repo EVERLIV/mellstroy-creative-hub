@@ -11,6 +11,11 @@ import {
   DiscoveryClassListItem,
   DiscoveryCoachCard,
 } from '../components/explore/ExploreDiscoveryCards';
+import {
+  DiscoveryFilterMobileTrigger,
+  DiscoveryFilterPanel,
+  DiscoveryFilterSidebar,
+} from '../components/explore/DiscoveryFilterPanel';
 import { AppScreen } from '@/src/components/layout/screen';
 import { APP_CONTENT } from '@/src/components/layout/shell';
 import { cn } from '@/src/lib/utils';
@@ -51,9 +56,34 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/src/components/ui/select';
+import {
+  Sheet,
+  SheetContent,
+  SheetFooter,
+  SheetHeader,
+  SheetTitle,
+} from '@/src/components/ui/sheet';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/src/components/ui/card';
 import { Skeleton } from '@/src/components/ui/skeleton';
 import { formatVND } from '@/src/lib/format';
+import {
+  classEntryMatchesDiscoveryFilters,
+  countDiscoveryFilters,
+  EMPTY_DISCOVERY_FILTERS,
+  trainerDistanceKm,
+  type DiscoveryFilters,
+} from '@/src/lib/discovery-filters';
+import {
+  readDiscoveryFilters,
+  writeDiscoveryFilters,
+} from '@/src/lib/discovery-filter-storage';
+import { useDistanceUnit } from '@/src/hooks/useDistanceUnit';
+import { useUserLocation } from '@/src/hooks/useUserLocation';
+import { useAuth } from '@/src/hooks/useAuth';
+import { resolveDistrict } from '@/src/lib/geo';
+import { boostScore } from '@/src/lib/marketplace';
+import { DistrictMap } from '../components/marketplace/DistrictMap';
+import { trackEvent } from '@/src/lib/analytics';
 
 type ClassEntry = { cls: Class; trainer: Trainer };
 type ViewMode = 'grid' | 'list' | 'map';
@@ -133,6 +163,7 @@ const transformTrainer = (profile: any, classes: Class[]): Trainer => ({
 
 export default function ClassesPage() {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [entries, setEntries] = useState<ClassEntry[]>([]);
   const [trainers, setTrainers] = useState<Trainer[]>([]);
   const [loading, setLoading] = useState(true);
@@ -141,6 +172,16 @@ export default function ClassesPage() {
   const [sortBy, setSortBy] = useState('recommended');
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
   const [selectedMapId, setSelectedMapId] = useState<string | null>(null);
+  const [activeFilters, setActiveFilters] = useState<DiscoveryFilters>(() =>
+    readDiscoveryFilters()
+  );
+
+  useEffect(() => {
+    writeDiscoveryFilters(activeFilters);
+  }, [activeFilters]);
+  const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
+  const { unit: distanceUnit, setUnit: setDistanceUnit } = useDistanceUnit(user?.id);
+  const { location: userLocation } = useUserLocation(user?.id);
 
   const load = useCallback(async () => {
     try {
@@ -189,32 +230,40 @@ export default function ClassesPage() {
 
   useEffect(() => {
     load();
-  }, [load]);
+    trackEvent('discover_view', { surface: 'classes' }, user?.id);
+  }, [load, user?.id]);
 
   const filtered = useMemo(() => {
-    const q = searchQuery.trim().toLowerCase();
-    return entries.filter(({ cls, trainer }) => {
-      if (selectedCategory && selectedCategory !== 'all') {
-        const cat = CATEGORIES.find((c) => c.id === selectedCategory);
-        const name = cat?.name?.toLowerCase() || selectedCategory;
-        const hit =
-          trainer.specialty?.some((s) => s.toLowerCase().includes(name)) ||
-          cls.name.toLowerCase().includes(name);
-        if (!hit) return false;
-      }
-      if (!q) return true;
-      return (
-        cls.name.toLowerCase().includes(q) ||
-        trainer.name.toLowerCase().includes(q) ||
-        trainer.location?.toLowerCase().includes(q) ||
-        cls.level?.toLowerCase().includes(q) ||
-        (cls.language || []).some((l) => l.toLowerCase().includes(q))
-      );
-    });
-  }, [entries, searchQuery, selectedCategory]);
+    const categoryName =
+      selectedCategory && selectedCategory !== 'all'
+        ? CATEGORIES.find((c) => c.id === selectedCategory)?.name || selectedCategory
+        : null;
+
+    let list = entries.filter((entry) =>
+      classEntryMatchesDiscoveryFilters(entry, activeFilters, {
+        searchQuery,
+        categoryId: categoryName,
+        userLocation,
+        distanceUnit,
+      })
+    );
+
+    if (activeFilters.maxDistance != null && userLocation) {
+      list = [...list].sort((a, b) => {
+        const da = trainerDistanceKm(a.trainer, userLocation) ?? Number.POSITIVE_INFINITY;
+        const db = trainerDistanceKm(b.trainer, userLocation) ?? Number.POSITIVE_INFINITY;
+        return da - db;
+      });
+    }
+
+    return list;
+  }, [entries, searchQuery, selectedCategory, activeFilters, userLocation, distanceUnit]);
 
   const sorted = useMemo(() => {
     const list = [...filtered];
+    if (activeFilters.maxDistance != null && userLocation && sortBy === 'recommended') {
+      return list;
+    }
     switch (sortBy) {
       case 'price-asc':
         return list.sort((a, b) => a.cls.price - b.cls.price);
@@ -225,14 +274,38 @@ export default function ClassesPage() {
       case 'duration':
         return list.sort((a, b) => a.cls.duration - b.cls.duration);
       default:
-        return list.sort(
-          (a, b) =>
-            b.trainer.rating * 10 +
-            b.trainer.reviews -
-            (a.trainer.rating * 10 + a.trainer.reviews)
-        );
+        return list.sort((a, b) => {
+          const sa = boostScore({
+            rating: a.trainer.rating,
+            reviews: a.trainer.reviews,
+            isPremium: a.trainer.isPremium,
+            distanceKm: trainerDistanceKm(a.trainer, userLocation),
+            createdAt: a.trainer.createdAt,
+          });
+          const sb = boostScore({
+            rating: b.trainer.rating,
+            reviews: b.trainer.reviews,
+            isPremium: b.trainer.isPremium,
+            distanceKm: trainerDistanceKm(b.trainer, userLocation),
+            createdAt: b.trainer.createdAt,
+          });
+          return sb - sa;
+        });
     }
-  }, [filtered, sortBy]);
+  }, [filtered, sortBy, activeFilters.maxDistance, userLocation]);
+
+  const activeFilterCount = countDiscoveryFilters(activeFilters);
+
+  const filterPanel = (
+    <DiscoveryFilterPanel
+      filters={activeFilters}
+      onChange={setActiveFilters}
+      target="class"
+      distanceUnit={distanceUnit}
+      onDistanceUnitChange={setDistanceUnit}
+      userLocation={userLocation}
+    />
+  );
 
   const topTrainers = useMemo(
     () =>
@@ -332,6 +405,10 @@ export default function ClassesPage() {
                 </InputGroupAddon>
               ) : null}
             </InputGroup>
+            <DiscoveryFilterMobileTrigger
+              count={activeFilterCount}
+              onClick={() => setMobileFiltersOpen(true)}
+            />
           </div>
 
           <CategoryFilters
@@ -415,14 +492,20 @@ export default function ClassesPage() {
           </section>
         ) : null}
 
-        {/* Class results */}
-        <section className="flex flex-col gap-4" aria-label="Class results">
+        <div className="flex items-start gap-6">
+          <DiscoveryFilterSidebar>{filterPanel}</DiscoveryFilterSidebar>
+
+          <section className="flex min-w-0 flex-1 flex-col gap-4" aria-label="Class results">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
-              <h2 className="text-lg font-bold tracking-tight">
+              <h2 className="text-lg font-semibold tracking-tight">
                 {loading ? 'Loading classes…' : `${sorted.length} class${sorted.length === 1 ? '' : 'es'}`}
               </h2>
-              <p className="text-xs text-muted-foreground">Cards · list · map — same inventory</p>
+              <p className="text-xs text-muted-foreground">
+                {userLocation
+                  ? `${userLocation} · distance in ${distanceUnit}`
+                  : `Ho Chi Minh City · distance in ${distanceUnit}`}
+              </p>
             </div>
             <div className="flex items-center gap-2">
               <ViewToggle viewMode={viewMode} setViewMode={setViewMode} withMap />
@@ -433,7 +516,7 @@ export default function ClassesPage() {
           </div>
 
           {loading ? (
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-2 lg:grid-cols-3">
               {Array.from({ length: 8 }, (_, i) => (
                 <Skeleton key={i} className="h-64 rounded-xl" />
               ))}
@@ -442,7 +525,9 @@ export default function ClassesPage() {
             <Empty className="border border-dashed bg-card">
               <EmptyHeader>
                 <EmptyTitle>No classes found</EmptyTitle>
-                <EmptyDescription>Try another category or clear search.</EmptyDescription>
+                <EmptyDescription>
+                  Widen distance, change area, or clear class filters.
+                </EmptyDescription>
               </EmptyHeader>
               <EmptyContent>
                 <Button
@@ -452,6 +537,7 @@ export default function ClassesPage() {
                   onClick={() => {
                     setSearchQuery('');
                     setSelectedCategory('all');
+                    setActiveFilters(EMPTY_DISCOVERY_FILTERS);
                   }}
                 >
                   Reset
@@ -506,26 +592,20 @@ export default function ClassesPage() {
               </div>
 
               <Card className="overflow-hidden">
-                <div className="relative h-56 bg-[radial-gradient(circle_at_30%_40%,hsl(var(--primary)/0.18),transparent_55%),radial-gradient(circle_at_70%_60%,hsl(var(--primary)/0.12),transparent_50%)] sm:h-72">
-                  <div className="absolute inset-0 opacity-40 [background-image:linear-gradient(to_right,hsl(var(--border))_1px,transparent_1px),linear-gradient(to_bottom,hsl(var(--border))_1px,transparent_1px)] [background-size:32px_32px]" />
-                  {districts.slice(0, 8).map(([district, list], i) => (
-                    <Badge
-                      key={district}
-                      variant="secondary"
-                      className="absolute shadow-sm"
-                      style={{
-                        left: `${12 + (i % 4) * 22}%`,
-                        top: `${18 + Math.floor(i / 4) * 34}%`,
-                      }}
-                    >
-                      <MapPin className="size-3" />
-                      {district.split(' ')[0]} · {list.length}
-                    </Badge>
-                  ))}
-                  <p className="absolute bottom-3 left-3 text-[11px] text-muted-foreground">
-                    HCMC coverage map · select a pin group from the list
-                  </p>
-                </div>
+                <DistrictMap
+                  className="rounded-none border-0"
+                  pins={districts.map(([district, list]) => ({
+                    id: district,
+                    label: district,
+                    location: district,
+                    count: list.length,
+                  }))}
+                  selectedId={selectedEntry ? resolveDistrict(selectedEntry.trainer.location) : null}
+                  onSelect={(district) => {
+                    const first = districts.find(([d]) => d === district)?.[1]?.[0];
+                    if (first) setSelectedMapId(`${first.trainer.id}:${first.cls.id}`);
+                  }}
+                />
                 {selectedEntry ? (
                   <>
                     <CardHeader className="gap-1">
@@ -561,7 +641,7 @@ export default function ClassesPage() {
               </Card>
             </div>
           ) : viewMode === 'list' ? (
-            <div className="grid grid-cols-1 gap-2.5 lg:grid-cols-2">
+            <div className="grid grid-cols-1 gap-2.5 xl:grid-cols-2">
               {sorted.map(({ cls, trainer }) => (
                 <DiscoveryClassListItem
                   key={`${trainer.id}:${cls.id}`}
@@ -572,7 +652,7 @@ export default function ClassesPage() {
               ))}
             </div>
           ) : (
-            <div className="grid grid-cols-2 items-stretch gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+            <div className="grid grid-cols-2 items-stretch gap-3 sm:grid-cols-2 lg:grid-cols-3">
               {sorted.map(({ cls, trainer }) => (
                 <DiscoveryClassCard
                   key={`${trainer.id}:${cls.id}`}
@@ -583,8 +663,26 @@ export default function ClassesPage() {
               ))}
             </div>
           )}
-        </section>
+          </section>
+        </div>
       </div>
+
+      <Sheet open={mobileFiltersOpen} onOpenChange={setMobileFiltersOpen}>
+        <SheetContent
+          side="bottom"
+          className="flex h-[92dvh] flex-col gap-0 overflow-hidden rounded-t-2xl p-0"
+        >
+          <SheetHeader className="shrink-0 border-b border-border/80 p-4 text-left">
+            <SheetTitle>Filters</SheetTitle>
+          </SheetHeader>
+          <div className="min-h-0 flex-1 overflow-y-auto p-4">{filterPanel}</div>
+          <SheetFooter className="shrink-0 border-t border-border/80 p-4 pb-[calc(1rem+env(safe-area-inset-bottom))]">
+            <Button type="button" className="w-full" onClick={() => setMobileFiltersOpen(false)}>
+              Show {sorted.length} classes
+            </Button>
+          </SheetFooter>
+        </SheetContent>
+      </Sheet>
     </AppScreen>
   );
 }

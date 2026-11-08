@@ -139,6 +139,8 @@ const ProfileContainer: React.FC = () => {
         weight: profile.weight,
         goals: profile.goals || [],
         interests: profile.interests || [],
+        distanceUnit:
+          (profile as { distance_unit?: string }).distance_unit === 'mi' ? 'mi' : 'km',
         role,
       });
     } catch (error: any) {
@@ -184,12 +186,31 @@ const ProfileContainer: React.FC = () => {
         updateData.interests = updatedUser.interests;
       }
 
+      if (updatedUser.distanceUnit === 'km' || updatedUser.distanceUnit === 'mi') {
+        updateData.distance_unit = updatedUser.distanceUnit;
+        try {
+          localStorage.setItem('rhinofit.distanceUnit', updatedUser.distanceUnit);
+        } catch {
+          /* ignore */
+        }
+      }
+
       const { error } = await supabase
         .from('profiles')
         .update(updateData)
         .eq('id', user.id);
 
-      if (error) throw error;
+      // Retry without distance_unit if the column is not migrated yet
+      if (error && String(error.message || '').includes('distance_unit')) {
+        delete updateData.distance_unit;
+        const { error: retryError } = await supabase
+          .from('profiles')
+          .update(updateData)
+          .eq('id', user.id);
+        if (retryError) throw retryError;
+      } else if (error) {
+        throw error;
+      }
 
       setCurrentUser(updatedUser);
       setIsEditingProfile(false);

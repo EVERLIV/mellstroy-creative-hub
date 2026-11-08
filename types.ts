@@ -2,6 +2,9 @@ export interface Review {
   reviewerName: string;
   rating: number;
   comment: string;
+  photos?: string[];
+  criteria?: Record<string, number | string>;
+  trainerReply?: string;
 }
 
 export type ClassType = 'Indoor' | 'Outdoor' | 'Home';
@@ -31,6 +34,10 @@ export interface Class {
   level?: string; // Class level (e.g., "Beginner", "Intermediate", "Advanced", "Beginner to Intermediate")
   kids_friendly?: boolean; // Indicates if the class is suitable for children
   disability_friendly?: boolean; // Indicates if the class is accessible for people with disabilities
+  venueId?: string | null;
+  venueName?: string | null;
+  venueDistrict?: string | null;
+  venueAddress?: string | null;
 }
 
 export interface Message {
@@ -71,6 +78,13 @@ export interface Trainer {
   weight?: number; // in kg
   goals?: string[];
   interests?: string[]; // "Sport values"
+  /** Preferred distance display / filter unit from profile. */
+  distanceUnit?: 'km' | 'mi';
+  gender?: 'female' | 'male' | 'other' | 'unspecified';
+  responseTimeMs?: number;
+  acceptanceRate?: number;
+  referralCode?: string;
+  createdAt?: string | null;
 }
 
 export interface Category {

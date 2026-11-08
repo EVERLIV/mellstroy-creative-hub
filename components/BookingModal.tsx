@@ -1,203 +1,494 @@
-import React, { useState, useMemo } from 'react';
-import { Trainer, Class } from '../types';
-import { Calendar, Clock, X, Info, Shield } from 'lucide-react';
+import React, { useEffect, useMemo, useState } from 'react';
+import { Clock, Shield } from 'lucide-react';
+import type { Class, Trainer } from '../types';
 import { cn } from '@/src/lib/utils';
 import { formatVND } from '@/src/lib/format';
 import { Button } from '@/src/components/ui/button';
+import { Calendar } from '@/src/components/ui/calendar';
 import { Checkbox } from '@/src/components/ui/checkbox';
+import { Input } from '@/src/components/ui/input';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/src/components/ui/dialog';
+import {
+  Field,
+  FieldDescription,
+  FieldGroup,
+  FieldLabel,
+  FieldSet,
+} from '@/src/components/ui/field';
+import { ToggleGroup, ToggleGroupItem } from '@/src/components/ui/toggle-group';
+import { PackagePicker } from './marketplace/PackagePicker';
+import {
+  applyPromo,
+  computeServiceFee,
+  createBookingHold,
+  fetchActivePackages,
+  type ClassPackage,
+} from '@/src/lib/marketplace';
+import { trackEvent } from '@/src/lib/analytics';
+import { supabase } from '@/src/integrations/supabase/client';
 
 interface BookingModalProps {
-    bookingTarget: {
-        trainer: Trainer;
-        cls: Class;
-    };
-    onConfirmBooking: (trainerId: string, classId: number, startDate: Date, period: 'once' | '4weeks') => void;
-    onClose: () => void;
+  bookingTarget: {
+    trainer: Trainer;
+    cls: Class;
+    preferredDate?: Date;
+  };
+  currentUserId?: string;
+  onConfirmBooking: (
+    trainerId: string,
+    classId: number,
+    startDate: Date,
+    period: 'once' | '4weeks',
+    meta?: {
+      holdId?: string;
+      paymentIntentId?: string;
+      packageId?: string;
+      serviceFee?: number;
+      insuranceFee?: number;
+      promoCode?: string;
+      amountPaid?: number;
+      tipAmount?: number;
+      upsells?: string[];
+    }
+  ) => void | Promise<void>;
+  onClose: () => void;
 }
 
-const dayMap = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+const WEEKDAY = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'] as const;
 
+const UPSELLS = [
+  { id: 'extra30', label: '+30 min', price: 120_000 },
+  { id: 'travel', label: 'Coach travel', price: 80_000 },
+  { id: 'premium_hall', label: 'Premium hall', price: 150_000 },
+] as const;
 
-const BookingModal: React.FC<BookingModalProps> = ({ bookingTarget, onConfirmBooking, onClose }) => {
-    const { trainer, cls } = bookingTarget;
-    const [selectedDate, setSelectedDate] = useState<Date | null>(null);
-    const [bookingPeriod, setBookingPeriod] = useState<'once' | '4weeks'>('once');
-    const [acceptPrivacy, setAcceptPrivacy] = useState(false);
-    const [acceptTerms, setAcceptTerms] = useState(false);
+/**
+ * Intent: athlete picks session → hold 10m → pay → confirm.
+ */
+const BookingModal: React.FC<BookingModalProps> = ({
+  bookingTarget,
+  currentUserId,
+  onConfirmBooking,
+  onClose,
+}) => {
+  const { trainer, cls, preferredDate } = bookingTarget;
+  const scheduleDays = useMemo(
+    () => new Set(cls.schedule?.days ?? []),
+    [cls.schedule?.days]
+  );
 
-    const availableScheduleDays = useMemo(() => new Set(cls.schedule?.days || []), [cls.schedule]);
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>(preferredDate);
+  const [bookingPeriod, setBookingPeriod] = useState<'once' | '4weeks'>('once');
+  const [acceptPrivacy, setAcceptPrivacy] = useState(false);
+  const [acceptTerms, setAcceptTerms] = useState(false);
+  const [packages, setPackages] = useState<ClassPackage[]>([]);
+  const [selectedPackage, setSelectedPackage] = useState<ClassPackage | null>(null);
+  const [upsells, setUpsells] = useState<string[]>([]);
+  const [promoCode, setPromoCode] = useState('');
+  const [promo, setPromo] = useState<{ discount_type: string; discount_value: number } | null>(
+    null
+  );
+  const [wantInsurance, setWantInsurance] = useState(false);
+  const [tipAmount, setTipAmount] = useState(0);
+  const [holdExpiresAt, setHoldExpiresAt] = useState<string | null>(null);
+  const [holdId, setHoldId] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+  const [step, setStep] = useState<'schedule' | 'checkout'>('schedule');
 
-    const upcomingDates = useMemo(() => {
-        const dates: Date[] = [];
-        const today = new Date();
-        today.setHours(0, 0, 0, 0); // Start from today
-        for (let i = 0; i < 14; i++) { // Show next 2 weeks for selection
-            const date = new Date(today);
-            date.setDate(date.getDate() + i);
-            dates.push(date);
+  useEffect(() => {
+    if (preferredDate && scheduleDays.has(WEEKDAY[preferredDate.getDay()])) {
+      setSelectedDate(preferredDate);
+    }
+  }, [preferredDate, scheduleDays]);
+
+  useEffect(() => {
+    void (async () => {
+      const { data } = await fetchActivePackages(String(cls.id));
+      setPackages(data);
+      if (data[0]) setSelectedPackage(data[0]);
+    })();
+    trackEvent('booking_start', { classId: cls.id, trainerId: trainer.id }, currentUserId);
+  }, [cls.id, trainer.id, currentUserId]);
+
+  const basePrice = useMemo(() => {
+    if (selectedPackage) return Number(selectedPackage.price);
+    if (!selectedDate || !cls.schedule) return cls.price;
+    if (bookingPeriod === 'once') return cls.price;
+    return cls.price * Math.max(cls.schedule.days.length, 1) * 4;
+  }, [bookingPeriod, selectedDate, cls.price, cls.schedule, selectedPackage]);
+
+  const upsellTotal = UPSELLS.filter((u) => upsells.includes(u.id)).reduce(
+    (s, u) => s + u.price,
+    0
+  );
+  const promoDiscount = applyPromo(basePrice + upsellTotal, promo);
+  const subtotal = Math.max(0, basePrice + upsellTotal - promoDiscount);
+  const serviceFee = computeServiceFee(subtotal);
+  const insuranceFee = wantInsurance ? Math.round(subtotal * 0.03) : 0;
+  const total = subtotal + serviceFee + insuranceFee + tipAmount;
+
+  const selectedLabel = selectedDate
+    ? selectedDate.toLocaleDateString('en-US', {
+        weekday: 'short',
+        month: 'short',
+        day: 'numeric',
+      })
+    : null;
+
+  const canContinue =
+    Boolean(selectedDate) && Boolean(cls.schedule?.time) && acceptPrivacy && acceptTerms;
+
+  const applyPromoCode = async () => {
+    const code = promoCode.trim().toUpperCase();
+    if (!code) return;
+    const { data } = await supabase
+      .from('promo_codes' as never)
+      .select('*')
+      .eq('code', code)
+      .eq('is_active', true)
+      .maybeSingle();
+    if (data) {
+      setPromo(data as { discount_type: string; discount_value: number });
+      trackEvent('promo_apply', { code }, currentUserId);
+    } else {
+      setPromo(null);
+    }
+  };
+
+  const createHold = async () => {
+    if (!selectedDate || !cls.schedule?.time || !currentUserId) return null;
+    const holdDate = selectedDate.toISOString().split('T')[0];
+    const { data, error } = await createBookingHold({
+      classId: String(cls.id),
+      userId: currentUserId,
+      holdDate,
+      holdTime: cls.schedule.time,
+      packageId: selectedPackage?.id,
+      upsells: upsells.map((id) => UPSELLS.find((u) => u.id === id)).filter(Boolean),
+      promoCode: promoCode.trim().toUpperCase() || undefined,
+      serviceFee,
+      insuranceFee,
+      subtotal,
+      total: total - tipAmount,
+    });
+    if (error || !data) throw error || new Error('Hold failed');
+    const hold = data as { id: string; expires_at: string };
+    setHoldId(hold.id);
+    setHoldExpiresAt(hold.expires_at);
+    trackEvent('booking_hold', { holdId: hold.id, classId: cls.id }, currentUserId);
+    trackEvent('slot_select', { date: holdDate, time: cls.schedule.time }, currentUserId);
+    return hold;
+  };
+
+  const handleCheckout = async () => {
+    if (!canContinue || !selectedDate) return;
+    if (!currentUserId || currentUserId === 'current-user-id') {
+      trackEvent('booking_abandon', { reason: 'unauthenticated' });
+      onClose();
+      window.location.assign(`/auth`);
+      return;
+    }
+    setSubmitting(true);
+    try {
+      setStep('checkout');
+      const hold = holdId
+        ? { id: holdId, expires_at: holdExpiresAt }
+        : await createHold();
+      if (!hold) throw new Error('Could not hold slot');
+
+      const { data: payment, error: payError } = await supabase.functions.invoke(
+        'create-booking-payment',
+        {
+          body: { holdId: hold.id, tipAmount },
         }
-        return dates;
-    }, []);
+      );
 
-    const handleDateSelect = (date: Date) => {
-        const dayOfWeek = dayMap[date.getDay()];
-        if (availableScheduleDays.has(dayOfWeek)) {
-            setSelectedDate(date);
+      // Mock or missing function: still confirm booking with hold metadata
+      const paymentIntentId =
+        (payment as { paymentIntentId?: string } | null)?.paymentIntentId ||
+        (payError ? `local_${hold.id}` : undefined);
+
+      await onConfirmBooking(trainer.id, cls.id as number, selectedDate, bookingPeriod, {
+        holdId: hold.id,
+        paymentIntentId,
+        packageId: selectedPackage?.id,
+        serviceFee,
+        insuranceFee,
+        promoCode: promoCode.trim().toUpperCase() || undefined,
+        amountPaid: total,
+        tipAmount,
+        upsells,
+      });
+      trackEvent('booking_complete', { holdId: hold.id, total }, currentUserId);
+      if (tipAmount > 0) trackEvent('tip_submit', { amount: tipAmount }, currentUserId);
+    } catch (e) {
+      trackEvent('booking_abandon', { classId: cls.id, reason: 'checkout_error' }, currentUserId);
+      console.error(e);
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const holdSecondsLeft = holdExpiresAt
+    ? Math.max(0, Math.floor((new Date(holdExpiresAt).getTime() - Date.now()) / 1000))
+    : null;
+
+  return (
+    <Dialog
+      open
+      onOpenChange={(open) => {
+        if (!open) {
+          if (step === 'checkout' && !submitting) {
+            trackEvent('booking_abandon', { classId: cls.id, step }, currentUserId);
+          }
+          onClose();
         }
-    };
+      }}
+    >
+      <DialogContent className="flex max-h-[90dvh] w-[calc(100%-2rem)] max-w-md flex-col gap-0 overflow-hidden p-0 sm:rounded-xl">
+        <DialogHeader className="shrink-0 gap-1 border-b border-border px-6 py-4 text-center sm:text-center">
+          <DialogTitle className="text-center text-lg font-semibold tracking-tight">
+            {step === 'schedule' ? 'Schedule a Class' : 'Checkout'}
+          </DialogTitle>
+          <DialogDescription className="text-center text-sm text-muted-foreground">
+            {cls.name}
+            {holdSecondsLeft != null ? (
+              <span className="mt-1 block text-xs text-amber-700 dark:text-amber-400">
+                Slot held · {Math.floor(holdSecondsLeft / 60)}:
+                {String(holdSecondsLeft % 60).padStart(2, '0')} left
+              </span>
+            ) : null}
+          </DialogDescription>
+        </DialogHeader>
 
-    const handleConfirm = () => {
-        if (selectedDate && cls.schedule?.time) {
-            onConfirmBooking(trainer.id, cls.id, selectedDate, bookingPeriod);
-        }
-    };
+        <div className="min-h-0 flex-1 overflow-y-auto px-6 py-4">
+          {step === 'schedule' ? (
+            <FieldSet className="gap-4">
+              <FieldGroup>
+                <FieldLabel>Pick a day</FieldLabel>
+                <Calendar
+                  mode="single"
+                  selected={selectedDate}
+                  onSelect={(d) => {
+                    setSelectedDate(d);
+                    if (d) trackEvent('slot_select', { date: d.toISOString() }, currentUserId);
+                  }}
+                  disabled={(date) => !scheduleDays.has(WEEKDAY[date.getDay()])}
+                  className="rounded-md border"
+                />
+                {cls.schedule?.time ? (
+                  <FieldDescription className="inline-flex items-center gap-1.5">
+                    <Clock className="size-3.5" />
+                    Session time {cls.schedule.time}
+                    {selectedLabel ? ` · ${selectedLabel}` : ''}
+                  </FieldDescription>
+                ) : null}
+              </FieldGroup>
 
-    const totalPrice = useMemo(() => {
-        if (!selectedDate || !cls.schedule) return cls.price;
-        if (bookingPeriod === 'once') return cls.price;
+              {packages.length > 0 ? (
+                <FieldGroup>
+                  <FieldLabel>Package</FieldLabel>
+                  <PackagePicker
+                    packages={packages}
+                    value={selectedPackage?.id}
+                    onChange={(pkg) => {
+                      setSelectedPackage(pkg);
+                      trackEvent('upsell_accept', { kind: 'package', packageId: pkg.id });
+                    }}
+                  />
+                </FieldGroup>
+              ) : (
+                <FieldGroup>
+                  <FieldLabel>Booking period</FieldLabel>
+                  <ToggleGroup
+                    type="single"
+                    value={bookingPeriod}
+                    onValueChange={(v) => v && setBookingPeriod(v as 'once' | '4weeks')}
+                    className="justify-start"
+                  >
+                    <ToggleGroupItem value="once">Once</ToggleGroupItem>
+                    <ToggleGroupItem value="4weeks">4 weeks</ToggleGroupItem>
+                  </ToggleGroup>
+                </FieldGroup>
+              )}
 
-        const scheduledDaysCount = cls.schedule.days.length;
-        return cls.price * scheduledDaysCount * 4; // 4 weeks
-    }, [bookingPeriod, selectedDate, cls.price, cls.schedule]);
-
-
-    return (
-        <div
-            className="fixed inset-0 z-50 flex animate-fade-in items-center justify-center bg-black/60 p-4 pb-20 md:pb-4"
-            onClick={onClose}
-            role="dialog"
-            aria-modal="true"
-        >
-            <div
-                className="flex max-h-[85vh] w-full max-w-md transform animate-slide-up flex-col overflow-hidden rounded-xl border border-border bg-card shadow-2xl md:max-w-xl"
-                onClick={e => e.stopPropagation()}
-            >
-                <div className="relative flex-shrink-0 border-b border-border p-4 text-center">
-                    <h2 className="text-base font-semibold text-foreground md:text-lg">Schedule a Class</h2>
-                    <p className="text-sm text-muted-foreground">{cls.name}</p>
-                    <Button variant="ghost" size="icon" onClick={onClose} aria-label="Close" className="absolute right-2 top-2">
-                        <X />
-                    </Button>
-                </div>
-
-                <div className="flex-1 overflow-y-auto p-4 md:p-6">
-                    {/* Date Picker */}
-                    <div>
-                        <h3 className="mb-2 flex items-center text-sm font-semibold text-foreground">
-                            <Calendar className="mr-2 h-5 w-5 text-muted-foreground" />
-                            Select a Start Date
-                        </h3>
-                        <div className="grid grid-cols-4 gap-2 sm:grid-cols-7">
-                            {upcomingDates.map(date => {
-                                const dayOfWeek = dayMap[date.getDay()];
-                                const isAvailable = availableScheduleDays.has(dayOfWeek);
-                                const isSelected = selectedDate?.toDateString() === date.toDateString();
-
-                                return (
-                                    <button
-                                        key={date.toISOString()}
-                                        onClick={() => handleDateSelect(date)}
-                                        disabled={!isAvailable}
-                                        type="button"
-                                        aria-pressed={isSelected}
-                                        className={cn(
-                                            'flex h-20 flex-shrink-0 flex-col items-center justify-center rounded-xl transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring sm:h-[4.5rem]',
-                                            isSelected
-                                                ? 'bg-primary text-primary-foreground shadow-lg'
-                                                : isAvailable
-                                                  ? 'border border-border bg-card text-foreground hover:bg-primary/10'
-                                                  : 'cursor-not-allowed bg-muted text-muted-foreground opacity-70'
-                                        )}
-                                    >
-                                        <span className="text-sm font-medium">{date.toLocaleDateString('en-US', { weekday: 'short' })}</span>
-                                        <span className="mt-1 text-2xl font-bold sm:text-xl">{date.getDate()}</span>
-                                    </button>
-                                );
-                            })}
-                        </div>
-                    </div>
-
-                    {selectedDate && (
-                        <div className="animate-fade-in">
-                            {/* Time Display */}
-                            <div className="mt-5">
-                                <h3 className="mb-2 flex items-center text-sm font-semibold text-foreground">
-                                    <Clock className="mr-2 h-5 w-5 text-muted-foreground" />
-                                    Class Time
-                                </h3>
-                                <div className="rounded-lg bg-muted p-3 text-center text-lg font-bold text-foreground">
-                                    {cls.schedule?.time}
-                                </div>
-                            </div>
-
-                            {/* Booking Period */}
-                             <div className="mt-5">
-                                <h3 className="mb-2 text-sm font-semibold text-foreground">Booking Period</h3>
-                                <div className="grid gap-2 sm:grid-cols-2">
-                                    <label className="flex cursor-pointer items-center rounded-lg border-2 border-border p-3 transition-colors has-[:checked]:border-primary has-[:checked]:bg-primary/10">
-                                        <input type="radio" name="booking-period" value="once" checked={bookingPeriod === 'once'} onChange={() => setBookingPeriod('once')} className="h-4 w-4 accent-primary" />
-                                        <span className="ml-3 text-sm font-medium text-foreground">Book single class</span>
-                                    </label>
-                                     <label className="flex cursor-pointer items-center rounded-lg border-2 border-border p-3 transition-colors has-[:checked]:border-primary has-[:checked]:bg-primary/10">
-                                        <input type="radio" name="booking-period" value="4weeks" checked={bookingPeriod === '4weeks'} onChange={() => setBookingPeriod('4weeks')} className="h-4 w-4 accent-primary" />
-                                        <span className="ml-3 text-sm font-medium text-foreground">Enroll for 4 weeks</span>
-                                    </label>
-                                </div>
-                                {bookingPeriod === '4weeks' && (
-                                    <div className="flex items-start gap-2 p-2 mt-2 bg-primary/10 text-primary rounded-lg text-xs">
-                                        <Info className="w-4 h-4 mt-0.5 flex-shrink-0"/>
-                                        <span>This will book all recurring classes for 4 weeks starting from your selected date.</span>
-                                    </div>
-                                 )}
-                            </div>
-
-                            {/* Privacy Policy & Terms */}
-                            <div className="mt-5 space-y-3">
-                                <div className="flex items-center gap-2 text-foreground">
-                                    <Shield className="w-5 h-5 text-muted-foreground flex-shrink-0" />
-                                    <h3 className="text-sm font-semibold">Agreements</h3>
-                                </div>
-                                <label htmlFor="booking-accept-privacy" className="flex cursor-pointer items-start gap-3 rounded-lg border-2 border-border p-3 transition-colors has-[[data-state=checked]]:border-primary has-[[data-state=checked]]:bg-primary/10">
-                                    <Checkbox
-                                        id="booking-accept-privacy"
-                                        checked={acceptPrivacy}
-                                        onCheckedChange={(checked) => setAcceptPrivacy(checked === true)}
-                                        className="mt-0.5"
-                                    />
-                                    <span className="text-xs text-muted-foreground leading-relaxed">
-                                        I have read and accept the <span className="font-semibold text-primary">Privacy Policy</span>
-                                    </span>
-                                </label>
-                                <label htmlFor="booking-accept-terms" className="flex cursor-pointer items-start gap-3 rounded-lg border-2 border-border p-3 transition-colors has-[[data-state=checked]]:border-primary has-[[data-state=checked]]:bg-primary/10">
-                                    <Checkbox
-                                        id="booking-accept-terms"
-                                        checked={acceptTerms}
-                                        onCheckedChange={(checked) => setAcceptTerms(checked === true)}
-                                        className="mt-0.5"
-                                    />
-                                    <span className="text-xs text-muted-foreground leading-relaxed">
-                                        I acknowledge the <span className="font-semibold text-primary">booking terms</span> and cancellation policy
-                                    </span>
-                                </label>
-                            </div>
-                        </div>
-                    )}
-                </div>
-
-                {/* Footer */}
-                <div className="flex-shrink-0 border-t border-border bg-muted/50 p-4">
-                    <Button
-                        size="lg"
-                        onClick={handleConfirm}
-                        disabled={!selectedDate || !cls.schedule?.time || !acceptPrivacy || !acceptTerms}
-                        className="w-full"
+              <Field orientation="horizontal" className="items-start gap-3">
+                <Checkbox
+                  id="privacy"
+                  checked={acceptPrivacy}
+                  onCheckedChange={(v) => setAcceptPrivacy(Boolean(v))}
+                />
+                <FieldLabel htmlFor="privacy" className="font-normal">
+                  I accept the privacy policy
+                </FieldLabel>
+              </Field>
+              <Field orientation="horizontal" className="items-start gap-3">
+                <Checkbox
+                  id="terms"
+                  checked={acceptTerms}
+                  onCheckedChange={(v) => setAcceptTerms(Boolean(v))}
+                />
+                <FieldLabel htmlFor="terms" className="font-normal">
+                  I accept the booking terms
+                </FieldLabel>
+              </Field>
+            </FieldSet>
+          ) : (
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                  Add-ons
+                </p>
+                {UPSELLS.map((u) => {
+                  const on = upsells.includes(u.id);
+                  return (
+                    <label
+                      key={u.id}
+                      className={cn(
+                        'flex cursor-pointer items-center justify-between rounded-lg border px-3 py-2 text-sm',
+                        on ? 'border-primary bg-primary/5' : 'border-border'
+                      )}
                     >
-                        Confirm Booking for {formatVND(totalPrice)}
-                    </Button>
+                      <span className="inline-flex items-center gap-2">
+                        <Checkbox
+                          checked={on}
+                          onCheckedChange={(v) => {
+                            setUpsells((prev) =>
+                              v ? [...prev, u.id] : prev.filter((x) => x !== u.id)
+                            );
+                            if (v) trackEvent('upsell_accept', { upsell: u.id });
+                          }}
+                        />
+                        {u.label}
+                      </span>
+                      <span className="tabular-nums">{formatVND(u.price)}</span>
+                    </label>
+                  );
+                })}
+              </div>
+
+              <FieldGroup>
+                <FieldLabel htmlFor="promo">Promo code</FieldLabel>
+                <div className="flex gap-2">
+                  <Input
+                    id="promo"
+                    value={promoCode}
+                    onChange={(e) => setPromoCode(e.target.value)}
+                    placeholder="SAVE10"
+                    autoComplete="off"
+                  />
+                  <Button type="button" variant="outline" onClick={() => void applyPromoCode()}>
+                    Apply
+                  </Button>
                 </div>
+                {promo ? (
+                  <FieldDescription className="text-emerald-700 dark:text-emerald-400">
+                    Promo applied
+                  </FieldDescription>
+                ) : null}
+              </FieldGroup>
+
+              <label className="flex items-center justify-between gap-3 rounded-lg border border-border px-3 py-2 text-sm">
+                <span className="inline-flex items-center gap-2">
+                  <Checkbox
+                    checked={wantInsurance}
+                    onCheckedChange={(v) => setWantInsurance(Boolean(v))}
+                  />
+                  <Shield className="size-3.5 text-muted-foreground" />
+                  Cancellation insurance
+                </span>
+                <span className="tabular-nums text-muted-foreground">3%</span>
+              </label>
+
+              <FieldGroup>
+                <FieldLabel>Optional tip</FieldLabel>
+                <ToggleGroup
+                  type="single"
+                  value={String(tipAmount)}
+                  onValueChange={(v) => setTipAmount(Number(v || 0))}
+                  className="justify-start"
+                >
+                  {[0, 20_000, 50_000, 100_000].map((n) => (
+                    <ToggleGroupItem key={n} value={String(n)}>
+                      {n === 0 ? 'None' : formatVND(n)}
+                    </ToggleGroupItem>
+                  ))}
+                </ToggleGroup>
+              </FieldGroup>
+
+              <dl className="space-y-1.5 rounded-lg border border-border bg-muted/30 p-3 text-sm">
+                <div className="flex justify-between">
+                  <dt>Subtotal</dt>
+                  <dd className="tabular-nums">{formatVND(subtotal)}</dd>
+                </div>
+                <div className="flex justify-between text-muted-foreground">
+                  <dt>Service fee</dt>
+                  <dd className="tabular-nums">{formatVND(serviceFee)}</dd>
+                </div>
+                {insuranceFee > 0 ? (
+                  <div className="flex justify-between text-muted-foreground">
+                    <dt>Insurance</dt>
+                    <dd className="tabular-nums">{formatVND(insuranceFee)}</dd>
+                  </div>
+                ) : null}
+                {tipAmount > 0 ? (
+                  <div className="flex justify-between text-muted-foreground">
+                    <dt>Tip</dt>
+                    <dd className="tabular-nums">{formatVND(tipAmount)}</dd>
+                  </div>
+                ) : null}
+                <div className="flex justify-between border-t border-border pt-2 font-semibold">
+                  <dt>Total</dt>
+                  <dd className="tabular-nums">{formatVND(total)}</dd>
+                </div>
+              </dl>
             </div>
+          )}
         </div>
-    );
+
+        <DialogFooter className="shrink-0 gap-2 border-t border-border px-6 py-4 sm:justify-between">
+          {step === 'checkout' ? (
+            <Button type="button" variant="outline" onClick={() => setStep('schedule')}>
+              Back
+            </Button>
+          ) : (
+            <Button type="button" variant="outline" onClick={onClose}>
+              Cancel
+            </Button>
+          )}
+          {step === 'schedule' ? (
+            <Button
+              type="button"
+              disabled={!canContinue}
+              onClick={() => {
+                void (async () => {
+                  try {
+                    await createHold();
+                    setStep('checkout');
+                  } catch {
+                    setStep('checkout');
+                  }
+                })();
+              }}
+            >
+              Continue · {formatVND(basePrice)}
+            </Button>
+          ) : (
+            <Button type="button" disabled={submitting} onClick={() => void handleCheckout()}>
+              {submitting ? 'Processing…' : `Pay ${formatVND(total)}`}
+            </Button>
+          )}
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
 };
 
 export default BookingModal;

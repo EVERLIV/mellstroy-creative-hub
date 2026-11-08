@@ -1,17 +1,20 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { supabase } from '../src/integrations/supabase/client';
-import { Trainer, Class, UserRole, ClassType } from '../types';
+import { Trainer, Class, UserRole } from '../types';
 import { CATEGORIES } from '../constants';
 import ViewToggle from '../components/ViewToggle';
-import TrainerDetailPage from '../components/TrainerDetailPage';
 import CategoryFilters from '../components/CategoryFilters';
-import FilterModal from '../components/FilterModal';
 import {
   DiscoveryCoachCard,
   DiscoveryCoachListItem,
 } from '../components/explore/ExploreDiscoveryCards';
-import { Loader, Search, SlidersHorizontal, X } from 'lucide-react';
+import {
+  DiscoveryFilterMobileTrigger,
+  DiscoveryFilterPanel,
+  DiscoveryFilterSidebar,
+} from '../components/explore/DiscoveryFilterPanel';
+import { BellRing, Loader, Search, X } from 'lucide-react';
 import { AppScreen } from '@/src/components/layout/screen';
 import { Badge } from '../src/components/ui/badge';
 import {
@@ -37,15 +40,36 @@ import {
   SelectValue,
 } from '../src/components/ui/select';
 import {
-  Empty,
-  EmptyContent,
-  EmptyDescription,
-  EmptyHeader,
-  EmptyTitle,
-} from '../src/components/ui/empty';
+  Sheet,
+  SheetContent,
+  SheetFooter,
+  SheetHeader,
+  SheetTitle,
+} from '../src/components/ui/sheet';
 import { APP_CONTENT } from '@/src/components/layout/shell';
 import { cn } from '../src/lib/utils';
 import TrainerCardSkeleton from '../components/TrainerCardSkeleton';
+import {
+  countDiscoveryFilters,
+  EMPTY_DISCOVERY_FILTERS,
+  trainerDistanceKm,
+  trainerMatchesDiscoveryFilters,
+  type DiscoveryFilters,
+} from '@/src/lib/discovery-filters';
+import {
+  readDiscoveryFilters,
+  writeDiscoveryFilters,
+} from '@/src/lib/discovery-filter-storage';
+import { formatDistance } from '@/src/lib/geo';
+import { useDistanceUnit } from '@/src/hooks/useDistanceUnit';
+import { useUserLocation } from '@/src/hooks/useUserLocation';
+import { trackEvent } from '@/src/lib/analytics';
+import { boostScore, fetchPromoted, saveSearch } from '@/src/lib/marketplace';
+import { DiscoveryCollections } from '../components/explore/DiscoveryCollections';
+import { DiscoveryEmptyState } from '../components/explore/DiscoveryEmptyState';
+import { DistrictMap } from '../components/marketplace/DistrictMap';
+import { useToast } from '@/src/hooks/use-toast';
+import { requireAuth } from '@/src/lib/require-auth';
 
 interface ExploreProps {
   onInitiateBooking?: (target: { trainer: Trainer; cls: Class }) => void;
@@ -87,6 +111,9 @@ const transformReviewData = (r: any) => ({
     reviewerName: (r.client as any)?.username || 'Anonymous',
     rating: r.rating,
     comment: r.comment || '',
+    photos: r.photos || [],
+    criteria: r.criteria || undefined,
+    trainerReply: r.trainer_reply || undefined,
 });
 
 // Helper function to transform trainer data
@@ -108,6 +135,10 @@ const transformTrainerData = (profile: any, classes: any[], reviews: any[]): Tra
     shortDescription: profile.short_description || '',
     experienceYears: profile.experience_years || undefined,
     lastSeen: lastSeenValue ?? null,
+    gender: profile.gender || undefined,
+    responseTimeMs: profile.response_time_ms ?? undefined,
+    acceptanceRate: profile.acceptance_rate != null ? Number(profile.acceptance_rate) : undefined,
+    createdAt: profile.created_at ?? null,
     reviewsData: reviews
         .filter(r => r.trainer_id === profile.id)
         .map(transformReviewData),
@@ -134,27 +165,40 @@ const Explore: React.FC<ExploreProps> = ({
   const [filteredTrainers, setFilteredTrainers] = useState<Trainer[]>([]);
   const [displayedTrainers, setDisplayedTrainers] = useState<Trainer[]>([]);
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
-  const [selectedTrainer, setSelectedTrainer] = useState<Trainer | null>(null);
-  const [isExitingDetail, setIsExitingDetail] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(categoryFromUrl);
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
-  const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
+  const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
   const [sortBy, setSortBy] = useState('recommended');
-  const [activeFilters, setActiveFilters] = useState({
-    specialty: [] as string[],
-    verified: false,
-    topRated: false,
-    premiumOnly: false,
-    district: 'All',
-    time: 'any' as 'any' | 'morning' | 'afternoon' | 'evening',
-    classType: [] as ClassType[],
-    languages: [] as string[],
-    level: '',
-  });
+  const [viewSurface, setViewSurface] = useState<'list' | 'map'>('list');
+  const [promotedIds, setPromotedIds] = useState<string[]>([]);
+  const [promotedWeight, setPromotedWeight] = useState<Record<string, number>>({});
+  const [savingSearch, setSavingSearch] = useState(false);
+  const [activeFilters, setActiveFilters] = useState<DiscoveryFilters>(() =>
+    readDiscoveryFilters()
+  );
+  const { toast } = useToast();
+
+  useEffect(() => {
+    writeDiscoveryFilters(activeFilters);
+    trackEvent('filter_apply', { filters: activeFilters, target: 'trainer' }, currentUserId);
+  }, [activeFilters, currentUserId]);
+  const { unit: distanceUnit, setUnit: setDistanceUnit } = useDistanceUnit(currentUserId);
+  const { location: userLocation } = useUserLocation(currentUserId);
   const observerTarget = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    trackEvent('discover_view', { surface: 'explore' }, currentUserId);
+    void (async () => {
+      const { data } = await fetchPromoted('trainer');
+      setPromotedIds(data.map((p) => p.target_id));
+      const weights: Record<string, number> = {};
+      for (const p of data) weights[p.target_id] = p.weight;
+      setPromotedWeight(weights);
+    })();
+  }, [currentUserId]);
 
   // Update selectedCategory when URL parameter changes
   useEffect(() => {
@@ -241,71 +285,27 @@ const Explore: React.FC<ExploreProps> = ({
       return;
     }
 
-    let filtered = [...trainers];
+    let filtered = trainers.filter((trainer) =>
+      trainerMatchesDiscoveryFilters(trainer, activeFilters, {
+        searchQuery,
+        categoryId: selectedCategory,
+        userLocation,
+        distanceUnit,
+      })
+    );
 
-    if (selectedCategory && selectedCategory !== 'all') {
-      filtered = filtered.filter(trainer => 
-        trainer?.specialty && Array.isArray(trainer.specialty) && trainer.specialty.includes(selectedCategory)
-      );
-    }
-
-    if (activeFilters?.specialty && activeFilters.specialty.length > 0) {
-      filtered = filtered.filter(trainer =>
-        trainer?.specialty && Array.isArray(trainer.specialty) && 
-        activeFilters.specialty.some(s => trainer.specialty.includes(s))
-      );
-    }
-
-    if (activeFilters?.district && activeFilters.district !== 'All') {
-      filtered = filtered.filter(trainer =>
-        trainer?.location && trainer.location.includes(activeFilters.district)
-      );
-    }
-
-    if (activeFilters?.verified) {
-      filtered = filtered.filter(trainer => trainer?.verificationStatus === 'verified');
-    }
-
-    if (activeFilters?.topRated) {
-      filtered = filtered.filter(trainer => trainer?.rating && trainer.rating >= 4.8);
-    }
-
-    if (activeFilters?.premiumOnly) {
-      filtered = filtered.filter(trainer => trainer?.isPremium === true);
-    }
-
-    if (activeFilters?.languages && activeFilters.languages.length > 0) {
-      filtered = filtered.filter(trainer =>
-        trainer?.classes && trainer.classes.some(cls =>
-          (cls as any).language && Array.isArray((cls as any).language) &&
-          activeFilters.languages.some(lang => (cls as any).language.includes(lang))
-        )
-      );
-    }
-
-    if (activeFilters?.level && activeFilters.level !== '') {
-      filtered = filtered.filter(trainer =>
-        trainer?.classes && trainer.classes.some(cls =>
-          (cls as any).level && (cls as any).level === activeFilters.level
-        )
-      );
-    }
-
-    if (searchQuery && searchQuery.trim()) {
-      const query = searchQuery.toLowerCase().trim();
-      filtered = filtered.filter(trainer =>
-        (trainer?.name && trainer.name.toLowerCase().includes(query)) ||
-        (trainer?.location && trainer.location.toLowerCase().includes(query)) ||
-        (trainer?.specialty && Array.isArray(trainer.specialty) && 
-         trainer.specialty.some(s => s && s.toLowerCase().includes(query)))
-      );
+    if (activeFilters.maxDistance != null && userLocation) {
+      filtered = [...filtered].sort((a, b) => {
+        const da = trainerDistanceKm(a, userLocation) ?? Number.POSITIVE_INFINITY;
+        const db = trainerDistanceKm(b, userLocation) ?? Number.POSITIVE_INFINITY;
+        return da - db;
+      });
     }
 
     setFilteredTrainers(filtered);
-    // Reset pagination when filters change
     setDisplayedTrainers(filtered.slice(0, TRAINERS_PER_PAGE));
     setHasMore(filtered.length > TRAINERS_PER_PAGE);
-  }, [trainers, selectedCategory, searchQuery, activeFilters]);
+  }, [trainers, selectedCategory, searchQuery, activeFilters, userLocation, distanceUnit]);
 
   const loadMoreTrainers = useCallback(() => {
     if (loadingMore || !hasMore) return;
@@ -344,52 +344,26 @@ const Explore: React.FC<ExploreProps> = ({
     };
   }, [hasMore, loadingMore, loadMoreTrainers]);
 
-  const handleApplyFilters = (newFilters: typeof activeFilters) => {
-    setActiveFilters(newFilters);
-    setIsFilterModalOpen(false);
-  };
-
   const handleResetFilters = () => {
-    setActiveFilters({
-      specialty: [],
-      verified: false,
-      topRated: false,
-      premiumOnly: false,
-      district: 'All',
-      time: 'any',
-      classType: [],
-      languages: [],
-      level: '',
-    });
+    setActiveFilters(EMPTY_DISCOVERY_FILTERS);
   };
 
+  /** Open coach in AppShell route — keeps top nav + footer, one document scroll. */
   const handleSelectTrainer = (trainer: Trainer) => {
-    setIsExitingDetail(false);
-    setSelectedTrainer(trainer);
-    window.scrollTo(0, 0);
+    navigate(`/trainer/${encodeURIComponent(trainer.id)}`);
   };
 
-  const handleBackFromDetail = () => {
-    setIsExitingDetail(true);
-    setTimeout(() => {
-      setSelectedTrainer(null);
-      setIsExitingDetail(false);
-    }, 300);
-  };
+  const activeFilterCount = countDiscoveryFilters(activeFilters);
 
-  const activeFilterCount =
-    activeFilters.specialty.length +
-    activeFilters.classType.length +
-    activeFilters.languages.length +
-    (activeFilters.district !== 'All' ? 1 : 0) +
-    (activeFilters.time !== 'any' ? 1 : 0) +
-    (activeFilters.level ? 1 : 0) +
-    (activeFilters.verified ? 1 : 0) +
-    (activeFilters.topRated ? 1 : 0) +
-    (activeFilters.premiumOnly ? 1 : 0);
-
-  const activeFilterChips = React.useMemo(() => {
+  const activeFilterChips = useMemo(() => {
     const chips: { key: string; label: string; clear: () => void }[] = [];
+    if (activeFilters.maxDistance != null) {
+      chips.push({
+        key: 'distance',
+        label: `Within ${activeFilters.maxDistance}${distanceUnit}`,
+        clear: () => setActiveFilters((prev) => ({ ...prev, maxDistance: null })),
+      });
+    }
     activeFilters.specialty.forEach((s) => {
       chips.push({
         key: `specialty:${s}`,
@@ -461,15 +435,35 @@ const Explore: React.FC<ExploreProps> = ({
     if (activeFilters.premiumOnly) {
       chips.push({
         key: 'premium',
-        label: 'Premium',
+        label: 'Coach Pro',
         clear: () => setActiveFilters((prev) => ({ ...prev, premiumOnly: false })),
       });
     }
     return chips;
-  }, [activeFilters]);
+  }, [activeFilters, distanceUnit]);
+
+  const filterPanel = (
+    <DiscoveryFilterPanel
+      filters={activeFilters}
+      onChange={setActiveFilters}
+      target="trainer"
+      distanceUnit={distanceUnit}
+      onDistanceUnitChange={setDistanceUnit}
+      userLocation={userLocation}
+    />
+  );
 
   const sortedDisplayed = React.useMemo(() => {
     const list = [...displayedTrainers];
+    const scoreOf = (t: Trainer) =>
+      boostScore({
+        rating: t.rating,
+        reviews: t.reviews,
+        isPremium: t.isPremium,
+        promotedWeight: promotedWeight[t.id] || 0,
+        distanceKm: trainerDistanceKm(t, userLocation),
+        createdAt: t.createdAt,
+      });
     switch (sortBy) {
       case 'rating':
         return list.sort((a, b) => b.rating - a.rating || b.reviews - a.reviews);
@@ -479,10 +473,54 @@ const Explore: React.FC<ExploreProps> = ({
         return list.sort((a, b) => b.price - a.price);
       case 'reviews':
         return list.sort((a, b) => b.reviews - a.reviews);
+      case 'distance':
+        return list.sort((a, b) => {
+          const da = trainerDistanceKm(a, userLocation) ?? Number.POSITIVE_INFINITY;
+          const db = trainerDistanceKm(b, userLocation) ?? Number.POSITIVE_INFINITY;
+          return da - db;
+        });
       default:
-        return list;
+        return list.sort((a, b) => scoreOf(b) - scoreOf(a));
     }
-  }, [displayedTrainers, sortBy]);
+  }, [displayedTrainers, sortBy, promotedWeight, userLocation]);
+
+  const similarForEmpty = useMemo(() => {
+    if (filteredTrainers.length > 0) return [];
+    return [...trainers]
+      .sort((a, b) => b.rating - a.rating)
+      .slice(0, 5);
+  }, [filteredTrainers.length, trainers]);
+
+  const handleSaveSearch = async () => {
+    if (
+      !requireAuth(currentUserId, navigate, {
+        returnTo: '/explore',
+        toast: (msg) => toast({ ...msg, variant: 'destructive' }),
+      })
+    ) {
+      return;
+    }
+    setSavingSearch(true);
+    try {
+      const { error } = await saveSearch({
+        userId: currentUserId,
+        filters: activeFilters,
+        target: 'trainer',
+        notify: true,
+      });
+      if (error) throw error;
+      trackEvent('saved_search_create', { target: 'trainer' }, currentUserId);
+      toast({ title: 'Search saved', description: 'We’ll notify you when new coaches match.' });
+    } catch (e) {
+      toast({
+        title: 'Could not save search',
+        description: e instanceof Error ? e.message : 'Try again',
+        variant: 'destructive',
+      });
+    } finally {
+      setSavingSearch(false);
+    }
+  };
 
   return (
     <AppScreen className="relative min-w-0 bg-muted/30">
@@ -519,20 +557,31 @@ const Explore: React.FC<ExploreProps> = ({
                 </button>
               </p>
             </div>
-            <Select value={sortBy} onValueChange={setSortBy}>
-              <SelectTrigger className="w-[180px]" aria-label="Sort coaches">
-                <SelectValue placeholder="Sort" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectGroup>
-                  <SelectItem value="recommended">Recommended</SelectItem>
-                  <SelectItem value="rating">Highest rated</SelectItem>
-                  <SelectItem value="reviews">Most reviews</SelectItem>
-                  <SelectItem value="price-asc">Price: low to high</SelectItem>
-                  <SelectItem value="price-desc">Price: high to low</SelectItem>
-                </SelectGroup>
-              </SelectContent>
-            </Select>
+            <div className="flex flex-wrap items-center gap-2">
+              <Select value={sortBy} onValueChange={setSortBy}>
+                <SelectTrigger className="w-[180px]" aria-label="Sort coaches">
+                  <SelectValue placeholder="Sort" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectGroup>
+                    <SelectItem value="recommended">Recommended</SelectItem>
+                    <SelectItem value="distance">Distance</SelectItem>
+                    <SelectItem value="rating">Highest rated</SelectItem>
+                    <SelectItem value="reviews">Most reviews</SelectItem>
+                    <SelectItem value="price-asc">Price: low to high</SelectItem>
+                    <SelectItem value="price-desc">Price: high to low</SelectItem>
+                  </SelectGroup>
+                </SelectContent>
+              </Select>
+              <Button
+                type="button"
+                variant={viewSurface === 'map' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setViewSurface((v) => (v === 'map' ? 'list' : 'map'))}
+              >
+                {viewSurface === 'map' ? 'List' : 'Map'}
+              </Button>
+            </div>
           </div>
 
           <div className="flex items-center gap-3">
@@ -559,25 +608,10 @@ const Explore: React.FC<ExploreProps> = ({
                 </InputGroupAddon>
               ) : null}
             </InputGroup>
-            <Button
-              type="button"
-              variant="outline"
-              className="relative h-11 gap-2 bg-card px-4"
-              onClick={() => setIsFilterModalOpen(true)}
-              aria-label={
-                activeFilterCount
-                  ? `Open filters (${activeFilterCount} active)`
-                  : 'Open filters'
-              }
-            >
-              <SlidersHorizontal className="text-primary" />
-              <span className="hidden sm:inline">Filters</span>
-              {activeFilterCount > 0 ? (
-                <Badge className="absolute -right-2 -top-2 size-5 justify-center rounded-full p-0 text-[10px]">
-                  {activeFilterCount}
-                </Badge>
-              ) : null}
-            </Button>
+            <DiscoveryFilterMobileTrigger
+              count={activeFilterCount}
+              onClick={() => setMobileFiltersOpen(true)}
+            />
           </div>
 
           <CategoryFilters
@@ -617,149 +651,162 @@ const Explore: React.FC<ExploreProps> = ({
           ) : null}
         </section>
 
-        {/* Results — single view system (grid | list) */}
-        <section className="flex flex-col gap-4" aria-label="Coach results">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div>
-              <h2 className="text-lg font-bold tracking-tight text-foreground">
-                {loading
-                  ? 'Loading coaches…'
-                  : `${filteredTrainers.length} coach${filteredTrainers.length === 1 ? '' : 'es'}`}
-              </h2>
-              <p className="text-xs text-muted-foreground">Ho Chi Minh City · denser results for faster comparison</p>
-            </div>
-            <div className="flex items-center gap-2">
-              <ViewToggle viewMode={viewMode} setViewMode={setViewMode} />
-              <Badge variant="secondary">{viewMode === 'list' ? 'List' : 'Cards'}</Badge>
-            </div>
-          </div>
+        <div className="flex items-start gap-6">
+          <DiscoveryFilterSidebar>{filterPanel}</DiscoveryFilterSidebar>
 
-          {loading ? (
-            <div
-              className={cn(
-                'grid gap-3',
-                viewMode === 'list'
-                  ? 'grid-cols-1 lg:grid-cols-2'
-                  : 'grid-cols-2 items-stretch sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5'
-              )}
-              aria-busy
-            >
-              {Array.from({ length: 10 }, (_, i) => (
-                <TrainerCardSkeleton key={i} />
-              ))}
-            </div>
-          ) : sortedDisplayed.length === 0 ? (
-            <Empty className="border border-dashed bg-card">
-              <EmptyHeader>
-                <EmptyTitle>No coaches found</EmptyTitle>
-                <EmptyDescription>
-                  Try adjusting your filters or search to see more coaches nearby.
-                </EmptyDescription>
-              </EmptyHeader>
-              {activeFilterCount > 0 || searchQuery ? (
-                <EmptyContent>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={() => {
-                      handleResetFilters();
-                      setSearchQuery('');
-                    }}
-                  >
-                    Clear filters
-                  </Button>
-                </EmptyContent>
-              ) : null}
-            </Empty>
-          ) : viewMode === 'list' ? (
-            <div className="grid grid-cols-1 gap-2.5 lg:grid-cols-2">
-              {sortedDisplayed.map((trainer) => (
-                <DiscoveryCoachListItem
-                  key={trainer.id}
-                  trainer={trainer}
-                  isFavorite={favoriteTrainerIds.includes(trainer.id)}
-                  onToggleFavorite={onToggleFavorite}
-                  onSelect={() => handleSelectTrainer(trainer)}
-                  onBook={() => handleSelectTrainer(trainer)}
-                />
-              ))}
-            </div>
-          ) : (
-            <div className="grid grid-cols-2 items-stretch gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
-              {sortedDisplayed.map((trainer) => (
-                <DiscoveryCoachCard
-                  key={trainer.id}
-                  trainer={trainer}
-                  isFavorite={favoriteTrainerIds.includes(trainer.id)}
-                  onToggleFavorite={onToggleFavorite}
-                  onSelect={() => handleSelectTrainer(trainer)}
-                  onBook={() => handleSelectTrainer(trainer)}
-                />
-              ))}
-            </div>
-          )}
-
-          {hasMore ? (
-            <div ref={observerTarget} className="flex items-center justify-center py-6">
-              {loadingMore ? (
-                <div role="status" className="flex items-center gap-2 text-muted-foreground">
-                  <Loader className="size-5 animate-spin" aria-hidden />
-                  <span className="text-sm">Loading more coaches…</span>
-                </div>
-              ) : null}
-            </div>
-          ) : null}
-
-          {!hasMore && displayedTrainers.length > 0 ? (
-            <div className="mt-4 flex flex-col items-center border-t border-border py-8 text-center">
-              <p className="mb-3 text-sm text-muted-foreground">
-                You&apos;ve seen all {displayedTrainers.length} coaches shown above
-              </p>
-              <div className="flex flex-wrap items-center justify-center gap-3">
+          <section className="flex min-w-0 flex-1 flex-col gap-4" aria-label="Coach results">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <h2 className="text-lg font-semibold tracking-tight text-foreground">
+                  {loading
+                    ? 'Loading coaches…'
+                    : `${filteredTrainers.length} coach${filteredTrainers.length === 1 ? '' : 'es'}`}
+                </h2>
+                <p className="text-xs text-muted-foreground">
+                  {userLocation
+                    ? `${userLocation} · distance in ${distanceUnit}`
+                    : `Ho Chi Minh City · distance in ${distanceUnit}`}
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
                 <Button
                   type="button"
                   variant="outline"
-                  onClick={() => navigate('/classes')}
+                  size="sm"
+                  className="gap-1.5"
+                  disabled={savingSearch || activeFilterCount === 0}
+                  onClick={() => void handleSaveSearch()}
                 >
-                  Browse classes
+                  <BellRing className="size-3.5" />
+                  Notify me
                 </Button>
-                <Button type="button" onClick={() => navigate('/venues')}>
-                  Browse venues
-                </Button>
+                <ViewToggle viewMode={viewMode} setViewMode={setViewMode} />
+                <Badge variant="secondary">{viewMode === 'list' ? 'List' : 'Cards'}</Badge>
               </div>
             </div>
-          ) : null}
-        </section>
+
+            {!loading && filteredTrainers.length > 0 && sortBy === 'recommended' ? (
+              <DiscoveryCollections trainers={filteredTrainers} userLocation={userLocation} />
+            ) : null}
+
+            {loading ? (
+              <div
+                className={cn(
+                  'grid gap-3',
+                  viewMode === 'list'
+                    ? 'grid-cols-1 xl:grid-cols-2'
+                    : 'grid-cols-2 items-stretch gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-3'
+                )}
+                aria-busy
+              >
+                {Array.from({ length: 9 }, (_, i) => (
+                  <TrainerCardSkeleton key={i} />
+                ))}
+              </div>
+            ) : sortedDisplayed.length === 0 ? (
+              <DiscoveryEmptyState
+                similar={similarForEmpty}
+                onClear={() => {
+                  handleResetFilters();
+                  setSearchQuery('');
+                }}
+              />
+            ) : viewSurface === 'map' ? (
+              <DistrictMap
+                pins={sortedDisplayed.map((t) => ({
+                  id: t.id,
+                  label: t.name,
+                  location: t.location,
+                }))}
+                onSelect={(id) => {
+                  const t = sortedDisplayed.find((x) => x.id === id);
+                  if (t) handleSelectTrainer(t);
+                }}
+              />
+            ) : viewMode === 'list' ? (
+              <div className="grid grid-cols-1 gap-2.5 xl:grid-cols-2">
+                {sortedDisplayed.map((trainer) => (
+                  <DiscoveryCoachListItem
+                    key={trainer.id}
+                    trainer={trainer}
+                    distanceLabel={formatDistance(
+                      trainerDistanceKm(trainer, userLocation),
+                      distanceUnit
+                    )}
+                    isFavorite={favoriteTrainerIds.includes(trainer.id)}
+                    onToggleFavorite={onToggleFavorite}
+                    onSelect={() => handleSelectTrainer(trainer)}
+                    onBook={() => handleSelectTrainer(trainer)}
+                    promoted={promotedIds.includes(trainer.id)}
+                  />
+                ))}
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 items-stretch gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-3">
+                {sortedDisplayed.map((trainer) => (
+                  <DiscoveryCoachCard
+                    key={trainer.id}
+                    trainer={trainer}
+                    distanceLabel={formatDistance(
+                      trainerDistanceKm(trainer, userLocation),
+                      distanceUnit
+                    )}
+                    isFavorite={favoriteTrainerIds.includes(trainer.id)}
+                    onToggleFavorite={onToggleFavorite}
+                    onSelect={() => handleSelectTrainer(trainer)}
+                    onBook={() => handleSelectTrainer(trainer)}
+                    promoted={promotedIds.includes(trainer.id)}
+                  />
+                ))}
+              </div>
+            )}
+
+            {hasMore ? (
+              <div ref={observerTarget} className="flex items-center justify-center py-6">
+                {loadingMore ? (
+                  <div role="status" className="flex items-center gap-2 text-muted-foreground">
+                    <Loader className="size-5 animate-spin" aria-hidden />
+                    <span className="text-sm">Loading more coaches…</span>
+                  </div>
+                ) : null}
+              </div>
+            ) : null}
+
+            {!hasMore && displayedTrainers.length > 0 ? (
+              <div className="mt-4 flex flex-col items-center border-t border-border py-8 text-center">
+                <p className="mb-3 text-sm text-muted-foreground">
+                  You&apos;ve seen all {displayedTrainers.length} coaches shown above
+                </p>
+                <div className="flex flex-wrap items-center justify-center gap-3">
+                  <Button type="button" variant="outline" onClick={() => navigate('/classes')}>
+                    Browse classes
+                  </Button>
+                  <Button type="button" onClick={() => navigate('/venues')}>
+                    Browse venues
+                  </Button>
+                </div>
+              </div>
+            ) : null}
+          </section>
+        </div>
       </div>
 
-      {selectedTrainer ? (
-        <div
-          className={cn(
-            'fixed inset-0 z-50 overflow-y-auto bg-background transition-all duration-300 md:absolute',
-            isExitingDetail ? 'translate-x-full opacity-0' : 'translate-x-0 opacity-100'
-          )}
+      <Sheet open={mobileFiltersOpen} onOpenChange={setMobileFiltersOpen}>
+        <SheetContent
+          side="bottom"
+          className="flex h-[92dvh] flex-col gap-0 overflow-hidden rounded-t-2xl p-0"
         >
-          <TrainerDetailPage
-            trainer={selectedTrainer}
-            onBack={handleBackFromDetail}
-            onInitiateBooking={onInitiateBooking}
-            userRole={userRole}
-            currentUserId={currentUserId}
-            isFavorite={favoriteTrainerIds.includes(selectedTrainer.id)}
-            onToggleFavorite={onToggleFavorite}
-            onOpenReviewsModal={onOpenReviewsModal}
-          />
-        </div>
-      ) : null}
-
-      <FilterModal
-        isOpen={isFilterModalOpen}
-        onClose={() => setIsFilterModalOpen(false)}
-        activeFilters={activeFilters}
-        onApplyFilters={handleApplyFilters}
-        onResetFilters={handleResetFilters}
-      />
+          <SheetHeader className="shrink-0 border-b border-border/80 p-4 text-left">
+            <SheetTitle>Filters</SheetTitle>
+          </SheetHeader>
+          <div className="min-h-0 flex-1 overflow-y-auto p-4">{filterPanel}</div>
+          <SheetFooter className="shrink-0 border-t border-border/80 p-4 pb-[calc(1rem+env(safe-area-inset-bottom))]">
+            <Button type="button" className="w-full" onClick={() => setMobileFiltersOpen(false)}>
+              Show {filteredTrainers.length} coaches
+            </Button>
+          </SheetFooter>
+        </SheetContent>
+      </Sheet>
     </AppScreen>
   );
 };
