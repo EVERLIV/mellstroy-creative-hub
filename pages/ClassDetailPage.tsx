@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
 import {
   ArrowRight,
@@ -274,21 +274,48 @@ const ClassDetailPage: React.FC<ClassDetailPageProps> = ({
     };
   }, [classId]);
 
-  const scheduleDays = classData?.schedule?.days ?? [];
+  const scheduleDaysKey = (classData?.schedule?.days ?? []).join(',');
+  const scheduleDays = useMemo(
+    () => (scheduleDaysKey ? scheduleDaysKey.split(',') : []),
+    [scheduleDaysKey]
+  );
   const scheduleTimeLabel = classData?.schedule?.time
     ? formatTime(classData.schedule.time)
     : null;
 
   useEffect(() => {
-    if (!classData?.schedule?.days?.length) {
+    if (!scheduleDays.length) {
       setSelectedDate(undefined);
       return;
     }
     setSelectedDate((prev) => {
-      if (prev && isScheduleDay(prev, classData.schedule?.days)) return prev;
-      return firstUpcomingScheduleDate(classData.schedule?.days);
+      if (prev && isScheduleDay(prev, scheduleDays)) return prev;
+      return firstUpcomingScheduleDate(scheduleDays);
     });
-  }, [classData?.id, classData?.schedule?.days]);
+  }, [classData?.id, scheduleDays]);
+
+  const isCalendarDisabled = useCallback(
+    (date: Date) => {
+      const today = startOfDay(new Date());
+      return date < today || !isScheduleDay(date, scheduleDays);
+    },
+    [scheduleDays]
+  );
+
+  const calendarModifiers = useMemo(
+    () => ({
+      scheduled: (date: Date) => isScheduleDay(date, scheduleDays),
+    }),
+    [scheduleDays]
+  );
+
+  const calendarModifiersClassNames = useMemo(
+    () => ({
+      scheduled:
+        'font-semibold text-primary underline decoration-primary/40 underline-offset-2',
+    }),
+    []
+  );
 
   useEffect(() => {
     if (!classId) return;
@@ -628,17 +655,9 @@ const ClassDetailPage: React.FC<ClassDetailPageProps> = ({
                       mode="single"
                       selected={selectedDate}
                       onSelect={setSelectedDate}
-                      disabled={(date) => {
-                        const today = startOfDay(new Date());
-                        return date < today || !isScheduleDay(date, scheduleDays);
-                      }}
-                      modifiers={{
-                        scheduled: (date) => isScheduleDay(date, scheduleDays),
-                      }}
-                      modifiersClassNames={{
-                        scheduled:
-                          "font-semibold text-primary underline decoration-primary/40 underline-offset-2",
-                      }}
+                      disabled={isCalendarDisabled}
+                      modifiers={calendarModifiers}
+                      modifiersClassNames={calendarModifiersClassNames}
                       className="rounded-xl border border-border bg-card shadow-sm"
                     />
 

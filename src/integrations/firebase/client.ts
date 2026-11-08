@@ -78,6 +78,11 @@ class QueryBuilder {
   private wantMaybeSingle = false;
   private countOnly = false;
   private headOnly = false;
+  private pending: Promise<{
+    data: unknown;
+    error: { message: string } | null;
+    count: number;
+  }> | null = null;
 
   constructor(private table: string) {
     ensureSeeded();
@@ -176,19 +181,24 @@ class QueryBuilder {
 
   single() {
     this.wantSingle = true;
-    return this.execute();
+    return this.run();
   }
 
   maybeSingle() {
     this.wantMaybeSingle = true;
-    return this.execute();
+    return this.run();
+  }
+
+  private run() {
+    if (!this.pending) this.pending = this.execute();
+    return this.pending;
   }
 
   then<TResult1 = unknown, TResult2 = never>(
     onfulfilled?: ((value: Awaited<ReturnType<QueryBuilder['execute']>>) => TResult1 | PromiseLike<TResult1>) | null,
     onrejected?: ((reason: unknown) => TResult2 | PromiseLike<TResult2>) | null
   ) {
-    return this.execute().then(onfulfilled, onrejected);
+    return this.run().then(onfulfilled, onrejected);
   }
 
   private applyFilters(rows: Row[]) {

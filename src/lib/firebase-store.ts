@@ -44,6 +44,10 @@ function loadLocal(): Store {
 
 function saveLocal(store: Store) {
   try {
+    // Cap noisy collections so analytics spam cannot blow up localStorage / freeze the tab.
+    if (Array.isArray(store.analytics_events) && store.analytics_events.length > 200) {
+      store.analytics_events = store.analytics_events.slice(-100);
+    }
     localStorage.setItem(STORAGE_KEY, JSON.stringify(store));
   } catch {
     /* ignore quota */

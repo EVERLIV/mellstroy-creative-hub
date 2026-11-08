@@ -27,20 +27,29 @@ export function trackEvent(
   props: Record<string, unknown> = {},
   userId?: string | null
 ) {
-  void (async () => {
+  // Defer off the click/navigation path so a slow store write cannot freeze the tab.
+  void Promise.resolve().then(async () => {
     try {
       let uid = userId ?? null;
       if (!uid) {
-        const { data } = await supabase.auth.getUser();
-        uid = data.user?.id ?? null;
+        try {
+          const demo = localStorage.getItem('rhinofit.demoUser');
+          if (demo) uid = (JSON.parse(demo) as { user?: { id?: string } }).user?.id ?? null;
+        } catch {
+          /* ignore */
+        }
       }
-      await supabase.from('analytics_events' as never).insert({
+      const { error } = await supabase.from('analytics_events' as never).insert({
         name,
         user_id: uid,
         props,
+        created_at: new Date().toISOString(),
       } as never);
+      if (error) {
+        /* swallow */
+      }
     } catch {
       /* analytics must not break product */
     }
-  })();
+  });
 }

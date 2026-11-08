@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Clock, Shield } from 'lucide-react';
 import type { Class, Trainer } from '../types';
 import { cn } from '@/src/lib/utils';
@@ -79,9 +79,21 @@ const BookingModal: React.FC<BookingModalProps> = ({
   onClose,
 }) => {
   const { trainer, cls, preferredDate } = bookingTarget;
+  const scheduleDaysKey = (cls.schedule?.days ?? []).join(',');
   const scheduleDays = useMemo(
-    () => new Set(cls.schedule?.days ?? []),
-    [cls.schedule?.days]
+    () => new Set(scheduleDaysKey ? scheduleDaysKey.split(',') : []),
+    [scheduleDaysKey]
+  );
+  const isDayDisabled = useCallback(
+    (date: Date) => !scheduleDays.has(WEEKDAY[date.getDay()]),
+    [scheduleDays]
+  );
+  const handleSelectDay = useCallback(
+    (d: Date | undefined) => {
+      setSelectedDate(d);
+      if (d) trackEvent('slot_select', { date: d.toISOString() }, currentUserId);
+    },
+    [currentUserId]
   );
 
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(preferredDate);
@@ -276,11 +288,8 @@ const BookingModal: React.FC<BookingModalProps> = ({
                 <Calendar
                   mode="single"
                   selected={selectedDate}
-                  onSelect={(d) => {
-                    setSelectedDate(d);
-                    if (d) trackEvent('slot_select', { date: d.toISOString() }, currentUserId);
-                  }}
-                  disabled={(date) => !scheduleDays.has(WEEKDAY[date.getDay()])}
+                  onSelect={handleSelectDay}
+                  disabled={isDayDisabled}
                   className="rounded-md border"
                 />
                 {cls.schedule?.time ? (
