@@ -27,29 +27,21 @@ export function trackEvent(
   props: Record<string, unknown> = {},
   userId?: string | null
 ) {
-  // Defer off the click/navigation path so a slow store write cannot freeze the tab.
-  void Promise.resolve().then(async () => {
-    try {
-      let uid = userId ?? null;
-      if (!uid) {
+  // Never block UI — analytics is best-effort Firestore write.
+  if (typeof window !== 'undefined') {
+    window.setTimeout(() => {
+      void (async () => {
         try {
-          const demo = localStorage.getItem('rhinofit.demoUser');
-          if (demo) uid = (JSON.parse(demo) as { user?: { id?: string } }).user?.id ?? null;
+          await supabase.from('analytics_events' as never).insert({
+            name,
+            user_id: userId ?? null,
+            props,
+            created_at: new Date().toISOString(),
+          } as never);
         } catch {
-          /* ignore */
+          /* analytics must not break product */
         }
-      }
-      const { error } = await supabase.from('analytics_events' as never).insert({
-        name,
-        user_id: uid,
-        props,
-        created_at: new Date().toISOString(),
-      } as never);
-      if (error) {
-        /* swallow */
-      }
-    } catch {
-      /* analytics must not break product */
-    }
-  });
+      })();
+    }, 0);
+  }
 }

@@ -31,6 +31,7 @@ import { PackagePicker } from './marketplace/PackagePicker';
 import { WaitlistButton } from './marketplace/WaitlistButton';
 import { fetchActivePackages, type ClassPackage } from '@/src/lib/marketplace';
 import { trackEvent } from '@/src/lib/analytics';
+import { mapClassSchedule } from '@/src/lib/mapClassSchedule';
 
 /**
  * Intent: athlete decides whether to book this coach.
@@ -77,10 +78,7 @@ const transformClassData = (c: Record<string, unknown>): Class => ({
   imageUrls: (c.image_urls as string[]) || [],
   capacity: Number(c.capacity ?? 0),
   classType: c.class_type as ClassType,
-  schedule:
-    c.schedule_days && c.schedule_time
-      ? { days: c.schedule_days as string[], time: String(c.schedule_time) }
-      : undefined,
+  schedule: mapClassSchedule(c as { schedule_days?: string[]; schedule_time?: string; schedule_times?: string[] }),
   bookings: [],
   kids_friendly: Boolean(c.kids_friendly),
   disability_friendly: Boolean(c.disability_friendly),

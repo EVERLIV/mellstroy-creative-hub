@@ -1,5 +1,10 @@
+/**
+ * Live Firestore data layer for RhinoFit.
+ * No localStorage mock store — every read/write hits Firebase (with a short memory cache).
+ */
 import {
   collection,
+  deleteDoc,
   doc,
   getDoc,
   getDocs,
@@ -8,144 +13,112 @@ import {
   type DocumentData,
 } from 'firebase/firestore';
 import { db } from './firebase';
-import {
-  buildSeedCollections,
-  type CollectionName,
-  type SeedCollections,
-} from '../data/seed/mockBackendData';
-
-const STORAGE_KEY = 'rhinofit.firebase.mockStore.v1';
-const SEEDED_FLAG = 'rhinofit.firebase.seeded';
 
 type Row = DocumentData & { id: string };
-type Store = Record<string, Row[]>;
 
-function cloneSeed(): Store {
-  const seed = buildSeedCollections();
-  const out: Store = {};
-  for (const [key, rows] of Object.entries(seed) as [CollectionName, SeedCollections[CollectionName]][]) {
-    out[key] = (rows as Row[]).map((r) => ({ ...r }));
-  }
-  return out;
-}
+const cache = new Map<string, { at: number; rows: Row[] }>();
+const CACHE_TTL_MS = 15_000;
 
-function loadLocal(): Store {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (raw) return JSON.parse(raw) as Store;
-  } catch {
-    /* ignore */
-  }
-  const seeded = cloneSeed();
-  saveLocal(seeded);
-  localStorage.setItem(SEEDED_FLAG, '1');
-  return seeded;
-}
+const LEGACY_KEYS = [
+  'rhinofit.firebase.mockStore.v1',
+  'rhinofit.firebase.mockStore.v2',
+  'rhinofit.firebase.seeded',
+  'rhinofit.firebase.seeded.v2',
+  'rhinofit.demoUser',
+];
 
-function saveLocal(store: Store) {
-  try {
-    // Cap noisy collections so analytics spam cannot blow up localStorage / freeze the tab.
-    if (Array.isArray(store.analytics_events) && store.analytics_events.length > 200) {
-      store.analytics_events = store.analytics_events.slice(-100);
+export function clearLegacyMockData() {
+  if (typeof window === 'undefined') return;
+  for (const key of LEGACY_KEYS) {
+    try {
+      localStorage.removeItem(key);
+    } catch {
+      /* ignore */
     }
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(store));
-  } catch {
-    /* ignore quota */
   }
-}
-
-let memory: Store | null = null;
-
-export function getStore(): Store {
-  if (typeof window === 'undefined') {
-    return cloneSeed();
+  for (let i = localStorage.length - 1; i >= 0; i--) {
+    const k = localStorage.key(i);
+    if (k && k.startsWith('rhinofit.firebase.mockStore')) {
+      try {
+        localStorage.removeItem(k);
+      } catch {
+        /* ignore */
+      }
+    }
   }
-  if (!memory) memory = loadLocal();
-  return memory;
+  cache.clear();
 }
 
-export function resetStore() {
-  memory = cloneSeed();
-  saveLocal(memory);
-  localStorage.setItem(SEEDED_FLAG, '1');
-  return memory;
+/** Wipe any leftover mock blobs on first import. */
+if (typeof window !== 'undefined') {
+  clearLegacyMockData();
 }
 
-export function ensureSeeded() {
-  if (typeof window === 'undefined') return getStore();
-  if (!localStorage.getItem(SEEDED_FLAG)) {
-    return resetStore();
+function invalidate(name?: string) {
+  if (name) cache.delete(name);
+  else cache.clear();
+}
+
+export async function listCollectionAsync(name: string, force = false): Promise<Row[]> {
+  const hit = cache.get(name);
+  if (!force && hit && Date.now() - hit.at < CACHE_TTL_MS) {
+    return hit.rows;
   }
-  return getStore();
+  const snap = await getDocs(collection(db, name));
+  const rows = snap.docs.map((d) => ({ id: d.id, ...d.data() })) as Row[];
+  cache.set(name, { at: Date.now(), rows });
+  return rows;
 }
 
-function persist() {
-  if (memory) saveLocal(memory);
-}
-
+/** Sync helper for rare call sites — prefer listCollectionAsync. */
 export function listCollection(name: string): Row[] {
-  ensureSeeded();
-  const store = getStore();
-  if (!store[name]) store[name] = [];
-  return store[name];
+  return cache.get(name)?.rows ?? [];
 }
 
-export function upsertRow(name: string, row: Row) {
-  const rows = listCollection(name);
-  const idx = rows.findIndex((r) => r.id === row.id);
-  if (idx >= 0) rows[idx] = { ...rows[idx], ...row };
-  else rows.push(row);
-  persist();
-  return row;
+export async function ensureCollection(name: string): Promise<Row[]> {
+  return listCollectionAsync(name);
 }
 
-export function deleteRow(name: string, id: string) {
-  const store = getStore();
-  store[name] = listCollection(name).filter((r) => r.id !== id);
-  persist();
+/** No-op kept for older call sites; real data lives in Firestore. */
+export function ensureSeeded() {
+  return { ok: true };
 }
 
-export function updateRows(
+export async function upsertRow(name: string, row: Row) {
+  const id = String(row.id);
+  const payload = { ...row, id };
+  await setDoc(doc(db, name, id), payload, { merge: true });
+  const rows = await listCollectionAsync(name, true);
+  const idx = rows.findIndex((r) => r.id === id);
+  if (idx >= 0) rows[idx] = { ...rows[idx], ...payload };
+  else rows.push(payload);
+  cache.set(name, { at: Date.now(), rows });
+  return payload;
+}
+
+export async function deleteRow(name: string, id: string) {
+  await deleteDoc(doc(db, name, id));
+  invalidate(name);
+  await listCollectionAsync(name, true);
+}
+
+export async function updateRows(
   name: string,
   match: (row: Row) => boolean,
   patch: Partial<Row>
 ) {
-  const rows = listCollection(name);
-  let count = 0;
-  for (let i = 0; i < rows.length; i++) {
-    if (match(rows[i])) {
-      rows[i] = { ...rows[i], ...patch };
-      count += 1;
-    }
-  }
-  persist();
-  return count;
-}
-
-/** Push local seed into Firestore (best-effort; needs auth + rules). */
-export async function syncSeedToFirestore() {
-  const store = ensureSeeded();
+  const rows = await listCollectionAsync(name, true);
   const batch = writeBatch(db);
-  let ops = 0;
-  for (const [col, rows] of Object.entries(store)) {
-    for (const row of rows) {
-      batch.set(doc(db, col, String(row.id)), row, { merge: true });
-      ops += 1;
-      if (ops >= 400) break;
-    }
-    if (ops >= 400) break;
+  let count = 0;
+  for (const row of rows) {
+    if (!match(row)) continue;
+    const next = { ...row, ...patch, id: row.id };
+    batch.set(doc(db, name, row.id), next, { merge: true });
+    count += 1;
   }
-  await batch.commit();
-  return ops;
-}
-
-export async function pullCollectionFromFirestore(name: string) {
-  const snap = await getDocs(collection(db, name));
-  const rows = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
-  const store = getStore();
-  store[name] = rows;
-  persist();
-  return rows;
+  if (count) await batch.commit();
+  invalidate(name);
+  return count;
 }
 
 export async function getFirestoreDoc(name: string, id: string) {
@@ -155,6 +128,19 @@ export async function getFirestoreDoc(name: string, id: string) {
 }
 
 export async function setFirestoreDoc(name: string, id: string, data: DocumentData) {
-  await setDoc(doc(db, name, id), { ...data, id }, { merge: true });
-  upsertRow(name, { ...data, id } as Row);
+  return upsertRow(name, { ...data, id } as Row);
+}
+
+/** @deprecated mock sync removed — use scripts/seed-firestore.mjs */
+export async function syncSeedToFirestore() {
+  return 0;
+}
+
+export async function pullCollectionFromFirestore(name: string) {
+  return listCollectionAsync(name, true);
+}
+
+export function resetStore() {
+  clearLegacyMockData();
+  return {};
 }

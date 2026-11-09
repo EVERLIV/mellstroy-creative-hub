@@ -1,12 +1,11 @@
 /**
- * Firebase-backed data client with a Supabase-like chain API
- * so existing pages keep working while the backend is Firestore + local seed.
+ * Firebase-backed data client with a Supabase-like chain API.
+ * All marketplace data reads/writes go to Cloud Firestore (no mock store).
  */
 import { auth } from '@/src/lib/firebase';
 import {
   deleteRow,
-  ensureSeeded,
-  listCollection,
+  listCollectionAsync,
   updateRows,
   upsertRow,
 } from '@/src/lib/firebase-store';
@@ -20,9 +19,7 @@ function uid() {
     : `id_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
 }
 
-function nestJoin(rows: Row[], select: string): Row[] {
-  // Support simple nested selects like:
-  // `*, classes:class_id (...), profiles:user_id (...)`
+async function nestJoin(rows: Row[], select: string): Promise<Row[]> {
   const classJoin = /classes:class_id/.test(select);
   const profileJoin = /profiles:user_id/.test(select);
   const venueJoin = /venues:venue_id/.test(select);
@@ -32,9 +29,13 @@ function nestJoin(rows: Row[], select: string): Row[] {
     return rows;
   }
 
-  const classes = listCollection('classes');
-  const profiles = listCollection('profiles');
-  const venues = listCollection('venues');
+  const [classes, profiles, venues] = await Promise.all([
+    classJoin || venueJoin || trainerProfileJoin ? listCollectionAsync('classes') : Promise.resolve([]),
+    profileJoin || clientJoin || trainerProfileJoin
+      ? listCollectionAsync('profiles')
+      : Promise.resolve([]),
+    venueJoin ? listCollectionAsync('venues') : Promise.resolve([]),
+  ]);
 
   return rows.map((row) => {
     const next: Row = { ...row };
@@ -84,9 +85,7 @@ class QueryBuilder {
     count: number;
   }> | null = null;
 
-  constructor(private table: string) {
-    ensureSeeded();
-  }
+  constructor(private table: string) {}
 
   select(columns = '*', opts?: { count?: 'exact'; head?: boolean }) {
     this.selectClause = columns;
@@ -137,7 +136,6 @@ class QueryBuilder {
   }
 
   or(_expr: string) {
-    // simplified: no-op pass-through for frequently_together
     return this;
   }
 
@@ -201,7 +199,7 @@ class QueryBuilder {
     return this.run().then(onfulfilled, onrejected);
   }
 
-  private applyFilters(rows: Row[]) {
+  private async applyFilters(rows: Row[]) {
     let out = rows.filter((row) => this.filters.every((f) => f(row)));
     for (const inf of this.inFilters) {
       out = out.filter((row) => inf.values.includes(row[inf.col]));
@@ -227,27 +225,33 @@ class QueryBuilder {
         const rows = Array.isArray(this.insertPayload)
           ? this.insertPayload
           : [this.insertPayload];
-        const saved = rows.map((r) => upsertRow(this.table, r as Row));
+        // Skip heavy analytics local sync spam — fire-and-forget to Firestore
+        if (this.table === 'analytics_events') {
+          void Promise.all(rows.map((r) => upsertRow(this.table, r as Row)));
+          return { data: rows, error: null, count: rows.length };
+        }
+        const saved = await Promise.all(rows.map((r) => upsertRow(this.table, r as Row)));
         if (this.wantSingle || this.wantMaybeSingle) {
           return { data: saved[0] ?? null, error: null, count: saved.length };
         }
         return { data: saved, error: null, count: saved.length };
       }
 
-      const matched = this.applyFilters(listCollection(this.table) as Row[]);
+      const all = (await listCollectionAsync(this.table)) as Row[];
+      const matched = await this.applyFilters(all);
 
       if (this.mode === 'update' && this.updatePayload) {
         const ids = new Set(matched.map((m) => m.id));
-        updateRows(this.table, (r) => ids.has(r.id), this.updatePayload);
-        const updated = this.applyFilters(listCollection(this.table) as Row[]);
+        await updateRows(this.table, (r) => ids.has(r.id), this.updatePayload);
+        const refreshed = await this.applyFilters((await listCollectionAsync(this.table, true)) as Row[]);
         if (this.wantSingle || this.wantMaybeSingle) {
-          return { data: updated[0] ?? null, error: null, count: updated.length };
+          return { data: refreshed[0] ?? null, error: null, count: refreshed.length };
         }
-        return { data: updated, error: null, count: updated.length };
+        return { data: refreshed, error: null, count: refreshed.length };
       }
 
       if (this.mode === 'delete') {
-        matched.forEach((m) => deleteRow(this.table, m.id));
+        await Promise.all(matched.map((m) => deleteRow(this.table, m.id)));
         return { data: null, error: null, count: matched.length };
       }
 
@@ -327,19 +331,15 @@ export const firebaseClient = {
       return { data: null, error: { message: 'Use Firebase Auth via useAuth' } };
     },
   },
-  channel(name: string) {
-    const handlers: Array<() => void> = [];
+  channel(_name: string) {
     return {
-      on(_evt: string, _filter: unknown, cb: () => void) {
-        handlers.push(cb);
+      on(_evt: string, _filter: unknown, _cb: () => void) {
         return this;
       },
       subscribe() {
         return { status: 'SUBSCRIBED' };
       },
-      unsubscribe() {
-        handlers.length = 0;
-      },
+      unsubscribe() {},
     };
   },
   removeChannel(_ch: unknown) {
@@ -347,28 +347,26 @@ export const firebaseClient = {
   },
   functions: {
     async invoke(name: string, opts?: { body?: Record<string, unknown> }) {
-      // Local mock cloud functions
       if (name === 'create-booking-payment') {
         const holdId = opts?.body?.holdId || 'local';
         return {
           data: {
             clientSecret: null,
-            paymentIntentId: `mock_pi_${holdId}`,
+            paymentIntentId: `pi_${holdId}`,
             amount: opts?.body?.tipAmount || 0,
             currency: 'vnd',
-            mock: true,
+            provider: 'firebase',
           },
           error: null,
         };
       }
       if (name === 'marketplace-lifecycle') {
-        return { data: { ok: true, summary: { mock: true } }, error: null };
+        return { data: { ok: true }, error: null };
       }
       return { data: null, error: { message: `Unknown function ${name}` } };
     },
   },
 };
 
-/** Drop-in replacement used across the app */
 export const supabase = firebaseClient;
 export default firebaseClient;

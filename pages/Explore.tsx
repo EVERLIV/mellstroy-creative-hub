@@ -48,6 +48,7 @@ import {
 } from '../src/components/ui/sheet';
 import { APP_CONTENT } from '@/src/components/layout/shell';
 import { cn } from '../src/lib/utils';
+import { mapClassSchedule } from '@/src/lib/mapClassSchedule';
 import TrainerCardSkeleton from '../components/TrainerCardSkeleton';
 import {
   countDiscoveryFilters,
@@ -97,10 +98,7 @@ const transformClassData = (c: any): Class => ({
     imageUrls: c.image_urls || [],
     capacity: c.capacity,
     classType: c.class_type as 'Indoor' | 'Outdoor' | 'Home',
-    schedule: c.schedule_days && c.schedule_time ? {
-        days: c.schedule_days,
-        time: c.schedule_time
-    } : undefined,
+    schedule: mapClassSchedule(c),
     bookings: [],
     kids_friendly: c.kids_friendly || false,
     disability_friendly: c.disability_friendly || false,

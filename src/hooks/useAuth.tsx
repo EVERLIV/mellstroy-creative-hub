@@ -12,10 +12,9 @@ import {
 } from 'firebase/auth';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { auth, db } from '@/src/lib/firebase';
-import { ensureSeeded, listCollection, upsertRow } from '@/src/lib/firebase-store';
+import { clearLegacyMockData } from '@/src/lib/firebase-store';
 import { useToast } from '@/src/hooks/use-toast';
 import { UserRole } from '@/types';
-import { SEED_IDS } from '@/src/data/seed/mockBackendData';
 
 /** App user shape — keeps `id` so existing pages using user.id keep working. */
 export type AppUser = {
@@ -39,8 +38,6 @@ interface AuthContextType {
   signOut: () => Promise<void>;
   signInWithGoogle: () => Promise<void>;
   signInWithFacebook: () => Promise<void>;
-  /** Demo helpers — instant local roles without Firebase console. */
-  signInAsDemo: (role: 'student' | 'trainer') => Promise<void>;
   checkOnboardingStatus: (userId: string) => Promise<boolean>;
 }
 
@@ -65,39 +62,18 @@ function mapDbRole(role: string | null | undefined): { userRole: UserRole | null
 }
 
 async function ensureProfile(user: AppUser, username?: string, role: UserRole = 'student') {
-  ensureSeeded();
-  upsertRow('profiles', {
+  const profile = {
     id: user.id,
     username: username || user.displayName || user.email?.split('@')[0] || 'Athlete',
     email: user.email,
     role,
     onboarding_completed: true,
+    updated_at: new Date().toISOString(),
     created_at: new Date().toISOString(),
     last_seen: new Date().toISOString(),
-  });
-  upsertRow('user_roles', {
-    id: `${user.id}-role`,
-    user_id: user.id,
-    role,
-  });
-
-  try {
-    await setDoc(
-      doc(db, 'profiles', user.id),
-      {
-        id: user.id,
-        username: username || user.displayName || user.email?.split('@')[0] || 'Athlete',
-        email: user.email,
-        role,
-        onboarding_completed: true,
-        updated_at: new Date().toISOString(),
-      },
-      { merge: true }
-    );
-    await setDoc(doc(db, 'user_roles', user.id), { user_id: user.id, role }, { merge: true });
-  } catch {
-    /* offline / rules — local seed still works */
-  }
+  };
+  await setDoc(doc(db, 'profiles', user.id), profile, { merge: true });
+  await setDoc(doc(db, 'user_roles', user.id), { id: user.id, user_id: user.id, role }, { merge: true });
 }
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
@@ -109,21 +85,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const { toast } = useToast();
 
   const fetchUserRole = async (userId: string) => {
-    ensureSeeded();
     try {
-      const local = listCollection('user_roles').find((r) => r.user_id === userId) as
-        | { role?: string }
-        | undefined;
-      if (local?.role) {
-        const mapped = mapDbRole(local.role);
+      const roleSnap = await getDoc(doc(db, 'user_roles', userId));
+      if (roleSnap.exists()) {
+        const mapped = mapDbRole(String(roleSnap.data()?.role || ''));
         setUserRole(mapped.userRole);
         setIsAdmin(mapped.isAdmin);
         return;
       }
-      const snap = await getDoc(doc(db, 'user_roles', userId));
-      const role = snap.exists() ? (snap.data().role as string) : 'student';
-      const mapped = mapDbRole(role);
-      setUserRole(mapped.userRole);
+      const profileSnap = await getDoc(doc(db, 'profiles', userId));
+      const mapped = mapDbRole(String(profileSnap.data()?.role || 'student'));
+      setUserRole(mapped.userRole || 'student');
       setIsAdmin(mapped.isAdmin);
     } catch {
       setUserRole('student');
@@ -132,30 +104,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   useEffect(() => {
-    ensureSeeded();
-    const demo = localStorage.getItem('rhinofit.demoUser');
-    if (demo) {
-      try {
-        const parsed = JSON.parse(demo) as { user: AppUser; role: UserRole };
-        setUser(parsed.user);
-        setSession({ user: parsed.user, access_token: 'demo' });
-        setUserRole(parsed.role);
-        setLoading(false);
-      } catch {
-        localStorage.removeItem('rhinofit.demoUser');
-      }
-    }
-
-    const unsub = onAuthStateChanged(auth, (fbUser) => {
-      if (localStorage.getItem('rhinofit.demoUser')) {
-        setLoading(false);
-        return;
-      }
+    clearLegacyMockData();
+    const unsub = onAuthStateChanged(auth, async (fbUser) => {
       if (fbUser) {
         const appUser = toAppUser(fbUser);
         setUser(appUser);
-        setSession({ user: appUser, access_token: 'firebase' });
-        void fetchUserRole(appUser.id);
+        setSession({ user: appUser, access_token: await fbUser.getIdToken() });
+        await fetchUserRole(appUser.id);
       } else {
         setUser(null);
         setSession(null);
@@ -193,11 +148,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const signOut = async () => {
-    localStorage.removeItem('rhinofit.demoUser');
+    clearLegacyMockData();
     try {
       await fbSignOut(auth);
     } catch {
-      /* demo-only session */
+      /* ignore */
     }
     setUser(null);
     setSession(null);
@@ -227,39 +182,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const signInAsDemo = async (role: 'student' | 'trainer') => {
-    ensureSeeded();
-    const id = role === 'student' ? SEED_IDS.student : SEED_IDS.trainerA;
-    const profile = listCollection('profiles').find((p) => p.id === id) as {
-      username?: string;
-      email?: string;
-    };
-    const appUser: AppUser = {
-      id,
-      uid: id,
-      email: profile?.email || `${role}@rhinofit.demo`,
-      displayName: profile?.username || role,
-    };
-    localStorage.setItem('rhinofit.demoUser', JSON.stringify({ user: appUser, role }));
-    setUser(appUser);
-    setSession({ user: appUser, access_token: 'demo' });
-    setUserRole(role);
-    setIsAdmin(false);
-    toast({
-      title: `Demo ${role}`,
-      description: role === 'trainer' ? 'View waitlists & coach tools' : 'Browse, book, join waitlists',
-    });
-  };
-
   const checkOnboardingStatus = async (userId: string): Promise<boolean> => {
-    ensureSeeded();
-    const local = listCollection('profiles').find((p) => p.id === userId) as
-      | { onboarding_completed?: boolean }
-      | undefined;
-    if (local) return Boolean(local.onboarding_completed);
     try {
       const snap = await getDoc(doc(db, 'profiles', userId));
-      return Boolean(snap.data()?.onboarding_completed);
+      if (!snap.exists()) return true;
+      return Boolean(snap.data()?.onboarding_completed ?? true);
     } catch {
       return true;
     }
@@ -278,7 +205,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         signOut,
         signInWithGoogle,
         signInWithFacebook,
-        signInAsDemo,
         checkOnboardingStatus,
       }}
     >
@@ -288,9 +214,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 };
 
 export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  return context;
+  const ctx = useContext(AuthContext);
+  if (!ctx) throw new Error('useAuth must be used within AuthProvider');
+  return ctx;
 };

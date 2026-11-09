@@ -1,10 +1,13 @@
 /**
  * Demo dataset for RhinoFit on Firebase.
- * Used to exercise discovery, waitlist, bookings, facilities, packages, notifications.
+ * Concrete schedules, real student profiles, no orphan client IDs.
  */
 
 export const SEED_IDS = {
   student: 'seed-student-1',
+  studentB: 'seed-student-2',
+  studentC: 'seed-student-3',
+  studentD: 'seed-student-4',
   trainerA: 'seed-trainer-1',
   trainerB: 'seed-trainer-2',
   trainerC: 'seed-trainer-3',
@@ -16,9 +19,30 @@ export const SEED_IDS = {
   venueC: 'seed-venue-3',
 } as const;
 
+/** Seed schema version — bump when mock shape changes so local stores reseed. */
+export const SEED_VERSION = 2;
+
+function nextWeekdayDate(weekday: number, hour: number, minute = 0) {
+  const d = new Date();
+  d.setHours(hour, minute, 0, 0);
+  const delta = (weekday - d.getDay() + 7) % 7 || 7;
+  d.setDate(d.getDate() + delta);
+  return d;
+}
+
+function dateKey(d: Date) {
+  const p = (n: number) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
+}
+
 export function buildSeedCollections() {
   const now = new Date().toISOString();
-  const tomorrow = new Date(Date.now() + 86_400_000).toISOString().slice(0, 10);
+  const boxingSlot = nextWeekdayDate(1, 18, 0); // next Monday 18:00
+  const boxingDate = dateKey(boxingSlot);
+  const yogaSlot = nextWeekdayDate(2, 8, 30); // next Tuesday
+  const yogaDate = dateKey(yogaSlot);
+  const strengthSlot = nextWeekdayDate(1, 7, 0); // next Monday
+  const strengthDate = dateKey(strengthSlot);
 
   const profiles = [
     {
@@ -32,9 +56,58 @@ export function buildSeedCollections() {
       onboarding_completed: true,
       gender: 'other',
       distance_unit: 'km',
+      goals: ['Strength', 'Consistency'],
       last_seen: now,
       created_at: now,
       bonus_balance: 0,
+    },
+    {
+      id: SEED_IDS.studentB,
+      username: 'Mai Nguyen',
+      email: 'mai@rhinofit.demo',
+      role: 'student',
+      avatar_url: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=200',
+      location: 'Quận 3, HCMC',
+      district: 'Quận 3',
+      onboarding_completed: true,
+      gender: 'female',
+      distance_unit: 'km',
+      goals: ['Mobility', 'Recovery'],
+      last_seen: now,
+      created_at: '2025-10-01T00:00:00.000Z',
+      bonus_balance: 50000,
+    },
+    {
+      id: SEED_IDS.studentC,
+      username: 'Jordan Lee',
+      email: 'jordan@rhinofit.demo',
+      role: 'student',
+      avatar_url: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200',
+      location: 'Quận 7, HCMC',
+      district: 'Quận 7',
+      onboarding_completed: true,
+      gender: 'male',
+      distance_unit: 'km',
+      goals: ['Boxing', 'Conditioning'],
+      last_seen: now,
+      created_at: '2025-11-15T00:00:00.000Z',
+      bonus_balance: 0,
+    },
+    {
+      id: SEED_IDS.studentD,
+      username: 'Priya Shah',
+      email: 'priya@rhinofit.demo',
+      role: 'student',
+      avatar_url: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=200',
+      location: 'Thảo Điền, HCMC',
+      district: 'Quận 2',
+      onboarding_completed: true,
+      gender: 'female',
+      distance_unit: 'km',
+      goals: ['Yoga', 'Flexibility'],
+      last_seen: now,
+      created_at: '2026-01-08T00:00:00.000Z',
+      bonus_balance: 20000,
     },
     {
       id: SEED_IDS.trainerA,
@@ -112,6 +185,9 @@ export function buildSeedCollections() {
 
   const user_roles = [
     { id: `${SEED_IDS.student}-role`, user_id: SEED_IDS.student, role: 'student' },
+    { id: `${SEED_IDS.studentB}-role`, user_id: SEED_IDS.studentB, role: 'student' },
+    { id: `${SEED_IDS.studentC}-role`, user_id: SEED_IDS.studentC, role: 'student' },
+    { id: `${SEED_IDS.studentD}-role`, user_id: SEED_IDS.studentD, role: 'student' },
     { id: `${SEED_IDS.trainerA}-role`, user_id: SEED_IDS.trainerA, role: 'trainer' },
     { id: `${SEED_IDS.trainerB}-role`, user_id: SEED_IDS.trainerB, role: 'trainer' },
     { id: `${SEED_IDS.trainerC}-role`, user_id: SEED_IDS.trainerC, role: 'trainer' },
@@ -180,6 +256,7 @@ export function buildSeedCollections() {
       language: ['English', 'Vietnamese'],
       schedule_days: ['Mon', 'Wed', 'Fri'],
       schedule_time: '07:00',
+      schedule_times: ['07:00', '12:00', '18:30'],
       image_url: 'https://images.unsplash.com/photo-1517836357463-d25dfeac3438?w=800',
       kids_friendly: false,
       disability_friendly: false,
@@ -198,6 +275,7 @@ export function buildSeedCollections() {
       language: ['English', 'Vietnamese'],
       schedule_days: ['Tue', 'Thu', 'Sat'],
       schedule_time: '08:30',
+      schedule_times: ['08:30', '17:30'],
       image_url: 'https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?w=800',
       kids_friendly: true,
       disability_friendly: true,
@@ -216,6 +294,7 @@ export function buildSeedCollections() {
       language: ['English'],
       schedule_days: ['Mon', 'Tue', 'Thu'],
       schedule_time: '18:00',
+      schedule_times: ['18:00', '19:30'],
       image_url: 'https://images.unsplash.com/photo-1549719386-0ddced763883?w=800',
       kids_friendly: false,
       disability_friendly: false,
@@ -284,8 +363,8 @@ export function buildSeedCollections() {
     {
       id: 'seed-booking-full-1',
       class_id: SEED_IDS.classC,
-      client_id: 'seed-filler-1',
-      booking_date: tomorrow,
+      client_id: SEED_IDS.studentC,
+      booking_date: boxingDate,
       booking_time: '18:00',
       status: 'booked',
       verification_code: 'RF1111',
@@ -297,14 +376,40 @@ export function buildSeedCollections() {
     {
       id: 'seed-booking-full-2',
       class_id: SEED_IDS.classC,
-      client_id: 'seed-filler-2',
-      booking_date: tomorrow,
+      client_id: SEED_IDS.studentB,
+      booking_date: boxingDate,
       booking_time: '18:00',
       status: 'booked',
       verification_code: 'RF2222',
       amount_paid: 380000,
       service_fee: 19000,
       tip_amount: 0,
+      created_at: now,
+    },
+    {
+      id: 'seed-booking-yoga-1',
+      class_id: SEED_IDS.classB,
+      client_id: SEED_IDS.studentD,
+      booking_date: yogaDate,
+      booking_time: '08:30',
+      status: 'booked',
+      verification_code: 'RF3333',
+      amount_paid: 320000,
+      service_fee: 16000,
+      tip_amount: 0,
+      created_at: now,
+    },
+    {
+      id: 'seed-booking-strength-1',
+      class_id: SEED_IDS.classA,
+      client_id: SEED_IDS.student,
+      booking_date: strengthDate,
+      booking_time: '07:00',
+      status: 'booked',
+      verification_code: 'RF4444',
+      amount_paid: 450000,
+      service_fee: 22500,
+      tip_amount: 20000,
       created_at: now,
     },
   ];
@@ -314,7 +419,7 @@ export function buildSeedCollections() {
       id: 'seed-wait-1',
       class_id: SEED_IDS.classC,
       user_id: SEED_IDS.student,
-      preferred_date: tomorrow,
+      preferred_date: boxingDate,
       preferred_time: '18:00',
       status: 'waiting',
       notified_at: null,
@@ -337,12 +442,23 @@ export function buildSeedCollections() {
     {
       id: 'seed-review-2',
       trainer_id: SEED_IDS.trainerB,
-      client_id: SEED_IDS.student,
+      client_id: SEED_IDS.studentD,
       rating: 5,
       comment: 'Perfect morning reset.',
       photos: [],
       criteria: { technique: 5, punctuality: 4, result: 5 },
       trainer_reply: null,
+      created_at: now,
+    },
+    {
+      id: 'seed-review-3',
+      trainer_id: SEED_IDS.trainerC,
+      client_id: SEED_IDS.studentC,
+      rating: 4,
+      comment: 'Hard session, excellent pad work.',
+      photos: [],
+      criteria: { technique: 4, punctuality: 5, result: 4 },
+      trainer_reply: 'Appreciate it Jordan!',
       created_at: now,
     },
   ];
@@ -445,6 +561,7 @@ export function buildSeedCollections() {
   const booking_holds: unknown[] = [];
   const saved_searches: unknown[] = [];
   const class_venues = classes.map((c) => ({
+    id: `cv-${c.id}`,
     class_id: c.id,
     venue_id: c.venue_id,
     is_primary: true,

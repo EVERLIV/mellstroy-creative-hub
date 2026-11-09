@@ -4,7 +4,6 @@ import type { Class, Trainer } from '../types';
 import { cn } from '@/src/lib/utils';
 import { formatVND } from '@/src/lib/format';
 import { Button } from '@/src/components/ui/button';
-import { Calendar } from '@/src/components/ui/calendar';
 import { Checkbox } from '@/src/components/ui/checkbox';
 import { Input } from '@/src/components/ui/input';
 import {
@@ -24,6 +23,7 @@ import {
 } from '@/src/components/ui/field';
 import { ToggleGroup, ToggleGroupItem } from '@/src/components/ui/toggle-group';
 import { PackagePicker } from './marketplace/PackagePicker';
+import { SessionSlotPicker } from './marketplace/SessionSlotPicker';
 import {
   applyPromo,
   computeServiceFee,
@@ -33,12 +33,19 @@ import {
 } from '@/src/lib/marketplace';
 import { trackEvent } from '@/src/lib/analytics';
 import { supabase } from '@/src/integrations/supabase/client';
+import {
+  buildUpcomingSlots,
+  slotToDate,
+  toDateKey,
+  type SessionSlot,
+} from '@/src/lib/sessionSlots';
 
 interface BookingModalProps {
   bookingTarget: {
     trainer: Trainer;
     cls: Class;
     preferredDate?: Date;
+    preferredTime?: string;
   };
   currentUserId?: string;
   onConfirmBooking: (
@@ -61,8 +68,6 @@ interface BookingModalProps {
   onClose: () => void;
 }
 
-const WEEKDAY = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'] as const;
-
 const UPSELLS = [
   { id: 'extra30', label: '+30 min', price: 120_000 },
   { id: 'travel', label: 'Coach travel', price: 80_000 },
@@ -78,25 +83,43 @@ const BookingModal: React.FC<BookingModalProps> = ({
   onConfirmBooking,
   onClose,
 }) => {
-  const { trainer, cls, preferredDate } = bookingTarget;
-  const scheduleDaysKey = (cls.schedule?.days ?? []).join(',');
-  const scheduleDays = useMemo(
-    () => new Set(scheduleDaysKey ? scheduleDaysKey.split(',') : []),
-    [scheduleDaysKey]
-  );
-  const isDayDisabled = useCallback(
-    (date: Date) => !scheduleDays.has(WEEKDAY[date.getDay()]),
-    [scheduleDays]
-  );
-  const handleSelectDay = useCallback(
-    (d: Date | undefined) => {
-      setSelectedDate(d);
-      if (d) trackEvent('slot_select', { date: d.toISOString() }, currentUserId);
-    },
-    [currentUserId]
+  const { trainer, cls, preferredDate, preferredTime } = bookingTarget;
+  const scheduleDays = cls.schedule?.days ?? [];
+  const scheduleTimes = useMemo(() => {
+    const times = cls.schedule?.times?.length
+      ? cls.schedule.times
+      : cls.schedule?.time
+        ? [cls.schedule.time]
+        : [];
+    return Array.from(new Set(times.map((t) => String(t).slice(0, 5))));
+  }, [cls.schedule?.times, cls.schedule?.time]);
+
+  const upcomingSlots = useMemo(
+    () =>
+      buildUpcomingSlots({
+        classId: String(cls.id),
+        days: scheduleDays,
+        times: scheduleTimes,
+        capacity: cls.capacity,
+        limit: 12,
+      }),
+    [cls.id, cls.capacity, scheduleDays, scheduleTimes]
   );
 
-  const [selectedDate, setSelectedDate] = useState<Date | undefined>(preferredDate);
+  const initialSlot = useMemo(() => {
+    if (!upcomingSlots.length) return null;
+    if (preferredDate) {
+      const date = toDateKey(preferredDate);
+      const time = (preferredTime || cls.schedule?.time || '').slice(0, 5);
+      const match =
+        upcomingSlots.find((s) => s.date === date && (!time || s.time === time)) ||
+        upcomingSlots.find((s) => s.date === date);
+      if (match) return match;
+    }
+    return upcomingSlots.find((s) => (s.spotsLeft ?? 1) > 0) || upcomingSlots[0];
+  }, [upcomingSlots, preferredDate, preferredTime, cls.schedule?.time]);
+
+  const [selectedSlot, setSelectedSlot] = useState<SessionSlot | null>(initialSlot);
   const [bookingPeriod, setBookingPeriod] = useState<'once' | '4weeks'>('once');
   const [acceptPrivacy, setAcceptPrivacy] = useState(false);
   const [acceptTerms, setAcceptTerms] = useState(false);
@@ -114,11 +137,21 @@ const BookingModal: React.FC<BookingModalProps> = ({
   const [submitting, setSubmitting] = useState(false);
   const [step, setStep] = useState<'schedule' | 'checkout'>('schedule');
 
+  const handleSelectSlot = useCallback(
+    (slot: SessionSlot) => {
+      setSelectedSlot(slot);
+      trackEvent(
+        'slot_select',
+        { classId: cls.id, date: slot.date, time: slot.time },
+        currentUserId
+      );
+    },
+    [cls.id, currentUserId]
+  );
+
   useEffect(() => {
-    if (preferredDate && scheduleDays.has(WEEKDAY[preferredDate.getDay()])) {
-      setSelectedDate(preferredDate);
-    }
-  }, [preferredDate, scheduleDays]);
+    setSelectedSlot(initialSlot);
+  }, [initialSlot]);
 
   useEffect(() => {
     void (async () => {
@@ -129,12 +162,14 @@ const BookingModal: React.FC<BookingModalProps> = ({
     trackEvent('booking_start', { classId: cls.id, trainerId: trainer.id }, currentUserId);
   }, [cls.id, trainer.id, currentUserId]);
 
+  const selectedDate = selectedSlot ? slotToDate(selectedSlot) : undefined;
+
   const basePrice = useMemo(() => {
     if (selectedPackage) return Number(selectedPackage.price);
-    if (!selectedDate || !cls.schedule) return cls.price;
+    if (!selectedSlot || !cls.schedule) return cls.price;
     if (bookingPeriod === 'once') return cls.price;
     return cls.price * Math.max(cls.schedule.days.length, 1) * 4;
-  }, [bookingPeriod, selectedDate, cls.price, cls.schedule, selectedPackage]);
+  }, [bookingPeriod, selectedSlot, cls.price, cls.schedule, selectedPackage]);
 
   const upsellTotal = UPSELLS.filter((u) => upsells.includes(u.id)).reduce(
     (s, u) => s + u.price,
@@ -146,16 +181,10 @@ const BookingModal: React.FC<BookingModalProps> = ({
   const insuranceFee = wantInsurance ? Math.round(subtotal * 0.03) : 0;
   const total = subtotal + serviceFee + insuranceFee + tipAmount;
 
-  const selectedLabel = selectedDate
-    ? selectedDate.toLocaleDateString('en-US', {
-        weekday: 'short',
-        month: 'short',
-        day: 'numeric',
-      })
-    : null;
+  const selectedLabel = selectedSlot?.label ?? null;
 
   const canContinue =
-    Boolean(selectedDate) && Boolean(cls.schedule?.time) && acceptPrivacy && acceptTerms;
+    Boolean(selectedSlot) && acceptPrivacy && acceptTerms;
 
   const applyPromoCode = async () => {
     const code = promoCode.trim().toUpperCase();
@@ -175,13 +204,13 @@ const BookingModal: React.FC<BookingModalProps> = ({
   };
 
   const createHold = async () => {
-    if (!selectedDate || !cls.schedule?.time || !currentUserId) return null;
-    const holdDate = selectedDate.toISOString().split('T')[0];
+    if (!selectedSlot || !currentUserId) return null;
+    const holdDate = selectedSlot.date;
     const { data, error } = await createBookingHold({
       classId: String(cls.id),
       userId: currentUserId,
       holdDate,
-      holdTime: cls.schedule.time,
+      holdTime: selectedSlot.time,
       packageId: selectedPackage?.id,
       upsells: upsells.map((id) => UPSELLS.find((u) => u.id === id)).filter(Boolean),
       promoCode: promoCode.trim().toUpperCase() || undefined,
@@ -195,12 +224,16 @@ const BookingModal: React.FC<BookingModalProps> = ({
     setHoldId(hold.id);
     setHoldExpiresAt(hold.expires_at);
     trackEvent('booking_hold', { holdId: hold.id, classId: cls.id }, currentUserId);
-    trackEvent('slot_select', { date: holdDate, time: cls.schedule.time }, currentUserId);
+    trackEvent(
+      'slot_select',
+      { date: holdDate, time: selectedSlot.time },
+      currentUserId
+    );
     return hold;
   };
 
   const handleCheckout = async () => {
-    if (!canContinue || !selectedDate) return;
+    if (!canContinue || !selectedDate || !selectedSlot) return;
     if (!currentUserId || currentUserId === 'current-user-id') {
       trackEvent('booking_abandon', { reason: 'unauthenticated' });
       onClose();
@@ -284,19 +317,16 @@ const BookingModal: React.FC<BookingModalProps> = ({
           {step === 'schedule' ? (
             <FieldSet className="gap-4">
               <FieldGroup>
-                <FieldLabel>Pick a day</FieldLabel>
-                <Calendar
-                  mode="single"
-                  selected={selectedDate}
-                  onSelect={handleSelectDay}
-                  disabled={isDayDisabled}
-                  className="rounded-md border"
+                <FieldLabel>Pick a session</FieldLabel>
+                <SessionSlotPicker
+                  slots={upcomingSlots}
+                  value={selectedSlot?.id}
+                  onChange={handleSelectSlot}
                 />
-                {cls.schedule?.time ? (
+                {selectedLabel ? (
                   <FieldDescription className="inline-flex items-center gap-1.5">
                     <Clock className="size-3.5" />
-                    Session time {cls.schedule.time}
-                    {selectedLabel ? ` · ${selectedLabel}` : ''}
+                    {selectedLabel}
                   </FieldDescription>
                 ) : null}
               </FieldGroup>

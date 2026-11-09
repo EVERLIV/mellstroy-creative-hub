@@ -94,6 +94,7 @@ const AppRoutes = () => {
     trainer: Trainer;
     cls: Class;
     preferredDate?: Date;
+    preferredTime?: string;
   } | null>(null);
   const [reviewModalData, setReviewModalData] = useState<{ booking: Booking; trainer: Trainer } | null>(null);
   const [reviewsModalTrainer, setReviewsModalTrainer] = useState<Trainer | null>(null);
@@ -175,6 +176,7 @@ const AppRoutes = () => {
     trainer: Trainer;
     cls: Class;
     preferredDate?: Date;
+    preferredTime?: string;
   }) => {
     setBookingModalData(data);
   };

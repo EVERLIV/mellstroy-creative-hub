@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { startTransition, useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
 import {
   ArrowRight,
@@ -25,7 +25,6 @@ import { cn } from '@/src/lib/utils';
 import { formatVND } from '@/src/lib/format';
 import { Badge } from '@/src/components/ui/badge';
 import { Button } from '@/src/components/ui/button';
-import { Calendar } from '@/src/components/ui/calendar';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/src/components/ui/card';
 import { Separator } from '@/src/components/ui/separator';
 import { PageLoader, EmptyState } from '@/src/components/layout/states';
@@ -37,9 +36,16 @@ import { CrossSellCarousel } from '../components/marketplace/CrossSellCarousel';
 import { BundleCart } from '../components/marketplace/BundleCart';
 import { PackagePicker } from '../components/marketplace/PackagePicker';
 import { ClassFacilityCard } from '../components/marketplace/ClassFacilityCard';
+import { SessionSlotPicker } from '../components/marketplace/SessionSlotPicker';
 import { fetchActivePackages, type ClassPackage } from '@/src/lib/marketplace';
 import { trackEvent } from '@/src/lib/analytics';
 import { requireAuth } from '@/src/lib/require-auth';
+import {
+  buildUpcomingSlots,
+  slotToDate,
+  type SessionSlot,
+} from '@/src/lib/sessionSlots';
+import { mapClassSchedule } from '@/src/lib/mapClassSchedule';
 
 /**
  * Stitch Class Details → product page
@@ -56,6 +62,7 @@ interface ClassDetailPageProps {
     trainer: Trainer;
     cls: Class;
     preferredDate?: Date;
+    preferredTime?: string;
   }) => void;
   onOpenChat?: (
     trainer: Trainer,
@@ -89,10 +96,13 @@ const mapClass = (c: Record<string, unknown>): Class => ({
   imageUrls: (c.image_urls as string[]) || [],
   capacity: Number(c.capacity ?? 0),
   classType: c.class_type as Class['classType'],
-  schedule:
-    c.schedule_days && c.schedule_time
-      ? { days: c.schedule_days as string[], time: String(c.schedule_time) }
-      : undefined,
+  schedule: mapClassSchedule(
+    c as {
+      schedule_days?: string[];
+      schedule_time?: string;
+      schedule_times?: string[];
+    }
+  ),
   language: (c.language as string[]) || [],
   level: String(c.level ?? ''),
   kids_friendly: Boolean(c.kids_friendly),
@@ -100,27 +110,6 @@ const mapClass = (c: Record<string, unknown>): Class => ({
 });
 
 const WEEKDAY = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'] as const;
-
-function startOfDay(d: Date) {
-  const next = new Date(d);
-  next.setHours(0, 0, 0, 0);
-  return next;
-}
-
-function isScheduleDay(date: Date, scheduleDays?: string[]) {
-  if (!scheduleDays?.length) return false;
-  return scheduleDays.includes(WEEKDAY[date.getDay()]);
-}
-
-function firstUpcomingScheduleDate(scheduleDays?: string[]) {
-  const today = startOfDay(new Date());
-  for (let i = 0; i < 60; i++) {
-    const d = new Date(today);
-    d.setDate(today.getDate() + i);
-    if (isScheduleDay(d, scheduleDays)) return d;
-  }
-  return undefined;
-}
 
 const ClassDetailPage: React.FC<ClassDetailPageProps> = ({
   userRole = 'student',
@@ -136,11 +125,12 @@ const ClassDetailPage: React.FC<ClassDetailPageProps> = ({
   const [enrolledCount, setEnrolledCount] = useState(0);
   const [classReviews, setClassReviews] = useState<Review[]>([]);
   const [similarClasses, setSimilarClasses] = useState<Class[]>([]);
-  const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
+  const [selectedSlot, setSelectedSlot] = useState<SessionSlot | null>(null);
   const [passOption, setPassOption] = useState<'single' | 'pack'>('single');
   const [saved, setSaved] = useState(false);
   const [packages, setPackages] = useState<ClassPackage[]>([]);
   const [selectedPackage, setSelectedPackage] = useState<ClassPackage | null>(null);
+  const [rawClassRow, setRawClassRow] = useState<Record<string, unknown> | null>(null);
   const cart = useOptionalCartQuantities();
   const cartId = classId ? `class:${classId}` : '';
 
@@ -212,6 +202,7 @@ const ClassDetailPage: React.FC<ClassDetailPageProps> = ({
         };
 
         if (!cancelled) {
+          setRawClassRow(classInfo as Record<string, unknown>);
           setClassData(cls);
           setTrainer(trainerData);
           setClassReviews(reviewsData);
@@ -279,43 +270,38 @@ const ClassDetailPage: React.FC<ClassDetailPageProps> = ({
     () => (scheduleDaysKey ? scheduleDaysKey.split(',') : []),
     [scheduleDaysKey]
   );
-  const scheduleTimeLabel = classData?.schedule?.time
-    ? formatTime(classData.schedule.time)
-    : null;
+  const scheduleTimes = useMemo(() => {
+    const fromRow = (rawClassRow?.schedule_times as string[] | undefined) || [];
+    const fromMapped = classData?.schedule?.times || [];
+    const fallback = classData?.schedule?.time ? [classData.schedule.time] : [];
+    const list = (fromRow.length ? fromRow : fromMapped.length ? fromMapped : fallback).map(
+      (t) => String(t).slice(0, 5)
+    );
+    return Array.from(new Set(list));
+  }, [rawClassRow, classData?.schedule?.times, classData?.schedule?.time]);
+
+  const upcomingSlots = useMemo(
+    () =>
+      buildUpcomingSlots({
+        classId: String(classData?.id ?? classId ?? ''),
+        days: scheduleDays,
+        times: scheduleTimes,
+        capacity: classData?.capacity,
+        limit: 10,
+      }),
+    [classData?.id, classData?.capacity, classId, scheduleDays, scheduleTimes]
+  );
 
   useEffect(() => {
-    if (!scheduleDays.length) {
-      setSelectedDate(undefined);
+    if (!upcomingSlots.length) {
+      setSelectedSlot(null);
       return;
     }
-    setSelectedDate((prev) => {
-      if (prev && isScheduleDay(prev, scheduleDays)) return prev;
-      return firstUpcomingScheduleDate(scheduleDays);
+    setSelectedSlot((prev) => {
+      if (prev && upcomingSlots.some((s) => s.id === prev.id)) return prev;
+      return upcomingSlots.find((s) => (s.spotsLeft ?? 1) > 0) || upcomingSlots[0];
     });
-  }, [classData?.id, scheduleDays]);
-
-  const isCalendarDisabled = useCallback(
-    (date: Date) => {
-      const today = startOfDay(new Date());
-      return date < today || !isScheduleDay(date, scheduleDays);
-    },
-    [scheduleDays]
-  );
-
-  const calendarModifiers = useMemo(
-    () => ({
-      scheduled: (date: Date) => isScheduleDay(date, scheduleDays),
-    }),
-    [scheduleDays]
-  );
-
-  const calendarModifiersClassNames = useMemo(
-    () => ({
-      scheduled:
-        'font-semibold text-primary underline decoration-primary/40 underline-offset-2',
-    }),
-    []
-  );
+  }, [upcomingSlots]);
 
   useEffect(() => {
     if (!classId) return;
@@ -327,13 +313,14 @@ const ClassDetailPage: React.FC<ClassDetailPageProps> = ({
     })();
   }, [classId, currentUserId]);
 
-  const selectedDateLabel = selectedDate
-    ? selectedDate.toLocaleDateString('en-US', {
-        weekday: 'short',
-        month: 'short',
-        day: 'numeric',
-      })
-    : 'Pick a day';
+  const selectedDateLabel = selectedSlot
+    ? selectedSlot.label
+    : 'Pick a session';
+  const scheduleTimeLabel = selectedSlot
+    ? formatTime(selectedSlot.time)
+    : scheduleTimes[0]
+      ? formatTime(scheduleTimes[0])
+      : null;
 
   if (loading) {
     return (
@@ -395,8 +382,18 @@ const ClassDetailPage: React.FC<ClassDetailPageProps> = ({
     if (cartId) cart?.setQuantity(cartId, Math.max(1, cart.getQuantity(cartId) || 1));
     onInitiateBooking({
       trainer,
-      cls: classData,
-      preferredDate: selectedDate,
+      cls: {
+        ...classData,
+        schedule: classData.schedule
+          ? {
+              ...classData.schedule,
+              time: selectedSlot?.time || classData.schedule.time,
+              times: scheduleTimes,
+            }
+          : undefined,
+      },
+      preferredDate: selectedSlot ? slotToDate(selectedSlot) : undefined,
+      preferredTime: selectedSlot?.time,
     });
   };
 
@@ -404,11 +401,26 @@ const ClassDetailPage: React.FC<ClassDetailPageProps> = ({
     if (!trainer) return;
     onOpenChat?.(trainer, {
       className: classData?.name || '',
-      bookingDate: selectedDate
-        ? selectedDate.toISOString().split('T')[0]
-        : undefined,
+      bookingDate: selectedSlot?.date,
     });
   };
+
+  const handleSelectSlot = useCallback(
+    (slot: SessionSlot) => {
+      startTransition(() => {
+        setSelectedSlot(slot);
+      });
+      // Defer analytics so slot UI never waits on network/storage.
+      window.setTimeout(() => {
+        trackEvent(
+          'slot_select',
+          { classId, date: slot.date, time: slot.time },
+          currentUserId
+        );
+      }, 0);
+    },
+    [classId, currentUserId]
+  );
 
   const scrollToSchedule = () =>
     document.getElementById('class-schedule')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -604,19 +616,19 @@ const ClassDetailPage: React.FC<ClassDetailPageProps> = ({
               </div>
             </section>
 
-            {/* Coach schedule — real class days/time */}
+            {/* Coach schedule — concrete upcoming sessions */}
             <Card id="class-schedule" className="scroll-mt-24 shadow-sm">
               <CardHeader className="gap-1">
                 <div className="flex flex-wrap items-start justify-between gap-3">
                   <div>
-                    <CardTitle className="text-lg">Coach schedule</CardTitle>
+                    <CardTitle className="text-lg">Upcoming sessions</CardTitle>
                     <CardDescription>
-                      Dates this class runs with {trainer.name}. Pick a day, then book.
+                      Real date + time slots with {trainer.name}. Pick one, then book.
                     </CardDescription>
                   </div>
                   <Button type="button" variant="ghost" size="sm" onClick={scrollToSchedule}>
                     <CalendarIcon data-icon="inline-start" />
-                    Jump to calendar
+                    Jump to slots
                   </Button>
                 </div>
                 {scheduleDays.length > 0 ? (
@@ -626,22 +638,27 @@ const ClassDetailPage: React.FC<ClassDetailPageProps> = ({
                       return (
                         <Badge
                           key={day}
-                          variant={active ? "default" : "outline"}
-                          className={cn(!active && "text-muted-foreground opacity-50")}
+                          variant={active ? 'default' : 'outline'}
+                          className={cn(!active && 'text-muted-foreground opacity-50')}
                         >
                           {day}
                         </Badge>
                       );
                     })}
+                    {scheduleTimes.map((t) => (
+                      <Badge key={t} variant="secondary" className="tabular-nums">
+                        {formatTime(t)}
+                      </Badge>
+                    ))}
                   </div>
                 ) : null}
               </CardHeader>
               <CardContent>
-                {scheduleDays.length === 0 || !scheduleTimeLabel ? (
+                {upcomingSlots.length === 0 ? (
                   <EmptyState
                     icon={CalendarIcon}
-                    title="No published schedule"
-                    description="This coach hasn’t set recurring days for this class yet. Message them to arrange a time."
+                    title="No upcoming sessions"
+                    description="This coach hasn’t published bookable slots yet. Message them to arrange a time."
                     action={
                       <Button type="button" variant="outline" onClick={handleMessageCoach}>
                         <MessageCircle data-icon="inline-start" />
@@ -650,18 +667,16 @@ const ClassDetailPage: React.FC<ClassDetailPageProps> = ({
                     }
                   />
                 ) : (
-                  <div className="flex flex-col gap-6 lg:flex-row lg:items-start">
-                    <Calendar
-                      mode="single"
-                      selected={selectedDate}
-                      onSelect={setSelectedDate}
-                      disabled={isCalendarDisabled}
-                      modifiers={calendarModifiers}
-                      modifiersClassNames={calendarModifiersClassNames}
-                      className="rounded-xl border border-border bg-card shadow-sm"
-                    />
+                  <div className="flex flex-col gap-4 lg:flex-row lg:items-start">
+                    <div className="min-w-0 flex-1">
+                      <SessionSlotPicker
+                        slots={upcomingSlots}
+                        value={selectedSlot?.id}
+                        onChange={handleSelectSlot}
+                      />
+                    </div>
 
-                    <div className="flex min-w-0 flex-1 flex-col gap-3">
+                    <div className="flex w-full min-w-0 flex-col gap-3 lg:max-w-xs">
                       <div className="rounded-xl border border-border bg-muted/40 p-4">
                         <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
                           Selected session
@@ -673,7 +688,7 @@ const ClassDetailPage: React.FC<ClassDetailPageProps> = ({
                         <div className="flex items-center justify-between gap-3">
                           <span className="inline-flex items-center gap-2 text-sm text-muted-foreground">
                             <Clock className="size-4 text-primary" />
-                            {scheduleTimeLabel}
+                            {scheduleTimeLabel || '—'}
                             <span className="text-border">·</span>
                             {classData.duration} min
                           </span>
@@ -682,24 +697,24 @@ const ClassDetailPage: React.FC<ClassDetailPageProps> = ({
                           </span>
                         </div>
                         <p className="mt-2 text-xs text-muted-foreground">
-                          {classData.classType} · {spotsLeft} spot{spotsLeft === 1 ? "" : "s"} left
+                          {classData.classType} · {spotsLeft} spot{spotsLeft === 1 ? '' : 's'} left
                         </p>
                       </div>
 
                       <Button
                         type="button"
                         className="h-11 w-full gap-2"
-                        disabled={isBookingDisabled || !selectedDate}
+                        disabled={isBookingDisabled || !selectedSlot}
                         onClick={handleBook}
                       >
                         <CalendarIcon className="size-4" />
                         {isFull
-                          ? "Class full"
+                          ? 'Class full'
                           : isTrainer
-                            ? "Trainers cannot book"
-                            : selectedDate
-                              ? "Book this session"
-                              : "Select a schedule day"}
+                            ? 'Trainers cannot book'
+                            : selectedSlot
+                              ? 'Book this session'
+                              : 'Select a session'}
                       </Button>
                     </div>
                   </div>
@@ -1105,8 +1120,8 @@ const ClassDetailPage: React.FC<ClassDetailPageProps> = ({
                 <WaitlistButton
                   classId={String(classData.id)}
                   userId={currentUserId}
-                  preferredDate={selectedDate?.toISOString().split('T')[0]}
-                  preferredTime={classData.schedule?.time}
+                  preferredDate={selectedSlot?.date}
+                  preferredTime={selectedSlot?.time || classData.schedule?.time}
                   className="mb-3 w-full"
                 />
               ) : null}

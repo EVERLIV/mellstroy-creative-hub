@@ -28,6 +28,14 @@ service cloud.firestore {
       allow read: if true;
       allow write: if signedIn();
     }
+    match /class_venues/{id} {
+      allow read: if true;
+      allow write: if signedIn();
+    }
+    match /class_slots/{id} {
+      allow read: if true;
+      allow write: if signedIn();
+    }
     match /bookings/{id} {
       allow read: if signedIn();
       allow create: if signedIn();

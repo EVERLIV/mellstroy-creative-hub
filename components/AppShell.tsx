@@ -27,7 +27,7 @@ import ViewModeSwitcher from './ViewModeSwitcher';
 import SiteFooter from './SiteFooter';
 import { NotificationsBell } from './marketplace/NotificationsBell';
 import { DevSeedPanel } from './DevSeedPanel';
-import { ensureSeeded } from '@/src/lib/firebase-store';
+import { clearLegacyMockData } from '@/src/lib/firebase-store';
 import {
   ACCOUNT_ITEMS,
   DISCOVER_ITEMS,
@@ -336,7 +336,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const role = useEffectiveRole();
 
   React.useEffect(() => {
-    ensureSeeded();
+    clearLegacyMockData();
   }, []);
 
   return (

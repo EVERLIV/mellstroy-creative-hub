@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../integrations/supabase/client';
 import { Trainer } from '../../types';
 import { useToast } from './use-toast';
+import { mapClassSchedule } from '../lib/mapClassSchedule';
 
 export const useTrainers = () => {
   const [trainers, setTrainers] = useState<Trainer[]>([]);
@@ -124,10 +125,7 @@ export const useTrainers = () => {
             imageUrls: c.image_urls || [],
             capacity: c.capacity,
             classType: c.class_type as 'Indoor' | 'Outdoor' | 'Home',
-            schedule: c.schedule_days && c.schedule_time ? {
-              days: c.schedule_days,
-              time: c.schedule_time
-            } : undefined,
+            schedule: mapClassSchedule(c as any),
           })),
         chatHistory: [],
       };

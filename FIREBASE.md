@@ -1,43 +1,42 @@
 # RhinoFit Firebase backend
 
-Project: **rihnofit**
+Project: **rihnofit** (Blaze)
 
-## What’s included
+## Stack
 
-- Auth (email / Google / Facebook) via Firebase Auth
-- Local **mock store** (seeded trainers, classes, venues, waitlist, bookings, packages, notifications) so you can test without Console setup
-- Optional sync to Cloud Firestore (`Sync` on the floating Dev panel)
-- Cloud Functions stubs: `createBookingPayment`, `marketplaceLifecycle`
-- Old `supabase` imports are shimmed to the Firebase mock client
+- **Auth** — Firebase Authentication (email/password, Google, Facebook)
+- **Data** — Cloud Firestore (live; local mock store removed)
+- **Storage** — Firebase Storage (avatars / media)
+- App still uses a Supabase-shaped client API that talks to Firestore
 
-## Quick test
-
-1. `npm run dev`
-2. Auth screen → **Demo student** or **Demo trainer**
-3. Or use the floating **Firebase mock backend** panel (bottom-right)
-
-### Student checklist
-
-- Explore coaches / classes (seed data)
-- Open Boxing Conditioning (full) → Join waitlist
-- Bookings → Waitlist tab
-- Notifications bell
-
-### Trainer checklist
-
-- Demo trainer → Bookings → Waitlist
-- See Alex waiting → Notify spot / Message
-
-## Deploy rules / functions
+## Seed real users + marketplace data
 
 ```bash
-firebase login
-firebase use rihnofit
+gcloud auth login
+gcloud config set project rihnofit
+node scripts/seed-firestore.mjs
 firebase deploy --only firestore:rules
-cd functions && npm i && npm run build && cd ..
-firebase deploy --only functions
 ```
 
-## Env
+Seeded password for all demo accounts: `RhinoFit123!`
 
-Copy `.env.example` → `.env.local` (already filled with the web app config).
+| Role    | Email             |
+|---------|-------------------|
+| student | alex@rhinofit.app |
+| student | mai@rhinofit.app  |
+| student | jordan@rhinofit.app |
+| student | priya@rhinofit.app |
+| trainer | minh@rhinofit.app |
+| trainer | linh@rhinofit.app |
+| trainer | kai@rhinofit.app  |
+
+## Local run
+
+```bash
+npm run build:student
+npm run preview -- --host 127.0.0.1 --port 4173
+# or
+npm run dev
+```
+
+Hard-refresh after seeding. Old `localStorage` mock keys are cleared automatically.

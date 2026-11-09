@@ -27,7 +27,7 @@ export interface Class {
   imageUrl: string;
   imageUrls?: string[]; // Multiple images for premium trainers
   capacity: number;
-  schedule?: { days: string[]; time: string; };
+  schedule?: { days: string[]; time: string; times?: string[] };
   bookings?: Booking[];
   classType: ClassType;
   language?: string[]; // Languages spoken in the class
