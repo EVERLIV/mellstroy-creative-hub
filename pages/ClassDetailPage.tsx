@@ -322,6 +322,24 @@ const ClassDetailPage: React.FC<ClassDetailPageProps> = ({
       ? formatTime(scheduleTimes[0])
       : null;
 
+  // Hooks must stay above early returns — #310 is "more hooks than previous render".
+  const handleSelectSlot = useCallback(
+    (slot: SessionSlot) => {
+      startTransition(() => {
+        setSelectedSlot(slot);
+      });
+      // Defer analytics so slot UI never waits on network/storage.
+      window.setTimeout(() => {
+        trackEvent(
+          'slot_select',
+          { classId, date: slot.date, time: slot.time },
+          currentUserId
+        );
+      }, 0);
+    },
+    [classId, currentUserId]
+  );
+
   if (loading) {
     return (
       <div className="min-h-[50vh] bg-[#f9fafb] dark:bg-background">
@@ -404,23 +422,6 @@ const ClassDetailPage: React.FC<ClassDetailPageProps> = ({
       bookingDate: selectedSlot?.date,
     });
   };
-
-  const handleSelectSlot = useCallback(
-    (slot: SessionSlot) => {
-      startTransition(() => {
-        setSelectedSlot(slot);
-      });
-      // Defer analytics so slot UI never waits on network/storage.
-      window.setTimeout(() => {
-        trackEvent(
-          'slot_select',
-          { classId, date: slot.date, time: slot.time },
-          currentUserId
-        );
-      }, 0);
-    },
-    [classId, currentUserId]
-  );
 
   const scrollToSchedule = () =>
     document.getElementById('class-schedule')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
